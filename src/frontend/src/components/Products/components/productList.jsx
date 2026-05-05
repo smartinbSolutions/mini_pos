@@ -1,82 +1,333 @@
-import React from "react";
-import useGetProducts from "../hooks/useGetProducts";
+import {
+  Edit2,
+  PackagePlus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import ProductFormModal from "./ProductFormModal";
+import UnitManager from "./UnitManager";
+import useProductCatalog from "../hooks/useProductCatalog";
 
-const ProductList = () => {
-  const { products, loading, error, refetch } = useGetProducts();
+const money = new Intl.NumberFormat("en-US", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+export default function ProductList() {
+  const catalog = useProductCatalog();
+  const {
+    products,
+    units,
+    barcodesByProduct,
+    loading,
+    saving,
+    error,
+    unavailableHandlers,
+    refetch,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    createUnit,
+    updateUnit,
+    deleteUnit,
+  } = catalog;
+
+  const [search, setSearch] = useState("");
+  const [activeProduct, setActiveProduct] = useState(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const canUseUnits = !unavailableHandlers.includes("units");
+  const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
+
+  const filteredProducts = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return products;
+
+    return products.filter((product) => {
+      const productBarcodes = barcodesByProduct[product.id] || [];
+      return [
+        product.name,
+        product.latinName,
+        product.unit_name,
+        product.unit_code,
+        ...productBarcodes.map((barcode) => barcode.barcode),
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term));
+    });
+  }, [barcodesByProduct, products, search]);
+
+  const openCreate = () => {
+    setActiveProduct(null);
+    setIsFormOpen(true);
+    setActionError("");
+  };
+
+  const openEdit = (product) => {
+    setActiveProduct(product);
+    setIsFormOpen(true);
+    setActionError("");
+  };
+
+  const submitProduct = async (form) => {
+    try {
+      if (activeProduct) {
+        await updateProduct(form);
+      } else {
+        await createProduct(form);
+      }
+      setIsFormOpen(false);
+      setActiveProduct(null);
+      setActionError("");
+    } catch (err) {
+      console.error("Failed to save product:", err);
+      setActionError(err?.message || "Failed to save product.");
+    }
+  };
+
+  const handleDeleteProduct = async (product) => {
+    const confirmed = window.confirm(`Delete product "${product.name}"?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteProduct(product);
+      setActionError("");
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+      setActionError(
+        err?.message ||
+          "Failed to delete product. It may be referenced by invoices.",
+      );
+    }
+  };
+
+  const handleCreateUnit = async (unit) => {
+    try {
+      await createUnit(unit);
+      setActionError("");
+    } catch (err) {
+      console.error("Failed to create unit:", err);
+      setActionError(err?.message || "Failed to create unit.");
+    }
+  };
+
+  const handleUpdateUnit = async (unit) => {
+    try {
+      await updateUnit(unit);
+      setActionError("");
+    } catch (err) {
+      console.error("Failed to update unit:", err);
+      setActionError(err?.message || "Failed to update unit.");
+    }
+  };
+
+  const handleDeleteUnit = async (unit) => {
+    const usedByProduct = products.some((product) => product.unit_id === unit.id);
+    if (usedByProduct) {
+      setActionError("This unit is used by products. Reassign them first.");
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete unit "${unit.name}"?`);
+    if (!confirmed) return;
+
+    try {
+      await deleteUnit(unit);
+      setActionError("");
+    } catch (err) {
+      console.error("Failed to delete unit:", err);
+      setActionError(err?.message || "Failed to delete unit.");
+    }
+  };
 
   if (loading) {
-    return <div className="p-6">Loading products...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="p-6 text-red-500">
-        Error loading products
-        <button
-          onClick={refetch}
-          className="ml-4 px-3 py-1 bg-gray-800 text-white rounded"
-        >
-          Retry
-        </button>
-      </div>
-    );
+    return <div className="p-6 text-gray-600">Loading product catalog...</div>;
   }
 
   return (
-    <div className="p-6 w-full">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Products</h1>
+    <div className="grid gap-6 p-6 xl:grid-cols-[1fr_320px]">
+      <main className="min-w-0">
+        <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Products</h1>
+            <p className="text-sm text-gray-500">
+              Real product, unit, stock, price, and barcode data from the DB.
+            </p>
+          </div>
 
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-          + Add Product
-        </button>
-      </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative">
+              <Search
+                size={17}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="w-full rounded border border-gray-300 py-2 pl-9 pr-3 text-sm sm:w-64"
+                placeholder="Search products"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={refetch}
+              className="inline-flex items-center justify-center gap-2 rounded border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              <RefreshCw size={16} />
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={openCreate}
+              className="inline-flex items-center justify-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+            >
+              <PackagePlus size={17} />
+              Add product
+            </button>
+          </div>
+        </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto bg-white shadow rounded-lg">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="p-3">ID</th>
-              <th className="p-3">Name</th>
-              <th className="p-3">Latin Name</th>
-              <th className="p-3">Price</th>
-              <th className="p-3">Cost</th>
-              <th className="p-3">Quantity</th>
-              <th className="p-3">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id} className="border-t hover:bg-gray-50">
-                <td className="p-3">{p.id}</td>
-                <td className="p-3 font-medium">{p.name}</td>
-                <td className="p-3">{p.latinName}</td>
-                <td className="p-3 text-green-600">{p.price}</td>
-                <td className="p-3 text-red-500">{p.costPrice}</td>
-                <td className="p-3">{p.quantity}</td>
-
-                <td className="p-3 flex gap-2">
-                  <button className="px-3 py-1 text-sm bg-yellow-500 text-white rounded">
-                    Edit
-                  </button>
-                  <button className="px-3 py-1 text-sm bg-red-500 text-white rounded">
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {products.length === 0 && (
-          <div className="p-6 text-center text-gray-500">No products found</div>
+        {(error || actionError) && (
+          <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {actionError || error}
+          </div>
         )}
-      </div>
+
+        <div className="overflow-hidden rounded-lg bg-white shadow">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] text-left">
+              <thead className="bg-gray-100 text-sm text-gray-700">
+                <tr>
+                  <th className="px-4 py-3">Product</th>
+                  <th className="px-4 py-3">Unit</th>
+                  <th className="px-4 py-3">Barcodes</th>
+                  <th className="px-4 py-3 text-right">Quantity</th>
+                  <th className="px-4 py-3 text-right">Cost</th>
+                  <th className="px-4 py-3 text-right">Price</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-gray-100">
+                {filteredProducts.map((product) => {
+                  const productBarcodes = barcodesByProduct[product.id] || [];
+
+                  return (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">
+                          {product.name || "Unnamed product"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {product.latinName || `ID ${product.id}`}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {product.unit_name ? (
+                          <>
+                            {product.unit_name}
+                            {product.unit_code ? (
+                              <span className="text-gray-400">
+                                {" "}
+                                ({product.unit_code})
+                              </span>
+                            ) : null}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">No unit</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex max-w-xs flex-wrap gap-1">
+                          {productBarcodes.length ? (
+                            productBarcodes.map((barcode) => (
+                              <span
+                                key={barcode.id}
+                                className="rounded bg-gray-100 px-2 py-1 text-xs text-gray-700"
+                              >
+                                {barcode.barcode}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-sm text-gray-400">
+                              No barcode
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm">
+                        {money.format(product.quantity || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-red-600">
+                        {money.format(product.costPrice || 0)}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-green-700">
+                        {money.format(product.price || 0)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(product)}
+                            className="rounded p-2 text-gray-500 hover:bg-gray-100"
+                            aria-label="Edit product"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(product)}
+                            className="rounded p-2 text-red-500 hover:bg-red-50"
+                            aria-label="Delete product"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredProducts.length === 0 && (
+            <div className="p-8 text-center text-sm text-gray-500">
+              No products found
+            </div>
+          )}
+        </div>
+      </main>
+
+      {canUseUnits ? (
+        <UnitManager
+          units={units}
+          saving={saving}
+          onCreate={handleCreateUnit}
+          onUpdate={handleUpdateUnit}
+          onDelete={handleDeleteUnit}
+        />
+      ) : (
+        <aside className="rounded-lg bg-white p-4 text-sm text-gray-500 shadow">
+          Unit management is unavailable until the units IPC handler is
+          registered.
+        </aside>
+      )}
+
+      {isFormOpen && (
+        <ProductFormModal
+          product={activeProduct}
+          units={units}
+          barcodes={activeProduct ? barcodesByProduct[activeProduct.id] || [] : []}
+          canManageBarcodes={canManageBarcodes}
+          canUseUnits={canUseUnits}
+          saving={saving}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={submitProduct}
+        />
+      )}
     </div>
   );
-};
-
-export default ProductList;
+}
