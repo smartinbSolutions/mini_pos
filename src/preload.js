@@ -58,8 +58,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("get-purchase-invoice-items"),
   getPurchaseInvoiceItem: (id) =>
     ipcRenderer.invoke("get-purchase-invoice-item", id),
-  getItemByPurchaseInvoice: (id) =>
-    ipcRenderer.invoke("get-items-by-invoice", id),
+  getItemByPurchaseInvoice: (invoice_id) =>
+    ipcRenderer.invoke("get-items-by-invoice", invoice_id),
   createPurchaseInvoiceItem: (data) =>
     ipcRenderer.invoke("create-purchase-invoice-item", data),
   updatePurchaseInvoiceItem: (data) =>
@@ -80,7 +80,8 @@ contextBridge.exposeInMainWorld("api", {
   /* ================= SALES INVOICE ITEM ================= */
   getSalesInvoiceItems: () => ipcRenderer.invoke("get-sales-invoice-items"),
   getSalesInvoiceItem: (id) => ipcRenderer.invoke("get-sales-invoice-item", id),
-  getItemBySalesInvoice: (id) => ipcRenderer.invoke("get-items-by-invoice", id),
+  getItemBySalesInvoice: (invoice_id) =>
+    ipcRenderer.invoke("get-items-by-sales-invoice", invoice_id),
   createSalesInvoiceItem: (data) =>
     ipcRenderer.invoke("create-sales-invoice-item", data),
   updateSalesInvoiceItem: (data) =>

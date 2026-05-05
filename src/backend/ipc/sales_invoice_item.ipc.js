@@ -51,7 +51,7 @@ export default function registerSalesInvoiceItemsIPC() {
       .get(id);
   });
 
-  ipcMain.handle("get-items-by-invoice", (event, invoice_id) => {
+  ipcMain.handle("get-items-by-sales-invoice", (event, invoice_id) => {
     return db
       .prepare(
         `

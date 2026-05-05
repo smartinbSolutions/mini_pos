@@ -1,5 +1,4 @@
 import registerProductIPC from "./ipc/product.ipc";
-import registerSalesIPC from "./ipc/sales_invoice.ipc";
 import registerPaymentsIPC from "./ipc/payments.ipc";
 import registerCurrenciesIPC from "./ipc/currencies.ipc";
 import registerCustomersIPC from "./ipc/customers.ipc";
@@ -15,7 +14,6 @@ import registerUnitIPC from "./ipc/unit.ipc";
 
 export default function registerAllIPC() {
   registerProductIPC();
-  registerSalesIPC();
   registerPaymentsIPC();
   registerCurrenciesIPC();
   registerCustomersIPC();
