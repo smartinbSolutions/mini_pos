@@ -25,4 +25,11 @@ contextBridge.exposeInMainWorld("api", {
   /* ================= PAYMENTS ================= */
   createPayment: (data) => ipcRenderer.invoke("create-payment", data),
   getPayments: () => ipcRenderer.invoke("get-payments"),
+
+  /* ================= UNITS ================= */
+  getUnits: () => ipcRenderer.invoke("get-units"),
+  getUnit: (id) => ipcRenderer.invoke("get-unit", id),
+  createUnit: (data) => ipcRenderer.invoke("create-unit", data),
+  updateUnit: (data) => ipcRenderer.invoke("update-unit", data),
+  deleteUnit: (id) => ipcRenderer.invoke("delete-unit", id),
 });
