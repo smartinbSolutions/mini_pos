@@ -126,7 +126,7 @@ export default function ProductFormModal({
             />
           </label>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+          {/* <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
             Unit
             <select
               value={form.unit_id}
@@ -143,7 +143,7 @@ export default function ProductFormModal({
                 </option>
               ))}
             </select>
-          </label>
+          </label> */}
 
           <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
             Quantity

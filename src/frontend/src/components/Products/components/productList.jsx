@@ -1,10 +1,4 @@
-import {
-  Edit2,
-  PackagePlus,
-  RefreshCw,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { Edit2, PackagePlus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ProductFormModal from "./ProductFormModal";
 import UnitManager from "./UnitManager";
@@ -103,51 +97,12 @@ export default function ProductList() {
     }
   };
 
-  const handleCreateUnit = async (unit) => {
-    try {
-      await createUnit(unit);
-      setActionError("");
-    } catch (err) {
-      console.error("Failed to create unit:", err);
-      setActionError(err?.message || "Failed to create unit.");
-    }
-  };
-
-  const handleUpdateUnit = async (unit) => {
-    try {
-      await updateUnit(unit);
-      setActionError("");
-    } catch (err) {
-      console.error("Failed to update unit:", err);
-      setActionError(err?.message || "Failed to update unit.");
-    }
-  };
-
-  const handleDeleteUnit = async (unit) => {
-    const usedByProduct = products.some((product) => product.unit_id === unit.id);
-    if (usedByProduct) {
-      setActionError("This unit is used by products. Reassign them first.");
-      return;
-    }
-
-    const confirmed = window.confirm(`Delete unit "${unit.name}"?`);
-    if (!confirmed) return;
-
-    try {
-      await deleteUnit(unit);
-      setActionError("");
-    } catch (err) {
-      console.error("Failed to delete unit:", err);
-      setActionError(err?.message || "Failed to delete unit.");
-    }
-  };
-
   if (loading) {
     return <div className="p-6 text-gray-600">Loading product catalog...</div>;
   }
 
   return (
-    <div className="grid gap-6 p-6 xl:grid-cols-[1fr_320px]">
+    <div className="grid gap-6 p-6 ">
       <main className="min-w-0">
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -301,7 +256,7 @@ export default function ProductList() {
         </div>
       </main>
 
-      {canUseUnits ? (
+      {/* {canUseUnits ? (
         <UnitManager
           units={units}
           saving={saving}
@@ -314,13 +269,15 @@ export default function ProductList() {
           Unit management is unavailable until the units IPC handler is
           registered.
         </aside>
-      )}
+      )} */}
 
       {isFormOpen && (
         <ProductFormModal
           product={activeProduct}
           units={units}
-          barcodes={activeProduct ? barcodesByProduct[activeProduct.id] || [] : []}
+          barcodes={
+            activeProduct ? barcodesByProduct[activeProduct.id] || [] : []
+          }
           canManageBarcodes={canManageBarcodes}
           canUseUnits={canUseUnits}
           saving={saving}

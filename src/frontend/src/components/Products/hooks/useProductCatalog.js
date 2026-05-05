@@ -32,7 +32,6 @@ const productPayload = (product) => ({
 
 export default function useProductCatalog() {
   const [products, setProducts] = useState([]);
-  const [units, setUnits] = useState([]);
   const [barcodes, setBarcodes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,33 +49,30 @@ export default function useProductCatalog() {
 
     try {
       setLoading(true);
-      const [productsResult, unitsResult, barcodesResult] =
-        await Promise.allSettled([
-          api.getProducts(),
-          api.getUnits(),
-          api.getProductBarcodes(),
-        ]);
+      const [productsResult, barcodesResult] = await Promise.allSettled([
+        api.getProducts(),
+        api.getProductBarcodes(),
+      ]);
 
       if (productsResult.status === "rejected") {
         throw productsResult.reason;
       }
 
-      if (unitsResult.status === "rejected") {
-        console.error("Failed to load units:", unitsResult.reason);
-      }
-
       if (barcodesResult.status === "rejected") {
-        console.error("Failed to load product barcodes:", barcodesResult.reason);
+        console.error(
+          "Failed to load product barcodes:",
+          barcodesResult.reason,
+        );
       }
 
       const nextUnavailableHandlers = [];
-      if (unitsResult.status === "rejected") nextUnavailableHandlers.push("units");
+
       if (barcodesResult.status === "rejected") {
         nextUnavailableHandlers.push("product barcodes");
       }
 
       setProducts(productsResult.value || []);
-      setUnits(unitsResult.status === "fulfilled" ? unitsResult.value || [] : []);
+
       setBarcodes(
         barcodesResult.status === "fulfilled" ? barcodesResult.value || [] : [],
       );
@@ -135,7 +131,9 @@ export default function useProductCatalog() {
 
       const nextBarcodes = normalizeBarcodes(form.barcodes || []);
       const existingBarcodes = barcodesByProduct[form.id] || [];
-      const nextIds = new Set(nextBarcodes.filter((b) => b.id).map((b) => b.id));
+      const nextIds = new Set(
+        nextBarcodes.filter((b) => b.id).map((b) => b.id),
+      );
 
       for (const barcode of existingBarcodes) {
         if (!nextIds.has(barcode.id)) {
@@ -177,39 +175,8 @@ export default function useProductCatalog() {
     }
   };
 
-  const createUnit = async (unit) => {
-    setSaving(true);
-    try {
-      await api.createUnit(unit);
-      await refetch();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateUnit = async (unit) => {
-    setSaving(true);
-    try {
-      await api.updateUnit(unit);
-      await refetch();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const deleteUnit = async (unit) => {
-    setSaving(true);
-    try {
-      await api.deleteUnit(unit.id);
-      await refetch();
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return {
     products,
-    units,
     barcodes,
     barcodesByProduct,
     loading,
@@ -220,8 +187,5 @@ export default function useProductCatalog() {
     createProduct,
     updateProduct,
     deleteProduct,
-    createUnit,
-    updateUnit,
-    deleteUnit,
   };
 }

@@ -6,6 +6,9 @@ import Products from "./pages/ProductsPage";
 import Sales from "./pages/SalesPage";
 import Payments from "./pages/PaymentsPage";
 import PosPointPage from "./pages/PosPointPage";
+import UnitList from "./components/Unit/components/UnitList";
+import CurrencyList from "./components/Cash/Currency/components/CurrencyList";
+import FundList from "./components/Cash/Fund/components/FundList";
 
 export default function App() {
   return (
@@ -17,6 +20,9 @@ export default function App() {
           <Route path="sales" element={<Sales />} />
           <Route path="payments" element={<Payments />} />
           <Route path="PosPointPage" element={<PosPointPage />} />
+          <Route path="unit" element={<UnitList />} />
+          <Route path="currency" element={<CurrencyList />} />
+          <Route path="funds" element={<FundList />} />
         </Route>
       </Routes>
     </BrowserRouter>

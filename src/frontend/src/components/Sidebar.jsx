@@ -1,5 +1,12 @@
 import { NavLink } from "react-router-dom";
-import { Home, Box, ShoppingCart, DollarSign } from "lucide-react";
+import {
+  Home,
+  Box,
+  ShoppingCart,
+  DollarSign,
+  ShelvingUnit,
+  Landmark,
+} from "lucide-react";
 
 export default function Sidebar() {
   return (
@@ -13,9 +20,12 @@ export default function Sidebar() {
         <SidebarItem to="/payments" icon={<DollarSign />} title="Payments" />
         <SidebarItem
           to="/PosPointPage"
-          icon={<DollarSign />}
+          icon={<ShoppingCart />}
           title="Pos Point"
         />
+        <SidebarItem to="/unit" icon={<ShelvingUnit />} title="Unit" />
+        <SidebarItem to="/currency" icon={<DollarSign />} title="Currency" />
+        <SidebarItem to="/funds" icon={<Landmark />} title="Funds" />
       </nav>
     </div>
   );
