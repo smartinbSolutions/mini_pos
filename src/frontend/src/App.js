@@ -1,24 +1,24 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Layout from "./Layout";
 
-function App() {
-  const [products, setProducts] = useState([]);
+import Dashboard from "./pages/DashboardPage";
+import Products from "./pages/ProductsPage";
+import Sales from "./pages/SalesPage";
+import Payments from "./pages/PaymentsPage";
+import PosPointPage from "./pages/PosPointPage";
 
-  useEffect(() => {
-    window.api.getProducts().then(setProducts);
-  }, []);
-  console.log(products);
-
+export default function App() {
   return (
-    <div>
-      <h1>Products</h1>
-
-      {products.map((p) => (
-        <div key={p.id}>
-          {p.name} - {p.price}
-        </div>
-      ))}
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="products" element={<Products />} />
+          <Route path="sales" element={<Sales />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="PosPointPage" element={<PosPointPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;

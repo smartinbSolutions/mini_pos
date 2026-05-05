@@ -3,11 +3,30 @@ import db from "../db";
 
 export default function registerProductIPC() {
   ipcMain.handle("get-products", () => {
-    return db.prepare("SELECT * FROM products").all();
+    return db
+      .prepare(
+        `
+      SELECT 
+        products.*,
+        unit.name as unit_name,
+        unit.code as unit_code
+      FROM products
+      LEFT JOIN unit ON unit.id = products.unit_id
+    `,
+      )
+      .all();
   });
-
   ipcMain.handle("get-product", (event, id) => {
-    return db.prepare("SELECT * FROM products WHERE id=?").get(id);
+    return db
+      .prepare(
+        ` SELECT 
+        products.*,
+        unit.name as unit_name,
+        unit.code as unit_code
+      FROM products
+      LEFT JOIN unit ON unit.id = products.unit_id WHERE id=?`,
+      )
+      .get(id);
   });
 
   ipcMain.handle("create-product", (event, data) => {
