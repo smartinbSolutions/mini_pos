@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
     const result = db

@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerProductBarcodeIPC() {
+export default function registerProductBarcodeIPC() {
   // CREATE
   ipcMain.handle("create-product-barcode", (event, data) => {
     const result = db
@@ -64,5 +64,3 @@ function registerProductBarcodeIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerProductBarcodeIPC;

@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerSalesInvoiceItemsIPC() {
+export default function registerSalesInvoiceItemsIPC() {
   ipcMain.handle("create-sales-invoice-item", (event, data) => {
     const total = data.quantity * data.price;
 
@@ -103,5 +103,3 @@ function registerSalesInvoiceItemsIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerSalesInvoiceItemsIPC;

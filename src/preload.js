@@ -1,6 +1,51 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("api", {
+  /* ================= CURRENCY ================= */
+  getCurrencies: () => ipcRenderer.invoke("get-currencies"),
+  getCurrency: (id) => ipcRenderer.invoke("get-currency", id),
+  createCurrency: (data) => ipcRenderer.invoke("create-currencies", data),
+  updateCurrency: (data) => ipcRenderer.invoke("update-currency", data),
+  deleteCurrency: (id) => ipcRenderer.invoke("delete-currency", id),
+
+  /* ================= CUSTOMER ================= */
+  getCustomers: () => ipcRenderer.invoke("get-customers"),
+  getCustomer: (id) => ipcRenderer.invoke("get-customer", id),
+  createCustomer: (data) => ipcRenderer.invoke("create-customer", data),
+  updateCustomer: (data) => ipcRenderer.invoke("update-customer", data),
+  deleteCustomer: (id) => ipcRenderer.invoke("delete-customer", id),
+
+  /* ================= FUND ================= */
+  getFunds: () => ipcRenderer.invoke("get-funds"),
+  getFund: (id) => ipcRenderer.invoke("get-fund", id),
+  createFund: (data) => ipcRenderer.invoke("create-fund", data),
+  updateFund: (data) => ipcRenderer.invoke("update-fund", data),
+  deleteFund: (id) => ipcRenderer.invoke("delete-fund", id),
+
+  /* ================= PAYMENTS ================= */
+  getPayments: () => ipcRenderer.invoke("get-payments"),
+  getPayment: (id) => ipcRenderer.invoke("get-payment", id),
+  createPayment: (data) => ipcRenderer.invoke("create-payment", data),
+  updatePayment: (data) => ipcRenderer.invoke("update-payment", data),
+  deletePayment: (id) => ipcRenderer.invoke("delete-payment", id),
+
+  /* ================= PRODUCT BARCODE ================= */
+  getProductBarcodes: () => ipcRenderer.invoke("get-product-barcodes"),
+  getProductBarcode: (id) => ipcRenderer.invoke("get-product-barcode", id),
+  createProductBarcode: (data) =>
+    ipcRenderer.invoke("create-product-barcode", data),
+  updateProductBarcode: (data) =>
+    ipcRenderer.invoke("update-product-barcode", data),
+  deleteProductBarcode: (id) =>
+    ipcRenderer.invoke("delete-product-barcode", id),
+
+  /* ================= PAYMENTS ================= */
+  getPayments: () => ipcRenderer.invoke("get-payments"),
+  getPayment: (id) => ipcRenderer.invoke("get-payment", id),
+  createPayment: (data) => ipcRenderer.invoke("create-payment", data),
+  updatePayment: (data) => ipcRenderer.invoke("update-payment", data),
+  deletePayment: (id) => ipcRenderer.invoke("delete-payment", id),
+
   /* ================= PRODUCTS ================= */
   getProducts: () => ipcRenderer.invoke("get-products"),
   getProduct: (id) => ipcRenderer.invoke("get-product", id),
@@ -8,23 +53,63 @@ contextBridge.exposeInMainWorld("api", {
   updateProduct: (data) => ipcRenderer.invoke("update-product", data),
   deleteProduct: (id) => ipcRenderer.invoke("delete-product", id),
 
+  /* ================= PURCHASE INVOICE ITEM ================= */
+  getPurchaseInvoiceItems: () =>
+    ipcRenderer.invoke("get-purchase-invoice-items"),
+  getPurchaseInvoiceItem: (id) =>
+    ipcRenderer.invoke("get-purchase-invoice-item", id),
+  getItemByPurchaseInvoice: (id) =>
+    ipcRenderer.invoke("get-items-by-invoice", id),
+  createPurchaseInvoiceItem: (data) =>
+    ipcRenderer.invoke("create-purchase-invoice-item", data),
+  updatePurchaseInvoiceItem: (data) =>
+    ipcRenderer.invoke("update-purchase-invoice-item", data),
+  deletePurchaseInvoiceItem: (id) =>
+    ipcRenderer.invoke("delete-purchase-invoice-item", id),
+
+  /* ================= PURCHASE INVOICE ================= */
+  getPurchaseInvoices: () => ipcRenderer.invoke("get-purchase-invoices"),
+  getPurchaseInvoice: (id) => ipcRenderer.invoke("get-purchase-invoice", id),
+  createPurchaseInvoice: (data) =>
+    ipcRenderer.invoke("create-purchase-invoice", data),
+  updatePurchaseInvoice: (data) =>
+    ipcRenderer.invoke("update-purchase-invoice", data),
+  deletePurchaseInvoice: (id) =>
+    ipcRenderer.invoke("delete-purchase-invoice", id),
+
+  /* ================= SALES INVOICE ITEM ================= */
+  getSalesInvoiceItems: () => ipcRenderer.invoke("get-sales-invoice-items"),
+  getSalesInvoiceItem: (id) => ipcRenderer.invoke("get-sales-invoice-item", id),
+  getItemBySalesInvoice: (id) => ipcRenderer.invoke("get-items-by-invoice", id),
+  createSalesInvoiceItem: (data) =>
+    ipcRenderer.invoke("create-sales-invoice-item", data),
+  updateSalesInvoiceItem: (data) =>
+    ipcRenderer.invoke("update-sales-invoice-item", data),
+  deleteSalesInvoiceItem: (id) =>
+    ipcRenderer.invoke("delete-sales-invoice-item", id),
+
   /* ================= SALES ================= */
-  createSalesInvoice: (data) =>
-    ipcRenderer.invoke("create-sales-invoice", data),
   getSalesInvoices: () => ipcRenderer.invoke("get-sales-invoices"),
   getSalesInvoice: (id) => ipcRenderer.invoke("get-sales-invoice", id),
+  createSalesInvoice: (data) =>
+    ipcRenderer.invoke("create-sales-invoice", data),
   updateSalesInvoice: (data) =>
     ipcRenderer.invoke("update-sales-invoice", data),
   deleteSalesInvoice: (id) => ipcRenderer.invoke("delete-sales-invoice", id),
 
-  /* ================= SALES ITEMS ================= */
-  createSalesItems: (data) => ipcRenderer.invoke("create-sales-items", data),
-  getSalesItems: (invoiceId) =>
-    ipcRenderer.invoke("get-sales-items", invoiceId),
+  /* ================= SUPPLIERS ================= */
+  getSuppliers: () => ipcRenderer.invoke("get-suppliers"),
+  getSupplier: (id) => ipcRenderer.invoke("get-supplier", id),
+  createSupplier: (data) => ipcRenderer.invoke("create-supplier", data),
+  updateSupplier: (data) => ipcRenderer.invoke("update-supplier", data),
+  deleteSupplier: (id) => ipcRenderer.invoke("delete-supplier", id),
 
-  /* ================= PAYMENTS ================= */
-  createPayment: (data) => ipcRenderer.invoke("create-payment", data),
-  getPayments: () => ipcRenderer.invoke("get-payments"),
+  /* ================= TAX ================= */
+  getTaxes: () => ipcRenderer.invoke("get-taxes"),
+  getTax: (id) => ipcRenderer.invoke("get-tax", id),
+  createTax: (data) => ipcRenderer.invoke("create-tax", data),
+  updateTax: (data) => ipcRenderer.invoke("update-tax", data),
+  deleteTax: (id) => ipcRenderer.invoke("delete-tax", id),
 
   /* ================= UNITS ================= */
   getUnits: () => ipcRenderer.invoke("get-units"),

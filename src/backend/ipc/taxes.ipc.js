@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerTaxesIPC() {
+export default function registerTaxesIPC() {
   ipcMain.handle("create-tax", (event, data) => {
     const result = db
       .prepare(
@@ -59,5 +59,3 @@ function registerTaxesIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerTaxesIPC;

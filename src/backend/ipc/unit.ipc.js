@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerUnitIPC() {
+export default function registerUnitIPC() {
   ipcMain.handle("create-unit", (event, data) => {
     const result = db
       .prepare(
@@ -57,5 +57,3 @@ function registerUnitIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerUnitIPC;

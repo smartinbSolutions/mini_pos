@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerSuppliersIPC() {
+export default function registerSuppliersIPC() {
   // CREATE
   ipcMain.handle("create-supplier", (event, data) => {
     const result = db
@@ -71,5 +71,3 @@ function registerSuppliersIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerSuppliersIPC;

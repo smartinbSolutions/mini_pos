@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerPurchaseInvoicesIPC() {
+export default function registerPurchaseInvoicesIPC() {
   // CREATE
   ipcMain.handle("create-purchase-invoice", (event, data) => {
     const result = db
@@ -27,7 +27,7 @@ function registerPurchaseInvoicesIPC() {
   });
 
   // GET ALL
-  ipcMain.handle("get-purchase-invoice", () => {
+  ipcMain.handle("get-purchase-invoices", () => {
     return db
       .prepare(
         `

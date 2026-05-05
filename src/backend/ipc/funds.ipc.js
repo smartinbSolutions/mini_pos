@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerFundIPC() {
+export default function registerFundIPC() {
   ipcMain.handle("create-fund", (event, data) => {
     const result = db
       .prepare(
@@ -74,5 +74,3 @@ function registerFundIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerFundIPC;

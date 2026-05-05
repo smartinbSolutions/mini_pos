@@ -1,8 +1,9 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-function registerCustomersIPC() {
+
+export default function registerCustomersIPC() {
   // CREATE
-  ipcMain.handle("create-customers", (event, data) => {
+  ipcMain.handle("create-customer", (event, data) => {
     const result = db
       .prepare(
         `
@@ -71,5 +72,3 @@ function registerCustomersIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerCustomersIPC;
