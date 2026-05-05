@@ -1,6 +1,5 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
+import db from "../db";
 function registerCustomersIPC() {
   // CREATE
   ipcMain.handle("create-customers", (event, data) => {

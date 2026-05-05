@@ -1,6 +1,5 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
+import db from "../db";
 function registerSuppliersIPC() {
   // CREATE
   ipcMain.handle("create-supplier", (event, data) => {

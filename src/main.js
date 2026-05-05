@@ -4,8 +4,7 @@ import started from "electron-squirrel-startup";
 
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-
-import registerProductIPC from "./backend/ipc/product.ipc.js";
+import registerAllIPC from "./backend/registerAllIPC";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -32,10 +31,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  // ✅ IPC أول شيء
-  registerProductIPC();
-
-  // ✅ بعده النافذة
+  registerAllIPC();
   createWindow();
 
   app.on("activate", () => {

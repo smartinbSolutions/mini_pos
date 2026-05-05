@@ -1,7 +1,6 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
-function registerCurrenciesIPC() {
+import db from "../db";
+export default function registerCurrenciesIPC() {
   // CREATE
   ipcMain.handle("create-currencies", (event, data) => {
     const result = db
@@ -65,5 +64,3 @@ function registerCurrenciesIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerCurrenciesIPC;

@@ -1,6 +1,5 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
+import db from "../db";
 function registerTaxesIPC() {
   ipcMain.handle("create-tax", (event, data) => {
     const result = db

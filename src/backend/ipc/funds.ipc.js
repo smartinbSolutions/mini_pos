@@ -1,6 +1,5 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
+import db from "../db";
 function registerFundIPC() {
   ipcMain.handle("create-fund", (event, data) => {
     const result = db

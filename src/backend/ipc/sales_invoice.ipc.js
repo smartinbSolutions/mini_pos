@@ -1,7 +1,6 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
-function registerSalesInvoiceIPC() {
+import db from "../db";
+export default function registerSalesInvoiceIPC() {
   // CREATE
   ipcMain.handle("create-sales-invoice", (event, data) => {
     const result = db
@@ -81,5 +80,3 @@ function registerSalesInvoiceIPC() {
     return { success: true };
   });
 }
-
-module.exports = registerSalesInvoiceIPC;

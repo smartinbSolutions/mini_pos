@@ -1,6 +1,5 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
+import db from "../db";
 function registerSalesInvoiceItemsIPC() {
   ipcMain.handle("create-sales-invoice-item", (event, data) => {
     const total = data.quantity * data.price;

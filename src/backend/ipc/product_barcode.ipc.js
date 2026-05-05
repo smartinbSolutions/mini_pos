@@ -1,6 +1,5 @@
 const { ipcMain } = require("electron");
-const db = require("../backend/db");
-
+import db from "../db";
 function registerProductBarcodeIPC() {
   // CREATE
   ipcMain.handle("create-product-barcode", (event, data) => {
