@@ -94,8 +94,8 @@ const useFundList = () => {
   };
 
   const handleDeleteFund = async (fund) => {
-    const confirmed = window.confirm(`Delete Fund "${fund.name}"?`);
-    if (!confirmed) return;
+    // const confirmed = window.confirm(`Delete Fund "${fund.name}"?`);
+    // if (!confirmed) return;
 
     try {
       await deleteFund(fund);

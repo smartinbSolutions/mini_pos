@@ -1,17 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
 
-export default function useUnit() {
-  const emptyUnit = { name: "", latinName: "", code: "" };
+export default function useTax() {
+  const emptyTax = { name: "", rate: 0 };
 
   const [saving, setSaving] = useState(false);
-  const [units, setUnits] = useState([]);
+  const [taxes, setTaxes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [unavailableHandlers, setUnavailableHandlers] = useState([]);
   const [actionError, setActionError] = useState("");
-  const [draft, setDraft] = useState(emptyUnit);
+  const [draft, setDraft] = useState(emptyTax);
   const [editingId, setEditingId] = useState(null);
-  const [editing, setEditing] = useState(emptyUnit);
+  const [editing, setEditing] = useState(emptyTax);
 
   const api = window.api;
 
@@ -24,9 +24,9 @@ export default function useUnit() {
     try {
       setLoading(true);
 
-      let unitResult = await api.getUnits();
+      let taxResult = await api.getTaxes();
 
-      setUnits(unitResult || []);
+      setTaxes(taxResult || []);
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
@@ -40,101 +40,100 @@ export default function useUnit() {
     refetch();
   }, [refetch]);
 
-  const createUnit = async (unit) => {
+  const createTax = async (tax) => {
     setSaving(true);
     try {
-      await api.createUnit(unit);
+      await api.createTax(tax);
       await refetch();
     } finally {
       setSaving(false);
     }
   };
 
-  const updateUnit = async (unit) => {
+  const updateTax = async (unit) => {
     setSaving(true);
     try {
-      await api.updateUnit(unit);
+      await api.updateTax(unit);
       await refetch();
     } finally {
       setSaving(false);
     }
   };
 
-  const deleteUnit = async (unit) => {
+  const deleteTax = async (tax) => {
     setSaving(true);
     try {
-      await api.deleteUnit(unit.id);
+      await api.deleteTax(tax.id);
       await refetch();
     } finally {
       setSaving(false);
     }
   };
 
-  const handleCreateUnit = async (unit) => {
+  const handleCreateTax = async (tax) => {
     try {
-      await createUnit(unit);
+      await createTax(tax);
       setActionError("");
     } catch (err) {
-      console.error("Failed to create unit:", err);
+      console.error("Failed to create tax:", err);
       setActionError(err?.message || "Failed to create unit.");
     }
   };
 
-  const handleUpdateUnit = async (unit) => {
+  const handleUpdateTax = async (tax) => {
     try {
-      await updateUnit(unit);
+      await updateTax(tax);
       setActionError("");
     } catch (err) {
-      console.error("Failed to update unit:", err);
-      setActionError(err?.message || "Failed to update unit.");
+      console.error("Failed to update tax:", err);
+      setActionError(err?.message || "Failed to update tax.");
     }
   };
 
-  const handleDeleteUnit = async (unit) => {
-    // const confirmed = window.confirm(`Delete unit "${unit.name}"?`);
+  const handleDeleteTax = async (tax) => {
+    // const confirmed = window.confirm(`Delete tax "${tax.name}"?`);
     // if (!confirmed) return;
 
     try {
-      await deleteUnit(unit);
+      await deleteTax(tax);
       setActionError("");
     } catch (err) {
-      console.error("Failed to delete unit:", err);
-      setActionError(err?.message || "Failed to delete unit.");
+      console.error("Failed to delete tax:", err);
+      setActionError(err?.message || "Failed to delete tax.");
     }
   };
 
   const submitDraft = async (event) => {
     event.preventDefault();
-    await handleCreateUnit(draft);
-    setDraft(emptyUnit);
+    await handleCreateTax(draft);
+    setDraft(emptyTax);
   };
 
-  const startEdit = (unit) => {
-    setEditingId(unit.id);
+  const startEdit = (tax) => {
+    setEditingId(tax.id);
     setEditing({
-      id: unit.id,
-      name: unit.name || "",
-      latinName: unit.latinName || "",
-      code: unit.code || "",
+      id: tax.id,
+      name: tax.name || "",
+      rate: tax.rate || "",
     });
   };
 
   const submitEdit = async (event) => {
     event.preventDefault();
-    await handleUpdateUnit(editing);
+    await handleUpdateTax(editing);
     setEditingId(null);
-    setEditing(emptyUnit);
+    setEditing(emptyTax);
   };
 
   return {
-    createUnit,
-    updateUnit,
-    deleteUnit,
+    createTax,
+    updateTax,
+    deleteTax,
     saving,
-    units,
-    handleDeleteUnit,
-    handleCreateUnit,
-    handleUpdateUnit,
+    taxes,
+    handleDeleteTax,
+    handleCreateTax,
+    handleUpdateTax,
     submitDraft,
     startEdit,
     submitEdit,

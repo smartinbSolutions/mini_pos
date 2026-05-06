@@ -144,13 +144,16 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   supplier_id INTEGER,
   date TEXT,
-  total REAL DEFAULT 0,
+  subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   tax REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
-)
+  FOREIGN KEY (supplier_id)
+    REFERENCES suppliers(id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE
+);
 `,
 ).run();
 
@@ -158,15 +161,22 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS purchase_invoice_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  invoice_id INTEGER,
-  product_id INTEGER,
-  quantity REAL,
-  price REAL,
-  total REAL,
+  invoice_id INTEGER NOT NULL,
+  product_id INTEGER NOT NULL,
+  quantity REAL NOT NULL,
+  price REAL NOT NULL,
+  total REAL NOT NULL,
+  product_name TEXT,
+  unit_name TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (invoice_id) REFERENCES purchase_invoices(id),
-  FOREIGN KEY (product_id) REFERENCES products(id)
-)
+  FOREIGN KEY (invoice_id)
+    REFERENCES purchase_invoices(id)
+    ON DELETE CASCADE,
+
+  FOREIGN KEY (product_id)
+    REFERENCES products(id)
+    ON DELETE RESTRICT
+);
 `,
 ).run();
 

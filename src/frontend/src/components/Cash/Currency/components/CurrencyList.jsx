@@ -21,9 +21,7 @@ const CurrencyList = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
-        {/* ================= LEFT ================= */}
         <div className="space-y-5">
-          {/* HEADER */}
           <div className="bg-white rounded-2xl p-5 shadow-sm border flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
@@ -42,7 +40,6 @@ const CurrencyList = () => {
             </div>
           </div>
 
-          {/* LIST */}
           <div className="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
             {currencies.map((currency) =>
               editingId === currency.id ? (
@@ -154,7 +151,6 @@ const CurrencyList = () => {
               ),
             )}
 
-            {/* EMPTY */}
             {currencies.length === 0 && (
               <div className="text-center py-16">
                 <div className="text-gray-400 mb-2 text-sm">
@@ -168,7 +164,6 @@ const CurrencyList = () => {
           </div>
         </div>
 
-        {/* ================= RIGHT ================= */}
         <div className="bg-white rounded-2xl shadow-sm border p-5 h-fit sticky top-6">
           <h3 className="text-md font-semibold mb-4">Add Currency</h3>
 

@@ -91,8 +91,8 @@ const useCurrency = () => {
   };
 
   const handleDeleteCurrency = async (currency) => {
-    const confirmed = window.confirm(`Delete Currency "${currency.name}"?`);
-    if (!confirmed) return;
+    // const confirmed = window.confirm(`Delete Currency "${currency.name}"?`);
+    // if (!confirmed) return;
 
     try {
       await deleteCurrency(currency);

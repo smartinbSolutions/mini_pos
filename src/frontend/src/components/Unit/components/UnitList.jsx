@@ -31,16 +31,13 @@ const UnitList = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
-        {/* ================= LEFT ================= */}
         <div className="bg-white/80 backdrop-blur rounded-2xl border shadow-sm p-6">
-          {/* HEADER */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Units</h2>
               <p className="text-sm text-gray-500">Manage measurement units</p>
             </div>
 
-            {/* SEARCH */}
             <div className="relative">
               <Search
                 className="absolute left-2 top-2.5 text-gray-400"
@@ -55,7 +52,6 @@ const UnitList = () => {
             </div>
           </div>
 
-          {/* LIST */}
           <div className="space-y-2">
             {filteredUnits.map((unit) =>
               editingId === unit.id ? (
@@ -147,7 +143,6 @@ const UnitList = () => {
           </div>
         </div>
 
-        {/* ================= RIGHT ================= */}
         <div className="bg-white/80 backdrop-blur rounded-2xl border shadow-sm p-6 h-fit sticky top-6">
           <h3 className="text-md font-semibold mb-4">Add Unit</h3>
 

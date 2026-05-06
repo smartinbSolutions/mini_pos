@@ -69,7 +69,8 @@ contextBridge.exposeInMainWorld("api", {
 
   /* ================= PURCHASE INVOICE ================= */
   getPurchaseInvoices: () => ipcRenderer.invoke("get-purchase-invoices"),
-  getPurchaseInvoice: (id) => ipcRenderer.invoke("get-purchase-invoice", id),
+  getPurchaseInvoiceById: (id) =>
+    ipcRenderer.invoke("get-purchase-invoice", id),
   createPurchaseInvoice: (data) =>
     ipcRenderer.invoke("create-purchase-invoice", data),
   updatePurchaseInvoice: (data) =>

@@ -37,6 +37,14 @@ export default function useProductCatalog() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [unavailableHandlers, setUnavailableHandlers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [activeProduct, setActiveProduct] = useState(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [units, setUnits] = useState([]);
+
+  const canUseUnits = !unavailableHandlers.includes("units");
+  const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
 
   const api = window.api;
 
@@ -49,10 +57,12 @@ export default function useProductCatalog() {
 
     try {
       setLoading(true);
-      const [productsResult, barcodesResult] = await Promise.allSettled([
-        api.getProducts(),
-        api.getProductBarcodes(),
-      ]);
+      const [productsResult, barcodesResult, unitResult] =
+        await Promise.allSettled([
+          api.getProducts(),
+          api.getProductBarcodes(),
+          api.getUnits(),
+        ]);
 
       if (productsResult.status === "rejected") {
         throw productsResult.reason;
@@ -73,6 +83,7 @@ export default function useProductCatalog() {
 
       setProducts(productsResult.value || []);
 
+      setUnits(unitResult || []);
       setBarcodes(
         barcodesResult.status === "fulfilled" ? barcodesResult.value || [] : [],
       );
@@ -165,13 +176,76 @@ export default function useProductCatalog() {
   const deleteProduct = async (product) => {
     setSaving(true);
     try {
-      for (const barcode of barcodesByProduct[product.id] || []) {
-        await api.deleteProductBarcode(barcode.id);
-      }
-      await api.deleteProduct(product.id);
+      const res = await api.deleteProduct(product.id);
       await refetch();
+      setActionError("");
+    } catch (e) {
+      console.log("error", e);
+      setActionError(e.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const filteredProducts = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return products;
+
+    return products.filter((product) => {
+      const productBarcodes = barcodesByProduct[product.id] || [];
+      return [
+        product.name,
+        product.latinName,
+        product.unit_name,
+        product.unit_code,
+        ...productBarcodes.map((barcode) => barcode.barcode),
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term));
+    });
+  }, [barcodesByProduct, products, search]);
+
+  const openCreate = () => {
+    setActiveProduct(null);
+    setIsFormOpen(true);
+    setActionError("");
+  };
+
+  const openEdit = (product) => {
+    setActiveProduct(product);
+    setIsFormOpen(true);
+    setActionError("");
+  };
+
+  const submitProduct = async (form) => {
+    try {
+      if (activeProduct) {
+        await updateProduct(form);
+      } else {
+        await createProduct(form);
+      }
+      setIsFormOpen(false);
+      setActiveProduct(null);
+      setActionError("");
+    } catch (err) {
+      console.error("Failed to save product:", err);
+      setActionError(err?.message || "Failed to save product.");
+    }
+  };
+
+  const handleDeleteProduct = async (product) => {
+    // const confirmed = window.confirm(`Delete product "${product.name}"?`);
+    // if (!confirmed) return;
+
+    try {
+      await deleteProduct(product);
+      setActionError("");
+    } catch (err) {
+      console.error("Failed to delete product:", err);
+      setActionError(
+        err?.message ||
+          "Failed to delete product. It may be referenced by invoices.",
+      );
     }
   };
 
@@ -187,5 +261,19 @@ export default function useProductCatalog() {
     createProduct,
     updateProduct,
     deleteProduct,
+    search,
+    setSearch,
+    openCreate,
+    actionError,
+    filteredProducts,
+    openEdit,
+    handleDeleteProduct,
+    isFormOpen,
+    activeProduct,
+    canManageBarcodes,
+    canUseUnits,
+    setIsFormOpen,
+    submitProduct,
+    units,
   };
 }

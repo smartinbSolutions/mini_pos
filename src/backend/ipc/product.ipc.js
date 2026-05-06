@@ -70,7 +70,32 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("delete-product", (event, id) => {
-    db.prepare("DELETE FROM products WHERE id=?").run(id);
+    db.prepare(
+      `
+      DELETE FROM product_barcodes WHERE product_id = ?
+    `,
+    ).run(id);
+
+    const used = db
+      .prepare(
+        `
+      SELECT COUNT(*) as count
+      FROM purchase_invoice_items
+      WHERE product_id = ?
+    `,
+      )
+      .get(id);
+
+    if (used.count > 0) {
+      throw new Error("Product is used in invoices");
+    }
+
+    db.prepare(
+      `
+      DELETE FROM products WHERE id = ?
+    `,
+    ).run(id);
+
     return { success: true };
   });
 }

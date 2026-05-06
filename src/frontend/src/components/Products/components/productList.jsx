@@ -1,7 +1,6 @@
 import { Edit2, PackagePlus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ProductFormModal from "./ProductFormModal";
-import UnitManager from "./UnitManager";
 import useProductCatalog from "../hooks/useProductCatalog";
 
 const money = new Intl.NumberFormat("en-US", {
@@ -13,7 +12,7 @@ export default function ProductList() {
   const catalog = useProductCatalog();
   const {
     products,
-    units,
+    barcodes,
     barcodesByProduct,
     loading,
     saving,
@@ -23,79 +22,21 @@ export default function ProductList() {
     createProduct,
     updateProduct,
     deleteProduct,
-    createUnit,
-    updateUnit,
-    deleteUnit,
+    search,
+    setSearch,
+    openCreate,
+    actionError,
+    filteredProducts,
+    openEdit,
+    handleDeleteProduct,
+    isFormOpen,
+    activeProduct,
+    canManageBarcodes,
+    canUseUnits,
+    setIsFormOpen,
+    submitProduct,
+    units,
   } = catalog;
-
-  const [search, setSearch] = useState("");
-  const [activeProduct, setActiveProduct] = useState(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [actionError, setActionError] = useState("");
-  const canUseUnits = !unavailableHandlers.includes("units");
-  const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
-
-  const filteredProducts = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return products;
-
-    return products.filter((product) => {
-      const productBarcodes = barcodesByProduct[product.id] || [];
-      return [
-        product.name,
-        product.latinName,
-        product.unit_name,
-        product.unit_code,
-        ...productBarcodes.map((barcode) => barcode.barcode),
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term));
-    });
-  }, [barcodesByProduct, products, search]);
-
-  const openCreate = () => {
-    setActiveProduct(null);
-    setIsFormOpen(true);
-    setActionError("");
-  };
-
-  const openEdit = (product) => {
-    setActiveProduct(product);
-    setIsFormOpen(true);
-    setActionError("");
-  };
-
-  const submitProduct = async (form) => {
-    try {
-      if (activeProduct) {
-        await updateProduct(form);
-      } else {
-        await createProduct(form);
-      }
-      setIsFormOpen(false);
-      setActiveProduct(null);
-      setActionError("");
-    } catch (err) {
-      console.error("Failed to save product:", err);
-      setActionError(err?.message || "Failed to save product.");
-    }
-  };
-
-  const handleDeleteProduct = async (product) => {
-    const confirmed = window.confirm(`Delete product "${product.name}"?`);
-    if (!confirmed) return;
-
-    try {
-      await deleteProduct(product);
-      setActionError("");
-    } catch (err) {
-      console.error("Failed to delete product:", err);
-      setActionError(
-        err?.message ||
-          "Failed to delete product. It may be referenced by invoices.",
-      );
-    }
-  };
 
   if (loading) {
     return <div className="p-6 text-gray-600">Loading product catalog...</div>;
@@ -255,21 +196,6 @@ export default function ProductList() {
           )}
         </div>
       </main>
-
-      {/* {canUseUnits ? (
-        <UnitManager
-          units={units}
-          saving={saving}
-          onCreate={handleCreateUnit}
-          onUpdate={handleUpdateUnit}
-          onDelete={handleDeleteUnit}
-        />
-      ) : (
-        <aside className="rounded-lg bg-white p-4 text-sm text-gray-500 shadow">
-          Unit management is unavailable until the units IPC handler is
-          registered.
-        </aside>
-      )} */}
 
       {isFormOpen && (
         <ProductFormModal
