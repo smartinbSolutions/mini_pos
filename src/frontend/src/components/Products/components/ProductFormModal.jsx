@@ -33,7 +33,7 @@ export default function ProductFormModal({
         costPrice: String(product.costPrice ?? 0),
         price: String(product.price ?? 0),
         quantity: String(product.quantity ?? 0),
-        unit_id: product.unit_id ? String(product.unit_id) : "",
+        unit_id: product.unit_id ? Number(product.unit_id) : "",
         barcodes: barcodes.length ? barcodes : [{ barcode: "" }],
       });
     } else {
@@ -126,7 +126,7 @@ export default function ProductFormModal({
             />
           </label>
 
-          {/* <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
             Unit
             <select
               value={form.unit_id}
@@ -137,13 +137,13 @@ export default function ProductFormModal({
               <option value="">
                 {canUseUnits ? "No unit" : "Units unavailable"}
               </option>
-              {units.map((unit) => (
+              {units?.value?.map((unit) => (
                 <option key={unit.id} value={unit.id}>
                   {unit.name} {unit.code ? `(${unit.code})` : ""}
                 </option>
               ))}
             </select>
-          </label> */}
+          </label>
 
           <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
             Quantity
