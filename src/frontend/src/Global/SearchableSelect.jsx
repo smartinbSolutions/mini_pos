@@ -60,9 +60,11 @@ const SearchableSelect = ({
       return;
     }
 
-    if (selectedValue) {
+    if (selectedValue !== "" && selectedValue !== null && selectedValue !== undefined) {
       const selectedOption = optionList.find(
-        (option) => option.id === selectedValue || option._id === selectedValue,
+        (option) =>
+          String(option.id) === String(selectedValue) ||
+          String(option._id) === String(selectedValue),
       );
       setSearchQuery(selectedOption ? getOptionLabel(selectedOption) : "");
       return;
@@ -133,8 +135,6 @@ const SearchableSelect = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const numericLabelWidth = Number(labelWidth) || 0;
-
   return (
     <div className="relative w-full" ref={rootRef}>
       <div className="flex items-center">
@@ -142,7 +142,7 @@ const SearchableSelect = ({
           <span
             className="flex items-center rounded-l-2xl border border-r-0 border-slate-200 bg-slate-100 px-3 text-left text-sm font-bold text-slate-700"
             style={{
-              width: `${numericLabelWidth}%`,
+              width: `${labelWidth}%`,
               height: `${height}rem`,
               minHeight: 0,
             }}
@@ -151,10 +151,7 @@ const SearchableSelect = ({
           </span>
         )}
 
-        <div
-          className="relative"
-          style={{ width: `${100 - numericLabelWidth}%` }}
-        >
+        <div className="relative" style={{ width: `${100 - labelWidth}%` }}>
           <input
             ref={inputRef}
             type="text"
@@ -201,10 +198,7 @@ const SearchableSelect = ({
                 type="button"
                 key={option.id || option._id}
                 className="cursor-pointer px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-100"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  handleSelect(option);
-                }}
+                onClick={() => handleSelect(option)}
               >
                 {getOptionLabel(option)}
               </button>
