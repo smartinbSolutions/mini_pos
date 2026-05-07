@@ -205,4 +205,79 @@ export default function registerSalesInvoiceIPC() {
       return { success: false, error: err.message };
     }
   });
+
+  ipcMain.handle("pos-checkout", (event, data) => {
+    const insertInvoice = db.prepare(`
+    INSERT INTO sales_invoices
+    (customer_id, date, subtotal, discount, tax_id, net_total)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+    const insertItem = db.prepare(`
+    INSERT INTO sales_invoice_items
+    (invoice_id, product_id, quantity, price, total)
+    VALUES (?, ?, ?, ?, ?)
+  `);
+
+    const updateStock = db.prepare(`
+    UPDATE products
+    SET quantity = quantity - ?
+    WHERE id = ?
+  `);
+
+    const insertPayment = db.prepare(`
+    INSERT INTO payments
+    (type, party_type, party_id, fund_id, amount, note)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `);
+
+    const updateFund = db.prepare(`
+    UPDATE funds
+    SET balance = balance + ?
+    WHERE id = ?
+  `);
+
+    const transaction = db.transaction(() => {
+      const invoiceResult = insertInvoice.run(
+        data.customer_id || null,
+        data.date,
+        data.subtotal || 0,
+        data.discount || 0,
+        data.tax_id || null,
+        data.net_total || 0,
+      );
+
+      const invoiceId = invoiceResult.lastInsertRowid;
+
+      for (const item of data.items) {
+        const quantity = Number(item.quantity || 0);
+        const price = Number(item.price || 0);
+        const total = quantity * price;
+
+        insertItem.run(invoiceId, item.product_id, quantity, price, total);
+        updateStock.run(quantity, item.product_id);
+      }
+
+      insertPayment.run(
+        "income",
+        data.customer_id ? "customer" : "walk-in",
+        data.customer_id || null,
+        data.fund_id,
+        data.paid_amount,
+        `POS Invoice #${invoiceId}`,
+      );
+
+      updateFund.run(data.paid_amount, data.fund_id);
+
+      return invoiceId;
+    });
+
+    try {
+      const invoiceId = transaction();
+      return { success: true, invoiceId };
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  });
 }

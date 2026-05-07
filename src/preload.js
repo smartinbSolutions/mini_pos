@@ -39,13 +39,6 @@ contextBridge.exposeInMainWorld("api", {
   deleteProductBarcode: (id) =>
     ipcRenderer.invoke("delete-product-barcode", id),
 
-  /* ================= PAYMENTS ================= */
-  getPayments: () => ipcRenderer.invoke("get-payments"),
-  getPayment: (id) => ipcRenderer.invoke("get-payment", id),
-  createPayment: (data) => ipcRenderer.invoke("create-payment", data),
-  updatePayment: (data) => ipcRenderer.invoke("update-payment", data),
-  deletePayment: (id) => ipcRenderer.invoke("delete-payment", id),
-
   /* ================= PRODUCTS ================= */
   getProducts: () => ipcRenderer.invoke("get-products"),
   getProduct: (id) => ipcRenderer.invoke("get-product", id),
@@ -99,7 +92,7 @@ contextBridge.exposeInMainWorld("api", {
   updateSalesInvoice: (data) =>
     ipcRenderer.invoke("update-sales-invoice", data),
   deleteSalesInvoice: (id) => ipcRenderer.invoke("delete-sales-invoice", id),
-
+  posCheckout: (data) => ipcRenderer.invoke("pos-checkout", data),
   /* ================= SUPPLIERS ================= */
   getSuppliers: () => ipcRenderer.invoke("get-suppliers"),
   getSupplier: (id) => ipcRenderer.invoke("get-supplier", id),

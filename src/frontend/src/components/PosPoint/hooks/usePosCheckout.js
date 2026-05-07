@@ -47,9 +47,13 @@ export default function usePosCheckout() {
 
       setProducts(productsResult.value || []);
       setCustomers(
-        customersResult.status === "fulfilled" ? customersResult.value || [] : [],
+        customersResult.status === "fulfilled"
+          ? customersResult.value || []
+          : [],
       );
-      setFunds(fundsResult.status === "fulfilled" ? fundsResult.value || [] : []);
+      setFunds(
+        fundsResult.status === "fulfilled" ? fundsResult.value || [] : [],
+      );
       setError(
         [customersResult, fundsResult].some(
           (result) => result.status === "rejected",
@@ -75,9 +79,7 @@ export default function usePosCheckout() {
 
       if (existing) {
         return current.map((item) =>
-          item.id === product.id
-            ? { ...item, qty: item.qty + 1 }
-            : item,
+          item.id === product.id ? { ...item, qty: item.qty + 1 } : item,
         );
       }
 
@@ -125,44 +127,103 @@ export default function usePosCheckout() {
     }
 
     setCheckingOut(true);
+
     try {
       const customerId = selectedCustomerId ? Number(selectedCustomerId) : null;
-      const invoiceResult = await api.createSalesInvoice({
-        customer_id: customerId,
-        date: new Date().toISOString(),
-        subtotal,
-        discount: 0,
-        tax: 0,
-        net_total: subtotal,
-      });
 
-      const invoiceId = invoiceResult?.id;
-      for (const item of cart) {
-        await api.createSalesInvoiceItem({
-          invoice_id: invoiceId,
-          product_id: item.id,
+      const payload = {
+        customer_id: customerId,
+        fund_id: Number(fundId),
+        items: cart.map((item) => ({
+          product_id: item.id || item.product_id,
           quantity: toNumber(item.qty),
           price: toNumber(item.price),
-        });
-      }
+        })),
+        subtotal,
+        discount: 0,
+        tax_id: null,
+        net_total: subtotal,
+        paid_amount: subtotal,
+        date: new Date().toISOString(),
+      };
 
-      await api.createPayment({
-        type: "income",
-        party_type: customerId ? "customer" : "walk-in",
-        party_id: customerId,
-        fund_id: Number(fundId),
-        amount: subtotal,
-        note: `Sales invoice #${invoiceId}`,
-      });
+      const invoiceResult = await api.posCheckout(payload);
 
       clearCart();
       await refetch();
+
       return invoiceResult;
+    } catch (err) {
+      setError(err.message);
+      throw err;
     } finally {
       setCheckingOut(false);
     }
   };
 
+  useEffect(() => {
+    let barcode = "";
+
+    const handleKeyDown = async (e) => {
+      if (e.key === "Enter") {
+        if (!barcode) return;
+
+        try {
+          const product = await api.getProductByBarcode(barcode);
+
+          if (!product) {
+            setError("Product not found");
+            barcode = "";
+            return;
+          }
+
+          setCart((prev) => {
+            const existingIndex = prev.findIndex(
+              (i) => Number(i.product_id) === Number(product.id),
+            );
+
+            if (existingIndex !== -1) {
+              const updated = [...prev];
+              const item = updated[existingIndex];
+
+              const newQuantity = Number(item.qty) + 1;
+
+              updated[existingIndex] = {
+                ...item,
+                qty: newQuantity,
+                price: Number(item.price),
+              };
+
+              return updated;
+            }
+
+            return [
+              ...prev,
+              {
+                product_id: product.id,
+                name: product.name,
+                qty: 1,
+                price: product.price || 0,
+                total: product.price || 0,
+              },
+            ];
+          });
+
+          barcode = "";
+        } catch (err) {
+          console.log(err);
+        }
+      } else {
+        barcode += e.key;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [api]);
   return {
     products,
     customers,
