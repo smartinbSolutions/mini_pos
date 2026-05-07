@@ -7,6 +7,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import SearchableSelect from "../Global/SearchableSelect";
 import CheckoutModal from "../components/PosPoint/components/CheckoutModal";
 import usePosCheckout from "../components/PosPoint/hooks/usePosCheckout";
 
@@ -249,22 +250,31 @@ export default function PosPointPage() {
               </button>
             </div>
 
-            <label className="flex flex-col gap-1.5 text-sm font-bold text-slate-700">
-              Customer
-              <select
-                value={selectedCustomerId}
-                onChange={(event) => setSelectedCustomerId(event.target.value)}
-                className="h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-800 outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-              >
-                <option value="">Walk-in customer</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={customer.id}>
-                    {customer.name}
-                    {customer.phone ? ` - ${customer.phone}` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex flex-col gap-1.5 text-sm font-bold text-slate-700">
+              <span>Customer</span>
+              <SearchableSelect
+                label=""
+                labelWidth="0"
+                placeholder="Walk-in customer"
+                options={[
+                  { id: "", name: "Walk-in customer", phone: "", address: "" },
+                  ...customers,
+                ]}
+                selectedValue={selectedCustomerId}
+                onChange={(customer) =>
+                  setSelectedCustomerId(customer.id ? String(customer.id) : "")
+                }
+                getOptionLabel={(customer) =>
+                  [
+                    customer.name || "Walk-in customer",
+                    customer.phone,
+                    customer.address,
+                  ]
+                    .filter(Boolean)
+                    .join(" - ")
+                }
+              />
+            </div>
           </div>
 
           <div className="flex-1 overflow-auto p-4">
