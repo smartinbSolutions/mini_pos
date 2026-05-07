@@ -7,8 +7,8 @@ export default function registerPurchaseInvoicesIPC() {
       if (
         !data.supplier_id ||
         !data.date ||
-        !data.subtotal <= 0 ||
-        !data.net_total <= 0
+        data.subtotal <= 0 ||
+        data.net_total <= 0
       ) {
         return { message: "ERROR ENTER DATA", status: 500 };
       }
@@ -130,8 +130,8 @@ export default function registerPurchaseInvoicesIPC() {
     if (
       !data.supplier_id ||
       !data.date ||
-      !data.subtotal <= 0 ||
-      !data.net_total <= 0
+      data.subtotal <= 0 ||
+      data.net_total <= 0
     ) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }

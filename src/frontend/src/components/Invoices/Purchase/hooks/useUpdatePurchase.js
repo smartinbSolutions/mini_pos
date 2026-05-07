@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const emptyItem = {
   product_id: "",
@@ -12,6 +12,7 @@ const emptyItem = {
 export default function useUpdatePurchase() {
   const { id } = useParams();
   const api = window.api;
+  const navigat = useNavigate();
 
   const [invoice, setInvoice] = useState(null);
   const [items, setItems] = useState([]);
@@ -183,7 +184,7 @@ export default function useUpdatePurchase() {
         subtotal,
         net_total: netTotal,
       });
-
+      navigat("/purchase");
       return true;
     } catch (err) {
       setError(err.message);
