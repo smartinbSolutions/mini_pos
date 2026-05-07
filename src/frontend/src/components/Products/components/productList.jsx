@@ -10,6 +10,7 @@ const money = new Intl.NumberFormat("en-US", {
 });
 
 export default function ProductList() {
+  const catalog = useProductCatalog();
   const {
     products,
     barcodes,
@@ -40,7 +41,7 @@ export default function ProductList() {
     setOpenDeleteModel,
     setSelectDeleteProduct,
     selectDeleteProduct,
-  } = useProductCatalog();
+  } = catalog;
 
   if (loading) {
     return <div className="p-6 text-gray-600">Loading product catalog...</div>;

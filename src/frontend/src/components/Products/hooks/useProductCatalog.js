@@ -44,9 +44,6 @@ export default function useProductCatalog() {
   const [units, setUnits] = useState([]);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [selectDeleteProduct, setSelectDeleteProduct] = useState(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const limit = 25;
 
   const canUseUnits = !unavailableHandlers.includes("units");
   const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
@@ -64,7 +61,7 @@ export default function useProductCatalog() {
       setLoading(true);
       const [productsResult, barcodesResult, unitResult] =
         await Promise.allSettled([
-          api.getProducts({ page, limit, search }),
+          api.getProducts(),
           api.getProductBarcodes(),
           api.getUnits(),
         ]);
@@ -86,8 +83,7 @@ export default function useProductCatalog() {
         nextUnavailableHandlers.push("product barcodes");
       }
 
-      setProducts(productsResult.data);
-      setTotalPages(productsResult.totalPages);
+      setProducts(productsResult.value || []);
 
       setUnits(unitResult || []);
       setBarcodes(
@@ -110,7 +106,7 @@ export default function useProductCatalog() {
 
   useEffect(() => {
     refetch();
-  }, [refetch, page, search]);
+  }, [refetch]);
 
   const barcodesByProduct = useMemo(() => {
     return barcodes.reduce((groups, barcode) => {
@@ -287,10 +283,5 @@ export default function useProductCatalog() {
     setOpenDeleteModel,
     setSelectDeleteProduct,
     selectDeleteProduct,
-    page,
-    setPage,
-    totalPages,
-    search,
-    setSearch,
   };
 }
