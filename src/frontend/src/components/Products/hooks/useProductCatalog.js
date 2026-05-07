@@ -42,6 +42,11 @@ export default function useProductCatalog() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [actionError, setActionError] = useState("");
   const [units, setUnits] = useState([]);
+  const [openDeleteModel, setOpenDeleteModel] = useState(false);
+  const [selectDeleteProduct, setSelectDeleteProduct] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 25;
 
   const canUseUnits = !unavailableHandlers.includes("units");
   const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
@@ -59,7 +64,7 @@ export default function useProductCatalog() {
       setLoading(true);
       const [productsResult, barcodesResult, unitResult] =
         await Promise.allSettled([
-          api.getProducts(),
+          api.getProducts({ page, limit, search }),
           api.getProductBarcodes(),
           api.getUnits(),
         ]);
@@ -81,7 +86,8 @@ export default function useProductCatalog() {
         nextUnavailableHandlers.push("product barcodes");
       }
 
-      setProducts(productsResult.value || []);
+      setProducts(productsResult.data);
+      setTotalPages(productsResult.totalPages);
 
       setUnits(unitResult || []);
       setBarcodes(
@@ -104,7 +110,7 @@ export default function useProductCatalog() {
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, [refetch, page, search]);
 
   const barcodesByProduct = useMemo(() => {
     return barcodes.reduce((groups, barcode) => {
@@ -240,6 +246,8 @@ export default function useProductCatalog() {
     try {
       await deleteProduct(product);
       setActionError("");
+      setOpenDeleteModel(false);
+      setSelectDeleteProduct(null);
     } catch (err) {
       console.error("Failed to delete product:", err);
       setActionError(
@@ -275,5 +283,14 @@ export default function useProductCatalog() {
     setIsFormOpen,
     submitProduct,
     units,
+    openDeleteModel,
+    setOpenDeleteModel,
+    setSelectDeleteProduct,
+    selectDeleteProduct,
+    page,
+    setPage,
+    totalPages,
+    search,
+    setSearch,
   };
 }

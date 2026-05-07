@@ -2,20 +2,53 @@ import { ipcMain } from "electron";
 import db from "../db";
 
 export default function registerProductIPC() {
-  ipcMain.handle("get-products", () => {
-    return db
-      .prepare(
-        `
+  ipcMain.handle(
+    "get-products",
+    (event, { page = 1, limit = 10, search = "" }) => {
+      const offset = (page - 1) * limit;
+
+      const searchQuery = search
+        ? `WHERE products.name LIKE ? OR products.barcode LIKE ?`
+        : "";
+
+      const params = search
+        ? [`%${search}%`, `%${search}%`, limit, offset]
+        : [limit, offset];
+
+      // البيانات
+      const data = db
+        .prepare(
+          `
       SELECT 
         products.*,
         unit.name as unit_name,
         unit.code as unit_code
       FROM products
       LEFT JOIN unit ON unit.id = products.unit_id
+      ${searchQuery}
+      LIMIT ? OFFSET ?
     `,
-      )
-      .all();
-  });
+        )
+        .all(...params);
+
+      const total = db
+        .prepare(
+          `
+      SELECT COUNT(*) as count
+      FROM products
+      ${searchQuery}
+    `,
+        )
+        .get(...(search ? [`%${search}%`, `%${search}%`] : [])).count;
+
+      return {
+        data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
+    },
+  );
   ipcMain.handle("get-product", (event, id) => {
     return db
       .prepare(

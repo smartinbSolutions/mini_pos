@@ -2,6 +2,7 @@ import { Edit2, PackagePlus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import ProductFormModal from "./ProductFormModal";
 import useProductCatalog from "../hooks/useProductCatalog";
+import DeleteModal from "../../../Global/DeleteModel";
 
 const money = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
@@ -9,7 +10,6 @@ const money = new Intl.NumberFormat("en-US", {
 });
 
 export default function ProductList() {
-  const catalog = useProductCatalog();
   const {
     products,
     barcodes,
@@ -36,7 +36,11 @@ export default function ProductList() {
     setIsFormOpen,
     submitProduct,
     units,
-  } = catalog;
+    openDeleteModel,
+    setOpenDeleteModel,
+    setSelectDeleteProduct,
+    selectDeleteProduct,
+  } = useProductCatalog();
 
   if (loading) {
     return <div className="p-6 text-gray-600">Loading product catalog...</div>;
@@ -174,7 +178,10 @@ export default function ProductList() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDeleteProduct(product)}
+                            onClick={() => (
+                              setOpenDeleteModel(true),
+                              setSelectDeleteProduct(product)
+                            )}
                             className="rounded p-2 text-red-500 hover:bg-red-50"
                             aria-label="Delete product"
                           >
@@ -211,6 +218,14 @@ export default function ProductList() {
           onSubmit={submitProduct}
         />
       )}
+
+      <DeleteModal
+        open={openDeleteModel}
+        onClose={() => setOpenDeleteModel(false)}
+        onConfirm={() => handleDeleteProduct(selectDeleteProduct)}
+        title="Delete Product"
+        message="Do You Wnat delete THis Product"
+      />
     </div>
   );
 }
