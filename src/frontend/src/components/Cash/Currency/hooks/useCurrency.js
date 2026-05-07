@@ -15,6 +15,34 @@ const useCurrency = () => {
 
   const api = window.api;
 
+  const normalizeCurrency = (currency) => ({
+    ...currency,
+    name: String(currency.name || "").trim(),
+    latinName: String(currency.latinName || "").trim(),
+    code: String(currency.code || "").trim(),
+    exchangeRate: Number(currency.exchangeRate),
+  });
+
+  const validateCurrency = (currency) => {
+    if (!String(currency.name || "").trim()) {
+      return "Currency name is required.";
+    }
+
+    if (!String(currency.code || "").trim()) {
+      return "Currency code is required.";
+    }
+
+    if (
+      currency.exchangeRate === "" ||
+      currency.exchangeRate === null ||
+      !Number.isFinite(Number(currency.exchangeRate))
+    ) {
+      return "Currency exchange rate is required.";
+    }
+
+    return "";
+  };
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError("Electron preload API is not available.");
@@ -41,9 +69,14 @@ const useCurrency = () => {
   }, [refetch]);
 
   const createCurrency = async (currency) => {
+    const validationError = validateCurrency(currency);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.createCurrency(currency);
+      await api.createCurrency(normalizeCurrency(currency));
       await refetch();
     } finally {
       setSaving(false);
@@ -51,9 +84,14 @@ const useCurrency = () => {
   };
 
   const updateCurrency = async (currency) => {
+    const validationError = validateCurrency(currency);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.updateCurrency(currency);
+      await api.updateCurrency(normalizeCurrency(currency));
       await refetch();
     } finally {
       setSaving(false);
@@ -74,9 +112,11 @@ const useCurrency = () => {
     try {
       await createCurrency(currency);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to create Currency:", err);
       setActionError(err?.message || "Failed to create Currency.");
+      return false;
     }
   };
 
@@ -84,9 +124,11 @@ const useCurrency = () => {
     try {
       await updateCurrency(currency);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to update Currency:", err);
       setActionError(err?.message || "Failed to update Currency.");
+      return false;
     }
   };
 
@@ -105,8 +147,10 @@ const useCurrency = () => {
 
   const submitDraft = async (event) => {
     event.preventDefault();
-    await handleCreateCurrency(draft);
-    setDraft(emptyCurrency);
+    const saved = await handleCreateCurrency(draft);
+    if (saved) {
+      setDraft(emptyCurrency);
+    }
   };
 
   const startEdit = (currency) => {
@@ -122,9 +166,11 @@ const useCurrency = () => {
 
   const submitEdit = async (event) => {
     event.preventDefault();
-    await handleUpdateCurrency(editing);
-    setEditingId(null);
-    setEditing(emptyCurrency);
+    const saved = await handleUpdateCurrency(editing);
+    if (saved) {
+      setEditingId(null);
+      setEditing(emptyCurrency);
+    }
   };
 
   return {
@@ -145,6 +191,7 @@ const useCurrency = () => {
     editingId,
     setDraft,
     draft,
+    actionError,
   };
 };
 

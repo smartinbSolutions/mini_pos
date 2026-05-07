@@ -15,6 +15,24 @@ export default function useTax() {
 
   const api = window.api;
 
+  const normalizeTax = (tax) => ({
+    ...tax,
+    name: String(tax.name || "").trim(),
+    rate: Number(tax.rate),
+  });
+
+  const validateTax = (tax) => {
+    if (!String(tax.name || "").trim()) {
+      return "Tax name is required.";
+    }
+
+    if (tax.rate === "" || tax.rate === null || !Number.isFinite(Number(tax.rate))) {
+      return "Tax value is required.";
+    }
+
+    return "";
+  };
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError("Electron preload API is not available.");
@@ -41,19 +59,29 @@ export default function useTax() {
   }, [refetch]);
 
   const createTax = async (tax) => {
+    const validationError = validateTax(tax);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.createTax(tax);
+      await api.createTax(normalizeTax(tax));
       await refetch();
     } finally {
       setSaving(false);
     }
   };
 
-  const updateTax = async (unit) => {
+  const updateTax = async (tax) => {
+    const validationError = validateTax(tax);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.updateTax(unit);
+      await api.updateTax(normalizeTax(tax));
       await refetch();
     } finally {
       setSaving(false);
@@ -74,9 +102,11 @@ export default function useTax() {
     try {
       await createTax(tax);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to create tax:", err);
-      setActionError(err?.message || "Failed to create unit.");
+      setActionError(err?.message || "Failed to create tax.");
+      return false;
     }
   };
 
@@ -84,9 +114,11 @@ export default function useTax() {
     try {
       await updateTax(tax);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to update tax:", err);
       setActionError(err?.message || "Failed to update tax.");
+      return false;
     }
   };
 
@@ -105,8 +137,10 @@ export default function useTax() {
 
   const submitDraft = async (event) => {
     event.preventDefault();
-    await handleCreateTax(draft);
-    setDraft(emptyTax);
+    const saved = await handleCreateTax(draft);
+    if (saved) {
+      setDraft(emptyTax);
+    }
   };
 
   const startEdit = (tax) => {
@@ -120,9 +154,11 @@ export default function useTax() {
 
   const submitEdit = async (event) => {
     event.preventDefault();
-    await handleUpdateTax(editing);
-    setEditingId(null);
-    setEditing(emptyTax);
+    const saved = await handleUpdateTax(editing);
+    if (saved) {
+      setEditingId(null);
+      setEditing(emptyTax);
+    }
   };
 
   return {
@@ -143,5 +179,6 @@ export default function useTax() {
     editingId,
     setDraft,
     draft,
+    actionError,
   };
 }

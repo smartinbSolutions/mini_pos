@@ -7,8 +7,6 @@ export const CustomerList = () => {
     saving,
     customers,
     handleDeleteCustomer,
-    handleCreateCustomer,
-    handleUpdateCustomer,
     submitDraft,
     startEdit,
     submitEdit,
@@ -18,6 +16,7 @@ export const CustomerList = () => {
     editingId,
     setDraft,
     draft,
+    actionError,
   } = useCustomerList();
 
   const [search, setSearch] = useState("");
@@ -69,6 +68,7 @@ export const CustomerList = () => {
                   className="border rounded-xl p-4 bg-blue-50 space-y-2"
                 >
                   <input
+                    required
                     value={editing.name}
                     onChange={(e) =>
                       setEditing({ ...editing, name: e.target.value })
@@ -194,8 +194,15 @@ export const CustomerList = () => {
         <div className="bg-white rounded-2xl border shadow-sm p-5 h-fit top-6">
           <h3 className="text-sm font-semibold mb-4">Create Customer</h3>
 
+          {actionError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
           <form onSubmit={submitDraft} className="space-y-3">
             <input
+              required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border bg-gray-50 text-sm"

@@ -16,6 +16,7 @@ const UnitList = () => {
     setDraft,
     draft,
     submitDraft,
+    actionError,
   } = useUnit();
 
   const [search, setSearch] = useState("");
@@ -80,6 +81,7 @@ const UnitList = () => {
                       placeholder="Latin"
                     />
                     <input
+                      required
                       value={editing.code}
                       onChange={(e) =>
                         setEditing({ ...editing, code: e.target.value })
@@ -146,6 +148,12 @@ const UnitList = () => {
         <div className="bg-white/80 backdrop-blur rounded-2xl border shadow-sm p-6 h-fit sticky top-6">
           <h3 className="text-md font-semibold mb-4">Add Unit</h3>
 
+          {actionError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
           <form onSubmit={submitDraft} className="space-y-3">
             <input
               required
@@ -165,6 +173,7 @@ const UnitList = () => {
                 placeholder="Latin"
               />
               <input
+                required
                 value={draft.code}
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
                 className="rounded-lg border px-3 py-2 text-sm"

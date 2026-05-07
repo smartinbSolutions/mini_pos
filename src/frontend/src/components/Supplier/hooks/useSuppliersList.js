@@ -15,6 +15,21 @@ const useSuppliersList = () => {
 
   const api = window.api;
 
+  const normalizeSupplier = (sup) => ({
+    ...sup,
+    name: String(sup.name || "").trim(),
+    phone: String(sup.phone || "").trim(),
+    address: String(sup.address || "").trim(),
+  });
+
+  const validateSupplier = (sup) => {
+    if (!String(sup.name || "").trim()) {
+      return "Supplier name is required.";
+    }
+
+    return "";
+  };
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError("Electron preload API is not available.");
@@ -41,9 +56,14 @@ const useSuppliersList = () => {
   }, [refetch]);
 
   const createSupplier = async (sup) => {
+    const validationError = validateSupplier(sup);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.createSupplier(sup);
+      await api.createSupplier(normalizeSupplier(sup));
       await refetch();
     } finally {
       setSaving(false);
@@ -51,9 +71,14 @@ const useSuppliersList = () => {
   };
 
   const updateSupplier = async (sup) => {
+    const validationError = validateSupplier(sup);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.updateSupplier(sup);
+      await api.updateSupplier(normalizeSupplier(sup));
       await refetch();
     } finally {
       setSaving(false);
@@ -75,9 +100,11 @@ const useSuppliersList = () => {
     try {
       await createSupplier(sup);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to create Supplier:", err);
       setActionError(err?.message || "Failed to create Supplier.");
+      return false;
     }
   };
 
@@ -85,9 +112,11 @@ const useSuppliersList = () => {
     try {
       await updateSupplier(sup);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to update Supplier:", err);
       setActionError(err?.message || "Failed to update Supplier.");
+      return false;
     }
   };
 
@@ -108,8 +137,10 @@ const useSuppliersList = () => {
 
   const submitDraft = async (event) => {
     event.preventDefault();
-    await handleCreateSupplier(draft);
-    setDraft(emptySupplier);
+    const saved = await handleCreateSupplier(draft);
+    if (saved) {
+      setDraft(emptySupplier);
+    }
   };
 
   const startEdit = (sup) => {
@@ -124,9 +155,11 @@ const useSuppliersList = () => {
 
   const submitEdit = async (event) => {
     event.preventDefault();
-    await handleUpdateSupplier(editing);
-    setEditingId(null);
-    setEditing(emptySupplier);
+    const saved = await handleUpdateSupplier(editing);
+    if (saved) {
+      setEditingId(null);
+      setEditing(emptySupplier);
+    }
   };
 
   return {
@@ -147,6 +180,7 @@ const useSuppliersList = () => {
     editingId,
     setDraft,
     draft,
+    actionError,
   };
 };
 
