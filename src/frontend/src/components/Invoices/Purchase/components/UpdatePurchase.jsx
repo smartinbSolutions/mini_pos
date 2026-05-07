@@ -9,6 +9,7 @@ export default function UpdatePurchase() {
     items,
     products,
     suppliers,
+    taxes,
     addItem,
     removeItem,
     updateItem,
@@ -97,6 +98,7 @@ export default function UpdatePurchase() {
                         ))}
                       </select>
                     </td>
+                    {console.log(item)}
 
                     <td className="p-2 w-24">
                       <input
@@ -171,14 +173,26 @@ export default function UpdatePurchase() {
 
               <div className="flex justify-between items-center">
                 <span>Tax</span>
-                <input
-                  type="number"
-                  className="border rounded px-2 py-1 w-24 text-right"
+                <select
+                  className="border rounded px-2 py-1 w-[120px]"
                   value={invoice.tax}
-                  onChange={(e) =>
-                    setInvoice({ ...invoice, tax: e.target.value })
-                  }
-                />
+                  onChange={(e) => {
+                    const selected = taxes.find((t) => t.id == e.target.value);
+
+                    setInvoice({
+                      ...invoice,
+                      tax: e.target.value || "",
+                      tax_rate: selected?.rate || 0,
+                    });
+                  }}
+                >
+                  <option value="">Select tax</option>
+                  {taxes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.rate}%)
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="border-t pt-3 flex justify-between font-bold text-lg">

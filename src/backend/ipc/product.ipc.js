@@ -98,4 +98,19 @@ export default function registerProductIPC() {
 
     return { success: true };
   });
+
+  ipcMain.handle("get-product-by-barcode", (event, barcode) => {
+    const row = db
+      .prepare(
+        `
+      SELECT p.*
+      FROM product_barcodes pb
+      JOIN products p ON p.id = pb.product_id
+      WHERE pb.barcode = ?
+    `,
+      )
+      .get(barcode);
+
+    return row;
+  });
 }

@@ -1,29 +1,30 @@
 import React, { useMemo, useState } from "react";
-import usePurchaseList from "../hooks/usePurchaseList";
 import { Edit2, PackagePlus, RefreshCw, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-const PurchaseList = () => {
-  const { purchaseInvoices, loading, error, refetch, deletePurchase } =
-    usePurchaseList();
+import useSalesList from "../hooks/useSalesList";
+
+const SalesList = () => {
+  const { salesInvoices, loading, saving, error, refetch, deleteSales } =
+    useSalesList();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
-    if (!term) return purchaseInvoices;
+    if (!term) return salesInvoices;
 
-    return purchaseInvoices.filter((inv) => {
+    return salesInvoices.filter((inv) => {
       return [inv.id, inv.supplier_id, inv.date, inv.total, inv.net_total]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term));
     });
-  }, [purchaseInvoices, search]);
+  }, [salesInvoices, search]);
 
   const handleDelete = async (id) => {
     try {
       setActionError("");
-      await deletePurchase(id);
+      await deleteSales(id);
     } catch (err) {
       setActionError(err.message || "Delete failed");
     }
@@ -33,10 +34,8 @@ const PurchaseList = () => {
     <div className="p-6">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Purchase Invoices
-          </h1>
-          <p className="text-sm text-gray-500">Manage all supplier purchases</p>
+          <h1 className="text-2xl font-bold text-gray-900">Sales Invoices</h1>
+          <p className="text-sm text-gray-500">Manage all customer sales</p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -62,7 +61,7 @@ const PurchaseList = () => {
           </button>
 
           <button
-            onClick={() => navigate("/add-purchase")}
+            onClick={() => navigate("/add-sales")}
             className="flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
           >
             <PackagePlus size={16} />
@@ -83,7 +82,7 @@ const PurchaseList = () => {
             <thead className="bg-gray-100 text-gray-700">
               <tr>
                 <th className="px-4 py-3">ID</th>
-                <th className="px-4 py-3">Supplier</th>
+                <th className="px-4 py-3">Customer</th>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3 text-right">Discount</th>
@@ -110,7 +109,7 @@ const PurchaseList = () => {
                   <tr key={inv.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">#{inv.id}</td>
 
-                    <td className="px-4 py-3">{inv.supplier_name || "—"}</td>
+                    <td className="px-4 py-3">{inv.customer_name || "—"}</td>
 
                     <td className="px-4 py-3">{inv.date}</td>
 
@@ -125,7 +124,7 @@ const PurchaseList = () => {
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => navigate(`/edit-purchase/${inv.id}`)}
+                          onClick={() => navigate(`/edit-sales/${inv.id}`)}
                           className="rounded p-2 text-gray-500 hover:bg-gray-100"
                         >
                           <Edit2 size={16} />
@@ -150,4 +149,4 @@ const PurchaseList = () => {
   );
 };
 
-export default PurchaseList;
+export default SalesList;

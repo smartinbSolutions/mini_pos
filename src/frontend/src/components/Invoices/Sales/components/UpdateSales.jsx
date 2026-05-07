@@ -1,31 +1,37 @@
 import React from "react";
 import { Plus, Trash2, Save } from "lucide-react";
-import useAddPurchase from "../hooks/useAddPurchase";
+import useUpdateSales from "../hooks/useUpdateSales";
 
-export default function AddPurchase() {
+export default function UpdateSales() {
   const {
     invoice,
     setInvoice,
     items,
     products,
-    suppliers,
+    customers,
+    taxes,
+    loading,
+    saving,
+    error,
     addItem,
     removeItem,
     updateItem,
     submit,
     subtotal,
     netTotal,
-    saving,
-    error,
-  } = useAddPurchase();
+  } = useUpdateSales();
+
+  if (loading) {
+    return <div className="p-10 text-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6">
-          <h1 className="text-2xl font-bold">Purchase Invoice</h1>
+          <h1 className="text-2xl font-bold">Sales Invoice</h1>
           <p className="text-sm text-blue-100">
-            Create and manage supplier purchases
+            Create and manage customer sales
           </p>
         </div>
 
@@ -36,16 +42,17 @@ export default function AddPurchase() {
             </div>
           )}
 
+          {/* SUPPLIER + DATE */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <select
               className="border rounded px-2 py-1 w-full"
-              value={invoice.supplier_id}
+              value={invoice?.customer_id}
               onChange={(e) =>
-                setInvoice({ ...invoice, supplier_id: e.target.value })
+                setInvoice({ ...invoice, customer_id: e.target.value })
               }
             >
-              <option value="">Select Supplier</option>
-              {suppliers.map((s) => (
+              <option value="">Select Customer</option>
+              {customers.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
@@ -59,6 +66,7 @@ export default function AddPurchase() {
             />
           </div>
 
+          {/* ITEMS */}
           <div className="border rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-100 text-gray-700">
@@ -164,14 +172,26 @@ export default function AddPurchase() {
 
               <div className="flex justify-between items-center">
                 <span>Tax</span>
-                <input
-                  type="number"
-                  className="border rounded px-2 py-1 w-24 text-right"
-                  value={invoice.tax}
-                  onChange={(e) =>
-                    setInvoice({ ...invoice, tax: e.target.value })
-                  }
-                />
+                <select
+                  className="border rounded px-2 py-1 w-[120px]"
+                  value={invoice.tax_id}
+                  onChange={(e) => {
+                    const selected = taxes.find((t) => t.id == e.target.value);
+
+                    setInvoice({
+                      ...invoice,
+                      tax_id: selected?.id || "",
+                      tax_rate: selected?.rate || 0,
+                    });
+                  }}
+                >
+                  <option value="">Select tax</option>
+                  {taxes.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.rate}%)
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="border-t pt-3 flex justify-between font-bold text-lg">

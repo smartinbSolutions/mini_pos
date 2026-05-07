@@ -109,14 +109,16 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS sales_invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_name TEXT,
   customer_id INTEGER,
   date TEXT,
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   tax_id INTEGER,
   net_total REAL DEFAULT 0,
+  status TEXT DEFAULT unpaid,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (customer_id) REFERENCES customers(id)
+  FOREIGN KEY (customer_id) REFERENCES customers(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
 `,
@@ -142,12 +144,14 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS purchase_invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_name TEXT,
   supplier_id INTEGER,
   date TEXT,
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   tax REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
+  status TEXT DEFAULT unpaid,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (supplier_id)
     REFERENCES suppliers(id)

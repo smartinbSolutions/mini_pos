@@ -52,7 +52,8 @@ contextBridge.exposeInMainWorld("api", {
   createProduct: (data) => ipcRenderer.invoke("create-product", data),
   updateProduct: (data) => ipcRenderer.invoke("update-product", data),
   deleteProduct: (id) => ipcRenderer.invoke("delete-product", id),
-
+  getProductByBarcode: (barcode) =>
+    ipcRenderer.invoke("get-product-by-barcode", barcode),
   /* ================= PURCHASE INVOICE ITEM ================= */
   getPurchaseInvoiceItems: () =>
     ipcRenderer.invoke("get-purchase-invoice-items"),
@@ -92,7 +93,7 @@ contextBridge.exposeInMainWorld("api", {
 
   /* ================= SALES ================= */
   getSalesInvoices: () => ipcRenderer.invoke("get-sales-invoices"),
-  getSalesInvoice: (id) => ipcRenderer.invoke("get-sales-invoice", id),
+  getSalesInvoiceById: (id) => ipcRenderer.invoke("get-sales-invoice", id),
   createSalesInvoice: (data) =>
     ipcRenderer.invoke("create-sales-invoice", data),
   updateSalesInvoice: (data) =>

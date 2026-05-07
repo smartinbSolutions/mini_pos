@@ -85,9 +85,13 @@ export default function registerPurchaseInvoicesIPC() {
     const invoice = db
       .prepare(
         `
-      SELECT pi.*, s.name AS supplier_name
+      SELECT 
+        pi.*,
+        s.name AS supplier_name,
+        t.rate AS tax_rate
       FROM purchase_invoices pi
       LEFT JOIN suppliers s ON s.id = pi.supplier_id
+      LEFT JOIN taxes t ON t.id = pi.tax
       WHERE pi.id = ?
     `,
       )
@@ -113,7 +117,6 @@ export default function registerPurchaseInvoicesIPC() {
       items,
     };
   });
-
   // UPDATE
   ipcMain.handle("update-purchase-invoice", (event, data) => {
     const transaction = db.transaction(() => {

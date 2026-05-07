@@ -93,12 +93,94 @@ export default function useAddPurchase() {
     return items.reduce((sum, item) => sum + (item.total || 0), 0);
   }, [items]);
 
+  useEffect(() => {
+    let barcodeRef = "";
+
+    const handleKeyDown = async (e) => {
+      if (e.key === "Enter") {
+        if (!barcodeRef) return;
+
+        try {
+          const product = await api.getProductByBarcode(barcodeRef);
+
+          if (!product) {
+            setError("Product not found");
+            barcodeRef = "";
+            return;
+          }
+
+          setItems((prev) => {
+            const existingIndex = prev.findIndex(
+              (i) => Number(i.product_id) === Number(product.id),
+            );
+
+            if (existingIndex !== -1) {
+              const updated = [...prev];
+              const item = updated[existingIndex];
+
+              const newQuantity = Number(item.quantity) + 1;
+
+              updated[existingIndex] = {
+                ...item,
+                quantity: newQuantity,
+                total: newQuantity * Number(item.price),
+              };
+
+              return updated;
+            }
+
+            const existingEmpty = prev.findIndex((i) => i.product_id === "");
+
+            if (existingEmpty !== -1) {
+              const updated = [...prev];
+
+              updated[existingEmpty] = {
+                ...updated[existingEmpty],
+                product_id: product.id,
+                name: product.name,
+                quantity: 1,
+                price: product.costPrice || 0,
+                total: product.costPrice || 0,
+              };
+
+              return updated;
+            }
+
+            return [
+              ...prev,
+              {
+                product_id: product.id,
+                name: product.name,
+                quantity: 1,
+                price: product.costPrice || 0,
+                total: product.costPrice || 0,
+              },
+            ];
+          });
+
+          barcodeRef = "";
+        } catch (err) {
+          console.log(err);
+        }
+      } else {
+        barcodeRef += e.key;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [api]);
+
   const netTotal = useMemo(() => {
     const discount = Number(invoice.discount || 0);
-    const tax = Number(invoice.tax || 0);
+    const taxRate = Number(invoice.tax_rate || 0);
+    const taxValue = subtotal * (taxRate / 100);
 
-    return subtotal - discount + tax;
-  }, [subtotal, invoice.discount, invoice.tax]);
+    return subtotal - discount + taxValue;
+  }, [subtotal, invoice]);
 
   const submit = useCallback(async () => {
     if (!api) {
@@ -157,6 +239,7 @@ export default function useAddPurchase() {
     items,
     products,
     suppliers,
+    taxes,
     addItem,
     removeItem,
     updateItem,
