@@ -3,6 +3,9 @@ import db from "../db";
 export default function registerCurrenciesIPC() {
   // CREATE
   ipcMain.handle("create-currencies", (event, data) => {
+    if (!data.name || !data.code || !data.exchangeRate) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `
@@ -43,6 +46,9 @@ export default function registerCurrenciesIPC() {
   });
 
   ipcMain.handle("update-currency", (event, data) => {
+    if (!data.name || !data.code || !data.exchangeRate) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE currencies

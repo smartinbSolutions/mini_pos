@@ -3,6 +3,9 @@ import db from "../db";
 export default function registerProductBarcodeIPC() {
   // CREATE
   ipcMain.handle("create-product-barcode", (event, data) => {
+    if (!data.barcode || !data.product_id) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `
@@ -43,6 +46,9 @@ export default function registerProductBarcodeIPC() {
   });
 
   ipcMain.handle("update-product-barcode", (event, data) => {
+    if (!data.barcode || !data.product_id) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE product_barcodes

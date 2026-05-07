@@ -30,6 +30,14 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("create-product", (event, data) => {
+    if (
+      !data.name ||
+      !data.unit_id ||
+      !data.costPrice <= 0 ||
+      !data.price <= 0
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `
@@ -50,6 +58,14 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("update-product", (event, data) => {
+    if (
+      !data.name ||
+      !data.unit_id ||
+      !data.costPrice <= 0 ||
+      !data.price <= 0
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE products

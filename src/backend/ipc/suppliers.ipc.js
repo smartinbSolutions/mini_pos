@@ -3,6 +3,9 @@ import db from "../db";
 export default function registerSuppliersIPC() {
   // CREATE
   ipcMain.handle("create-supplier", (event, data) => {
+    if (!data.name) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `
@@ -43,6 +46,9 @@ export default function registerSuppliersIPC() {
   });
 
   ipcMain.handle("update-supplier", (event, data) => {
+    if (!data.name) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE suppliers

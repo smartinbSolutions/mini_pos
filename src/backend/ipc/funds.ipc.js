@@ -2,6 +2,9 @@ const { ipcMain } = require("electron");
 import db from "../db";
 export default function registerFundIPC() {
   ipcMain.handle("create-fund", (event, data) => {
+    if (!data.name || !data.currency_id) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `
@@ -53,6 +56,9 @@ export default function registerFundIPC() {
   });
 
   ipcMain.handle("update-fund", (event, data) => {
+    if (!data.name || !data.currency_id) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE funds

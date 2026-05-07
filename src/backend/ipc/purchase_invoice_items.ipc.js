@@ -4,7 +4,14 @@ import db from "../db";
 export default function registerPurchaseInvoiceItemsIPC() {
   ipcMain.handle("create-purchase-invoice-item", (event, data) => {
     const total = data.quantity * data.price;
-
+    if (
+      !data.invoice_id ||
+      !data.product_id ||
+      !data.quantity <= 0 ||
+      !data.price <= 0
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `
@@ -70,7 +77,14 @@ export default function registerPurchaseInvoiceItemsIPC() {
 
   ipcMain.handle("update-purchase-invoice-item", (event, data) => {
     const total = data.quantity * data.price;
-
+    if (
+      !data.invoice_id ||
+      !data.product_id ||
+      !data.quantity <= 0 ||
+      !data.price <= 0
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE purchase_invoice_items

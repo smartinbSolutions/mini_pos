@@ -4,6 +4,14 @@ export default function registerPurchaseInvoicesIPC() {
   // CREATE
   ipcMain.handle("create-purchase-invoice", (event, data) => {
     const transaction = db.transaction(() => {
+      if (
+        !data.supplier_id ||
+        !data.date ||
+        !data.subtotal <= 0 ||
+        !data.net_total <= 0
+      ) {
+        return { message: "ERROR ENTER DATA", status: 500 };
+      }
       const invoiceResult = db
         .prepare(
           `
@@ -119,6 +127,14 @@ export default function registerPurchaseInvoicesIPC() {
   });
   // UPDATE
   ipcMain.handle("update-purchase-invoice", (event, data) => {
+    if (
+      !data.supplier_id ||
+      !data.date ||
+      !data.subtotal <= 0 ||
+      !data.net_total <= 0
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const transaction = db.transaction(() => {
       const oldItems = db
         .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)

@@ -2,6 +2,10 @@ const { ipcMain } = require("electron");
 import db from "../db";
 export default function registerUnitIPC() {
   ipcMain.handle("create-unit", (event, data) => {
+    if (!data.name || !data.code) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
+
     const result = db
       .prepare(
         `
@@ -40,6 +44,9 @@ export default function registerUnitIPC() {
   });
 
   ipcMain.handle("update-unit", (event, data) => {
+    if (!data.name || !data.code) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE unit

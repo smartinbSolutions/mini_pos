@@ -3,7 +3,14 @@ import db from "../db";
 export default function registerSalesInvoiceItemsIPC() {
   ipcMain.handle("create-sales-invoice-item", (event, data) => {
     const total = data.quantity * data.price;
-
+    if (
+      !data.invoice_id ||
+      !data.product_id ||
+      !data.quantity <= 0 ||
+      !data.price <= 0
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `

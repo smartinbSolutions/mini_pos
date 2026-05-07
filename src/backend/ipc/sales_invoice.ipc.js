@@ -100,6 +100,14 @@ export default function registerSalesInvoiceIPC() {
 
   // UPDATE
   ipcMain.handle("update-sales-invoice", (event, data) => {
+    if (
+      !data.invoice_id ||
+      !data.product_id ||
+      !data.quantity <= 0 ||
+      !data.price <= 0
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const transaction = db.transaction(() => {
       const oldItems = db
         .prepare(`SELECT * FROM sales_invoice_items WHERE invoice_id = ?`)

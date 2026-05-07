@@ -3,6 +3,15 @@ import db from "../db";
 
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
+    if (
+      !data.type ||
+      !data.party_type ||
+      !data.party_id ||
+      !data.fund_id ||
+      !data.amount
+    ) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     const result = db
       .prepare(
         `

@@ -43,7 +43,8 @@ export default function useUnit() {
   const createUnit = async (unit) => {
     setSaving(true);
     try {
-      await api.createUnit(unit);
+      const data = await api.createUnit(unit);
+
       await refetch();
     } finally {
       setSaving(false);

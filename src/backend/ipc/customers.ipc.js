@@ -2,6 +2,9 @@ const { ipcMain } = require("electron");
 import db from "../db";
 
 export default function registerCustomersIPC() {
+  if (!data.name) {
+    return { message: "ERROR ENTER DATA", status: 500 };
+  }
   // CREATE
   ipcMain.handle("create-customer", (event, data) => {
     const result = db
@@ -44,6 +47,9 @@ export default function registerCustomersIPC() {
   });
 
   ipcMain.handle("update-customer", (event, data) => {
+    if (!data.name) {
+      return { message: "ERROR ENTER DATA", status: 500 };
+    }
     db.prepare(
       `
       UPDATE customers
