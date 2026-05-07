@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 
 const useFundList = () => {
-  const emptyFund = { name: "", latinName: "", code: "", exchangeRate: 1 };
+  const emptyFund = { name: "", currency_id: "", balance: 0 };
 
   const [saving, setSaving] = useState(false);
   const [funds, setFunds] = useState([]);
@@ -15,6 +15,25 @@ const useFundList = () => {
   const [editing, setEditing] = useState(emptyFund);
 
   const api = window.api;
+
+  const normalizeFund = (fund) => ({
+    ...fund,
+    name: String(fund.name || "").trim(),
+    currency_id: Number(fund.currency_id),
+    balance: Number(fund.balance || 0),
+  });
+
+  const validateFund = (fund) => {
+    if (!String(fund.name || "").trim()) {
+      return "Fund name is required.";
+    }
+
+    if (!fund.currency_id) {
+      return "Fund currency is required.";
+    }
+
+    return "";
+  };
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -44,9 +63,14 @@ const useFundList = () => {
   }, [refetch]);
 
   const createFund = async (fund) => {
+    const validationError = validateFund(fund);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.createFund(fund);
+      await api.createFund(normalizeFund(fund));
       await refetch();
     } finally {
       setSaving(false);
@@ -54,9 +78,14 @@ const useFundList = () => {
   };
 
   const updateFund = async (fund) => {
+    const validationError = validateFund(fund);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.updateFund(fund);
+      await api.updateFund(normalizeFund(fund));
       await refetch();
     } finally {
       setSaving(false);
@@ -77,9 +106,11 @@ const useFundList = () => {
     try {
       await createFund(fund);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to create Fund:", err);
       setActionError(err?.message || "Failed to create Fund.");
+      return false;
     }
   };
 
@@ -87,9 +118,11 @@ const useFundList = () => {
     try {
       await updateFund(fund);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to update Fund:", err);
       setActionError(err?.message || "Failed to update Fund.");
+      return false;
     }
   };
 
@@ -108,8 +141,10 @@ const useFundList = () => {
 
   const submitDraft = async (event) => {
     event.preventDefault();
-    await handleCreateFund(draft);
-    setDraft(emptyFund);
+    const saved = await handleCreateFund(draft);
+    if (saved) {
+      setDraft(emptyFund);
+    }
   };
 
   const startEdit = (fund) => {
@@ -118,17 +153,19 @@ const useFundList = () => {
       id: fund.id,
       name: fund.name || "",
       balance: fund.balance || "",
-      currency_name: fund.currency_name || 1,
-      currency_id: fund.currency_id || 1,
-      currency_code: fund.currency_code || 1,
+      currency_name: fund.currency_name || "",
+      currency_id: fund.currency_id || "",
+      currency_code: fund.currency_code || "",
     });
   };
 
   const submitEdit = async (event) => {
     event.preventDefault();
-    await handleUpdateFund(editing);
-    setEditingId(null);
-    setEditing(emptyFund);
+    const saved = await handleUpdateFund(editing);
+    if (saved) {
+      setEditingId(null);
+      setEditing(emptyFund);
+    }
   };
   return {
     createFund,
@@ -149,6 +186,7 @@ const useFundList = () => {
     setDraft,
     draft,
     currencies,
+    actionError,
   };
 };
 

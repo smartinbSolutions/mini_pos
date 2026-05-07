@@ -16,6 +16,7 @@ const CurrencyList = () => {
     setDraft,
     draft,
     submitDraft,
+    actionError,
   } = useCurrency();
 
   return (
@@ -68,6 +69,7 @@ const CurrencyList = () => {
                       placeholder="Latin"
                     />
                     <input
+                      required
                       value={editing.code}
                       onChange={(e) =>
                         setEditing({ ...editing, code: e.target.value })
@@ -76,6 +78,9 @@ const CurrencyList = () => {
                       placeholder="Code"
                     />
                     <input
+                      required
+                      type="number"
+                      step="0.0001"
                       value={editing.exchangeRate}
                       onChange={(e) =>
                         setEditing({
@@ -167,6 +172,12 @@ const CurrencyList = () => {
         <div className="bg-white rounded-2xl shadow-sm border p-5 h-fit sticky top-6">
           <h3 className="text-md font-semibold mb-4">Add Currency</h3>
 
+          {actionError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
           <form onSubmit={submitDraft} className="space-y-3">
             <input
               required
@@ -186,6 +197,7 @@ const CurrencyList = () => {
                 placeholder="Latin"
               />
               <input
+                required
                 value={draft.code}
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
                 className="rounded-lg border px-3 py-2 text-sm"
@@ -194,6 +206,9 @@ const CurrencyList = () => {
             </div>
 
             <input
+              required
+              type="number"
+              step="0.0001"
               value={draft.exchangeRate}
               onChange={(e) =>
                 setDraft({ ...draft, exchangeRate: e.target.value })

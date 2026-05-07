@@ -17,6 +17,7 @@ const FundList = () => {
     draft,
     submitDraft,
     currencies,
+    actionError,
   } = useFundList();
 
   return (
@@ -55,6 +56,7 @@ const FundList = () => {
                   className="bg-white rounded-2xl border shadow-sm p-5 space-y-3"
                 >
                   <input
+                    required
                     value={editing.name}
                     onChange={(e) =>
                       setEditing({ ...editing, name: e.target.value })
@@ -65,6 +67,7 @@ const FundList = () => {
 
                   <div className="grid grid-cols-2 gap-3">
                     <select
+                      required
                       value={editing.currency_id || ""}
                       onChange={(e) =>
                         setEditing({
@@ -172,8 +175,15 @@ const FundList = () => {
             Create Fund
           </h3>
 
+          {actionError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
           <form onSubmit={submitDraft} className="space-y-4">
             <input
+              required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 focus:bg-white text-sm"
@@ -181,6 +191,7 @@ const FundList = () => {
             />
 
             <select
+              required
               value={draft.currency_id || ""}
               onChange={(e) =>
                 setDraft({

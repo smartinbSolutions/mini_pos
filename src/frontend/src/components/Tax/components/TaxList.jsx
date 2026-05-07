@@ -16,6 +16,7 @@ const TaxList = () => {
     editingId,
     setDraft,
     draft,
+    actionError,
   } = useTax();
 
   const [search, setSearch] = useState("");
@@ -65,6 +66,7 @@ const TaxList = () => {
                   className="grid grid-cols-3 items-center px-5 py-3 border-b bg-blue-50"
                 >
                   <input
+                    required
                     value={editing.name}
                     onChange={(e) =>
                       setEditing({ ...editing, name: e.target.value })
@@ -73,6 +75,9 @@ const TaxList = () => {
                   />
 
                   <input
+                    required
+                    type="number"
+                    step="0.01"
                     value={editing.rate}
                     onChange={(e) =>
                       setEditing({ ...editing, rate: e.target.value })
@@ -137,8 +142,15 @@ const TaxList = () => {
         <div className="bg-white rounded-2xl border shadow-sm p-5 h-fit sticky top-6">
           <h3 className="text-sm font-semibold mb-4">Create Tax</h3>
 
+          {actionError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
           <form onSubmit={submitDraft} className="space-y-3">
             <input
+              required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border bg-gray-50 text-sm"
@@ -146,6 +158,9 @@ const TaxList = () => {
             />
 
             <input
+              required
+              type="number"
+              step="0.01"
               value={draft.rate}
               onChange={(e) => setDraft({ ...draft, rate: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border bg-gray-50 text-sm"

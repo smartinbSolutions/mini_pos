@@ -15,6 +15,21 @@ const useSuppliersList = () => {
 
   const api = window.api;
 
+  const normalizeCustomer = (cust) => ({
+    ...cust,
+    name: String(cust.name || "").trim(),
+    phone: String(cust.phone || "").trim(),
+    address: String(cust.address || "").trim(),
+  });
+
+  const validateCustomer = (cust) => {
+    if (!String(cust.name || "").trim()) {
+      return "Customer name is required.";
+    }
+
+    return "";
+  };
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError("Electron preload API is not available.");
@@ -41,9 +56,14 @@ const useSuppliersList = () => {
   }, [refetch]);
 
   const createCustomer = async (cust) => {
+    const validationError = validateCustomer(cust);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.createCustomer(cust);
+      await api.createCustomer(normalizeCustomer(cust));
       await refetch();
     } finally {
       setSaving(false);
@@ -51,9 +71,14 @@ const useSuppliersList = () => {
   };
 
   const updateCustomer = async (cust) => {
+    const validationError = validateCustomer(cust);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
     setSaving(true);
     try {
-      await api.updateCustomer(cust);
+      await api.updateCustomer(normalizeCustomer(cust));
       await refetch();
     } finally {
       setSaving(false);
@@ -75,9 +100,11 @@ const useSuppliersList = () => {
     try {
       await createCustomer(cust);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to create Customer:", err);
       setActionError(err?.message || "Failed to create Customer.");
+      return false;
     }
   };
 
@@ -85,9 +112,11 @@ const useSuppliersList = () => {
     try {
       await updateCustomer(cust);
       setActionError("");
+      return true;
     } catch (err) {
       console.error("Failed to update Customer:", err);
       setActionError(err?.message || "Failed to update Customer.");
+      return false;
     }
   };
 
@@ -108,8 +137,10 @@ const useSuppliersList = () => {
 
   const submitDraft = async (event) => {
     event.preventDefault();
-    await handleCreateCustomer(draft);
-    setDraft(emptyCustomer);
+    const saved = await handleCreateCustomer(draft);
+    if (saved) {
+      setDraft(emptyCustomer);
+    }
   };
 
   const startEdit = (cust) => {
@@ -124,9 +155,11 @@ const useSuppliersList = () => {
 
   const submitEdit = async (event) => {
     event.preventDefault();
-    await handleUpdateCustomer(editing);
-    setEditingId(null);
-    setEditing(emptyCustomer);
+    const saved = await handleUpdateCustomer(editing);
+    if (saved) {
+      setEditingId(null);
+      setEditing(emptyCustomer);
+    }
   };
 
   return {
@@ -147,6 +180,7 @@ const useSuppliersList = () => {
     editingId,
     setDraft,
     draft,
+    actionError,
   };
 };
 
