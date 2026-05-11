@@ -35,7 +35,6 @@ export default function useUpdateSales() {
         api.getCustomers(),
         api.getTaxes(),
       ]);
-      console.log();
 
       setInvoice(inv);
       setItems(inv.items || []);

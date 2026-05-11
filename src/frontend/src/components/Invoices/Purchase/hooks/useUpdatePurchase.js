@@ -36,7 +36,6 @@ export default function useUpdatePurchase() {
       ]);
 
       setInvoice(inv);
-      console.log(inv.items);
 
       setItems(inv.items || []);
       setProducts(prods || []);

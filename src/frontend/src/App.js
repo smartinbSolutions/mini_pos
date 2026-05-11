@@ -28,8 +28,6 @@ export default function App() {
     const check = async () => {
       try {
         const res = await window.api.getCompanySetting();
-        console.log(res);
-
         setIsSetup(!!res?.exists);
       } catch (err) {
         console.error(err);

@@ -98,7 +98,6 @@ export default function UpdatePurchase() {
                         ))}
                       </select>
                     </td>
-                    {console.log(item)}
 
                     <td className="p-2 w-24">
                       <input
