@@ -47,7 +47,7 @@ export default function Sidebar() {
         </div>
 
         <SidebarItem
-          to="/PosPointPage"
+          to="/pos"
           icon={<ShoppingCart size={18} />}
           title="POS Point"
         />

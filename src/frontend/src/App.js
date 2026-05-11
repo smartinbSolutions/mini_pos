@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./Layout";
 
 import Dashboard from "./pages/DashboardPage";
@@ -17,29 +17,65 @@ import UpdatePurchase from "./components/Invoices/Purchase/components/UpdatePurc
 import SalesList from "./components/Invoices/Sales/components/SalesList";
 import AddSales from "./components/Invoices/Sales/components/AddSales";
 import UpdateSales from "./components/Invoices/Sales/components/UpdateSales";
+import SetupPage from "./components/SetupPage";
+
+import { useEffect, useState } from "react";
 
 export default function App() {
+  const [isSetup, setIsSetup] = useState(null);
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await window.api.getCompanySetting();
+        console.log(res);
+
+        setIsSetup(!!res?.exists);
+      } catch (err) {
+        console.error(err);
+        setIsSetup(false);
+      }
+    };
+
+    check();
+  }, []);
+
+  if (isSetup === null) return <div>Loading...</div>;
+
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<ProductList />} />
-          <Route path="sales" element={<SalesList />} />
-          <Route path="add-sales" element={<AddSales />} />
-          <Route path="edit-sales/:id" element={<UpdateSales />} />
-          <Route path="purchase" element={<PurchaseList />} />
-          <Route path="add-purchase" element={<AddPurchase />} />
-          <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
-          <Route path="payments" element={<Payments />} />
-          <Route path="PosPointPage" element={<PosPointPage />} />
-          <Route path="unit" element={<UnitList />} />
-          <Route path="currency" element={<CurrencyList />} />
-          <Route path="funds" element={<FundList />} />
-          <Route path="tax" element={<TaxList />} />
-          <Route path="supplier" element={<SuppliersList />} />
-          <Route path="customer" element={<CustomerList />} />
-        </Route>
+        {/* SETUP MODE */}
+        {!isSetup ? (
+          <>
+            <Route path="/setup" element={<SetupPage />} />
+            <Route path="*" element={<Navigate to="/setup" />} />
+          </>
+        ) : (
+          <>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="products" element={<ProductList />} />
+              <Route path="sales" element={<SalesList />} />
+              <Route path="add-sales" element={<AddSales />} />
+              <Route path="edit-sales/:id" element={<UpdateSales />} />
+              <Route path="purchase" element={<PurchaseList />} />
+              <Route path="add-purchase" element={<AddPurchase />} />
+              <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
+              <Route path="payments" element={<Payments />} />
+              <Route path="pos" element={<PosPointPage />} />
+              <Route path="unit" element={<UnitList />} />
+              <Route path="currency" element={<CurrencyList />} />
+              <Route path="funds" element={<FundList />} />
+              <Route path="tax" element={<TaxList />} />
+              <Route path="supplier" element={<SuppliersList />} />
+              <Route path="customer" element={<CustomerList />} />
+            </Route>
+
+            {/* fallback */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </>
+        )}
       </Routes>
     </BrowserRouter>
   );

@@ -11,14 +11,16 @@ import registerSalesInvoiceIPC from "./ipc/sales_invoice.ipc";
 import registerSuppliersIPC from "./ipc/suppliers.ipc";
 import registerTaxesIPC from "./ipc/taxes.ipc";
 import registerUnitIPC from "./ipc/unit.ipc";
+import registerCompanySettingIPC from "./ipc/company_setting.ipc";
 
 export default function registerAllIPC() {
-  registerProductIPC();
-  registerPaymentsIPC();
+  registerCompanySettingIPC();
   registerCurrenciesIPC();
   registerCustomersIPC();
   registerFundIPC();
+  registerPaymentsIPC();
   registerProductBarcodeIPC();
+  registerProductIPC();
   registerPurchaseInvoiceItemsIPC();
   registerPurchaseInvoicesIPC();
   registerSalesInvoiceItemsIPC();

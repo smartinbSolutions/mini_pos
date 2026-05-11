@@ -223,6 +223,8 @@ export default function registerSalesInvoiceIPC() {
   });
 
   ipcMain.handle("pos-checkout", (event, data) => {
+    console.log(data);
+
     const insertInvoice = db.prepare(`
     INSERT INTO sales_invoices
     (customer_id, date, subtotal, discount, tax_id, net_total)
@@ -266,12 +268,13 @@ export default function registerSalesInvoiceIPC() {
       const invoiceId = invoiceResult.lastInsertRowid;
 
       for (const item of data.items) {
-        const quantity = Number(item.quantity || 0);
+        const quantity = Number(item.qty || 0);
         const price = Number(item.price || 0);
         const total = quantity * price;
+        console.log(item);
 
-        insertItem.run(invoiceId, item.product_id, quantity, price, total);
-        updateStock.run(quantity, item.product_id);
+        insertItem.run(invoiceId, item.id, quantity, price, total);
+        updateStock.run(quantity, item.id);
       }
 
       insertPayment.run(

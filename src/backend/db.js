@@ -201,6 +201,25 @@ CREATE TABLE IF NOT EXISTS payments (
 ).run();
 
 db.prepare(
+  `
+  CREATE TABLE IF NOT EXISTS company_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_name TEXT NOT NULL,
+    company_latin_name TEXT,
+    phone TEXT,
+    address TEXT,
+    email TEXT,
+    logo TEXT,
+    base_currency_id INTEGER,
+    language TEXT DEFAULT 'ar',
+    timezone TEXT DEFAULT 'Asia/Damascus',
+    createdAt TEXT DEFAULT (datetime('now')),
+    updatedAt TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (base_currency_id) REFERENCES currencies(id)
+  )`,
+);
+
+db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`,
 ).run();
 db.prepare(

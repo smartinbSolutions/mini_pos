@@ -1,6 +1,12 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("api", {
+  /* ================= COMPANY SETTING ================= */
+  getCompanySetting: (id) => ipcRenderer.invoke("get-company-settings", id),
+  createCompanySetting: (data) =>
+    ipcRenderer.invoke("create-company-settings", data),
+  updateCompanySetting: (data) =>
+    ipcRenderer.invoke("update-company-settings", data),
   /* ================= CURRENCY ================= */
   getCurrencies: () => ipcRenderer.invoke("get-currencies"),
   getCurrency: (id) => ipcRenderer.invoke("get-currency", id),
