@@ -93,6 +93,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("update-sales-invoice", data),
   deleteSalesInvoice: (id) => ipcRenderer.invoke("delete-sales-invoice", id),
   posCheckout: (data) => ipcRenderer.invoke("pos-checkout", data),
+  printReceipt: (data) => ipcRenderer.invoke("print-receipt", data),
+
   /* ================= SUPPLIERS ================= */
   getSuppliers: () => ipcRenderer.invoke("get-suppliers"),
   getSupplier: (id) => ipcRenderer.invoke("get-supplier", id),

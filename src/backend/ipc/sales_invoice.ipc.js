@@ -1,4 +1,4 @@
-const { ipcMain } = require("electron");
+const { ipcMain, BrowserWindow } = require("electron");
 import db from "../db";
 export default function registerSalesInvoiceIPC() {
   // CREATE
@@ -295,5 +295,193 @@ export default function registerSalesInvoiceIPC() {
       console.error(err);
       throw err;
     }
+  });
+
+  ipcMain.handle("print-receipt", async (event, data) => {
+    const win = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+      },
+    });
+
+    const itemsHtml = (data.items || [])
+      .map(
+        (item) => `
+      <tr>
+        <td class="item">${item.name}</td>
+        <td class="center">${item.quantity}</td>
+        <td class="right">${Number(item.price).toFixed(2)}</td>
+        <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
+      </tr>
+    `,
+      )
+      .join("");
+
+    const html = `
+  <html>
+    <head>
+      <style>
+        @page {
+          margin: 0;
+          size: 80mm auto;
+        }
+
+        body {
+          font-family: monospace;
+          width: 270px;
+          margin: 0;
+          padding: 4mm;
+          box-sizing: border-box;
+          color: #000;
+        }
+
+        .header {
+          text-align: center;
+          margin-bottom: 8px;
+        }
+
+        .header h1 {
+          font-size: 16px;
+          margin: 0;
+          letter-spacing: 2px;
+        }
+
+        .header p {
+          font-size: 12px;
+          margin: 2px 0;
+        }
+
+        .line {
+          border-top: 1px dashed #000;
+          margin: 6px 0;
+        }
+
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12px;
+        }
+
+        th {
+          text-align: left;
+          border-bottom: 1px solid #000;
+          padding-bottom: 4px;
+        }
+
+        td {
+          padding: 3px 0;
+          border-bottom: 1px dotted #ccc;
+        }
+
+        .item {
+          word-break: break-word;
+        }
+
+        .center { text-align: center; }
+        .right { text-align: right; }
+
+        .summary {
+          margin-top: 8px;
+          font-size: 13px;
+        }
+
+        .summary div {
+          display: flex;
+          justify-content: space-between;
+          margin: 3px 0;
+        }
+
+        .total {
+          border-top: 1px dashed #000;
+          margin-top: 6px;
+          padding-top: 4px;
+          font-weight: bold;
+          font-size: 14px;
+        }
+
+        .footer {
+          text-align: center;
+          font-size: 12px;
+          margin-top: 10px;
+        }
+      </style>
+    </head>
+
+    <body>
+
+      <div class="header">
+        <h1>MY STORE</h1>
+        <p>Invoice #${data.id}</p>
+        <p>${new Date().toLocaleString()}</p>
+      </div>
+
+      <div class="line"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="center">Qty</th>
+            <th class="right">Price</th>
+            <th class="right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+      </table>
+
+      <div class="line"></div>
+
+      <div class="summary">
+        <div>
+          <span>Subtotal</span>
+          <span>${data.total}</span>
+        </div>
+
+        <div>
+          <span>Paid</span>
+          <span>${data.received}</span>
+        </div>
+
+        <div>
+          <span>Change</span>
+          <span>${data.change}</span>
+        </div>
+
+        <div class="total">
+          <span>TOTAL</span>
+          <span>${data.total}</span>
+        </div>
+      </div>
+
+      <div class="footer">
+        Thank you <br/>
+        Visit again
+      </div>
+
+    </body>
+  </html>
+  `;
+
+    await win.loadURL(
+      "data:text/html;charset=utf-8," + encodeURIComponent(html),
+    );
+
+    win.webContents.print(
+      {
+        silent: true,
+        printBackground: true,
+        margins: {
+          marginType: "none",
+        },
+        scaleFactor: 100,
+      },
+      () => {
+        win.close();
+      },
+    );
   });
 }

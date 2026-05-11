@@ -117,45 +117,37 @@ export default function usePosCheckout() {
     [cart],
   );
 
-  const checkout = async ({ fundId }) => {
-    if (!cart.length) {
-      throw new Error("Cart is empty.");
-    }
-
-    if (!fundId) {
-      throw new Error("Select a fund before checkout.");
-    }
-
+  const checkout = async ({ fundId, received }) => {
     setCheckingOut(true);
 
     try {
-      const customerId = selectedCustomerId ? Number(selectedCustomerId) : null;
-
       const payload = {
-        customer_id: customerId,
-        fund_id: Number(fundId),
-        items: cart.map((item) => ({
-          product_id: item.id || item.product_id,
-          quantity: toNumber(item.qty),
-          price: toNumber(item.price),
+        items: cart.map((i) => ({
+          name: i.name,
+          quantity: i.qty,
+          price: i.price,
         })),
-        subtotal,
-        discount: 0,
-        tax_id: null,
-        net_total: subtotal,
-        paid_amount: subtotal,
-        date: new Date().toISOString(),
+        total: subtotal,
+        received,
+        change: received - subtotal,
       };
 
-      const invoiceResult = await api.posCheckout(payload);
+      const sales = await api.posCheckout({
+        fund_id: Number(fundId),
+        items: cart,
+        subtotal,
+        paid_amount: received,
+        net_total: subtotal,
+      });
 
-      clearCart();
-      await refetch();
+      payload.id = sales.invoiceId;
+      await api.printReceipt(payload);
 
-      return invoiceResult;
+      setCart([]);
+
+      refetch();
     } catch (err) {
-      setError(err.message);
-      throw err;
+      console.error(err);
     } finally {
       setCheckingOut(false);
     }
