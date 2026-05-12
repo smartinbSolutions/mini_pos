@@ -77,20 +77,23 @@ const CurrencyList = () => {
                       className="rounded-lg border px-3 py-2 text-sm"
                       placeholder="Code"
                     />
-                    <input
-                      required
-                      type="number"
-                      step="0.0001"
-                      value={editing.exchangeRate}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          exchangeRate: e.target.value,
-                        })
-                      }
-                      className="rounded-lg border px-3 py-2 text-sm"
-                      placeholder="Rate"
-                    />
+
+                    {currency.isPrimary === 0 && (
+                      <input
+                        required
+                        type="number"
+                        step="0.0001"
+                        value={editing.exchangeRate}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            exchangeRate: e.target.value,
+                          })
+                        }
+                        className="rounded-lg border px-3 py-2 text-sm"
+                        placeholder="Rate"
+                      />
+                    )}
                   </div>
 
                   <div className="flex gap-2">
@@ -145,12 +148,14 @@ const CurrencyList = () => {
                     >
                       <Edit2 size={15} />
                     </button>
-                    <button
-                      onClick={() => handleDeleteCurrency(currency)}
-                      className="p-2 rounded-lg text-red-500 hover:bg-red-50"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    {currency.isPrimary === 0 && (
+                      <button
+                        onClick={() => handleDeleteCurrency(currency)}
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ),

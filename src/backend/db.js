@@ -77,7 +77,9 @@ CREATE TABLE IF NOT EXISTS currencies (
   name TEXT,
   latinName TEXT,
   code TEXT UNIQUE,
-  exchangeRate REAL DEFAULT 1
+  exchangeRate REAL DEFAULT 1,
+  symbol TEXT,
+  isPrimary INTEGER DEFAULT 0
 )
 `,
 ).run();
@@ -217,7 +219,7 @@ db.prepare(
     updatedAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (base_currency_id) REFERENCES currencies(id)
   )`,
-);
+).run();
 
 db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`,

@@ -9,11 +9,18 @@ export default function registerCurrenciesIPC() {
     const result = db
       .prepare(
         `
-      INSERT INTO currencies (name, latinName, code, exchangeRate)
-      VALUES (?,?,?,?)
+      INSERT INTO currencies (name, latinName, code, exchangeRate,symbol,isPrimary)
+      VALUES (?,?,?,?,?,?)
     `,
       )
-      .run(data.name, data.latinName, data.code, data.exchangeRate);
+      .run(
+        data.name,
+        data.latinName,
+        data.code,
+        data.exchangeRate,
+        data.symbol,
+        0,
+      );
 
     return {
       success: true,

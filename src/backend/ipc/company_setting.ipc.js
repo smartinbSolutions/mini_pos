@@ -11,10 +11,22 @@ export default function registerCompanySettingsIPC() {
       )
       .get();
 
+    if (!settings) {
+      return { exists: false };
+    }
+
     return { exists: true, settings };
   });
 
   ipcMain.handle("create-company-settings", (event, data) => {
+    const currencyResult = db
+      .prepare(
+        `
+      INSERT INTO currencies (name, latinName, code, exchangeRate, symbol,isPrimary)
+      VALUES (?,?,?,?,?,?)
+    `,
+      )
+      .run(data.currency_name, data.latinName, data.code, 1, data.symbol, 1);
     const result = db
       .prepare(
         `
@@ -38,7 +50,7 @@ export default function registerCompanySettingsIPC() {
         data.address,
         data.email,
         data.logo,
-        data.base_currency_id,
+        currencyResult.lastInsertRowid,
         data.language,
         data.timezone,
       );
