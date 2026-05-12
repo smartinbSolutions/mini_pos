@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("create-company-settings", data),
   updateCompanySetting: (data) =>
     ipcRenderer.invoke("update-company-settings", data),
+  saveLogo: (data) => ipcRenderer.invoke("save-logo", data),
   /* ================= CURRENCY ================= */
   getCurrencies: () => ipcRenderer.invoke("get-currencies"),
   getCurrency: (id) => ipcRenderer.invoke("get-currency", id),

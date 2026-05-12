@@ -82,6 +82,11 @@ export default function Sidebar() {
           icon={<Users size={18} />}
           title="Customers"
         />
+        <SidebarItem
+          to="/company-settings"
+          icon={<Users size={18} />}
+          title="Company Settings"
+        />
       </nav>
 
       {/* FOOTER */}

@@ -19,6 +19,8 @@ export default function registerCompanySettingsIPC() {
   });
 
   ipcMain.handle("create-company-settings", (event, data) => {
+    console.log(data);
+
     const currencyResult = db
       .prepare(
         `
@@ -58,6 +60,25 @@ export default function registerCompanySettingsIPC() {
     return { success: true, id: result.lastInsertRowid };
   });
 
+  ipcMain.handle("save-logo", (event, { base64, name }) => {
+    const fs = require("fs");
+    const path = require("path");
+    const { app } = require("electron");
+
+    const uploadDir = path.join(app.getPath("userData"), "uploads");
+
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadDir, name);
+
+    const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
+
+    fs.writeFileSync(filePath, base64Data, "base64");
+
+    return filePath;
+  });
   ipcMain.handle("update-company-settings", (event, data) => {
     db.prepare(
       `

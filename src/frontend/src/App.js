@@ -17,9 +17,10 @@ import UpdatePurchase from "./components/Invoices/Purchase/components/UpdatePurc
 import SalesList from "./components/Invoices/Sales/components/SalesList";
 import AddSales from "./components/Invoices/Sales/components/AddSales";
 import UpdateSales from "./components/Invoices/Sales/components/UpdateSales";
-import SetupPage from "./components/SetupPage";
+import SetupPage from "./components/SetupPage/components/SetupPage";
 
 import { useEffect, useState } from "react";
+import CompanySettings from "./components/CompanySettings/components/CompanySettings";
 
 export default function App() {
   const [isSetup, setIsSetup] = useState(null);
@@ -68,6 +69,7 @@ export default function App() {
               <Route path="tax" element={<TaxList />} />
               <Route path="supplier" element={<SuppliersList />} />
               <Route path="customer" element={<CustomerList />} />
+              <Route path="company-settings" element={<CompanySettings />} />
             </Route>
 
             {/* fallback */}
