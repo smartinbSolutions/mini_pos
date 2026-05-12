@@ -21,7 +21,6 @@ export default function CompanySettings() {
       </div>
     );
   }
-  console.log(form);
 
   return (
     <div className="p-6 bg-[#f5f7fb] min-h-screen">

@@ -20,7 +20,6 @@ const useUpdateCompanySettings = () => {
     const load = async () => {
       try {
         const res = await window.api.getCompanySetting();
-        console.log(res);
 
         if (res?.exists) {
           setForm(res.settings);

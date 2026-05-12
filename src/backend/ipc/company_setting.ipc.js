@@ -19,8 +19,6 @@ export default function registerCompanySettingsIPC() {
   });
 
   ipcMain.handle("create-company-settings", (event, data) => {
-    console.log(data);
-
     const currencyResult = db
       .prepare(
         `
