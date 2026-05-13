@@ -9,6 +9,7 @@ import {
   Factory,
   Users,
   ShelvingUnit,
+  Building2,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -84,7 +85,7 @@ export default function Sidebar() {
         />
         <SidebarItem
           to="/company-settings"
-          icon={<Users size={18} />}
+          icon={<Building2 size={18} />}
           title="Company Settings"
         />
       </nav>
