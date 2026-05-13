@@ -24,7 +24,6 @@ export default function useUpdateSales() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // ================= LOAD =================
   const load = useCallback(async () => {
     try {
       setLoading(true);
@@ -169,12 +168,11 @@ export default function useUpdateSales() {
         subtotal,
         net_total: netTotal,
       });
-
-      navigate("/sales");
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
+      navigate("/sales");
     }
   };
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { Plus, Trash2, Save } from "lucide-react";
 import useUpdatePurchase from "../hooks/useUpdatePurchase";
+import SearchableSelect from "../../../../Global/SearchableSelect";
 
 export default function UpdatePurchase() {
   const {
@@ -44,20 +45,12 @@ export default function UpdatePurchase() {
 
           {/* SUPPLIER + DATE */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <select
-              className="border rounded px-2 py-1 w-full"
-              value={invoice.supplier_id}
-              onChange={(e) =>
-                setInvoice({ ...invoice, supplier_id: e.target.value })
-              }
-            >
-              <option value="">Select Supplier</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              placeholder="Select Supplier"
+              options={suppliers}
+              selectedValue={invoice?.supplier_id}
+              onChange={(e) => setInvoice({ ...invoice, supplier_id: e })}
+            />
             <input
               type="date"
               className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
@@ -83,20 +76,12 @@ export default function UpdatePurchase() {
                 {items.map((item, index) => (
                   <tr key={index} className="border-t hover:bg-gray-50">
                     <td className="p-2">
-                      <select
-                        className="border rounded px-2 py-1 w-full"
-                        value={item.product_id}
-                        onChange={(e) =>
-                          updateItem(index, "product_id", e.target.value)
-                        }
-                      >
-                        <option value="">Select product</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
+                      <SearchableSelect
+                        placeholder="Select Product"
+                        options={products}
+                        selectedValue={item.product_id}
+                        onChange={(e) => updateItem(index, "product_id", e.id)}
+                      />
                     </td>
 
                     <td className="p-2 w-24">

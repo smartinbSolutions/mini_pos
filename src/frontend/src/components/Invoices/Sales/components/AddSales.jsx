@@ -135,16 +135,8 @@ export default function AddSales() {
                           <SearchableSelect
                             label=""
                             labelWidth="0"
-                            placeholder="Walk-in customer"
-                            options={[
-                              {
-                                id: "",
-                                name: "Walk-in customer",
-                                phone: "",
-                                address: "",
-                              },
-                              ...products,
-                            ]}
+                            placeholder="Select Products"
+                            options={products}
                             selectedValue={item.product_id}
                             onChange={(e) => updateItem(i, "product_id", e.id)}
                           />
@@ -305,16 +297,8 @@ export default function AddSales() {
                   <SearchableSelect
                     label=""
                     labelWidth="0"
-                    placeholder="Walk-in customer"
-                    options={[
-                      {
-                        id: "",
-                        name: "Walk-in customer",
-                        phone: "",
-                        address: "",
-                      },
-                      ...funds,
-                    ]}
+                    placeholder="Select Funds"
+                    options={funds}
                     selectedValue={invoice.fund_id}
                     onChange={(e) => {
                       setInvoice((p) => ({

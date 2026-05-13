@@ -143,12 +143,7 @@ export default function registerSalesInvoiceIPC() {
 
   // UPDATE
   ipcMain.handle("update-sales-invoice", (event, data) => {
-    if (
-      !data.invoice_id ||
-      !data.product_id ||
-      data.quantity <= 0 ||
-      data.price <= 0
-    ) {
+    if (!data.date || data.subtotal <= 0 || data.net_total <= 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
     const transaction = db.transaction(() => {
@@ -182,11 +177,11 @@ export default function registerSalesInvoiceIPC() {
       WHERE id = ?
     `,
       ).run(
-        data.customer_id,
+        data.customer_id || null,
         data.date,
         data.subtotal || 0,
         data.discount || 0,
-        data.tax_id || 0,
+        data.tax_id || null,
         data.net_total || 0,
         data.id,
       );

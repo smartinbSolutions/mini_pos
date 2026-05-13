@@ -55,21 +55,12 @@ export default function AddPurchase() {
         {/* BASIC INFO */}
         <div className={`${Card} p-5`}>
           <div className="grid md:grid-cols-2 gap-4">
-            <select
-              className={Input}
-              value={invoice.supplier_id}
-              onChange={(e) =>
-                setInvoice({ ...invoice, supplier_id: e.target.value })
-              }
-            >
-              <option value="">Select Supplier</option>
-              {suppliers.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-
+            <SearchableSelect
+              placeholder="Select Supplier"
+              options={suppliers}
+              selectedValue={invoice?.supplier_id}
+              onChange={(e) => setInvoice({ ...invoice, supplier_id: e })}
+            />
             <input
               type="date"
               className={Input}
@@ -108,20 +99,12 @@ export default function AddPurchase() {
               {items.map((item, index) => (
                 <tr key={index} className="border-t hover:bg-gray-50">
                   <td className="p-2">
-                    <select
-                      className={Input}
-                      value={item.product_id}
-                      onChange={(e) =>
-                        updateItem(index, "product_id", e.target.value)
-                      }
-                    >
-                      <option value="">Select product</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
+                    <SearchableSelect
+                      placeholder="Select Product"
+                      options={products}
+                      selectedValue={item.product_id}
+                      onChange={(e) => updateItem(index, "product_id", e.id)}
+                    />
                   </td>
 
                   <td className="p-2">
