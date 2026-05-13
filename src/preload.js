@@ -125,3 +125,8 @@ contextBridge.exposeInMainWorld("api", {
   updateUnit: (data) => ipcRenderer.invoke("update-unit", data),
   deleteUnit: (id) => ipcRenderer.invoke("delete-unit", id),
 });
+
+contextBridge.exposeInMainWorld("license", {
+  activate: (licenseKey) => ipcRenderer.invoke("license:activate", licenseKey),
+  status: () => ipcRenderer.invoke("license:status"),
+});

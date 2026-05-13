@@ -23,11 +23,29 @@ import { useEffect, useState } from "react";
 import CompanySettings from "./components/CompanySettings/components/CompanySettings";
 import FundMovementsPage from "./components/Cash/Fund/components/FundPayment";
 import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
+import ActivationPage from "./renderer/ActivationPage";
 
 export default function App() {
+  const [licenseStatus, setLicenseStatus] = useState(null);
   const [isSetup, setIsSetup] = useState(null);
 
   useEffect(() => {
+    const checkLicense = async () => {
+      try {
+        const status = await window.license?.status();
+        setLicenseStatus(status?.valid === true);
+      } catch (err) {
+        console.error(err);
+        setLicenseStatus(false);
+      }
+    };
+
+    checkLicense();
+  }, []);
+
+  useEffect(() => {
+    if (!licenseStatus) return;
+
     const check = async () => {
       try {
         const res = await window.api.getCompanySetting();
@@ -39,7 +57,13 @@ export default function App() {
     };
 
     check();
-  }, []);
+  }, [licenseStatus]);
+
+  if (licenseStatus === null) return <div>Loading...</div>;
+
+  if (!licenseStatus) {
+    return <ActivationPage onActivated={() => setLicenseStatus(true)} />;
+  }
 
   if (isSetup === null) return <div>Loading...</div>;
 

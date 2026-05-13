@@ -1,10 +1,12 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import registerAllIPC from "./backend/registerAllIPC";
+import activateLicense from "./main/license/activateLicense";
+import verifyLicenseFile from "./main/license/verifyLicenseFile";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,7 +15,25 @@ if (started) app.quit();
 
 let mainWindow;
 
-function createWindow() {
+function loadRendererRoute(window, routePath) {
+  const devServerUrl = app.isPackaged
+    ? null
+    : process.env.RENDERER_DEV_SERVER_URL || "http://localhost:3000";
+
+  if (devServerUrl) {
+    window.loadURL(new URL(routePath, devServerUrl).toString());
+    return;
+  }
+
+  const rendererName =
+    typeof MAIN_WINDOW_VITE_NAME !== "undefined"
+      ? MAIN_WINDOW_VITE_NAME
+      : "main_window";
+
+  window.loadFile(path.join(__dirname, `../renderer/${rendererName}/index.html`));
+}
+
+function createWindow(routePath = "/") {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -26,19 +46,36 @@ function createWindow() {
     },
   });
 
-  // DEV
-  mainWindow.loadURL("http://localhost:3000");
+  loadRendererRoute(mainWindow, routePath);
 
   mainWindow.webContents.openDevTools();
 }
 
-app.whenReady().then(() => {
+function registerLicenseIPC() {
+  ipcMain.handle("license:status", async () => verifyLicenseFile());
+  ipcMain.handle("license:activate", async (_event, licenseKey) => {
+    const result = await activateLicense(licenseKey);
+
+    if (result.success && mainWindow) {
+      loadRendererRoute(mainWindow, "/");
+    }
+
+    return result;
+  });
+}
+
+app.whenReady().then(async () => {
   registerAllIPC();
-  createWindow();
+  registerLicenseIPC();
+
+  const licenseStatus = await verifyLicenseFile();
+  createWindow(licenseStatus.valid ? "/" : "/activation");
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      verifyLicenseFile().then((status) => {
+        createWindow(status.valid ? "/" : "/activation");
+      });
     }
   });
 });
