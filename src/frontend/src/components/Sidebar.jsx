@@ -46,11 +46,11 @@ export default function Sidebar() {
           icon={<CreditCard size={18} />}
           title="Purchase"
         />
-        <SidebarItem
+        {/* <SidebarItem
           to="/payments"
           icon={<Wallet size={18} />}
           title="Payments"
-        />
+        /> */}
 
         <Section title="MANAGEMENT" />
 
