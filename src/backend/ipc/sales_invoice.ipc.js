@@ -255,8 +255,8 @@ export default function registerSalesInvoiceIPC() {
   ipcMain.handle("pos-checkout", (event, data) => {
     const insertInvoice = db.prepare(`
     INSERT INTO sales_invoices
-    (customer_id, date, subtotal, discount, tax_id, net_total)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (customer_id, date, subtotal, discount, tax_id, net_total, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
     const insertItem = db.prepare(`
@@ -291,6 +291,7 @@ export default function registerSalesInvoiceIPC() {
         data.discount || 0,
         data.tax_id || null,
         data.net_total || 0,
+        "paid",
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
