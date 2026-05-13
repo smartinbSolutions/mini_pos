@@ -26,7 +26,7 @@ const FundMovementsPage = () => {
     .reduce((acc, item) => acc + Number(item.amount || 0), 0);
 
   const totalOut = payments
-    .filter((p) => p.type === "out")
+    .filter((p) => p.type === "expense")
     .reduce((acc, item) => acc + Number(item.amount || 0), 0);
 
   return (

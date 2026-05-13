@@ -241,24 +241,8 @@ export default function AddSales() {
                 </div>
               </div>
 
-              {/* PAYMENT */}
               <div className="space-y-3 pt-3">
                 <h3 className="font-semibold">Payment</h3>
-
-                <select
-                  className="border rounded-xl px-2 py-2 w-full"
-                  value={invoice.payment_method || "cash"}
-                  onChange={(e) =>
-                    setInvoice((p) => ({
-                      ...p,
-                      payment_method: e.target.value,
-                    }))
-                  }
-                >
-                  <option value="cash">Cash</option>
-                  <option value="card">Card</option>
-                  <option value="bank">Bank</option>
-                </select>
 
                 <input
                   type="number"

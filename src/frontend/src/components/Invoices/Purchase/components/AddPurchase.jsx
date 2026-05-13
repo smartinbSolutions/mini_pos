@@ -203,21 +203,6 @@ export default function AddPurchase() {
           <div className={`${Card} p-5 space-y-4`}>
             <h3 className="font-semibold">Payment</h3>
 
-            <select
-              className={Input}
-              value={invoice.payment_method || "cash"}
-              onChange={(e) =>
-                setInvoice((p) => ({
-                  ...p,
-                  payment_method: e.target.value,
-                }))
-              }
-            >
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="bank">Bank</option>
-            </select>
-
             <input
               type="number"
               className={Input}
