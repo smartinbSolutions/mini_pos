@@ -65,6 +65,96 @@ export default function registerPaymentIPC() {
       .get(id);
   });
 
+  ipcMain.handle("get-payment-fund", (event, id) => {
+    return db
+      .prepare(
+        `
+      SELECT 
+        p.*,
+        f.name AS fund_name,
+
+        SUM(
+          CASE
+            WHEN p.type = 'income' THEN p.amount
+            ELSE -p.amount
+          END
+        ) OVER (
+          ORDER BY p.id ASC
+        ) AS running_balance
+
+      FROM payments p
+
+      LEFT JOIN funds f 
+        ON f.id = p.fund_id
+
+      WHERE p.fund_id = ?
+
+      ORDER BY p.id DESC
+    `,
+      )
+      .all(id);
+  });
+
+  ipcMain.handle(
+    "get-party-ledger",
+    (event, { partyId, partyType, limit = 1, offset = 0 }) => {
+      return db
+        .prepare(
+          `
+        SELECT *
+        FROM (
+          SELECT 
+            p.*,
+            f.name AS fund_name,
+
+            SUM(
+              CASE 
+                WHEN p.type = 'income' THEN p.amount
+                WHEN p.type = 'expense' THEN -p.amount
+                ELSE 0
+              END
+            ) OVER (
+              PARTITION BY p.party_id
+              ORDER BY p.id ASC
+            ) AS running_balance
+
+          FROM payments p
+          LEFT JOIN funds f ON f.id = p.fund_id
+          WHERE p.party_id = ?
+            AND p.party_type = ?
+        )
+
+        ORDER BY id DESC
+        LIMIT ? OFFSET ?
+        `,
+        )
+        .all(partyId, partyType, limit, offset);
+    },
+  );
+
+  ipcMain.handle(
+    "get-party-opening-balance",
+    (event, { partyId, partyType }) => {
+      const row = db
+        .prepare(
+          `
+        SELECT COALESCE(SUM(
+          CASE 
+            WHEN type = 'income' THEN amount
+            ELSE -amount
+          END
+        ), 0) AS balance
+        FROM payments
+        WHERE party_id = ?
+          AND party_type = ?
+        `,
+        )
+        .get(partyId, partyType);
+
+      return row?.balance || 0;
+    },
+  );
+
   ipcMain.handle("update-payment", (event, data) => {
     db.prepare(
       `

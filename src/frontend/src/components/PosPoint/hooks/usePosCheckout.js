@@ -130,6 +130,7 @@ export default function usePosCheckout() {
         total: subtotal,
         received,
         change: received - subtotal,
+        customer_id: selectedCustomerId,
       };
 
       const sales = await api.posCheckout({
@@ -138,6 +139,7 @@ export default function usePosCheckout() {
         subtotal,
         paid_amount: received,
         net_total: subtotal,
+        customer_id: selectedCustomerId,
       });
 
       payload.id = sales.invoiceId;

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const useSuppliersList = () => {
+const useCustomerList = () => {
   const emptyCustomer = { name: "", phone: "", address: "" };
-
+  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -181,7 +182,8 @@ const useSuppliersList = () => {
     setDraft,
     draft,
     actionError,
+    navigate,
   };
 };
 
-export default useSuppliersList;
+export default useCustomerList;

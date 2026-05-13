@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const useSuppliersList = () => {
   const emptySupplier = { name: "", phone: "", address: "" };
+  const navigate = useNavigate();
 
   const [saving, setSaving] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
@@ -181,6 +183,7 @@ const useSuppliersList = () => {
     setDraft,
     draft,
     actionError,
+    navigate,
   };
 };
 

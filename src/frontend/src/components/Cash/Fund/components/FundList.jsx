@@ -1,8 +1,11 @@
 import React from "react";
 import useFundList from "../hooks/useFundList";
-import { Edit2, Plus, Save, Trash2, X } from "lucide-react";
+import { Edit2, Plus, Save, Trash2, X, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const FundList = () => {
+  const navigate = useNavigate();
+
   const {
     saving,
     funds,
@@ -25,7 +28,7 @@ const FundList = () => {
       <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_360px] gap-6">
         {/* LEFT */}
         <div className="space-y-6">
-          {/* HEADER (Dashboard style) */}
+          {/* HEADER */}
           <div className="bg-white/70 backdrop-blur border border-gray-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
             <div>
               <h2 className="text-2xl font-semibold text-gray-900">
@@ -61,7 +64,7 @@ const FundList = () => {
                     onChange={(e) =>
                       setEditing({ ...editing, name: e.target.value })
                     }
-                    className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 focus:bg-white focus:ring-2 focus:ring-gray-900 outline-none text-sm"
+                    className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm"
                     placeholder="Fund name"
                   />
 
@@ -100,9 +103,9 @@ const FundList = () => {
                   </div>
 
                   <div className="flex gap-2 pt-1">
-                    <button className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-black transition">
+                    <button className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-black">
                       <Save size={15} />
-                      Save Changes
+                      Save
                     </button>
 
                     <button
@@ -117,18 +120,16 @@ const FundList = () => {
               ) : (
                 <div
                   key={fund.id}
-                  className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition p-5 flex items-center justify-between group"
+                  className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition p-5 flex items-center justify-between group"
                 >
-                  {/* LEFT INFO */}
+                  {/* LEFT */}
                   <div className="space-y-1">
                     <div className="text-lg font-semibold text-gray-900">
                       {fund.name}
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="px-2 py-0.5 bg-gray-100 rounded-full">
-                        {fund.currency_code}
-                      </span>
+                    <div className="text-xs text-gray-500">
+                      {fund.currency_code}
                     </div>
                   </div>
 
@@ -141,7 +142,17 @@ const FundList = () => {
                       </div>
                     </div>
 
+                    {/* ACTIONS */}
                     <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition">
+                      {/* 👁 VIEW MOVEMENTS */}
+                      <button
+                        onClick={() => navigate(`/fund/${fund.id}`)}
+                        className="p-2 rounded-xl hover:bg-blue-50 text-blue-600"
+                        title="View Movements"
+                      >
+                        <Eye size={14} />
+                      </button>
+
                       <button
                         onClick={() => startEdit(fund)}
                         className="p-2 rounded-xl hover:bg-gray-100"
@@ -160,23 +171,15 @@ const FundList = () => {
                 </div>
               ),
             )}
-
-            {funds.length === 0 && (
-              <div className="bg-white rounded-2xl border p-10 text-center text-gray-400">
-                No funds created yet
-              </div>
-            )}
           </div>
         </div>
 
-        {/* RIGHT PANEL */}
+        {/* RIGHT */}
         <div className="bg-white/80 backdrop-blur border rounded-2xl p-6 shadow-sm h-fit sticky top-6">
-          <h3 className="text-lg font-semibold mb-5 text-gray-900">
-            Create Fund
-          </h3>
+          <h3 className="text-lg font-semibold mb-5">Create Fund</h3>
 
           {actionError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="mb-3 text-sm text-red-600 bg-red-50 border p-2 rounded-lg">
               {actionError}
             </div>
           )}
@@ -186,7 +189,7 @@ const FundList = () => {
               required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 focus:bg-white text-sm"
+              className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm"
               placeholder="Fund name"
             />
 
@@ -224,7 +227,7 @@ const FundList = () => {
 
             <button
               disabled={saving}
-              className="w-full bg-gradient-to-r from-gray-900 to-black text-white py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:opacity-90 transition"
+              className="w-full bg-black text-white py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
             >
               <Plus size={16} />
               Create Fund

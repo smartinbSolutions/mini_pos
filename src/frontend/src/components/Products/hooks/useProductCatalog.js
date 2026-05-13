@@ -24,9 +24,9 @@ const productPayload = (product) => ({
   id: product.id,
   name: String(product.name || "").trim(),
   latinName: String(product.latinName || "").trim(),
-  costPrice: toNumber(product.costPrice),
-  price: toNumber(product.price),
-  quantity: toNumber(product.quantity),
+  costPrice: Number(product.costPrice),
+  price: Number(product.price),
+  quantity: Number(product.quantity),
   unit_id: product.unit_id ? Number(product.unit_id) : null,
 });
 
@@ -132,6 +132,8 @@ export default function useProductCatalog() {
 
       await refetch();
       return result;
+    } catch (e) {
+      console.log(e);
     } finally {
       setSaving(false);
     }

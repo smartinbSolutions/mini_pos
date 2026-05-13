@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 const emptyForm = {
   name: "",
   latinName: "",
-  costPrice: "0",
-  price: "0",
-  quantity: "0",
+  costPrice: 0,
+  price: 0,
+  quantity: 0,
   unit_id: "",
   barcodes: [{ barcode: "" }],
 };
@@ -23,6 +23,7 @@ export default function ProductFormModal({
 }) {
   const [form, setForm] = useState(emptyForm);
   const isEditing = Boolean(product);
+  console.log(form);
 
   useEffect(() => {
     if (product) {
@@ -30,9 +31,9 @@ export default function ProductFormModal({
         id: product.id,
         name: product.name || "",
         latinName: product.latinName || "",
-        costPrice: String(product.costPrice ?? 0),
-        price: String(product.price ?? 0),
-        quantity: String(product.quantity ?? 0),
+        costPrice: Number(product.costPrice ?? 0),
+        price: Number(product.price ?? 0),
+        quantity: Number(product.quantity ?? 0),
         unit_id: product.unit_id ? Number(product.unit_id) : "",
         barcodes: barcodes.length ? barcodes : [{ barcode: "" }],
       });

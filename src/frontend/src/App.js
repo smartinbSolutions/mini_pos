@@ -21,6 +21,8 @@ import SetupPage from "./components/SetupPage/components/SetupPage";
 
 import { useEffect, useState } from "react";
 import CompanySettings from "./components/CompanySettings/components/CompanySettings";
+import FundMovementsPage from "./components/Cash/Fund/components/FundPayment";
+import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
 
 export default function App() {
   const [isSetup, setIsSetup] = useState(null);
@@ -62,10 +64,15 @@ export default function App() {
               <Route path="add-purchase" element={<AddPurchase />} />
               <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
               <Route path="payments" element={<Payments />} />
+              <Route
+                path="payment/:type/:id"
+                element={<PartyLedgerPage />}
+              />{" "}
               <Route path="pos" element={<PosPointPage />} />
               <Route path="unit" element={<UnitList />} />
               <Route path="currency" element={<CurrencyList />} />
               <Route path="funds" element={<FundList />} />
+              <Route path="/fund/:id" element={<FundMovementsPage />} />
               <Route path="tax" element={<TaxList />} />
               <Route path="supplier" element={<SuppliersList />} />
               <Route path="customer" element={<CustomerList />} />

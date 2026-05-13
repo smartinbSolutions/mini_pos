@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
+import { Edit2, Plus, Save, Trash2, X, Search, Eye } from "lucide-react";
 import useSuppliersList from "../hooks/useSuppliersList";
 
 export const SuppliersList = () => {
@@ -17,6 +17,7 @@ export const SuppliersList = () => {
     setDraft,
     draft,
     actionError,
+    navigate,
   } = useSuppliersList();
 
   const [search, setSearch] = useState("");
@@ -122,6 +123,15 @@ export const SuppliersList = () => {
                     </div>
 
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <button
+                        onClick={() =>
+                          navigate(`/payment/supplier/${supplier.id}`)
+                        }
+                        className="p-2 rounded-xl hover:bg-blue-50 text-blue-600"
+                        title="View Movements"
+                      >
+                        <Eye size={14} />
+                      </button>
                       <button
                         onClick={() => startEdit(supplier)}
                         className="p-2 rounded-lg hover:bg-gray-100"
