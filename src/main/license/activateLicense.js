@@ -4,7 +4,7 @@ import getDeviceHash from "./getDeviceHash";
 import saveLicenseFile from "./saveLicenseFile";
 import verifyLicenseFile from "./verifyLicenseFile";
 
-const DEFAULT_ACTIVATION_URL = "http://localhost:8001/api/licenses/activate";
+const DEFAULT_ACTIVATION_URL = "http://localhost/api/licenses/activate";
 
 function getActivationUrl() {
   return DEFAULT_ACTIVATION_URL;
