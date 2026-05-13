@@ -3,29 +3,25 @@ import db from "../db";
 export default function registerSalesInvoiceIPC() {
   // CREATE
   ipcMain.handle("create-sales-invoice", (event, data) => {
-    if (
-      !data.invoice_id ||
-      !data.product_id ||
-      data.quantity <= 0 ||
-      data.price <= 0
-    ) {
+    if (!data.items || data.subtotal <= 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
     const invoiceResult = db
       .prepare(
         `
       INSERT INTO sales_invoices
-      (customer_id, date, subtotal, discount, tax_id, net_total)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (customer_id, date, subtotal, discount, tax_id, net_total, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
       )
       .run(
-        data.customer_id,
+        data.customer_id || null,
         data.date,
         data.subtotal || 0,
         data.discount || 0,
-        data.tax_id || 0,
+        data.tax_id || null,
         data.net_total || 0,
+        data.status || "unpaid",
       );
 
     const invoiceId = invoiceResult.lastInsertRowid;
@@ -50,6 +46,45 @@ export default function registerSalesInvoiceIPC() {
       updateStock.run(quantity, item.product_id);
     }
 
+    if (data.status === "paid") {
+      const insertPayment = db.prepare(`
+        INSERT INTO payments
+        (type, party_type, party_id, fund_id, amount, note)
+        VALUES (?, ?, ?, ?, ?, ?)
+     `);
+
+      const updateFund = db.prepare(`
+       UPDATE funds
+       SET balance = balance + ?
+       WHERE id = ?
+     `);
+
+      updateFund.run(data.paid_amount, data.fund_id);
+
+      insertPayment.run(
+        "income",
+        "customer",
+        data.customer_id || null,
+        data.fund_id,
+        data.paid_amount,
+        `Sales Invoice #${invoiceId}`,
+      );
+    }
+
+    const updateCustomer = db.prepare(`
+        UPDATE customers
+        SET total = total + ?,
+            total_paid = total_paid + ?
+        WHERE id = ?
+      `);
+    const customerPaid =
+      data.status === "paid" ? Number(data.paid_amount || 0) : 0;
+
+    updateCustomer.run(
+      Number(data.net_total || 0),
+      customerPaid,
+      data.customer_id,
+    );
     return { success: true, invoiceId };
   });
 

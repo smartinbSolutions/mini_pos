@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS customers (
   name TEXT,
   phone TEXT,
   address TEXT,
-  total REAL DEFAULT 0,
-  total_paid REAL DEFAULT 0,
+  total INTEGER DEFAULT 0,
+  total_paid INTEGER DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `,
@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS suppliers (
   name TEXT,
   phone TEXT,
   address TEXT,
-  total REAL DEFAULT 0,
-  total_paid REAL DEFAULT 0,
+  total INTEGER DEFAULT 0,
+  total_paid INTEGER DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `,

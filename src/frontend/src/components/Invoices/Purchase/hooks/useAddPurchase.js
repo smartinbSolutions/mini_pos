@@ -28,7 +28,8 @@ export default function useAddPurchase() {
   const [saving, setSaving] = useState(false);
   const [taxes, setTaxes] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-
+  const [status, setStatus] = useState("unpaid");
+  const [funds, setFunds] = useState([]);
   const refetch = useCallback(async () => {
     if (!api) {
       setError("API not available");
@@ -39,10 +40,12 @@ export default function useAddPurchase() {
       setLoading(true);
       const res = await api.getProducts();
       setProducts(res || []);
-      let taxResult = await api.getTaxes();
+      const taxResult = await api.getTaxes();
       setTaxes(taxResult || []);
-      let suppliersResult = await api.getSuppliers();
+      const suppliersResult = await api.getSuppliers();
       setSuppliers(suppliersResult || []);
+      const fundResult = await api.getFunds();
+      setFunds(fundResult || []);
       setError("");
     } catch (err) {
       setError(err?.message || "Failed to load purchases");
@@ -182,6 +185,8 @@ export default function useAddPurchase() {
     return subtotal - discount + taxValue;
   }, [subtotal, invoice]);
 
+  const dueAmount = Number(netTotal || 0) - Number(invoice.paid_amount || 0);
+
   const submit = useCallback(async () => {
     if (!api) {
       setError("Electron API not available");
@@ -207,6 +212,7 @@ export default function useAddPurchase() {
         subtotal,
         net_total: netTotal,
         items,
+        status,
       };
 
       const res = await api.createPurchaseInvoice(payload);
@@ -250,5 +256,9 @@ export default function useAddPurchase() {
     loading,
     saving,
     error,
+    funds,
+    status,
+    dueAmount,
+    setStatus,
   };
 }

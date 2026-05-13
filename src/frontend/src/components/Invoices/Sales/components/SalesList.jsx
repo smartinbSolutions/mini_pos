@@ -1,11 +1,30 @@
 import React, { useMemo, useState } from "react";
-import { Edit2, PackagePlus, RefreshCw, Search, Trash2 } from "lucide-react";
+import {
+  Edit2,
+  HandCoins,
+  PackagePlus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useSalesList from "../hooks/useSalesList";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 
 const SalesList = () => {
-  const { salesInvoices, loading, saving, error, refetch, deleteSales } =
-    useSalesList();
+  const {
+    salesInvoices,
+    loading,
+    saving,
+    error,
+    refetch,
+    deleteSales,
+    selecteInvoice,
+    setSelecteInvoice,
+    openPaymentModel,
+    setOpenPaymentModel,
+  } = useSalesList();
+  console.log(selecteInvoice);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
@@ -129,13 +148,26 @@ const SalesList = () => {
                         >
                           <Edit2 size={16} />
                         </button>
+                        {inv.status !== "paid" && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelecteInvoice(inv);
+                                setOpenPaymentModel(true);
+                              }}
+                              className="rounded p-2 text-gray-500 hover:bg-gray-100"
+                            >
+                              <HandCoins size={16} />
+                            </button>
 
-                        <button
-                          onClick={() => handleDelete(inv.id)}
-                          className="rounded p-2 text-red-500 hover:bg-red-50"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                            <button
+                              onClick={() => handleDelete(inv.id)}
+                              className="rounded p-2 text-red-500 hover:bg-red-50"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -145,6 +177,15 @@ const SalesList = () => {
           </table>
         </div>
       </div>
+      <AddPayment
+        isOpen={openPaymentModel}
+        onClose={() => setOpenPaymentModel(false)}
+        invoice={selecteInvoice}
+        party={selecteInvoice?.customer_id}
+        partyName={selecteInvoice?.customer_name}
+        mode="sales"
+        refetchList={refetch}
+      />
     </div>
   );
 };

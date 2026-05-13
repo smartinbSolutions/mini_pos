@@ -8,6 +8,9 @@ const usePurchaseList = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [openPaymentModel, setOpenPaymentModel] = useState(false);
+  const [selecteInvoice, setSelecteInvoice] = useState(null);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError("API not available");
@@ -49,6 +52,10 @@ const usePurchaseList = () => {
     error,
     refetch,
     deletePurchase,
+    selecteInvoice,
+    setSelecteInvoice,
+    openPaymentModel,
+    setOpenPaymentModel,
   };
 };
 

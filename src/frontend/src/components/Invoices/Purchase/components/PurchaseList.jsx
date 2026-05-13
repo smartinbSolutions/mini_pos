@@ -1,10 +1,28 @@
 import React, { useMemo, useState } from "react";
 import usePurchaseList from "../hooks/usePurchaseList";
-import { Edit2, PackagePlus, RefreshCw, Search, Trash2 } from "lucide-react";
+import {
+  Edit2,
+  HandCoins,
+  PackagePlus,
+  RefreshCw,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
+
 const PurchaseList = () => {
-  const { purchaseInvoices, loading, error, refetch, deletePurchase } =
-    usePurchaseList();
+  const {
+    purchaseInvoices,
+    loading,
+    error,
+    refetch,
+    deletePurchase,
+    selecteInvoice,
+    setSelecteInvoice,
+    openPaymentModel,
+    setOpenPaymentModel,
+  } = usePurchaseList();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
@@ -131,12 +149,25 @@ const PurchaseList = () => {
                           <Edit2 size={16} />
                         </button>
 
-                        <button
-                          onClick={() => handleDelete(inv.id)}
-                          className="rounded p-2 text-red-500 hover:bg-red-50"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {inv.status !== "paid" && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setSelecteInvoice(inv);
+                                setOpenPaymentModel(true);
+                              }}
+                              className="rounded p-2 text-gray-500 hover:bg-gray-100"
+                            >
+                              <HandCoins size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(inv.id)}
+                              className="rounded p-2 text-red-500 hover:bg-red-50"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -146,6 +177,15 @@ const PurchaseList = () => {
           </table>
         </div>
       </div>
+      <AddPayment
+        isOpen={openPaymentModel}
+        onClose={() => setOpenPaymentModel(false)}
+        invoice={selecteInvoice}
+        party={selecteInvoice?.supplier_id}
+        partyName={selecteInvoice?.supplier_name}
+        mode="purchase"
+        refetchList={refetch}
+      />
     </div>
   );
 };

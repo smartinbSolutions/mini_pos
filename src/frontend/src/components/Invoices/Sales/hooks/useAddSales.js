@@ -13,7 +13,6 @@ const emptyInvoice = {
   customer_id: "",
   date: new Date().toISOString().slice(0, 10),
   discount: 0,
-  tax_id: 0,
 };
 
 export default function useAddSales() {
@@ -27,16 +26,20 @@ export default function useAddSales() {
   const [customers, setCustomers] = useState([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState("unpaid");
+  const [funds, setFunds] = useState([]);
 
   const refetch = useCallback(async () => {
     try {
       const res = await api.getProducts();
       const taxRes = await api.getTaxes();
       const custRes = await api.getCustomers();
+      const fundResult = await api.getFunds();
 
       setProducts(res || []);
       setTaxes(taxRes || []);
       setCustomers(custRes || []);
+      setFunds(fundResult || []);
     } catch (err) {
       setError("Load error");
     }
@@ -46,7 +49,6 @@ export default function useAddSales() {
     refetch();
   }, []);
 
-  // ✅ إضافة item
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem]);
   };
@@ -154,6 +156,7 @@ export default function useAddSales() {
 
     return subtotal - discount + taxValue;
   }, [subtotal, invoice]);
+  const dueAmount = Number(netTotal || 0) - Number(invoice.paid_amount || 0);
 
   const submit = async () => {
     try {
@@ -164,6 +167,7 @@ export default function useAddSales() {
         subtotal,
         net_total: netTotal,
         items,
+        status,
       };
 
       const res = await api.createSalesInvoice(payload);
@@ -196,5 +200,9 @@ export default function useAddSales() {
     error,
     navigate,
     taxes,
+    funds,
+    status,
+    dueAmount,
+    setStatus,
   };
 }

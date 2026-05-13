@@ -8,30 +8,90 @@ export default function registerPaymentIPC() {
       !data.party_type ||
       !data.party_id ||
       !data.fund_id ||
+      !data.invoiceId ||
       !data.amount
     ) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
-    const result = db
-      .prepare(
-        `
-      INSERT INTO payments 
-      (type, party_type, party_id, fund_id, amount, note)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `,
-      )
-      .run(
-        data.type,
-        data.party_type,
-        data.party_id,
-        data.fund_id,
-        data.amount,
-        data.note || null,
-      );
+
+    const transaction = db.transaction(() => {
+      const result = db
+        .prepare(
+          `
+        INSERT INTO payments 
+        (type, party_type, party_id, fund_id, amount, note)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+        )
+        .run(
+          data.type,
+          data.party_type,
+          data.party_id,
+          data.fund_id,
+          data.amount,
+          data.note || null,
+        );
+
+      if (data.party_type === "supplier") {
+        db.prepare(
+          `
+        UPDATE suppliers
+        SET total_paid = total_paid + ?
+        WHERE id = ?
+      `,
+        ).run(data.amount, data.party_id);
+
+        db.prepare(
+          `
+        UPDATE purchase_invoices
+        SET status = ?
+        WHERE id = ?
+      `,
+        ).run("paid", data.invoiceId);
+
+        const res = db
+          .prepare(
+            `
+              UPDATE funds
+              SET balance = balance - ?
+              WHERE id = ?
+            `,
+          )
+          .run(Number(data.amount), data.fund_id);
+      }
+
+      if (data.party_type === "customer") {
+        db.prepare(
+          `
+        UPDATE customers
+        SET total_paid = total_paid + ?
+        WHERE id = ?
+      `,
+        ).run(data.amount, data.party_id);
+
+        db.prepare(
+          `
+        UPDATE sales_invoices
+        SET status = ?
+        WHERE id = ?
+      `,
+        ).run("paid", data.invoiceId);
+
+        db.prepare(
+          `
+            UPDATE funds
+            SET balance = balance + ?
+            WHERE id = ?
+          `,
+        ).run(data.amount, data.fund_id);
+      }
+    });
+
+    const id = transaction();
 
     return {
       success: true,
-      id: result.lastInsertRowid,
+      id,
     };
   });
 
