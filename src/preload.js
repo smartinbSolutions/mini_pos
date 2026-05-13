@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("api", {
   /* ================= COMPANY SETTING ================= */
+  getDashboardStats: () => ipcRenderer.invoke("get-dashboard-stats"),
   getCompanySetting: (id) => ipcRenderer.invoke("get-company-settings", id),
   createCompanySetting: (data) =>
     ipcRenderer.invoke("create-company-settings", data),
