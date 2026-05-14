@@ -25,7 +25,6 @@ const SalesList = () => {
     openPaymentModel,
     setOpenPaymentModel,
   } = useSalesList();
-  console.log(selecteInvoice);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");

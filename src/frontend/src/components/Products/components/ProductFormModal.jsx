@@ -23,7 +23,6 @@ export default function ProductFormModal({
 }) {
   const [form, setForm] = useState(emptyForm);
   const isEditing = Boolean(product);
-  console.log(form);
 
   useEffect(() => {
     if (product) {

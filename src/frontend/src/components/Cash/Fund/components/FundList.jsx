@@ -2,6 +2,7 @@ import React from "react";
 import useFundList from "../hooks/useFundList";
 import { Edit2, Plus, Save, Trash2, X, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatNumber } from "../../../../Global/FormatNumber";
 
 const FundList = () => {
   const navigate = useNavigate();
@@ -26,9 +27,7 @@ const FundList = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f4f6fb] to-[#eef2f7] p-6">
       <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_360px] gap-6">
-        {/* LEFT */}
         <div className="space-y-6">
-          {/* HEADER */}
           <div className="bg-white/70 backdrop-blur border border-gray-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
             <div>
               <h2 className="text-2xl font-semibold text-gray-900">
@@ -49,7 +48,6 @@ const FundList = () => {
             </div>
           </div>
 
-          {/* LIST */}
           <div className="space-y-3">
             {funds.map((fund) =>
               editingId === fund.id ? (
@@ -78,6 +76,7 @@ const FundList = () => {
                           currency_id: Number(e.target.value),
                         })
                       }
+                      disabled={true}
                       className="px-3 py-2.5 rounded-xl border text-sm bg-gray-50"
                     >
                       <option value="">Currency</option>
@@ -97,6 +96,7 @@ const FundList = () => {
                           balance: Number(e.target.value),
                         })
                       }
+                      disabled={true}
                       className="px-3 py-2.5 rounded-xl border bg-gray-50 text-sm"
                       placeholder="Balance"
                     />
@@ -122,7 +122,6 @@ const FundList = () => {
                   key={fund.id}
                   className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition p-5 flex items-center justify-between group"
                 >
-                  {/* LEFT */}
                   <div className="space-y-1">
                     <div className="text-lg font-semibold text-gray-900">
                       {fund.name}
@@ -133,18 +132,15 @@ const FundList = () => {
                     </div>
                   </div>
 
-                  {/* RIGHT */}
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <div className="text-sm text-gray-400">Balance</div>
                       <div className="text-xl font-semibold text-emerald-600">
-                        {fund.balance || 0}
+                        {formatNumber(fund.balance || 0)}
                       </div>
                     </div>
 
-                    {/* ACTIONS */}
                     <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition">
-                      {/* 👁 VIEW MOVEMENTS */}
                       <button
                         onClick={() => navigate(`/fund/${fund.id}`)}
                         className="p-2 rounded-xl hover:bg-blue-50 text-blue-600"

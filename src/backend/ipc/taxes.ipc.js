@@ -2,7 +2,7 @@ const { ipcMain } = require("electron");
 import db from "../db";
 export default function registerTaxesIPC() {
   ipcMain.handle("create-tax", (event, data) => {
-    if (!data.name || !data.rate) {
+    if (!data.name || data.rate < 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
     const result = db

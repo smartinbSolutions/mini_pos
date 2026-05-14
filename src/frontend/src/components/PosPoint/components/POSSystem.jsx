@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
 import CheckoutModal from "../components/CheckoutModal";
 import usePosCheckout from "../hooks/usePosCheckout";
+import { formatNumber } from "../../../Global/FormatNumber";
 const money = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -33,6 +34,7 @@ export default function POSSystem() {
     removeFromCart,
     clearCart,
     checkout,
+    currencies,
   } = usePosCheckout();
 
   const [search, setSearch] = useState("");
@@ -159,7 +161,8 @@ export default function POSSystem() {
                       </div>
 
                       <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-bold text-emerald-700">
-                        {money.format(product.price || 0)}
+                        {formatNumber(product.price || 0)}{" "}
+                        {currencies.symbol || currencies.code}
                       </span>
                     </div>
 
@@ -328,7 +331,8 @@ export default function POSSystem() {
                       <div className="text-right">
                         <p className="text-xs text-zinc-400">Subtotal</p>
                         <p className="font-bold">
-                          {money.format((item.price || 0) * item.qty)}
+                          {formatNumber((item.price || 0) * item.qty)}{" "}
+                          {currencies.symbol || currencies.code}
                         </p>
                       </div>
                     </div>
@@ -348,7 +352,7 @@ export default function POSSystem() {
               </div>
 
               <div className="mt-2 text-3xl font-bold tracking-tight">
-                {money.format(subtotal)}
+                {money.format(subtotal)} {currencies.symbol || currencies.code}
               </div>
             </div>
 

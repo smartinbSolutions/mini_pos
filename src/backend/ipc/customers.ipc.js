@@ -14,7 +14,13 @@ export default function registerCustomersIPC() {
       VALUES (?,?,?,?,?)
     `,
       )
-      .run(data.name, data.phone, data.address, data.total, data.total_paid);
+      .run(
+        data.name,
+        data.phone,
+        data.address,
+        data.total || 0,
+        data.total_paid || 0,
+      );
 
     return {
       success: true,
@@ -53,17 +59,10 @@ export default function registerCustomersIPC() {
     db.prepare(
       `
       UPDATE customers
-      SET name = ?, phone = ?, address = ?, total = ?, total_paid = ?
+      SET name = ?, phone = ?, address = ?
       WHERE id = ?
     `,
-    ).run(
-      data.name,
-      data.phone,
-      data.address,
-      data.total,
-      data.total_paid,
-      data.id,
-    );
+    ).run(data.name, data.phone, data.address, data.id);
 
     return { success: true };
   });

@@ -160,6 +160,7 @@ const TaxList = () => {
             <input
               required
               type="number"
+              min="0"
               step="0.01"
               value={draft.rate}
               onChange={(e) => setDraft({ ...draft, rate: e.target.value })}

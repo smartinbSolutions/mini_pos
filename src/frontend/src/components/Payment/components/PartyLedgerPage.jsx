@@ -20,7 +20,6 @@ const PartyLedgerPage = () => {
 
     return { inTotal, outTotal };
   }, [data]);
-  console.log(data);
 
   const lastBalance = data.length ? data[0].running_balance : 0;
 

@@ -71,6 +71,20 @@ export default function registerPurchaseInvoicesIPC() {
         }
 
         let insertPaymentId = null;
+        const updateSupplier = db.prepare(`
+  UPDATE suppliers
+  SET total = total + ?,
+      total_paid = total_paid + ?
+  WHERE id = ?
+`);
+
+        const supplierPaid = data.status === "paid" ? paidAmount : 0;
+
+        updateSupplier.run(
+          Number(netTotal || 0),
+          Number(supplierPaid || 0),
+          data.supplier_id,
+        );
 
         if (data.status === "paid") {
           if (paidAmount <= 0) {
@@ -114,14 +128,6 @@ export default function registerPurchaseInvoicesIPC() {
             ).lastInsertRowid;
         }
 
-        const updateSupplier = db.prepare(`
-        UPDATE suppliers
-        SET total = total + ?,
-            total_paid = total_paid + ?
-        WHERE id = ?
-      `);
-        const supplierPaid = data.status === "paid" ? paidAmount : 0;
-        updateSupplier.run(netTotal, paidAmount, data.supplier_id);
         return {
           invoiceId,
           paymentId: insertPaymentId,
@@ -135,7 +141,7 @@ export default function registerPurchaseInvoicesIPC() {
     } catch (err) {
       return {
         success: false,
-        error: err.message,
+        error: err,
       };
     }
   });
@@ -208,12 +214,25 @@ export default function registerPurchaseInvoicesIPC() {
       const oldItems = db
         .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
         .all(data.id);
-
+      const oldInvoice = db
+        .prepare(`SELECT * FROM purchase_invoices WHERE id = ?`)
+        .get(data.id);
       const reverseStock = db.prepare(`
       UPDATE products
       SET quantity = quantity - ?
       WHERE id = ?
     `);
+      const oldPaid =
+        oldInvoice.status === "paid" ? Number(oldInvoice.net_total || 0) : 0;
+
+      db.prepare(
+        `
+      UPDATE suppliers
+      SET total = total - ?,
+          total_paid = total_paid - ?
+      WHERE id = ?
+    `,
+      ).run(Number(oldInvoice.net_total || 0), oldPaid, oldInvoice.supplier_id);
 
       for (const item of oldItems) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -268,6 +287,16 @@ export default function registerPurchaseInvoicesIPC() {
 
         addStock.run(quantity, item.product_id);
       }
+      const newPaid = data.status === "paid" ? Number(data.net_total || 0) : 0;
+
+      db.prepare(
+        `
+        UPDATE suppliers
+        SET total = total + ?,
+            total_paid = total_paid + ?
+        WHERE id = ?
+      `,
+      ).run(Number(data.net_total || 0), newPaid, data.supplier_id);
     });
 
     try {

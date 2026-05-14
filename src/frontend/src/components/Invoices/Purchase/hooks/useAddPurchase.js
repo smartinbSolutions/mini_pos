@@ -218,6 +218,8 @@ export default function useAddPurchase() {
       const res = await api.createPurchaseInvoice(payload);
 
       if (!res?.success) {
+        console.error(res);
+
         throw new Error("Failed to create invoice");
       }
 

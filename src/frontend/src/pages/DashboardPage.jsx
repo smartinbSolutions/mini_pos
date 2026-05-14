@@ -27,7 +27,6 @@ export default function Dashboard() {
 
     load();
   }, []);
-  console.log(data);
 
   const formatMoney = (v) =>
     Number(v || 0).toLocaleString(undefined, {
@@ -76,7 +75,7 @@ export default function Dashboard() {
         <h2 className="text-lg font-bold mb-4">Analytics</h2>
 
         <div className="h-64 flex items-center justify-center text-gray-400">
-          Charts will go here (Recharts / Chart.js)
+          😁
         </div>
       </div>
     </div>

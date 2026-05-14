@@ -59,7 +59,7 @@ export default function AddPurchase() {
               placeholder="Select Supplier"
               options={suppliers}
               selectedValue={invoice?.supplier_id}
-              onChange={(e) => setInvoice({ ...invoice, supplier_id: e })}
+              onChange={(e) => setInvoice({ ...invoice, supplier_id: e.id })}
             />
             <input
               type="date"
