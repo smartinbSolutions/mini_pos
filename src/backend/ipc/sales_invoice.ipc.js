@@ -63,8 +63,9 @@ export default function registerSalesInvoiceIPC() {
     if (data.status === "paid") {
       const insertPayment = db.prepare(`
         INSERT INTO payments
-        (type, party_type, party_id, fund_id, amount, note)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (type, party_type, party_id, fund_id, amount, note,
+         currency_code, exchange_rate, amount_fund_currency)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      `);
 
       const updateFund = db.prepare(`
@@ -82,6 +83,9 @@ export default function registerSalesInvoiceIPC() {
         data.fund_id,
         data.paid_amount,
         `Sales Invoice #${invoiceId}`,
+        data.currency_code,
+        data.exchange_rate,
+        data.paymentInfundCurrency,
       );
     }
 

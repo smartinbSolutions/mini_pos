@@ -309,8 +309,6 @@ export default function POSSystem() {
 
                         <input
                           type="number"
-                          min="0"
-                          step="1"
                           value={item.qty}
                           onChange={(event) =>
                             updateQuantity(item.id, event.target.value)

@@ -1,11 +1,12 @@
 import { Plus, Save, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
 
 const emptyForm = {
   name: "",
   latinName: "",
-  costPrice: 0,
-  price: 0,
+  costPrice: "",
+  price: "",
   quantity: 0,
   unit_id: "",
   barcodes: [{ barcode: "" }],
@@ -75,6 +76,15 @@ export default function ProductFormModal({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (Number(form.costPrice) <= 0) {
+      toast.error("Please enter a valid cost price");
+      return;
+    }
+
+    if (Number(form.price) <= 0) {
+      toast.error("Please enter a valid sale price");
+      return;
+    }
     await onSubmit({
       ...form,
       unit_id: form.unit_id ? Number(form.unit_id) : null,
@@ -129,6 +139,7 @@ export default function ProductFormModal({
           <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
             Unit
             <select
+              required
               value={form.unit_id}
               onChange={(event) => updateField("unit_id", event.target.value)}
               disabled={!canUseUnits}
@@ -149,8 +160,6 @@ export default function ProductFormModal({
             Quantity
             <input
               type="number"
-              min="0"
-              step="1"
               value={form.quantity}
               onChange={(event) => updateField("quantity", event.target.value)}
               className="rounded border border-gray-300 px-3 py-2 font-normal"
@@ -160,10 +169,9 @@ export default function ProductFormModal({
           <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
             Cost price
             <input
+              required={true}
               type="number"
-              min="0"
-              step="1"
-              value={form.costPrice}
+              value={form.costPrice || 0}
               onChange={(event) => updateField("costPrice", event.target.value)}
               className="rounded border border-gray-300 px-3 py-2 font-normal"
             />
@@ -172,10 +180,9 @@ export default function ProductFormModal({
           <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
             Sale price
             <input
+              required={true}
               type="number"
-              min="0"
-              step="1"
-              value={form.price}
+              value={form.price || 0}
               onChange={(event) => updateField("price", event.target.value)}
               className="rounded border border-gray-300 px-3 py-2 font-normal"
             />
@@ -244,6 +251,7 @@ export default function ProductFormModal({
           </button>
         </div>
       </form>
+      <ToastContainer />
     </div>
   );
 }

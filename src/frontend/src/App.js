@@ -25,6 +25,7 @@ import ActivationPage from "./renderer/ActivationPage";
 import SalesInvoiceView from "./components/Invoices/Sales/components/SalesInvoiceView";
 import PurchaseInvoiceView from "./components/Invoices/Purchase/components/PurchaseInvoiceView";
 import POSSystem from "./components/PosPoint/components/POSSystem";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
   const [licenseStatus, setLicenseStatus] = useState(null);

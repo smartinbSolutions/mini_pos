@@ -161,7 +161,6 @@ const TaxList = () => {
               required
               type="number"
               min="0"
-              step="0.01"
               value={draft.rate}
               onChange={(e) => setDraft({ ...draft, rate: e.target.value })}
               className="w-full px-3 py-2 rounded-lg border bg-gray-50 text-sm"

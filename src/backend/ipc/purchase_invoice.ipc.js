@@ -114,8 +114,9 @@ export default function registerPurchaseInvoicesIPC() {
             .prepare(
               `
           INSERT INTO payments
-          (type, party_type, party_id, fund_id, amount, note)
-          VALUES (?, ?, ?, ?, ?, ?)
+          (type, party_type, party_id, fund_id, amount, note,
+         currency_code, exchange_rate, amount_fund_currency)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
             )
             .run(
@@ -125,6 +126,9 @@ export default function registerPurchaseInvoicesIPC() {
               data.fund_id || null,
               paidAmount,
               `Purchase Invoice #${invoiceId}`,
+              data.currency_code,
+              data.exchange_rate,
+              data.paymentInfundCurrency,
             ).lastInsertRowid;
         }
 

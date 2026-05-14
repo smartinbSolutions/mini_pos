@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Plus, Trash2, Save, ArrowLeft, Receipt } from "lucide-react";
 import useAddSales from "../hooks/useAddSales";
 import SearchableSelect from "../../../../Global/SearchableSelect";
@@ -25,36 +25,38 @@ export default function AddSales() {
     setStatus,
   } = useAddSales();
 
-  const safeNumber = (v) => (isNaN(Number(v)) ? 0 : Number(v));
+  const toNum = (v) => (isNaN(Number(v)) ? 0 : Number(v));
 
-  const status =
-    Number(invoice.paid_amount || 0) >= Number(netTotal || 0) &&
-    Number(netTotal || 0) > 0
-      ? "paid"
-      : "unpaid";
+  const total = toNum(netTotal);
+  const paid = toNum(invoice.paid_amount);
+  const due = Math.max(total - paid, 0);
+
+  const status = useMemo(() => {
+    if (total === 0) return "unpaid";
+    if (paid >= total) return "paid";
+    if (paid > 0) return "partial";
+    return "unpaid";
+  }, [paid, total]);
+
+  const Input =
+    "border rounded-xl px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-400 outline-none bg-white";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* HEADER */}
-        <div className="flex items-center justify-between bg-white rounded-2xl shadow-sm p-5 border">
+        <div className="flex justify-between items-center bg-white p-5 rounded-2xl border">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-600 text-white p-2 rounded-xl">
-              <Receipt size={20} />
-            </div>
+            <Receipt />
             <div>
-              <h1 className="text-xl font-bold text-gray-800">
-                Create Sales Invoice
-              </h1>
-              <p className="text-sm text-gray-500">
-                Manage invoice items and payments
-              </p>
+              <h1 className="font-bold text-lg">Create Sales Invoice</h1>
+              <p className="text-sm text-gray-500">Manage items & payments</p>
             </div>
           </div>
 
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50"
+            className="flex items-center gap-2 border px-3 py-2 rounded-xl hover:bg-gray-50"
           >
             <ArrowLeft size={16} />
             Back
@@ -63,19 +65,18 @@ export default function AddSales() {
 
         {/* ERROR */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-xl">
+          <div className="bg-red-50 text-red-600 p-3 rounded-xl border">
             {error}
           </div>
         )}
 
-        {/* TOP SECTION */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT - ITEMS */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* LEFT */}
           <div className="lg:col-span-2 space-y-4">
             {/* CUSTOMER + DATE */}
-            <div className="bg-white border rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="bg-white p-4 border rounded-2xl grid md:grid-cols-2 gap-3">
               <select
-                className="border rounded-xl px-3 py-2"
+                className={Input}
                 value={invoice.customer_id || ""}
                 onChange={(e) =>
                   setInvoice((p) => ({
@@ -94,215 +95,204 @@ export default function AddSales() {
 
               <input
                 type="date"
-                className="border rounded-xl px-3 py-2"
+                className={Input}
                 value={invoice.date || ""}
                 onChange={(e) =>
-                  setInvoice((p) => ({ ...p, date: e.target.value }))
+                  setInvoice((p) => ({
+                    ...p,
+                    date: e.target.value,
+                  }))
                 }
               />
             </div>
 
-            {/* ITEMS TABLE */}
+            {/* ITEMS */}
             <div className="bg-white border rounded-2xl overflow-hidden">
-              <div className="p-4 flex justify-between items-center border-b">
-                <h2 className="font-semibold">Invoice Items</h2>
+              <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="font-semibold">Items</h2>
 
                 <button
                   onClick={addItem}
-                  className="flex items-center gap-2 bg-black text-white px-3 py-2 rounded-xl text-sm"
+                  className="bg-black text-white px-3 py-2 rounded-xl flex items-center gap-2"
                 >
                   <Plus size={14} />
                   Add Item
                 </button>
               </div>
 
-              <div className="overflow-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50 text-gray-600">
-                    <tr>
-                      <th className="p-3 text-left">Product</th>
-                      <th className="p-3">Qty</th>
-                      <th className="p-3">Price</th>
-                      <th className="p-3">Total</th>
-                      <th></th>
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th className="p-3 text-left">Product</th>
+                    <th>Qty</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {items.map((item, i) => (
+                    <tr key={i} className="border-t hover:bg-gray-50">
+                      <td className="p-2">
+                        <SearchableSelect
+                          options={products}
+                          selectedValue={item.product_id}
+                          onChange={(e) => updateItem(i, "product_id", e.id)}
+                        />
+                      </td>
+
+                      <td>
+                        <input
+                          type="number"
+                          className="border rounded-xl w-20 text-center"
+                          value={item.quantity || 0}
+                          onChange={(e) =>
+                            updateItem(i, "quantity", e.target.value)
+                          }
+                        />
+                      </td>
+
+                      <td>
+                        <input
+                          type="number"
+                          className="border rounded-xl w-24 text-center"
+                          value={item.price || 0}
+                          onChange={(e) =>
+                            updateItem(i, "price", e.target.value)
+                          }
+                        />
+                      </td>
+
+                      <td className="text-center font-bold">
+                        {toNum(item.total).toFixed(2)}
+                      </td>
+
+                      <td className="text-center">
+                        <button
+                          onClick={() => removeItem(i)}
+                          className="text-red-500 hover:bg-red-50 p-2 rounded-xl"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-
-                  <tbody>
-                    {items.map((item, i) => (
-                      <tr key={i} className="border-t hover:bg-gray-50">
-                        <td className="p-2">
-                          <SearchableSelect
-                            label=""
-                            labelWidth="0"
-                            placeholder="Select Products"
-                            options={products}
-                            selectedValue={item.product_id}
-                            onChange={(e) => updateItem(i, "product_id", e.id)}
-                          />
-                        </td>
-
-                        <td className="p-2">
-                          <input
-                            type="number"
-                            className="border rounded-xl px-2 py-1 w-full text-center"
-                            value={item.quantity || 0}
-                            onChange={(e) =>
-                              updateItem(i, "quantity", e.target.value)
-                            }
-                          />
-                        </td>
-
-                        <td className="p-2">
-                          <input
-                            type="number"
-                            className="border rounded-xl px-2 py-1 w-full text-center"
-                            value={item.price || 0}
-                            onChange={(e) =>
-                              updateItem(i, "price", e.target.value)
-                            }
-                          />
-                        </td>
-
-                        <td className="p-2 text-center font-semibold">
-                          {Number(item.total || 0).toFixed(2)}
-                        </td>
-
-                        <td className="p-2 text-center">
-                          <button
-                            onClick={() => removeItem(i)}
-                            className="text-red-500 hover:bg-red-50 p-2 rounded-xl"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* RIGHT - SUMMARY (STICKY STYLE) */}
+          {/* RIGHT */}
           <div className="space-y-4">
-            <div className="bg-white border rounded-2xl p-5 space-y-4 lg:sticky lg:top-6">
-              {/* SUMMARY */}
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>{subtotal.toFixed(2)}</span>
-                </div>
-
-                {/* <div className="flex justify-between items-center">
-                  <span>Discount</span>
-                  <input
-                    className="border rounded-xl px-2 py-1 w-24 text-right"
-                    value={invoice.discount || 0}
-                    onChange={(e) =>
-                      setInvoice((p) => ({
-                        ...p,
-                        discount: safeNumber(e.target.value),
-                      }))
-                    }
-                  />
-                </div> */}
-
-                <div className="flex justify-between items-center">
-                  <span>Tax</span>
-                  <select
-                    className="border rounded-xl px-2 py-1"
-                    value={invoice.tax_id || ""}
-                    onChange={(e) => {
-                      const t = taxes.find(
-                        (x) => String(x.id) === String(e.target.value),
-                      );
-                      setInvoice((p) => ({
-                        ...p,
-                        tax_id: t?.id || "",
-                        tax_rate: t?.rate || 0,
-                      }));
-                    }}
-                  >
-                    <option value="">Tax</option>
-                    {taxes.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <hr />
-
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total</span>
-                  <span className="text-blue-600">{netTotal.toFixed(2)}</span>
-                </div>
+            {/* TOTAL */}
+            <div className="bg-white p-5 border rounded-2xl">
+              <div className="flex justify-between">
+                <span>Total</span>
+                <span className="font-bold text-blue-600">
+                  {total.toFixed(2)}
+                </span>
               </div>
 
-              <div className="space-y-3 pt-3">
-                <h3 className="font-semibold">Payment</h3>
-
-                <input
-                  type="number"
-                  className="border rounded-xl px-2 py-2 w-full"
-                  value={invoice.paid_amount || 0}
-                  onChange={(e) =>
-                    setInvoice((p) => ({
-                      ...p,
-                      paid_amount: safeNumber(e.target.value),
-                    }))
-                  }
-                  placeholder="Paid Amount"
-                />
-
-                <div className="flex justify-between">
-                  <span>Status</span>
-                  <span
-                    className={
-                      status === "paid"
-                        ? "text-green-600 font-bold"
-                        : "text-red-500 font-bold"
-                    }
-                  >
-                    {status.toUpperCase()}
-                  </span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span>Due</span>
-                  <span className="font-bold text-red-500">
-                    {dueAmount.toFixed(2)}
-                  </span>
-                </div>
-
-                {status === "paid" && (
-                  <SearchableSelect
-                    label=""
-                    labelWidth="0"
-                    placeholder="Select Funds"
-                    options={funds}
-                    selectedValue={invoice.fund_id}
-                    onChange={(e) => {
-                      setInvoice((p) => ({
-                        ...p,
-                        fund_id: e.id,
-                      }));
-                      setStatus("paid");
-                    }}
-                  />
-                )}
+              <div className="flex justify-between mt-2">
+                <span>Subtotal</span>
+                <span>{toNum(subtotal).toFixed(2)}</span>
               </div>
             </div>
 
-            {/* SAVE BUTTON (FLOAT STYLE) */}
+            {/* PAYMENT */}
+            <div className="bg-white p-5 border rounded-2xl space-y-4">
+              {/* STATUS */}
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Payment</span>
+
+                <span
+                  className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                    status === "paid"
+                      ? "bg-green-100 text-green-700"
+                      : status === "partial"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {status.toUpperCase()}
+                </span>
+              </div>
+
+              {/* PAID INPUT */}
+              <input
+                type="number"
+                className={Input + " text-lg font-bold"}
+                value={invoice.paid_amount || ""}
+                max={total}
+                onChange={(e) => {
+                  let v = toNum(e.target.value);
+                  if (v > total) v = total;
+
+                  setInvoice((p) => ({
+                    ...p,
+                    paid_amount: v,
+                  }));
+                }}
+              />
+
+              {/* QUICK BUTTONS */}
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => {
+                    setInvoice((p) => ({
+                      ...p,
+                      paid_amount: 0,
+                    }));
+                  }}
+                  className="border rounded-xl py-2 hover:bg-gray-50"
+                >
+                  Unpaid
+                </button>
+
+                <button
+                  onClick={() => {
+                    setInvoice((p) => ({
+                      ...p,
+                      paid_amount: total,
+                    }));
+                    setStatus("paid");
+                  }}
+                  className="bg-green-600 text-white rounded-xl py-2"
+                >
+                  Full
+                </button>
+              </div>
+
+              {/* DUE */}
+              <div className="flex justify-between font-bold">
+                <span>Due</span>
+                <span className="text-red-500">{due.toFixed(2)}</span>
+              </div>
+
+              {/* FUND */}
+              {paid > 0 && (
+                <SearchableSelect
+                  options={funds}
+                  selectedValue={invoice.fund_id}
+                  onChange={(e) =>
+                    setInvoice((p) => ({
+                      ...p,
+                      fund_id: e.id,
+                      exchange_rate: e.currency_exchangeRate,
+                      currency_code: e.currency_code,
+                    }))
+                  }
+                />
+              )}
+            </div>
+
+            {/* SAVE */}
             <button
               onClick={submit}
               disabled={saving}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl flex items-center justify-center gap-2 font-semibold"
+              className="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700"
             >
-              <Save size={16} />
               {saving ? "Saving..." : "Save Invoice"}
             </button>
           </div>

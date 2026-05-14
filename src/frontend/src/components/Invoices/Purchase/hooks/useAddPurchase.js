@@ -187,6 +187,13 @@ export default function useAddPurchase() {
 
   const dueAmount = Number(netTotal || 0) - Number(invoice.paid_amount || 0);
 
+  const paymentInfundCurrency = useMemo(() => {
+    const payment = subtotal * (invoice.exchange_rate || 1);
+    return payment;
+  }, [subtotal, invoice]);
+
+  console.log(invoice);
+
   const submit = useCallback(async () => {
     if (!api) {
       setError("Electron API not available");
@@ -213,6 +220,7 @@ export default function useAddPurchase() {
         net_total: netTotal,
         items,
         status,
+        paymentInfundCurrency,
       };
 
       const res = await api.createPurchaseInvoice(payload);

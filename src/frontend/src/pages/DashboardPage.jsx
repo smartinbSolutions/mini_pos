@@ -74,9 +74,7 @@ export default function Dashboard() {
       <div className="mt-10 bg-white rounded-xl p-6 shadow">
         <h2 className="text-lg font-bold mb-4">Analytics</h2>
 
-        <div className="h-64 flex items-center justify-center text-gray-400">
-          😁
-        </div>
+        <div className="h-64 flex items-center justify-center text-gray-400"></div>
       </div>
     </div>
   );
