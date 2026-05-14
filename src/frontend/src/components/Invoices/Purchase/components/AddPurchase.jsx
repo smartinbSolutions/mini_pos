@@ -158,7 +158,7 @@ export default function AddPurchase() {
               <span>{subtotal.toFixed(2)}</span>
             </div>
 
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
               <span>Discount</span>
               <input
                 className="border rounded-lg px-2 py-1 w-28 text-right"
@@ -167,7 +167,7 @@ export default function AddPurchase() {
                   setInvoice({ ...invoice, discount: e.target.value })
                 }
               />
-            </div>
+            </div> */}
 
             <div className="flex justify-between items-center">
               <span>Tax</span>

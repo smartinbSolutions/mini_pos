@@ -24,8 +24,10 @@ export default function CheckoutModal({
   const [currencyCode, setCurrencyCode] = useState("");
 
   const [received, setReceived] = useState(
-    (total / toNumber(currencyExchangeRate || 1)).toFixed(2),
+    total * toNumber(currencyExchangeRate || 1),
   );
+  console.log(total * currencyExchangeRate);
+  console.log(total);
 
   const [error, setError] = useState("");
 
@@ -35,11 +37,11 @@ export default function CheckoutModal({
       setCurrencyExchangeRate(funds[0].currency_exchangeRate);
       setCurrencyCode(funds[0]?.currency_code);
     }
-    setReceived((total / toNumber(currencyExchangeRate || 1)).toFixed(2));
+    setReceived(total * toNumber(currencyExchangeRate || 1));
   }, [fundId, funds]);
 
   const convertedTotal = useMemo(() => {
-    return total / toNumber(currencyExchangeRate || 1);
+    return total * toNumber(currencyExchangeRate || 1);
   }, [total, currencyExchangeRate]);
 
   const change = useMemo(
@@ -60,17 +62,19 @@ export default function CheckoutModal({
       return;
     }
 
-    if (received * currencyExchangeRate < total) {
-      setError("Received amount is less than the total.");
-      return;
-    }
+    // if (received * currencyExchangeRate < total) {
+    //   setError("Received amount is less than the total.");
+    //   return;
+    // }
 
     try {
       await onCheckout({
         fundId,
         received: toNumber(received),
         change,
-        paymentInFundExchageRate: convertedTotal,
+        paymentInfundCurrency: convertedTotal,
+        currency_code: currencyCode,
+        exchange_rate: currencyExchangeRate,
       });
       onClose();
     } catch (err) {

@@ -194,7 +194,7 @@ export default function AddSales() {
                   <span>{subtotal.toFixed(2)}</span>
                 </div>
 
-                <div className="flex justify-between items-center">
+                {/* <div className="flex justify-between items-center">
                   <span>Discount</span>
                   <input
                     className="border rounded-xl px-2 py-1 w-24 text-right"
@@ -206,7 +206,7 @@ export default function AddSales() {
                       }))
                     }
                   />
-                </div>
+                </div> */}
 
                 <div className="flex justify-between items-center">
                   <span>Tax</span>

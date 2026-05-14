@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Wallet, Save, X, Receipt, Building2, User } from "lucide-react";
 
 export default function InvoicePaymentModal({
@@ -23,6 +23,8 @@ export default function InvoicePaymentModal({
   const [form, setForm] = useState({
     fund_id: "",
     amount: invoice?.net_total,
+    fund_exchangeRate: 1,
+    currency_code: "",
     note: "",
   });
 
@@ -51,6 +53,9 @@ export default function InvoicePaymentModal({
       setMessage("");
     }
   }, [isOpen, refetch, invoice?.id, remaining, isPurchase]);
+  const paymentInfundCurrency = useMemo(() => {
+    return invoice?.net_total * Number(form.fund_exchangeRate || 1);
+  }, [invoice, form]);
 
   const submit = async () => {
     setLoading(true);
@@ -65,6 +70,9 @@ export default function InvoicePaymentModal({
         amount: Number(invoice.net_total),
         note: form.note,
         invoiceId: invoice.id,
+        paymentInfundCurrency,
+        exchange_rate: form.fund_exchangeRate,
+        currency_code: form.currency_code,
       });
 
       if (!res.success) throw new Error(res.message);
@@ -84,6 +92,7 @@ export default function InvoicePaymentModal({
   useEffect(() => {
     refetchList();
   }, [loading]);
+  console.log(form);
 
   if (!isOpen) return null;
 
@@ -162,7 +171,18 @@ export default function InvoicePaymentModal({
 
             <select
               value={form.fund_id}
-              onChange={(e) => handleChange("fund_id", e.target.value)}
+              onChange={(e) => {
+                const fundId = Number(e.target.value);
+
+                const fund = funds.find((f) => f.id === fundId);
+
+                handleChange("fund_id", fundId);
+                handleChange(
+                  "fund_exchangeRate",
+                  fund?.currency_exchangeRate || 1,
+                );
+                handleChange("currency_code", fund?.currency_code || 1);
+              }}
               className="w-full h-11 rounded-xl border px-3 mt-1"
             >
               <option value="">Select Fund</option>

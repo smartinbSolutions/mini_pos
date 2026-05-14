@@ -30,8 +30,8 @@ export default function registerPaymentIPC() {
           .prepare(
             `
           INSERT INTO payments 
-          (type, party_type, party_id, fund_id, amount, note)
-          VALUES (?, ?, ?, ?, ?, ?)
+          (type, party_type, party_id, fund_id, amount, note, currency_code, exchange_rate, amount_fund_currency)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
@@ -41,6 +41,9 @@ export default function registerPaymentIPC() {
             data.fund_id,
             amount,
             data.note || null,
+            data.currency_code,
+            data.exchange_rate,
+            data.paymentInfundCurrency,
           );
 
         if (data.party_type === "supplier") {
@@ -66,7 +69,7 @@ export default function registerPaymentIPC() {
           SET balance = COALESCE(balance, 0) - ?
           WHERE id = ?
           `,
-          ).run(amount, data.fund_id);
+          ).run(data.paymentInfundCurrency, data.fund_id);
         }
 
         if (data.party_type === "customer") {
@@ -92,11 +95,14 @@ export default function registerPaymentIPC() {
           SET balance = COALESCE(balance, 0) + ?
           WHERE id = ?
           `,
-          ).run(amount, data.fund_id);
+          ).run(data.paymentInfundCurrency, data.fund_id);
         }
 
         if (data.party_type === "other") {
-          const fundAmount = data.type === "income" ? amount : -amount;
+          const fundAmount =
+            data.type === "income"
+              ? data.paymentInfundCurrency
+              : -data.paymentInfundCurrency;
 
           db.prepare(
             `
@@ -168,8 +174,8 @@ export default function registerPaymentIPC() {
 
         SUM(
           CASE
-            WHEN p.type = 'income' THEN p.amount
-            ELSE -p.amount
+            WHEN p.type = 'income' THEN p.amount_fund_currency
+            ELSE -p.amount_fund_currency
           END
         ) OVER (
           ORDER BY p.id ASC
@@ -202,8 +208,8 @@ export default function registerPaymentIPC() {
 
             SUM(
               CASE 
-                WHEN p.type = 'income' THEN p.amount
-                WHEN p.type = 'expense' THEN -p.amount
+                WHEN p.type = 'income' THEN p.amount_fund_currency
+                WHEN p.type = 'expense' THEN -p.amount_fund_currency
                 ELSE 0
               END
             ) OVER (

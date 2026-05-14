@@ -45,6 +45,7 @@ export default function registerFundIPC() {
         f.*,
         c.name as currency_name,
         c.code as currency_code,
+        c.symbol as currency_symbol,
         c.exchangeRate as currency_exchangeRate
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id

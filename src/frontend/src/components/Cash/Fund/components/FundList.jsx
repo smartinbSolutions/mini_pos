@@ -136,7 +136,7 @@ const FundList = () => {
                     <div className="text-right">
                       <div className="text-sm text-gray-400">Balance</div>
                       <div className="text-xl font-semibold text-emerald-600">
-                        {formatNumber(fund.balance || 0)}
+                        {formatNumber(fund.balance || 0)} {fund.currency_symbol}
                       </div>
                     </div>
 

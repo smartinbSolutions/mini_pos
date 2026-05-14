@@ -56,7 +56,6 @@ export default function usePosCheckout() {
       setFunds(
         fundsResult.status === "fulfilled" ? fundsResult.value || [] : [],
       );
-      console.log(currencyResult);
 
       setCurrencies(currencyResult.value[0] || []);
 
@@ -123,7 +122,13 @@ export default function usePosCheckout() {
     [cart],
   );
 
-  const checkout = async ({ fundId, received, paymentInFundExchageRate }) => {
+  const checkout = async ({
+    fundId,
+    received,
+    paymentInfundCurrency,
+    currency_code,
+    exchange_rate,
+  }) => {
     setCheckingOut(true);
 
     try {
@@ -137,6 +142,8 @@ export default function usePosCheckout() {
         received,
         change: received - subtotal,
         customer_id: selectedCustomerId,
+        currency_code,
+        exchange_rate,
       };
 
       const sales = await api.posCheckout({
@@ -146,7 +153,9 @@ export default function usePosCheckout() {
         paid_amount: received,
         net_total: subtotal,
         customer_id: selectedCustomerId,
-        paymentInFundExchageRate,
+        paymentInfundCurrency,
+        currency_code,
+        exchange_rate,
       });
 
       payload.id = sales.invoiceId;

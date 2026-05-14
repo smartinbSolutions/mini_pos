@@ -318,8 +318,8 @@ export default function registerSalesInvoiceIPC() {
 
     const insertPayment = db.prepare(`
     INSERT INTO payments
-    (type, party_type, party_id, fund_id, amount, note)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (type, party_type, party_id, fund_id, amount, note, currency_code, exchange_rate, amount_fund_currency)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
     const updateFund = db.prepare(`
@@ -355,11 +355,14 @@ export default function registerSalesInvoiceIPC() {
         data.customer_id ? "customer" : "walk-in",
         data.customer_id || null,
         data.fund_id,
-        data.paymentInFundExchageRate,
+        data.paid_amount,
         `POS Invoice #${invoiceId}`,
+        data.currency_code,
+        data.exchange_rate,
+        data.paymentInfundCurrency,
       );
 
-      updateFund.run(data.paymentInFundExchageRate, data.fund_id);
+      updateFund.run(data.paymentInfundCurrency, data.fund_id);
 
       return invoiceId;
     });

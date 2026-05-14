@@ -194,7 +194,10 @@ CREATE TABLE IF NOT EXISTS payments (
   party_type TEXT, -- customer / supplier / other
   party_id INTEGER,
   fund_id INTEGER,
-  amount REAL,
+  amount REAL, -- 
+  currency_code TEXT, -- USD / TRY / EUR
+  exchange_rate REAL, -- Exchange rate at time of payment
+  amount_fund_currency REAL, 
   note TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id)

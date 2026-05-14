@@ -1,7 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
 
 const useCurrency = () => {
-  const emptyCurrency = { name: "", latinName: "", code: "", exchangeRate: 1 };
+  const emptyCurrency = {
+    name: "",
+    latinName: "",
+    code: "",
+    exchangeRate: 1,
+    symbol: "",
+  };
 
   const [saving, setSaving] = useState(false);
   const [currencies, setCurrencies] = useState([]);
@@ -161,6 +167,7 @@ const useCurrency = () => {
       latinName: currency.latinName || "",
       code: currency.code || "",
       exchangeRate: currency.exchangeRate || 1,
+      symbol: currency.symbol || "",
     });
   };
 

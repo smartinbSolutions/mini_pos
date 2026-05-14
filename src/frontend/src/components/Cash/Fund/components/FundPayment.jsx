@@ -19,11 +19,11 @@ const FundMovementsPage = () => {
 
   const totalIn = payments
     .filter((p) => p.type === "income")
-    .reduce((acc, item) => acc + Number(item.amount || 0), 0);
+    .reduce((acc, item) => acc + Number(item.amount_fund_currency || 0), 0);
 
   const totalOut = payments
     .filter((p) => p.type === "expense")
-    .reduce((acc, item) => acc + Number(item.amount || 0), 0);
+    .reduce((acc, item) => acc + Number(item.amount_fund_currency || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f6f8fc] to-[#eef2f7] p-6">
@@ -148,7 +148,8 @@ const FundMovementsPage = () => {
                       }`}
                     >
                       {isIn ? "+" : "-"}
-                      {formatNumber(payment.amount)} {fund.currency_code}
+                      {formatNumber(payment.amount_fund_currency)}{" "}
+                      {fund.currency_code}
                     </div>
 
                     {/* RUNNING BALANCE */}
