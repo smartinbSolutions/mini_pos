@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS products (
   costPrice REAL DEFAULT 0,
   price REAL DEFAULT 0,
   quantity REAL DEFAULT 0,
+  logo TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   unit_id INTEGER,
   FOREIGN KEY (unit_id) REFERENCES unit(id)

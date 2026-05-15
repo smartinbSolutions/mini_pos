@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const useFundList = () => {
   const emptyFund = { name: "", currency_id: "", balance: 0 };
@@ -20,7 +21,10 @@ const useFundList = () => {
     ...fund,
     name: String(fund.name || "").trim(),
     currency_id: Number(fund.currency_id),
-    balance: Number(fund.balance || 0),
+    balance: Number(fund.balance / fund.exchange_rate || 0),
+    exchange_rate: fund.exchange_rate,
+    currency_code: fund.currency_code,
+    paymentInfundCurrency: fund.balance,
   });
 
   const validateFund = (fund) => {
@@ -109,7 +113,7 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Fund:", err);
-      setActionError(err?.message || "Failed to create Fund.");
+      toast.error("Failed to create Fund.");
       return false;
     }
   };
@@ -121,7 +125,7 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Fund:", err);
-      setActionError(err?.message || "Failed to update Fund.");
+      toast.error("Failed to update Fund.");
       return false;
     }
   };
@@ -135,7 +139,7 @@ const useFundList = () => {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete Fund:", err);
-      setActionError(err?.message || "Failed to delete Fund.");
+      toast.error("Failed to delete Fund.");
     }
   };
 

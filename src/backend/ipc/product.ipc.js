@@ -36,8 +36,8 @@ export default function registerProductIPC() {
     const result = db
       .prepare(
         `
-      INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id, logo)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
       )
       .run(
@@ -47,6 +47,7 @@ export default function registerProductIPC() {
         data.price,
         data.quantity,
         data.unit_id,
+        data.logo,
       );
 
     return { success: true, id: result.lastInsertRowid };
@@ -56,10 +57,11 @@ export default function registerProductIPC() {
     if (!data.name || !data.unit_id || data.costPrice <= 0 || data.price <= 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
+    console.log(data);
     db.prepare(
       `
       UPDATE products
-      SET name=?, latinName=?, costPrice=?, price=?, quantity=?, unit_id=?
+      SET name=?, latinName=?, costPrice=?, price=?, quantity=?, unit_id=?, logo=?
       WHERE id=?
     `,
     ).run(
@@ -70,6 +72,7 @@ export default function registerProductIPC() {
       data.quantity,
       data.unit_id,
       data.id,
+      data.logo,
     );
 
     return { success: true };

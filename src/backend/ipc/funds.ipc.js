@@ -12,14 +12,15 @@ export default function registerFundIPC() {
       VALUES (?, ?, ?)
     `,
       )
-      .run(data.name, data.currency_id, data.balance || 0);
+      .run(data.name, data.currency_id, data.paymentInfundCurrency || 0);
 
-    if (data.balance !== 0) {
+    if (data.balance !== 0 && data.paymentInfundCurrency !== 0) {
       db.prepare(
         `
         INSERT INTO payments 
-        (type, party_type, party_id, fund_id, amount, note)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (type, party_type, party_id, fund_id, amount, note,
+         currency_code, exchange_rate, amount_fund_currency)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
       ).run(
         data.balance > 0 ? "income" : "expense",
@@ -28,6 +29,9 @@ export default function registerFundIPC() {
         result.lastInsertRowid,
         Math.abs(data.balance),
         "Open Balance",
+        data.currency_code,
+        data.exchange_rate,
+        data.paymentInfundCurrency,
       );
     }
 
@@ -81,10 +85,10 @@ export default function registerFundIPC() {
     db.prepare(
       `
       UPDATE funds
-      SET name = ?, currency_id = ?, balance = ?
+      SET name = ?
       WHERE id = ?
     `,
-    ).run(data.name, data.currency_id, data.balance, data.id);
+    ).run(data.name, data.id);
 
     return { success: true };
   });

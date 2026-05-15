@@ -3,6 +3,7 @@ import useFundList from "../hooks/useFundList";
 import { Edit2, Plus, Save, Trash2, X, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatNumber } from "../../../../Global/FormatNumber";
+import { ToastContainer } from "react-toastify";
 
 const FundList = () => {
   const navigate = useNavigate();
@@ -173,12 +174,12 @@ const FundList = () => {
         {/* RIGHT */}
         <div className="bg-white/80 backdrop-blur border rounded-2xl p-6 shadow-sm h-fit sticky top-6">
           <h3 className="text-lg font-semibold mb-5">Create Fund</h3>
-
+          {/* 
           {actionError && (
             <div className="mb-3 text-sm text-red-600 bg-red-50 border p-2 rounded-lg">
               {actionError}
             </div>
-          )}
+          )} */}
 
           <form onSubmit={submitDraft} className="space-y-4">
             <input
@@ -192,15 +193,22 @@ const FundList = () => {
             <select
               required
               value={draft.currency_id || ""}
-              onChange={(e) =>
+              onChange={(e) => {
+                const selected = currencies.find(
+                  (c) => c.id === Number(e.target.value),
+                );
+
                 setDraft({
                   ...draft,
-                  currency_id: Number(e.target.value),
-                })
-              }
+                  currency_id: selected?.id || "",
+                  currency_code: selected?.code || "",
+                  exchange_rate: selected?.exchangeRate || 1,
+                });
+              }}
               className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm"
             >
               <option value="">Select currency</option>
+
               {currencies.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name} ({c.code})
@@ -231,6 +239,7 @@ const FundList = () => {
           </form>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
