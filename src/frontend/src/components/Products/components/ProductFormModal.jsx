@@ -280,7 +280,6 @@ export default function ProductFormModal({
                       <label className={labelClass}>Quantity</label>
                       <input
                         type="number"
-                        min="0"
                         value={form.quantity}
                         onChange={(event) =>
                           updateField("quantity", event.target.value)
