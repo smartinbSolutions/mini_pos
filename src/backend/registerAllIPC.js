@@ -12,6 +12,7 @@ import registerSuppliersIPC from "./ipc/suppliers.ipc";
 import registerTaxesIPC from "./ipc/taxes.ipc";
 import registerUnitIPC from "./ipc/unit.ipc";
 import registerCompanySettingIPC from "./ipc/company_setting.ipc";
+import registerSerialIPC from "./ipc/serial.ipc";
 
 export default function registerAllIPC() {
   registerCompanySettingIPC();
@@ -23,6 +24,7 @@ export default function registerAllIPC() {
   registerProductIPC();
   registerPurchaseInvoiceItemsIPC();
   registerPurchaseInvoicesIPC();
+  registerSerialIPC();
   registerSalesInvoiceItemsIPC();
   registerSalesInvoiceIPC();
   registerSuppliersIPC();

@@ -26,8 +26,6 @@ export default function CheckoutModal({
   const [received, setReceived] = useState(
     total * toNumber(currencyExchangeRate || 1),
   );
-  console.log(total * currencyExchangeRate);
-  console.log(total);
 
   const [error, setError] = useState("");
 

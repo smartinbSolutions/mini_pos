@@ -105,6 +105,21 @@ contextBridge.exposeInMainWorld("api", {
   posCheckout: (data) => ipcRenderer.invoke("pos-checkout", data),
   printReceipt: (data) => ipcRenderer.invoke("print-receipt", data),
 
+  /* ================= SCALE ================= */
+  listScalePorts: () => ipcRenderer.invoke("scale:list-ports"),
+  connectScale: (options) => ipcRenderer.invoke("scale:connect", options),
+  disconnectScale: () => ipcRenderer.invoke("scale:disconnect"),
+  onScaleData: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("scale:data", listener);
+    return () => ipcRenderer.removeListener("scale:data", listener);
+  },
+  onScaleStatus: (callback) => {
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("scale:status", listener);
+    return () => ipcRenderer.removeListener("scale:status", listener);
+  },
+
   /* ================= SUPPLIERS ================= */
   getSuppliers: () => ipcRenderer.invoke("get-suppliers"),
   getSupplier: (id) => ipcRenderer.invoke("get-supplier", id),

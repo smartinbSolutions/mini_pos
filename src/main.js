@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, session } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 
@@ -10,6 +10,8 @@ import verifyLicenseFile from "./main/license/verifyLicenseFile";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+app.commandLine.appendSwitch("enable-experimental-web-platform-features");
 
 if (started) app.quit();
 
@@ -43,18 +45,18 @@ function createWindow(routePath = "/") {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false,
-      allowRunningInsecureContent: true,
+      enableBlinkFeatures: "Serial",
+      experimentalFeatures: true,
     },
   });
 
   loadRendererRoute(mainWindow, routePath);
-
   mainWindow.webContents.openDevTools();
 }
 
 function registerLicenseIPC() {
   ipcMain.handle("license:status", async () => verifyLicenseFile());
+
   ipcMain.handle("license:activate", async (_event, licenseKey) => {
     const result = await activateLicense(licenseKey);
 
@@ -74,6 +76,27 @@ app.whenReady().then(async () => {
   } catch (error) {
     console.error("Failed to register application IPC handlers", error);
   }
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+    return permission === "serial";
+  });
+
+  session.defaultSession.setDevicePermissionHandler((details) => {
+    return details.deviceType === "serial";
+  });
+
+  session.defaultSession.on(
+    "select-serial-port",
+    (event, portList, _webContents, callback) => {
+      event.preventDefault();
+
+      if (!portList.length) {
+        console.warn("No serial ports were found for the scale.");
+        callback("");
+        return;
+      }
+      callback(portList[0].portId);
+    },
+  );
 
   const licenseStatus = await verifyLicenseFile();
   createWindow(licenseStatus.valid ? "/" : "/activation");

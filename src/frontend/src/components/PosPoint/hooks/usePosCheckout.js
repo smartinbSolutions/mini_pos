@@ -78,25 +78,41 @@ export default function usePosCheckout() {
     refetch();
   }, [refetch]);
 
-  const addToCart = (product) => {
+  const addToCart = (product, quantity = 1, replaceQuantity = false) => {
+    const qty = Math.max(0, toNumber(quantity));
+
+    if (!qty) return;
+
     setCart((current) => {
       const existing = current.find((item) => item.id === product.id);
 
       if (existing) {
         return current.map((item) =>
-          item.id === product.id ? { ...item, qty: item.qty + 1 } : item,
+          item.id === product.id
+            ? {
+                ...item,
+                qty: replaceQuantity ? qty : toNumber(item.qty) + qty,
+              }
+            : item,
         );
       }
 
-      return [...current, { ...product, qty: 1 }];
+      return [
+        ...current,
+        {
+          ...product,
+          qty,
+          product_id: product.product_id || product.id,
+        },
+      ];
     });
   };
 
   const updateQuantity = (productId, nextQuantity) => {
-    const quantity = Math.max(0, toNumber(nextQuantity));
+    const quantity = Math.max(-1, toNumber(nextQuantity));
 
     setCart((current) =>
-      quantity === 0
+      quantity === -1
         ? current.filter((item) => item.id !== productId)
         : current.map((item) =>
             item.id === productId ? { ...item, qty: quantity } : item,

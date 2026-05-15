@@ -5,12 +5,18 @@ import {
   Search,
   ShoppingCart,
   Trash2,
+  Scale,
+  Wallet,
+  Package2,
+  Sparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
 import CheckoutModal from "../components/CheckoutModal";
 import usePosCheckout from "../hooks/usePosCheckout";
 import { formatNumber } from "../../../Global/FormatNumber";
+import useWeight from "../hooks/useWeight";
+
 const money = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -37,12 +43,29 @@ export default function POSSystem() {
     currencies,
   } = usePosCheckout();
 
+  const [currentWeight, setCurrentWeight] = useState(0);
+
+  const {
+    weight,
+    status: scaleStatus,
+    isConnected: isScaleConnected,
+    ports: scalePorts,
+    connect: connectScale,
+    close: disconnectScale,
+  } = useWeight({
+    setCurrentWeight,
+  });
+
+  const activeWeight = Number(currentWeight) > 0 ? Number(currentWeight) : 0;
+
+  const [selectedScalePort, setSelectedScalePort] = useState("");
   const [search, setSearch] = useState("");
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [actionError, setActionError] = useState("");
 
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
+
     if (!term) return products;
 
     return products.filter((product) =>
@@ -75,45 +98,109 @@ export default function POSSystem() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 text-sm font-medium text-zinc-500">
-        Loading POS data...
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <div className="rounded-2xl border border-stone-200 bg-white p-8 shadow-xl shadow-stone-200/70">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-teal-500 border-t-transparent" />
+          <p className="mt-5 text-sm font-semibold text-stone-700">
+            Loading POS System...
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-100 p-4 text-zinc-950">
-      <div className="mx-auto grid h-[calc(100vh-2rem)] min-h-[720px] max-w-[1600px] grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
-        <main className="flex min-w-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
-          <div className="border-b border-zinc-200 px-5 py-4">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  Point of Sale
-                </h1>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Select products, review the cart, and complete payment.
-                </p>
+    <div className="min-h-screen bg-[#f7f3ee] text-stone-900">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px]">
+        <main className="flex min-w-0 flex-col">
+          <div className="sticky top-0 z-20 border-b border-stone-200/80 bg-white/90 shadow-sm shadow-stone-200/50 backdrop-blur-xl">
+            <div className="flex flex-col gap-4 px-4 py-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white shadow-lg shadow-teal-500/20">
+                  <ShoppingCart size={21} strokeWidth={2.6} />
+                </div>
+
+                <div>
+                  <h1 className="text-xl font-black tracking-tight text-stone-950 sm:text-2xl">
+                    POS System
+                  </h1>
+                  <p className="text-xs font-medium text-stone-500">
+                    Products, scale, and checkout in one workspace
+                  </p>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <div className="relative">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex h-11 items-center overflow-hidden rounded-xl border border-stone-200 bg-stone-50">
+                  <div className="flex h-full items-center gap-2 border-r border-stone-200 px-3">
+                    <Scale
+                      size={16}
+                      className={
+                        isScaleConnected ? "text-teal-600" : "text-stone-400"
+                      }
+                    />
+                    <span className="min-w-[96px] text-sm font800 font-bold">
+                      {activeWeight
+                        ? `${formatNumber(weight)} KG`
+                        : scaleStatus}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      isScaleConnected
+                        ? disconnectScale()
+                        : connectScale(selectedScalePort)
+                    }
+                    className={`h-full px-4 text-sm font-bold transition ${
+                      isScaleConnected
+                        ? "text-rose-600 hover:bg-rose-50"
+                        : "text-teal-700 hover:bg-teal-50"
+                    }`}
+                  >
+                    {isScaleConnected ? "Disconnect" : "Connect"}
+                  </button>
+                </div>
+
+                {!isScaleConnected && scalePorts.length > 1 && (
+                  <select
+                    value={selectedScalePort}
+                    onChange={(event) =>
+                      setSelectedScalePort(event.target.value)
+                    }
+                    className="h-11 max-w-[220px] rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                  >
+                    <option value="">Auto COM</option>
+
+                    {scalePorts.map((port) => (
+                      <option key={port.path} value={port.path}>
+                        {[port.path, port.friendlyName || port.manufacturer]
+                          .filter(Boolean)
+                          .join(" - ")}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                <div className="relative w-full sm:w-[320px]">
                   <Search
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                    size={17}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"
                   />
+
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    className="h-10 w-full rounded-md border border-zinc-300 bg-white pl-10 pr-3 text-sm outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 sm:w-80"
-                    placeholder="Search products, unit, code..."
+                    placeholder="Search products..."
+                    className="h-11 w-full rounded-xl border border-stone-200 bg-white pl-10 pr-4 text-sm text-stone-800 outline-none transition placeholder:text-stone-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={refetch}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                  className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:border-teal-200 hover:bg-teal-50"
                 >
                   <RefreshCw size={16} />
                   Refresh
@@ -122,91 +209,143 @@ export default function POSSystem() {
             </div>
 
             {(error || actionError) && (
-              <div className="mt-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                {actionError || error}
+              <div className="px-4 pb-4">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                  {actionError || error}
+                </div>
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-between border-b border-zinc-200 px-5 py-3">
-            <div>
-              <p className="text-sm font-semibold">Products</p>
-              <p className="text-xs text-zinc-500">
-                {filteredProducts.length} item
-                {filteredProducts.length === 1 ? "" : "s"} found
-              </p>
+          <div className="grid gap-3 p-4 md:grid-cols-3">
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Products
+                  </p>
+                  <h2 className="mt-2 text-3xl font-black text-stone-950">
+                    {filteredProducts.length}
+                  </h2>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                  <Package2 size={23} />
+                </div>
+              </div>
             </div>
 
-            <div className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-sm font-semibold text-zinc-700">
-              Cart: {cart.length}
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Cart Items
+                  </p>
+                  <h2 className="mt-2 text-3xl font-black text-stone-950">
+                    {cart.length}
+                  </h2>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
+                  <ShoppingCart size={23} />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                    Total
+                  </p>
+                  <h2 className="mt-2 truncate text-3xl font-black text-stone-950">
+                    {money.format(subtotal)}
+                  </h2>
+                </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  <Wallet size={23} />
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-5">
+          <div className="flex-1 overflow-auto px-4 pb-28 lg:pb-4">
             {filteredProducts.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {filteredProducts.map((product) => (
                   <button
-                    type="button"
                     key={product.id}
+                    type="button"
                     onClick={() => {
-                      addToCart(product);
+                      addToCart(
+                        product,
+                        activeWeight || 1,
+                        Boolean(activeWeight),
+                      );
                       setActionError("");
                     }}
-                    className="group rounded-lg border border-zinc-200 bg-white p-4 text-left transition hover:border-zinc-900 hover:shadow-md"
+                    className="group rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm shadow-stone-200/70 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-100"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-zinc-100 text-zinc-700">
-                        <ShoppingCart size={18} />
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition group-hover:bg-teal-500 group-hover:text-white">
+                        <Package2 size={23} />
                       </div>
 
-                      <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-sm font-bold text-emerald-700">
-                        {formatNumber(product.price || 0)}{" "}
-                        {currencies.symbol || currencies.code}
-                      </span>
+                      <div className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-right">
+                        <p className="text-[11px] font-semibold uppercase text-teal-700/70">
+                          Price
+                        </p>
+                        <h3 className="text-lg font-black text-teal-700">
+                          {formatNumber(product.price || 0)}
+                        </h3>
+                      </div>
                     </div>
 
-                    <h3 className="mt-4 truncate text-sm font-bold text-zinc-950">
-                      {product.name || "Unnamed product"}
-                    </h3>
+                    <div className="mt-4 min-w-0">
+                      <h3 className="truncate text-base font-black text-stone-950">
+                        {product.name || "Unnamed product"}
+                      </h3>
+                      <p className="mt-1 truncate text-sm text-stone-500">
+                        {product.latinName ||
+                          product.unit_name ||
+                          `ID ${product.id}`}
+                      </p>
+                    </div>
 
-                    <p className="mt-1 truncate text-xs text-zinc-500">
-                      {product.latinName ||
-                        product.unit_name ||
-                        `ID ${product.id}`}
-                    </p>
-
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-md bg-zinc-50 px-3 py-2">
-                        <p className="text-zinc-400">Unit</p>
-                        <p className="mt-1 truncate font-semibold text-zinc-700">
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+                        <p className="text-[11px] font-semibold uppercase text-stone-500">
+                          Unit
+                        </p>
+                        <p className="mt-1 truncate text-sm font-bold text-stone-700">
                           {product.unit_name || "No unit"}
                         </p>
                       </div>
 
-                      <div className="rounded-md bg-zinc-50 px-3 py-2">
-                        <p className="text-zinc-400">Stock</p>
-                        <p className="mt-1 truncate font-semibold text-zinc-700">
+                      <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+                        <p className="text-[11px] font-semibold uppercase text-stone-500">
+                          Stock
+                        </p>
+                        <p className="mt-1 truncate text-sm font-bold text-stone-700">
                           {money.format(product.quantity || 0)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-4 flex h-9 items-center justify-center rounded-md bg-zinc-950 text-sm font-semibold text-white transition group-hover:bg-emerald-600">
-                      Add to cart
+                    <div className="mt-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-500 text-sm font-black text-white transition group-hover:bg-teal-600">
+                      <Sparkles size={16} />
+                      Add To Cart
                     </div>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="flex h-full min-h-[360px] items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50">
+              <div className="flex min-h-[460px] items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/70">
                 <div className="text-center">
-                  <Search size={28} className="mx-auto text-zinc-400" />
-                  <h3 className="mt-3 font-bold text-zinc-900">
-                    No products found
-                  </h3>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Try another product name, unit, or code.
+                  <Search size={38} className="mx-auto text-stone-400" />
+                  <h2 className="mt-4 text-xl font-black text-stone-950">
+                    No Products Found
+                  </h2>
+                  <p className="mt-2 text-sm text-stone-500">
+                    Try searching with another keyword.
                   </p>
                 </div>
               </div>
@@ -214,29 +353,30 @@ export default function POSSystem() {
           </div>
         </main>
 
-        <aside className="hidden overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm lg:flex lg:flex-col">
-          <div className="border-b border-zinc-200 p-5">
-            <div className="mb-5 flex items-center justify-between">
+        <aside className="hidden border-l border-stone-200 bg-white lg:flex lg:flex-col">
+          <div className="border-b border-stone-200 p-5">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold">Cart</h2>
-                <p className="text-xs text-zinc-500">
-                  {cart.length} selected item{cart.length === 1 ? "" : "s"}
+                <h2 className="text-xl font-black text-stone-950">
+                  Current Cart
+                </h2>
+                <p className="mt-1 text-sm text-stone-500">
+                  {cart.length} item{cart.length === 1 ? "" : "s"}
                 </p>
               </div>
-
               <button
                 type="button"
                 onClick={clearCart}
                 disabled={!cart.length}
-                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                <Trash2 size={16} />
                 Clear
               </button>
             </div>
 
-            <div className="space-y-1.5 text-sm font-semibold text-zinc-700">
-              <span>Customer</span>
+            <div className="mt-5">
+              <p className="mb-2 text-sm font-bold text-stone-700">Customer</p>
+
               <SearchableSelect
                 label=""
                 labelWidth="0"
@@ -260,12 +400,14 @@ export default function POSSystem() {
 
           <div className="flex-1 overflow-auto p-4">
             {cart.length === 0 ? (
-              <div className="flex h-full min-h-[320px] items-center justify-center text-center">
+              <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 text-center">
                 <div>
-                  <ShoppingCart size={32} className="mx-auto text-zinc-400" />
-                  <h3 className="mt-3 font-bold">Cart is empty</h3>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    Click any product to start a sale.
+                  <ShoppingCart size={46} className="mx-auto text-stone-400" />
+                  <h3 className="mt-4 text-lg font-black text-stone-950">
+                    Cart is Empty
+                  </h3>
+                  <p className="mt-2 text-sm text-stone-500">
+                    Add products to begin checkout.
                   </p>
                 </div>
               </div>
@@ -274,14 +416,14 @@ export default function POSSystem() {
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-lg border border-zinc-200 bg-white p-4"
+                    className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
                   >
-                    <div className="flex justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="truncate text-sm font-bold">
+                        <h3 className="truncate text-sm font-black text-stone-950">
                           {item.name}
                         </h3>
-                        <p className="mt-1 text-xs text-zinc-500">
+                        <p className="mt-1 text-xs text-stone-500">
                           {money.format(item.price || 0)} each
                         </p>
                       </div>
@@ -289,22 +431,20 @@ export default function POSSystem() {
                       <button
                         type="button"
                         onClick={() => removeFromCart(item.id)}
-                        className="rounded-md p-2 text-red-500 transition hover:bg-red-50"
-                        aria-label="Remove item"
+                        className="rounded-xl bg-rose-50 p-2 text-rose-600 transition hover:bg-rose-100"
                       >
-                        <Trash2 size={17} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
 
                     <div className="mt-4 flex items-center justify-between gap-3">
-                      <div className="flex overflow-hidden rounded-md border border-zinc-300 bg-white">
+                      <div className="flex h-10 items-center overflow-hidden rounded-xl border border-stone-200 bg-white">
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, item.qty - 1)}
-                          className="p-2.5 text-zinc-600 transition hover:bg-zinc-100"
-                          aria-label="Decrease quantity"
+                          className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
                         >
-                          <Minus size={15} />
+                          <Minus size={14} />
                         </button>
 
                         <input
@@ -313,25 +453,23 @@ export default function POSSystem() {
                           onChange={(event) =>
                             updateQuantity(item.id, event.target.value)
                           }
-                          className="w-14 border-x border-zinc-300 px-2 text-center text-sm font-bold outline-none"
+                          className="h-10 w-16 bg-transparent text-center text-sm font-black text-stone-950 outline-none"
                         />
 
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, item.qty + 1)}
-                          className="p-2.5 text-zinc-600 transition hover:bg-zinc-100"
-                          aria-label="Increase quantity"
+                          className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
                         >
-                          <Plus size={15} />
+                          <Plus size={14} />
                         </button>
                       </div>
 
                       <div className="text-right">
-                        <p className="text-xs text-zinc-400">Subtotal</p>
-                        <p className="font-bold">
-                          {formatNumber((item.price || 0) * item.qty)}{" "}
-                          {currencies.symbol || currencies.code}
-                        </p>
+                        <p className="text-xs text-stone-500">Subtotal</p>
+                        <h3 className="text-lg font-black text-teal-700">
+                          {formatNumber((item.price || 0) * item.qty)}
+                        </h3>
                       </div>
                     </div>
                   </div>
@@ -339,26 +477,32 @@ export default function POSSystem() {
               </div>
             )}
           </div>
+          <div className="border-t border-stone-200 p-5">
+            <div className="rounded-2xl bg-teal-500 p-5 text-white shadow-xl shadow-teal-200">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-xs font-black uppercase tracking-wide">
+                  Total Amount
+                </span>
 
-          <div className="border-t border-zinc-200 p-5">
-            <div className="mb-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-              <div className="flex items-center justify-between text-sm text-zinc-500">
-                <span>Total amount</span>
-                <span>
+                <span className="text-xs font-black uppercase tracking-wide">
                   {cart.length} item{cart.length === 1 ? "" : "s"}
                 </span>
               </div>
 
-              <div className="mt-2 text-3xl font-bold tracking-tight">
-                {money.format(subtotal)} {currencies.symbol || currencies.code}
-              </div>
+              <h2 className="mt-3 truncate text-4xl font-black tracking-tight">
+                {money.format(subtotal)}
+              </h2>
+
+              <p className="mt-1 text-sm font-semibold opacity-75">
+                {currencies.symbol || currencies.code}
+              </p>
             </div>
 
             <button
               type="button"
               onClick={openCheckout}
               disabled={!cart.length || checkingOut}
-              className="flex h-12 w-full items-center justify-center rounded-md bg-emerald-600 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 flex h-14 w-full items-center justify-center rounded-2xl bg-teal-600 text-lg font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {checkingOut ? "Processing..." : "Checkout"}
             </button>
@@ -366,21 +510,27 @@ export default function POSSystem() {
         </aside>
       </div>
 
-      <div className="fixed inset-x-4 bottom-4 z-40 rounded-lg border border-zinc-200 bg-white p-3 shadow-xl lg:hidden">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold text-zinc-500">Cart total</p>
-            <p className="text-xl font-bold">{money.format(subtotal)}</p>
-          </div>
+      <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
+        <div className="rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-2xl shadow-stone-300/60 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+                Cart Total
+              </p>
+              <h2 className="truncate text-2xl font-black text-stone-950">
+                {money.format(subtotal)}
+              </h2>
+            </div>
 
-          <button
-            type="button"
-            onClick={openCheckout}
-            disabled={!cart.length || checkingOut}
-            className="rounded-md bg-emerald-600 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Checkout ({cart.length})
-          </button>
+            <button
+              type="button"
+              onClick={openCheckout}
+              disabled={!cart.length || checkingOut}
+              className="shrink-0 rounded-xl bg-teal-500 px-5 py-3 text-sm font-black text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Checkout ({cart.length})
+            </button>
+          </div>
         </div>
       </div>
 
