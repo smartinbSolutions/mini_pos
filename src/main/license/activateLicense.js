@@ -4,11 +4,7 @@ import getDeviceHash from "./getDeviceHash";
 import saveLicenseFile from "./saveLicenseFile";
 import verifyLicenseFile from "./verifyLicenseFile";
 
-const DEFAULT_ACTIVATION_URL = "http://localhost:8001/api/licenses/activate";
-
-function getActivationUrl() {
-  return DEFAULT_ACTIVATION_URL;
-}
+const DEFAULT_ACTIVATION_URL = "http://127.0.0.1:8787/api/activateLicense";
 
 export default async function activateLicense(licenseKey) {
   if (!licenseKey?.trim()) {
@@ -39,14 +35,17 @@ export default async function activateLicense(licenseKey) {
 
   const result = await response.json().catch(() => null);
 
-  if (!response.ok || !result?.license) {
+  if (!response.ok || !result?.payload || !result?.signature) {
     return {
       success: false,
-      message: result?.message || "License activation failed",
+      message: result?.message || result?.error || "License activation failed",
     };
   }
 
-  await saveLicenseFile(result.license);
+  await saveLicenseFile({
+    payload: result.payload,
+    signature: result.signature,
+  });
 
   const status = await verifyLicenseFile();
 
