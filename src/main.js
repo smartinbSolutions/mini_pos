@@ -30,7 +30,9 @@ function loadRendererRoute(window, routePath) {
       ? MAIN_WINDOW_VITE_NAME
       : "main_window";
 
-  window.loadFile(path.join(__dirname, `../renderer/${rendererName}/index.html`));
+  window.loadFile(
+    path.join(__dirname, `../renderer/${rendererName}/index.html`),
+  );
 }
 
 function createWindow(routePath = "/") {
@@ -65,8 +67,13 @@ function registerLicenseIPC() {
 }
 
 app.whenReady().then(async () => {
-  registerAllIPC();
   registerLicenseIPC();
+
+  try {
+    registerAllIPC();
+  } catch (error) {
+    console.error("Failed to register application IPC handlers", error);
+  }
 
   const licenseStatus = await verifyLicenseFile();
   createWindow(licenseStatus.valid ? "/" : "/activation");
