@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const toNumber = (value) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const normalizeBarcodes = (barcodes) => {
+const normalizeBarcodes = (barcodes = []) => {
   const seen = new Set();
 
   return barcodes
@@ -24,15 +19,17 @@ const productPayload = (product) => ({
   id: product.id,
   name: String(product.name || "").trim(),
   latinName: String(product.latinName || "").trim(),
-  costPrice: Number(product.costPrice),
-  price: Number(product.price),
-  quantity: Number(product.quantity),
+  costPrice: Number(product.costPrice || 0),
+  price: Number(product.price || 0),
+  quantity: Number(product.quantity || 0),
   unit_id: product.unit_id ? Number(product.unit_id) : null,
+  logo: product.logo || "",
 });
 
 export default function useProductCatalog() {
   const [products, setProducts] = useState([]);
   const [barcodes, setBarcodes] = useState([]);
+  const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -41,14 +38,13 @@ export default function useProductCatalog() {
   const [activeProduct, setActiveProduct] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [units, setUnits] = useState([]);
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [selectDeleteProduct, setSelectDeleteProduct] = useState(null);
 
+  const api = window.api;
+
   const canUseUnits = !unavailableHandlers.includes("units");
   const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
-
-  const api = window.api;
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -59,7 +55,8 @@ export default function useProductCatalog() {
 
     try {
       setLoading(true);
-      const [productsResult, barcodesResult, unitResult] =
+
+      const [productsResult, barcodesResult, unitsResult] =
         await Promise.allSettled([
           api.getProducts(),
           api.getProductBarcodes(),
@@ -70,29 +67,33 @@ export default function useProductCatalog() {
         throw productsResult.reason;
       }
 
+      const nextUnavailableHandlers = [];
+
       if (barcodesResult.status === "rejected") {
         console.error(
           "Failed to load product barcodes:",
           barcodesResult.reason,
         );
-      }
-
-      const nextUnavailableHandlers = [];
-
-      if (barcodesResult.status === "rejected") {
         nextUnavailableHandlers.push("product barcodes");
       }
 
-      setProducts(productsResult.value || []);
+      if (unitsResult.status === "rejected") {
+        console.error("Failed to load units:", unitsResult.reason);
+        nextUnavailableHandlers.push("units");
+      }
 
-      setUnits(unitResult || []);
+      setProducts(productsResult.value || []);
       setBarcodes(
         barcodesResult.status === "fulfilled" ? barcodesResult.value || [] : [],
       );
+      setUnits(
+        unitsResult.status === "fulfilled" ? unitsResult.value || [] : [],
+      );
       setUnavailableHandlers(nextUnavailableHandlers);
+
       setError(
         nextUnavailableHandlers.length
-          ? "Products loaded, but units or barcodes are not available because their IPC handlers are not registered."
+          ? "Products loaded, but some product features are unavailable because IPC handlers are not registered."
           : "",
       );
     } catch (err) {
@@ -119,11 +120,12 @@ export default function useProductCatalog() {
 
   const createProduct = async (form) => {
     setSaving(true);
+
     try {
       const result = await api.createProduct(productPayload(form));
       const productId = result?.id;
 
-      for (const barcode of normalizeBarcodes(form.barcodes || [])) {
+      for (const barcode of normalizeBarcodes(form.barcodes)) {
         await api.createProductBarcode({
           barcode: barcode.barcode,
           product_id: productId,
@@ -132,8 +134,6 @@ export default function useProductCatalog() {
 
       await refetch();
       return result;
-    } catch (e) {
-      console.log(e);
     } finally {
       setSaving(false);
     }
@@ -141,10 +141,11 @@ export default function useProductCatalog() {
 
   const updateProduct = async (form) => {
     setSaving(true);
+
     try {
       await api.updateProduct(productPayload(form));
 
-      const nextBarcodes = normalizeBarcodes(form.barcodes || []);
+      const nextBarcodes = normalizeBarcodes(form.barcodes);
       const existingBarcodes = barcodesByProduct[form.id] || [];
       const nextIds = new Set(
         nextBarcodes.filter((b) => b.id).map((b) => b.id),
@@ -179,13 +180,11 @@ export default function useProductCatalog() {
 
   const deleteProduct = async (product) => {
     setSaving(true);
+
     try {
-      const res = await api.deleteProduct(product.id);
+      await api.deleteProduct(product.id);
       await refetch();
       setActionError("");
-    } catch (e) {
-      console.log("error", e);
-      setActionError(e.message);
     } finally {
       setSaving(false);
     }
@@ -197,6 +196,7 @@ export default function useProductCatalog() {
 
     return products.filter((product) => {
       const productBarcodes = barcodesByProduct[product.id] || [];
+
       return [
         product.name,
         product.latinName,
@@ -228,6 +228,7 @@ export default function useProductCatalog() {
       } else {
         await createProduct(form);
       }
+
       setIsFormOpen(false);
       setActiveProduct(null);
       setActionError("");
@@ -238,14 +239,11 @@ export default function useProductCatalog() {
   };
 
   const handleDeleteProduct = async (product) => {
-    // const confirmed = window.confirm(`Delete product "${product.name}"?`);
-    // if (!confirmed) return;
-
     try {
       await deleteProduct(product);
-      setActionError("");
       setOpenDeleteModel(false);
       setSelectDeleteProduct(null);
+      setActionError("");
     } catch (err) {
       console.error("Failed to delete product:", err);
       setActionError(
@@ -255,35 +253,47 @@ export default function useProductCatalog() {
     }
   };
 
+  const handleLogo = async (file) => {
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+    });
+
+    return window.api.saveLogo({
+      base64,
+      name: `${Date.now()}-${file.name}`,
+    });
+  };
+
   return {
     products,
     barcodes,
     barcodesByProduct,
+    units,
     loading,
     saving,
     error,
     unavailableHandlers,
-    refetch,
-    createProduct,
-    updateProduct,
-    deleteProduct,
-    search,
-    setSearch,
-    openCreate,
-    actionError,
-    filteredProducts,
-    openEdit,
-    handleDeleteProduct,
-    isFormOpen,
-    activeProduct,
     canManageBarcodes,
     canUseUnits,
+    search,
+    setSearch,
+    filteredProducts,
+    refetch,
+    openCreate,
+    openEdit,
+    isFormOpen,
     setIsFormOpen,
+    activeProduct,
     submitProduct,
-    units,
+    actionError,
     openDeleteModel,
     setOpenDeleteModel,
-    setSelectDeleteProduct,
     selectDeleteProduct,
+    setSelectDeleteProduct,
+    handleDeleteProduct,
+    handleLogo,
   };
 }

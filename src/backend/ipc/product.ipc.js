@@ -57,7 +57,6 @@ export default function registerProductIPC() {
     if (!data.name || !data.unit_id || data.costPrice <= 0 || data.price <= 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
-    console.log(data);
     db.prepare(
       `
       UPDATE products
@@ -71,8 +70,8 @@ export default function registerProductIPC() {
       data.price,
       data.quantity,
       data.unit_id,
-      data.id,
       data.logo,
+      data.id,
     );
 
     return { success: true };

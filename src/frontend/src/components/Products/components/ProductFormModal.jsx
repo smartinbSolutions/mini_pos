@@ -1,4 +1,14 @@
-import { Plus, Save, Trash2, X } from "lucide-react";
+import {
+  Plus,
+  Save,
+  Trash2,
+  X,
+  Package,
+  DollarSign,
+  Barcode,
+  ImagePlus,
+  Boxes,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 
@@ -9,6 +19,7 @@ const emptyForm = {
   price: "",
   quantity: 0,
   unit_id: "",
+  logo: "",
   barcodes: [{ barcode: "" }],
 };
 
@@ -21,6 +32,7 @@ export default function ProductFormModal({
   saving,
   onClose,
   onSubmit,
+  handleLogo,
 }) {
   const [form, setForm] = useState(emptyForm);
   const isEditing = Boolean(product);
@@ -35,15 +47,20 @@ export default function ProductFormModal({
         price: Number(product.price ?? 0),
         quantity: Number(product.quantity ?? 0),
         unit_id: product.unit_id ? Number(product.unit_id) : "",
-        barcodes: barcodes.length ? barcodes : [{ barcode: "" }],
+        logo: product.logo || "",
+        barcodes: barcodes?.length > 0 ? barcodes : [{ barcode: "" }],
       });
     } else {
       setForm(emptyForm);
     }
-  }, [barcodes, product]);
+  }, [product, barcodes]);
+  console.log(form);
 
   const updateField = (field, value) => {
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
   };
 
   const updateBarcode = (index, value) => {
@@ -74,8 +91,33 @@ export default function ProductFormModal({
     }));
   };
 
+  const uploadLogo = async (event) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const savedPath = await handleLogo(file);
+
+      setForm((current) => ({
+        ...current,
+        logo: savedPath,
+      }));
+
+      toast.success("Image uploaded successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload image");
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (!form.name.trim()) {
+      toast.error("Please enter product name");
+      return;
+    }
+
     if (Number(form.costPrice) <= 0) {
       toast.error("Please enter a valid cost price");
       return;
@@ -85,173 +127,309 @@ export default function ProductFormModal({
       toast.error("Please enter a valid sale price");
       return;
     }
+
     await onSubmit({
       ...form,
+      quantity: Number(form.quantity || 0),
+      costPrice: Number(form.costPrice || 0),
+      price: Number(form.price || 0),
       unit_id: form.unit_id ? Number(form.unit_id) : null,
+      barcodes: form.barcodes.filter((item) => item.barcode.trim()),
     });
   };
 
+  const inputClass =
+    "h-10 w-full rounded-md border border-zinc-300 bg-white px-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-500";
+
+  const labelClass = "text-sm font-semibold text-zinc-700";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-3xl rounded-lg bg-white shadow-xl"
-      >
-        <div className="flex items-center justify-between border-b px-5 py-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              {isEditing ? "Edit product" : "Add product"}
-            </h2>
-            <p className="text-sm text-gray-500">
-              Product, unit, inventory, price, and barcode details.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded p-2 text-gray-500 hover:bg-gray-100"
-            aria-label="Close product form"
-          >
-            <X size={18} />
-          </button>
-        </div>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/60 p-4 backdrop-blur-sm">
+        <form
+          onSubmit={handleSubmit}
+          className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
+        >
+          <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-zinc-950 text-white">
+                <Package size={19} />
+              </div>
 
-        <div className="grid gap-4 px-5 py-5 sm:grid-cols-2">
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Name
-            <input
-              required
-              value={form.name}
-              onChange={(event) => updateField("name", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 font-normal"
-            />
-          </label>
+              <div>
+                <h2 className="text-xl font-bold tracking-tight text-zinc-950">
+                  {isEditing ? "Edit Product" : "Create Product"}
+                </h2>
+                <p className="mt-0.5 text-sm text-zinc-500">
+                  Manage product details, pricing, image, and barcodes.
+                </p>
+              </div>
+            </div>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Latin name
-            <input
-              value={form.latinName}
-              onChange={(event) => updateField("latinName", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 font-normal"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Unit
-            <select
-              required
-              value={form.unit_id}
-              onChange={(event) => updateField("unit_id", event.target.value)}
-              disabled={!canUseUnits}
-              className="rounded border border-gray-300 px-3 py-2 font-normal"
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900"
+              aria-label="Close"
             >
-              <option value="">
-                {canUseUnits ? "No unit" : "Units unavailable"}
-              </option>
-              {units?.value?.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name} {unit.code ? `(${unit.code})` : ""}
-                </option>
-              ))}
-            </select>
-          </label>
+              <X size={19} />
+            </button>
+          </div>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Quantity
-            <input
-              type="number"
-              value={form.quantity}
-              onChange={(event) => updateField("quantity", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 font-normal"
-            />
-          </label>
+          <div className="flex-1 overflow-y-auto">
+            <div className="grid gap-6 p-6 lg:grid-cols-[1fr_320px]">
+              <main className="space-y-6">
+                <section>
+                  <div className="mb-4 flex items-center gap-2">
+                    <Package size={18} className="text-zinc-500" />
+                    <h3 className="font-bold text-zinc-950">
+                      Product Information
+                    </h3>
+                  </div>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Cost price
-            <input
-              required={true}
-              type="number"
-              value={form.costPrice || 0}
-              onChange={(event) => updateField("costPrice", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 font-normal"
-            />
-          </label>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>Product Name</label>
+                      <input
+                        required
+                        value={form.name}
+                        onChange={(event) =>
+                          updateField("name", event.target.value)
+                        }
+                        placeholder="Enter product name"
+                        className={inputClass}
+                      />
+                    </div>
 
-          <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
-            Sale price
-            <input
-              required={true}
-              type="number"
-              value={form.price || 0}
-              onChange={(event) => updateField("price", event.target.value)}
-              className="rounded border border-gray-300 px-3 py-2 font-normal"
-            />
-          </label>
-        </div>
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>Latin Name</label>
+                      <input
+                        value={form.latinName}
+                        onChange={(event) =>
+                          updateField("latinName", event.target.value)
+                        }
+                        placeholder="Optional"
+                        className={inputClass}
+                      />
+                    </div>
 
-        {canManageBarcodes ? (
-          <div className="border-t px-5 py-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-900">Barcodes</h3>
-              <button
-                type="button"
-                onClick={addBarcode}
-                className="inline-flex items-center gap-2 rounded bg-gray-900 px-3 py-2 text-sm text-white hover:bg-gray-800"
-              >
-                <Plus size={16} />
-                Add barcode
-              </button>
-            </div>
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>Quantity</label>
+                      <div className="relative">
+                        <Boxes
+                          size={17}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                        />
+                        <input
+                          type="number"
+                          min="0"
+                          value={form.quantity}
+                          onChange={(event) =>
+                            updateField("quantity", event.target.value)
+                          }
+                          className={`${inputClass} pl-9`}
+                        />
+                      </div>
+                    </div>
 
-            <div className="grid gap-2">
-              {form.barcodes.map((barcode, index) => (
-                <div key={barcode.id || index} className="flex gap-2">
-                  <input
-                    value={barcode.barcode}
-                    onChange={(event) =>
-                      updateBarcode(index, event.target.value)
-                    }
-                    className="flex-1 rounded border border-gray-300 px-3 py-2"
-                    placeholder="Barcode"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeBarcode(index)}
-                    className="rounded border border-gray-300 p-2 text-gray-600 hover:bg-gray-100"
-                    aria-label="Remove barcode"
-                  >
-                    <Trash2 size={17} />
-                  </button>
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>Unit</label>
+                      <select
+                        value={form.unit_id}
+                        onChange={(event) =>
+                          updateField("unit_id", event.target.value)
+                        }
+                        disabled={!canUseUnits}
+                        className={inputClass}
+                      >
+                        <option value="">
+                          {canUseUnits ? "Select unit" : "Units unavailable"}
+                        </option>
+
+                        {units?.map((unit) => (
+                          <option key={unit.id} value={unit.id}>
+                            {unit.name} {unit.code ? `(${unit.code})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="border-t border-zinc-200 pt-6">
+                  <div className="mb-4 flex items-center gap-2">
+                    <DollarSign size={18} className="text-zinc-500" />
+                    <h3 className="font-bold text-zinc-950">Pricing</h3>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>Cost Price</label>
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={form.costPrice}
+                        onChange={(event) =>
+                          updateField("costPrice", event.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>Sale Price</label>
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={form.price}
+                        onChange={(event) =>
+                          updateField("price", event.target.value)
+                        }
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {canManageBarcodes && (
+                  <section className="border-t border-zinc-200 pt-6">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Barcode size={18} className="text-zinc-500" />
+                        <h3 className="font-bold text-zinc-950">Barcodes</h3>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={addBarcode}
+                        className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-zinc-300 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                      >
+                        <Plus size={15} />
+                        Add
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {form.barcodes.map((barcode, index) => (
+                        <div
+                          key={barcode.id || index}
+                          className="grid grid-cols-[1fr_auto] gap-3"
+                        >
+                          <input
+                            value={barcode.barcode}
+                            onChange={(event) =>
+                              updateBarcode(index, event.target.value)
+                            }
+                            placeholder="Enter barcode"
+                            className={inputClass}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => removeBarcode(index)}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-red-600 transition hover:bg-red-50"
+                            aria-label="Remove barcode"
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {!canManageBarcodes && (
+                  <section className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Barcode editing is unavailable until the product barcode IPC
+                    handler is registered.
+                  </section>
+                )}
+              </main>
+
+              <aside>
+                <div className="sticky top-6 space-y-4">
+                  <div>
+                    <div className="mb-4 flex items-center gap-2">
+                      <ImagePlus size={18} className="text-zinc-500" />
+                      <h3 className="font-bold text-zinc-950">Product Image</h3>
+                    </div>
+
+                    <label className="flex aspect-square cursor-pointer flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed border-zinc-300 bg-zinc-50 transition hover:border-zinc-500 hover:bg-zinc-100">
+                      {form.logo ? (
+                        <img
+                          src={form.logo}
+                          alt="Product"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="px-6 text-center">
+                          <ImagePlus
+                            size={38}
+                            className="mx-auto text-zinc-400"
+                          />
+                          <p className="mt-3 text-sm font-semibold text-zinc-700">
+                            Upload image
+                          </p>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            PNG, JPG, or WEBP
+                          </p>
+                        </div>
+                      )}
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={uploadLogo}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+                    <p className="text-sm font-semibold text-zinc-900">
+                      Product Status
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {isEditing
+                        ? "Changes will update the existing product."
+                        : "A new product will be added to inventory."}
+                    </p>
+                  </div>
                 </div>
-              ))}
+              </aside>
             </div>
           </div>
-        ) : (
-          <div className="border-t px-5 py-5 text-sm text-gray-500">
-            Barcode editing is unavailable until the product barcode IPC handler
-            is registered.
-          </div>
-        )}
 
-        <div className="flex justify-end gap-3 border-t bg-gray-50 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border border-gray-300 px-4 py-2 text-gray-700 hover:bg-white"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Save size={17} />
-            {saving ? "Saving..." : "Save"}
-          </button>
-        </div>
-      </form>
-      <ToastContainer />
-    </div>
+          <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="inline-flex h-10 items-center justify-center rounded-md border border-zinc-300 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-emerald-600 px-5 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save size={16} />
+              {saving
+                ? "Saving..."
+                : isEditing
+                  ? "Update Product"
+                  : "Create Product"}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <ToastContainer position="top-right" />
+    </>
   );
 }

@@ -41,6 +41,8 @@ export default function ProductList() {
     setOpenDeleteModel,
     setSelectDeleteProduct,
     selectDeleteProduct,
+    handleLogo,
+    logo,
   } = catalog;
 
   if (loading) {
@@ -217,6 +219,8 @@ export default function ProductList() {
           saving={saving}
           onClose={() => setIsFormOpen(false)}
           onSubmit={submitProduct}
+          handleLogo={handleLogo}
+          logo={logo}
         />
       )}
 
