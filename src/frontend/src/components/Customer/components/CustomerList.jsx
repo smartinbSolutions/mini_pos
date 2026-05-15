@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Eye, Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
 import useCustomerList from "../hooks/useCustomerList";
+import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 
 export const CustomerList = () => {
   const {
@@ -19,6 +20,7 @@ export const CustomerList = () => {
     actionError,
     navigate,
   } = useCustomerList();
+  const { money } = usePrimaryCurrency();
 
   const [search, setSearch] = useState("");
   const pageClass =
@@ -175,14 +177,14 @@ export const CustomerList = () => {
                       <div className="flex justify-between">
                         <span className="text-gray-500">Sales</span>
                         <span className="font-medium text-gray-800">
-                          {sales}
+                          {money(sales)}
                         </span>
                       </div>
 
                       <div className="flex justify-between">
                         <span className="text-gray-500">Paid</span>
                         <span className="font-medium text-green-600">
-                          {paid}
+                          {money(paid)}
                         </span>
                       </div>
 
@@ -195,7 +197,7 @@ export const CustomerList = () => {
                             balance > 0 ? "text-red-500" : "text-green-600"
                           }`}
                         >
-                          {balance}
+                          {money(balance)}
                         </span>
                       </div>
                     </div>

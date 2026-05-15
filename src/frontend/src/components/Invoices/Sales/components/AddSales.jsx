@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
-import { Plus, Trash2, Save, ArrowLeft, Receipt } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Plus, Trash2, Save, ArrowLeft, Receipt, HandCoins } from "lucide-react";
 import useAddSales from "../hooks/useAddSales";
 import SearchableSelect from "../../../../Global/SearchableSelect";
+import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
 export default function AddSales() {
   const {
@@ -19,11 +20,11 @@ export default function AddSales() {
     saving,
     error,
     navigate,
-    taxes,
     funds,
-    dueAmount,
     setStatus,
   } = useAddSales();
+  const [paymentChoice, setPaymentChoice] = useState(null);
+  const { money } = usePrimaryCurrency();
 
   const toNum = (v) => (isNaN(Number(v)) ? 0 : Number(v));
 
@@ -38,176 +39,190 @@ export default function AddSales() {
     return "unpaid";
   }, [paid, total]);
 
-  const Input =
-    "border rounded-xl px-3 py-2 text-sm w-full focus:ring-2 focus:ring-blue-400 outline-none bg-white";
+  const inputClass =
+    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100";
+  const panelClass =
+    "rounded-[28px] border border-white/80 bg-white/85 p-5 shadow-[0_18px_60px_rgba(70,99,255,0.10)]";
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* HEADER */}
-        <div className="flex justify-between items-center bg-white p-5 rounded-2xl border">
-          <div className="flex items-center gap-3">
-            <Receipt />
+    <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="flex flex-col gap-4 rounded-[32px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-4">
+            <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#4663ff] text-white shadow-lg shadow-[#4663ff]/20">
+              <Receipt size={24} />
+            </span>
             <div>
-              <h1 className="font-bold text-lg">Create Sales Invoice</h1>
-              <p className="text-sm text-gray-500">Manage items & payments</p>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+                Sales
+              </p>
+              <h1 className="text-3xl font-black text-slate-950">
+                Create Sales Invoice
+              </h1>
+              <p className="text-sm text-slate-500">Manage items and payments</p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 border px-3 py-2 rounded-xl hover:bg-gray-50"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
           >
             <ArrowLeft size={16} />
             Back
           </button>
-        </div>
+        </section>
 
-        {/* ERROR */}
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-xl border">
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {error}
           </div>
         )}
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* LEFT */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* CUSTOMER + DATE */}
-            <div className="bg-white p-4 border rounded-2xl grid md:grid-cols-2 gap-3">
-              <select
-                className={Input}
-                value={invoice.customer_id || ""}
-                onChange={(e) =>
-                  setInvoice((p) => ({
-                    ...p,
-                    customer_id: e.target.value,
-                  }))
-                }
-              >
-                <option value="">Select Customer</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          <main className="space-y-6">
+            <section className={panelClass}>
+              <div className="mb-4 grid gap-3 md:grid-cols-2">
+                <select
+                  className={inputClass}
+                  value={invoice.customer_id || ""}
+                  onChange={(e) =>
+                    setInvoice((p) => ({
+                      ...p,
+                      customer_id: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">Select Customer</option>
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
 
-              <input
-                type="date"
-                className={Input}
-                value={invoice.date || ""}
-                onChange={(e) =>
-                  setInvoice((p) => ({
-                    ...p,
-                    date: e.target.value,
-                  }))
-                }
-              />
-            </div>
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={invoice.date || ""}
+                  onChange={(e) =>
+                    setInvoice((p) => ({
+                      ...p,
+                      date: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </section>
 
-            {/* ITEMS */}
-            <div className="bg-white border rounded-2xl overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="font-semibold">Items</h2>
+            <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
+              <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
+                <div>
+                  <h2 className="text-lg font-black text-slate-950">Items</h2>
+                  <p className="text-sm text-slate-500">Products on this invoice</p>
+                </div>
 
                 <button
+                  type="button"
                   onClick={addItem}
-                  className="bg-black text-white px-3 py-2 rounded-xl flex items-center gap-2"
+                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20"
                 >
                   <Plus size={14} />
                   Add Item
                 </button>
               </div>
 
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-gray-600">
-                  <tr>
-                    <th className="p-3 text-left">Product</th>
-                    <th>Qty</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {items.map((item, i) => (
-                    <tr key={i} className="border-t hover:bg-gray-50">
-                      <td className="p-2">
-                        <SearchableSelect
-                          options={products}
-                          selectedValue={item.product_id}
-                          onChange={(e) => updateItem(i, "product_id", e.id)}
-                        />
-                      </td>
-
-                      <td>
-                        <input
-                          type="number"
-                          className="border rounded-xl w-20 text-center"
-                          value={item.quantity || 0}
-                          onChange={(e) =>
-                            updateItem(i, "quantity", e.target.value)
-                          }
-                        />
-                      </td>
-
-                      <td>
-                        <input
-                          type="number"
-                          className="border rounded-xl w-24 text-center"
-                          value={item.price || 0}
-                          onChange={(e) =>
-                            updateItem(i, "price", e.target.value)
-                          }
-                        />
-                      </td>
-
-                      <td className="text-center font-bold">
-                        {toNum(item.total).toFixed(2)}
-                      </td>
-
-                      <td className="text-center">
-                        <button
-                          onClick={() => removeItem(i)}
-                          className="text-red-500 hover:bg-red-50 p-2 rounded-xl"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="p-3 text-left">Product</th>
+                      <th className="p-3">Qty</th>
+                      <th className="p-3">Price</th>
+                      <th className="p-3">Total</th>
+                      <th className="p-3"></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                  </thead>
 
-          {/* RIGHT */}
-          <div className="space-y-4">
-            {/* TOTAL */}
-            <div className="bg-white p-5 border rounded-2xl">
-              <div className="flex justify-between">
-                <span>Total</span>
-                <span className="font-bold text-blue-600">
-                  {total.toFixed(2)}
+                  <tbody className="divide-y divide-[#e5ebff]">
+                    {items.map((item, i) => (
+                      <tr key={i} className="transition hover:bg-[#f8faff]">
+                        <td className="p-2">
+                          <SearchableSelect
+                            options={products}
+                            selectedValue={item.product_id}
+                            onChange={(e) => updateItem(i, "product_id", e.id)}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="number"
+                            className={`${inputClass} mx-auto w-24 text-center`}
+                            value={item.quantity || 0}
+                            onChange={(e) =>
+                              updateItem(i, "quantity", e.target.value)
+                            }
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="number"
+                            className={`${inputClass} mx-auto w-28 text-center`}
+                            value={item.price || 0}
+                            onChange={(e) =>
+                              updateItem(i, "price", e.target.value)
+                            }
+                          />
+                        </td>
+                        <td className="p-2 text-center font-black text-slate-950">
+                          {money(item.total)}
+                        </td>
+                        <td className="p-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeItem(i)}
+                            className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </main>
+
+          <aside className="space-y-4">
+            <section className={panelClass}>
+              <div className="mb-4 flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
+                  <HandCoins size={19} />
                 </span>
+                <div>
+                  <h3 className="font-black text-slate-950">Totals</h3>
+                  <p className="text-sm text-slate-500">Invoice summary</p>
+                </div>
               </div>
 
-              <div className="flex justify-between mt-2">
-                <span>Subtotal</span>
-                <span>{toNum(subtotal).toFixed(2)}</span>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Subtotal</span>
+                  <span className="font-bold">{money(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-xl font-black">
+                  <span>Total</span>
+                  <span className="text-[#4663ff]">{money(total)}</span>
+                </div>
               </div>
-            </div>
+            </section>
 
-            {/* PAYMENT */}
-            <div className="bg-white p-5 border rounded-2xl space-y-4">
-              {/* STATUS */}
-              <div className="flex justify-between items-center">
-                <span className="font-bold">Payment</span>
-
+            <section className={`${panelClass} space-y-4`}>
+              <div className="flex items-center justify-between">
+                <span className="font-black text-slate-950">Payment</span>
                 <span
-                  className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                  className={`rounded-xl px-3 py-1 text-xs font-black ${
                     status === "paid"
                       ? "bg-green-100 text-green-700"
                       : status === "partial"
@@ -219,59 +234,65 @@ export default function AddSales() {
                 </span>
               </div>
 
-              {/* PAID INPUT */}
-              <input
-                disabled
-                type="number"
-                className={Input + " text-lg font-bold"}
-                value={invoice.paid_amount || ""}
-                max={total}
-                onChange={(e) => {
-                  let v = toNum(e.target.value);
-                  if (v > total) v = total;
+              <div className="rounded-2xl border border-[#e5ebff] bg-[#f8faff] p-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Amount to pay</span>
+                  <span className="font-black text-slate-950">
+                    {money(total)}
+                  </span>
+                </div>
+                <div className="mt-2 flex justify-between text-sm">
+                  <span className="text-slate-500">Recorded payment</span>
+                  <span className="font-black text-[#4663ff]">
+                    {money(paid)}
+                  </span>
+                </div>
+              </div>
 
-                  setInvoice((p) => ({
-                    ...p,
-                    paid_amount: v,
-                  }));
-                }}
-              />
-
-              {/* QUICK BUTTONS */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
+                  type="button"
                   onClick={() => {
+                    setPaymentChoice("unpaid");
                     setInvoice((p) => ({
                       ...p,
                       paid_amount: 0,
                     }));
                   }}
-                  className="border rounded-xl py-2 hover:bg-gray-50"
+                  className={`rounded-2xl border py-2 text-sm font-bold transition ${
+                    paymentChoice === "unpaid"
+                      ? "border-red-200 bg-red-50 text-red-600"
+                      : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff]"
+                  }`}
                 >
-                  Unpaid
+                  No payment now
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => {
+                    setPaymentChoice("paid");
                     setInvoice((p) => ({
                       ...p,
                       paid_amount: total,
                     }));
                     setStatus("paid");
                   }}
-                  className="bg-green-600 text-white rounded-xl py-2"
+                  className={`rounded-2xl border py-2 text-sm font-bold transition ${
+                    paymentChoice === "paid"
+                      ? "border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
+                      : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff]"
+                  }`}
                 >
-                  Full
+                  Pay in full
                 </button>
               </div>
 
-              {/* DUE */}
-              <div className="flex justify-between font-bold">
+              <div className="flex justify-between font-black">
                 <span>Due</span>
-                <span className="text-red-500">{due.toFixed(2)}</span>
+                <span className="text-red-500">{money(due)}</span>
               </div>
 
-              {/* FUND */}
               {paid > 0 && (
                 <SearchableSelect
                   options={funds}
@@ -286,17 +307,18 @@ export default function AddSales() {
                   }
                 />
               )}
-            </div>
+            </section>
 
-            {/* SAVE */}
             <button
+              type="button"
               onClick={submit}
               disabled={saving}
-              className="w-full bg-blue-600 text-white py-3 rounded-2xl font-bold hover:bg-blue-700"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 hover:bg-[#3854e8] disabled:opacity-60"
             >
+              <Save size={16} />
               {saving ? "Saving..." : "Save Invoice"}
             </button>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

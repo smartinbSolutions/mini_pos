@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Printer, ArrowLeft } from "lucide-react";
+import { Printer, ArrowLeft, Receipt } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
-export default function SalesInvoiceView() {
+export default function PurchaseInvoiceView() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { money } = usePrimaryCurrency();
 
   useEffect(() => {
     let cancelled = false;
@@ -15,7 +17,6 @@ export default function SalesInvoiceView() {
     const loadInvoice = async () => {
       try {
         setLoading(true);
-
         const data = await window.api.getPurchaseInvoiceById(id);
 
         if (!cancelled) {
@@ -45,18 +46,10 @@ export default function SalesInvoiceView() {
     window.print();
   };
 
-  const formatMoney = (value) =>
-    Number(value || 0).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   const formatDate = (value) => {
     if (!value) return "-";
-
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "-";
-
     return date.toLocaleDateString();
   };
 
@@ -65,7 +58,11 @@ export default function SalesInvoiceView() {
   const isPaid = status === "paid";
 
   if (loading) {
-    return <div className="p-6 text-gray-500">Loading invoice...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
+        Loading invoice...
+      </div>
+    );
   }
 
   if (!invoice) {
@@ -73,107 +70,133 @@ export default function SalesInvoiceView() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen print:bg-white">
-      <div className="print:hidden flex justify-between items-center mb-6">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-gray-600 hover:text-black"
-        >
-          <ArrowLeft size={18} />
-          Back
-        </button>
+    <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900 print:bg-white">
+      <div className="mx-auto max-w-5xl">
+        <div className="print:hidden mb-6 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 hover:bg-[#eef3ff]"
+          >
+            <ArrowLeft size={18} />
+            Back
+          </button>
 
-        {/* <button
-          type="button"
-          onClick={printInvoice}
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg"
-        >
-          <Printer size={18} />
-          Print
-        </button> */}
-      </div>
-
-      <div className="bg-white shadow rounded-xl p-6 print:shadow-none print:rounded-none">
-        <div className="flex justify-between gap-6 mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">Invoice #{invoice.id}</h1>
-            <p className="text-gray-500">Date: {formatDate(invoice.date)}</p>
-          </div>
-
-          <div className="text-right">
-            <p className="font-semibold">{invoice.supplier_name || "-"}</p>
-            <p className="text-gray-500">Supplier</p>
-
-            <span
-              className={`inline-block mt-2 px-3 py-1 rounded-full text-sm ${
-                isPaid
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-600"
-              }`}
-            >
-              {isPaid ? "PAID" : status.toUpperCase()}
-            </span>
-          </div>
+          {/* <button
+            type="button"
+            onClick={printInvoice}
+            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20"
+          >
+            <Printer size={18} />
+            Print
+          </button> */}
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-3 text-left">Product</th>
-                <th className="p-3 text-center">Price</th>
-                <th className="p-3 text-center">Qty</th>
-                <th className="p-3 text-center">Tax</th>
-                <th className="p-3 text-center">Total</th>
-              </tr>
-            </thead>
+        <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(70,99,255,0.14)] print:rounded-none print:border-none print:shadow-none">
+          <div className="grid gap-6 bg-[#f8faff] p-7 md:grid-cols-[1fr_auto]">
+            <div className="flex items-center gap-4">
+              <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#4663ff] text-white">
+                <Receipt size={24} />
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+                  Purchase Invoice
+                </p>
+                <h1 className="text-3xl font-black text-slate-950">
+                  Invoice #{invoice.id}
+                </h1>
+                <p className="text-sm text-slate-500">
+                  Date: {formatDate(invoice.date)}
+                </p>
+              </div>
+            </div>
 
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td className="p-3 text-center text-gray-500" colSpan={5}>
-                    No items found
-                  </td>
-                </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id} className="border-t">
-                    <td className="p-3">
-                      {item.product_name || item.name || "-"}
-                    </td>
-                    <td className="p-3 text-center">
-                      {formatMoney(item.price)}
-                    </td>
-                    <td className="p-3 text-center">
-                      {Number(item.quantity || 0)}
-                    </td>
-                    <td className="p-3 text-center">
-                      {Number(item.tax || 0)}%
-                    </td>
-                    <td className="p-3 text-center font-semibold">
-                      {formatMoney(item.total)}
-                    </td>
+            <div className="text-left md:text-right">
+              <p className="text-lg font-black text-slate-950">
+                {invoice.supplier_name || "-"}
+              </p>
+              <p className="text-sm text-slate-500">Supplier</p>
+              <span
+                className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-black ${
+                  isPaid
+                    ? "bg-green-100 text-green-700"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {isPaid ? "PAID" : status.toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-7">
+            <div className="overflow-x-auto rounded-2xl border border-[#e5ebff]">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="p-3 text-left">Product</th>
+                    <th className="p-3 text-center">Price</th>
+                    <th className="p-3 text-center">Qty</th>
+                    <th className="p-3 text-center">Tax</th>
+                    <th className="p-3 text-center">Total</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
 
-        <div className="flex justify-end mt-6">
-          <div className="w-80 max-w-full space-y-2">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>{formatMoney(invoice.subtotal)}</span>
+                <tbody className="divide-y divide-[#e5ebff]">
+                  {items.length === 0 ? (
+                    <tr>
+                      <td
+                        className="p-5 text-center text-slate-500"
+                        colSpan={5}
+                      >
+                        No items found
+                      </td>
+                    </tr>
+                  ) : (
+                    items.map((item) => (
+                      <tr key={item.id}>
+                        <td className="p-3 font-bold text-slate-900">
+                          {item.product_name || item.name || "-"}
+                        </td>
+                        <td className="p-3 text-center">
+                          {money(item.price)}
+                        </td>
+                        <td className="p-3 text-center">
+                          {Number(item.quantity || 0)}
+                        </td>
+                        <td className="p-3 text-center">
+                          {Number(item.tax || 0)}%
+                        </td>
+                        <td className="p-3 text-center font-black">
+                          {money(item.total)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-            <div className="flex justify-between">
-              <span>Tax</span>
-              <span>{formatMoney(invoice.net_total - invoice.subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-lg font-bold border-t pt-2">
-              <span>Total</span>
-              <span>{formatMoney(invoice.net_total)}</span>
+
+            <div className="mt-6 flex justify-end">
+              <div className="w-80 max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Subtotal</span>
+                  <span className="font-bold">
+                    {money(invoice.subtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Tax</span>
+                  <span>
+                    {money(invoice.net_total - invoice.subtotal)}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl font-black">
+                  <span>Total</span>
+                  <span className="text-[#4663ff]">
+                    {money(invoice.net_total)}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

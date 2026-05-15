@@ -16,11 +16,7 @@ import CheckoutModal from "../components/CheckoutModal";
 import usePosCheckout from "../hooks/usePosCheckout";
 import { formatNumber } from "../../../Global/FormatNumber";
 import useWeight from "../hooks/useWeight";
-
-const money = new Intl.NumberFormat("en-US", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 
 export default function POSSystem() {
   const [currentWeight, setCurrentWeight] = useState(0);
@@ -53,8 +49,8 @@ export default function POSSystem() {
     removeFromCart,
     clearCart,
     checkout,
-    currencies,
   } = usePosCheckout({ weight });
+  const { money } = usePrimaryCurrency();
 
   const activeWeight = Number(currentWeight) > 0 ? Number(currentWeight) : 0;
 
@@ -257,7 +253,7 @@ export default function POSSystem() {
                     Total
                   </p>
                   <h2 className="mt-2 truncate text-3xl font-black text-stone-950">
-                    {money.format(subtotal)}
+                    {money(subtotal)}
                   </h2>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
@@ -294,7 +290,7 @@ export default function POSSystem() {
                           Price
                         </p>
                         <h3 className="text-lg font-black text-teal-700">
-                          {formatNumber(product.price || 0)}
+                          {money(product.price || 0)}
                         </h3>
                       </div>
                     </div>
@@ -325,7 +321,7 @@ export default function POSSystem() {
                           Stock
                         </p>
                         <p className="mt-1 truncate text-sm font-bold text-stone-700">
-                          {money.format(product.quantity || 0)}
+                          {formatNumber(product.quantity || 0, 2)}
                         </p>
                       </div>
                     </div>
@@ -424,7 +420,7 @@ export default function POSSystem() {
                           {item.name}
                         </h3>
                         <p className="mt-1 text-xs text-stone-500">
-                          {money.format(item.price || 0)} each
+                          {money(item.price || 0)} each
                         </p>
                       </div>
 
@@ -468,7 +464,7 @@ export default function POSSystem() {
                       <div className="text-right">
                         <p className="text-xs text-stone-500">Subtotal</p>
                         <h3 className="text-lg font-black text-teal-700">
-                          {formatNumber((item.price || 0) * item.qty)}
+                          {money((item.price || 0) * item.qty)}
                         </h3>
                       </div>
                     </div>
@@ -490,12 +486,8 @@ export default function POSSystem() {
               </div>
 
               <h2 className="mt-3 truncate text-4xl font-black tracking-tight">
-                {money.format(subtotal)}
+                {money(subtotal)}
               </h2>
-
-              <p className="mt-1 text-sm font-semibold opacity-75">
-                {currencies.symbol || currencies.code}
-              </p>
             </div>
 
             <button
@@ -518,7 +510,7 @@ export default function POSSystem() {
                 Cart Total
               </p>
               <h2 className="truncate text-2xl font-black text-stone-950">
-                {money.format(subtotal)}
+                {money(subtotal)}
               </h2>
             </div>
 

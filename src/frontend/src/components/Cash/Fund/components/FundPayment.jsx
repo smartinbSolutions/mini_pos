@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 import useGetPayments from "../../../Payment/hooks/usePartyLedger";
-import { formatNumber } from "../../../../Global/FormatNumber";
+import { formatMoney } from "../../../../Global/FormatNumber";
 
 const FundMovementsPage = () => {
   const { id } = useParams();
@@ -16,6 +16,7 @@ const FundMovementsPage = () => {
   const { payments, loading, fund } = useGetPayments(id);
 
   const finalBalance = payments[0]?.running_balance || 0;
+  const fundCurrency = fund || {};
 
   const totalIn = payments
     .filter((p) => p.type === "income")
@@ -45,7 +46,7 @@ const FundMovementsPage = () => {
               </div>
 
               <div className="text-2xl font-bold text-green-600 mt-1">
-                {formatNumber(totalIn)} {fund.currency_code}
+                {formatMoney(totalIn, fundCurrency)}
               </div>
             </div>
 
@@ -55,7 +56,7 @@ const FundMovementsPage = () => {
               </div>
 
               <div className="text-2xl font-bold text-red-500 mt-1">
-                {formatNumber(totalOut)} {fund.currency_code}
+                {formatMoney(totalOut, fundCurrency)}
               </div>
             </div>
 
@@ -65,7 +66,7 @@ const FundMovementsPage = () => {
               </div>
 
               <div className="text-2xl font-bold mt-1">
-                {formatNumber(finalBalance)} {fund.currency_code}
+                {formatMoney(finalBalance, fundCurrency)}
               </div>
             </div>
           </div>
@@ -148,8 +149,7 @@ const FundMovementsPage = () => {
                       }`}
                     >
                       {isIn ? "+" : "-"}
-                      {formatNumber(payment.amount_fund_currency)}{" "}
-                      {fund.currency_code}
+                      {formatMoney(payment.amount_fund_currency, fundCurrency)}
                     </div>
 
                     {/* RUNNING BALANCE */}
@@ -158,8 +158,7 @@ const FundMovementsPage = () => {
                         <Wallet size={15} className="text-gray-500" />
 
                         <span className="font-semibold text-gray-800">
-                          {formatNumber(payment.running_balance)}{" "}
-                          {fund.currency_code}
+                          {formatMoney(payment.running_balance, fundCurrency)}
                         </span>
                       </div>
                     </div>

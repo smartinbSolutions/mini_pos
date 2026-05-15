@@ -1,6 +1,7 @@
 import { CheckCircle2, CreditCard, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatNumber } from "../../../Global/FormatNumber";
+import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 
 const money = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
@@ -22,6 +23,7 @@ export default function CheckoutModal({
   const [fundId, setFundId] = useState("");
   const [currencyExchangeRate, setCurrencyExchangeRate] = useState("");
   const [currencyCode, setCurrencyCode] = useState("");
+  const { money } = usePrimaryCurrency();
 
   const [received, setReceived] = useState(
     total * toNumber(currencyExchangeRate || 1),
@@ -119,9 +121,7 @@ export default function CheckoutModal({
               <span>Current sale</span>
             </div>
 
-            <div className="mt-2 text-4xl font-black">
-              {money.format(total)}
-            </div>
+            <div className="mt-2 text-4xl font-black">{money(total)}</div>
           </div>
 
           <div className="mb-6">
@@ -186,7 +186,7 @@ export default function CheckoutModal({
                       <div className="mt-5 rounded-2xl bg-white/80 px-3 py-2">
                         <p className="text-xs text-slate-400">Balance</p>
                         <p className="mt-0.5 font-black text-slate-800">
-                          {money.format(fund.balance || 0)}
+                          {money(fund.balance || 0, fund)}
                         </p>
                       </div>
                     </button>
@@ -222,7 +222,11 @@ export default function CheckoutModal({
               <div className="rounded-2xl bg-white p-4">
                 <p className="text-xs font-bold text-slate-400">Change</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
-                  {money.format(change)} {currencyCode}
+                  {money(
+                    change,
+                    { currency_code: currencyCode },
+                    { showCode: true },
+                  )}
                 </p>
               </div>
 
@@ -233,7 +237,11 @@ export default function CheckoutModal({
                     remaining > 0 ? "text-red-600" : "text-slate-900"
                   }`}
                 >
-                  {money.format(remaining)} {currencyCode}
+                  {money(
+                    remaining,
+                    { currency_code: currencyCode },
+                    { showCode: true },
+                  )}
                 </p>
               </div>
             </div>

@@ -3,18 +3,14 @@ import { useParams } from "react-router-dom";
 import { ArrowDownLeft, ArrowUpRight, Wallet, RefreshCcw } from "lucide-react";
 
 import usePartyLedger from "../hooks/useGetPartyPayments";
-import { formatNumber } from "../../../Global/FormatNumber";
-
-const format = (n) =>
-  Number(n || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+import { formatMoney, formatNumber } from "../../../Global/FormatNumber";
+import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 
 const PartyLedgerPage = () => {
   const { id, type } = useParams();
 
   const { data = [], loading } = usePartyLedger(id, type);
+  const { money } = usePrimaryCurrency();
 
   const pageTotals = useMemo(() => {
     let inTotal = 0;
@@ -50,7 +46,7 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-green-600 font-medium">TOTAL IN</div>
 
             <div className="text-lg font-bold text-green-700">
-              {formatNumber(pageTotals.inTotal)}
+              {formatMoney(pageTotals.inTotal, data[0])}
             </div>
           </div>
 
@@ -58,7 +54,7 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-red-500 font-medium">TOTAL OUT</div>
 
             <div className="text-lg font-bold text-red-600">
-              {formatNumber(pageTotals.outTotal)}
+              {formatMoney(pageTotals.outTotal, data[0])}
             </div>
           </div>
 
@@ -66,7 +62,7 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-gray-500 font-medium">BALANCE</div>
 
             <div className="text-lg font-bold text-gray-800">
-              {formatNumber(lastBalance)}
+              {formatMoney(lastBalance, data[0])}
             </div>
           </div>
         </div>
@@ -128,16 +124,16 @@ const PartyLedgerPage = () => {
                   >
                     {isIn ? "+" : "-"}
 
-                    {formatNumber(p.amount_fund_currency)}
+                    {formatMoney(p.amount_fund_currency, p)}
                   </div>
 
                   <div className="text-sm text-gray-500 mt-1">
-                    {formatNumber(p.amount)} {p.currency_code} Base Currency
+                    {money(p.amount)}
                   </div>
 
                   <div className="text-xs text-gray-400 flex items-center gap-1 justify-end mt-2">
                     <Wallet size={12} />
-                    Balance: {formatNumber(p.running_balance)}
+                    Balance: {formatMoney(p.running_balance, p)}
                   </div>
                 </div>
               </div>

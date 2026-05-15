@@ -1,7 +1,8 @@
 import React from "react";
-import { Plus, Trash2, Save } from "lucide-react";
+import { Plus, Trash2, Save, Receipt } from "lucide-react";
 import useUpdateSales from "../hooks/useUpdateSales";
 import SearchableSelect from "../../../../Global/SearchableSelect";
+import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
 export default function UpdateSales() {
   const {
@@ -21,147 +22,169 @@ export default function UpdateSales() {
     subtotal,
     netTotal,
   } = useUpdateSales();
+  const { money } = usePrimaryCurrency();
+
+  const inputClass =
+    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+  const panelClass =
+    "rounded-[28px] border border-white/80 bg-white/85 p-5 shadow-[0_18px_60px_rgba(70,99,255,0.10)]";
 
   if (loading) {
-    return <div className="p-10 text-center">Loading...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
+        Loading...
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-6">
-          <h1 className="text-2xl font-bold">Sales Invoice</h1>
-          <p className="text-sm text-blue-100">
-            Create and manage customer sales
-          </p>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {error && (
-            <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-              {error}
+    <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="rounded-[32px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
+          <div className="flex items-center gap-4">
+            <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#4663ff] text-white shadow-lg shadow-[#4663ff]/20">
+              <Receipt size={24} />
+            </span>
+            <div>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+                Sales
+              </p>
+              <h1 className="text-3xl font-black text-slate-950">
+                Edit Sales Invoice
+              </h1>
+              <p className="text-sm text-slate-500">
+                Update customer, items, and totals
+              </p>
             </div>
-          )}
-
-          {/* SUPPLIER + DATE */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SearchableSelect
-              placeholder="Select Customer"
-              options={customers}
-              selectedValue={invoice?.customer_id}
-              onChange={(e) => setInvoice({ ...invoice, customer_id: e })}
-            />
-            <input
-              type="date"
-              className="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 outline-none"
-              value={invoice.date}
-              onChange={(e) => setInvoice({ ...invoice, date: e.target.value })}
-            />
           </div>
+        </section>
 
-          {/* ITEMS */}
-          <div className="border rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-gray-700">
-                <tr>
-                  <th className="p-3 text-left">Product</th>
-                  <th className="p-3">Qty</th>
-                  <th className="p-3">Price</th>
-                  <th className="p-3">Total</th>
-                  <th className="p-3"></th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={index} className="border-t hover:bg-gray-50">
-                    <td className="p-2">
-                      <SearchableSelect
-                        placeholder="Select Products"
-                        options={products}
-                        selectedValue={item.product_id}
-                        onChange={(e) => updateItem(index, "product_id", e.id)}
-                      />
-                    </td>
-
-                    <td className="p-2 w-24">
-                      <input
-                        type="number"
-                        className="border rounded px-2 py-1 w-full"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateItem(index, "quantity", e.target.value)
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2 w-28">
-                      <input
-                        type="number"
-                        className="border rounded px-2 py-1 w-full"
-                        value={item.price}
-                        onChange={(e) =>
-                          updateItem(index, "price", e.target.value)
-                        }
-                      />
-                    </td>
-
-                    <td className="p-2 text-center font-semibold">
-                      {item.total.toFixed(2)}
-                    </td>
-
-                    <td className="p-2 text-center">
-                      <button
-                        onClick={() => removeItem(index)}
-                        className="text-red-500 hover:bg-red-50 p-2 rounded"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {error}
           </div>
+        )}
 
-          <div className="flex justify-between items-center">
-            <button
-              onClick={addItem}
-              className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-black"
-            >
-              <Plus size={16} />
-              Add Item
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div></div>
-
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span className="font-medium">{subtotal.toFixed(2)}</span>
-              </div>
-
-              {/* <div className="flex justify-between items-center">
-                <span>Discount</span>
+        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+          <main className="space-y-6">
+            <section className={panelClass}>
+              <div className="grid gap-3 md:grid-cols-2">
+                <SearchableSelect
+                  placeholder="Select Customer"
+                  options={customers}
+                  selectedValue={invoice?.customer_id}
+                  onChange={(e) => setInvoice({ ...invoice, customer_id: e })}
+                />
                 <input
-                  type="number"
-                  className="border rounded px-2 py-1 w-24 text-right"
-                  value={invoice.discount}
+                  type="date"
+                  className={inputClass}
+                  value={invoice.date}
                   onChange={(e) =>
-                    setInvoice({ ...invoice, discount: e.target.value })
+                    setInvoice({ ...invoice, date: e.target.value })
                   }
                 />
-              </div> */}
+              </div>
+            </section>
 
-              <div className="flex justify-between items-center">
-                <span>Tax</span>
+            <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
+              <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
+                <div>
+                  <h2 className="text-lg font-black text-slate-950">Items</h2>
+                  <p className="text-sm text-slate-500">
+                    Products on this invoice
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20"
+                >
+                  <Plus size={16} />
+                  Add Item
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="p-3 text-left">Product</th>
+                      <th className="p-3">Qty</th>
+                      <th className="p-3">Price</th>
+                      <th className="p-3">Total</th>
+                      <th className="p-3"></th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-[#e5ebff]">
+                    {items.map((item, index) => (
+                      <tr key={index} className="transition hover:bg-[#f8faff]">
+                        <td className="p-2">
+                          <SearchableSelect
+                            placeholder="Select Products"
+                            options={products}
+                            selectedValue={item.product_id}
+                            onChange={(e) =>
+                              updateItem(index, "product_id", e.id)
+                            }
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="number"
+                            className={`${inputClass} mx-auto w-24 text-center`}
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateItem(index, "quantity", e.target.value)
+                            }
+                          />
+                        </td>
+                        <td className="p-2">
+                          <input
+                            type="number"
+                            className={`${inputClass} mx-auto w-28 text-center`}
+                            value={item.price}
+                            onChange={(e) =>
+                              updateItem(index, "price", e.target.value)
+                            }
+                          />
+                        </td>
+                        <td className="p-2 text-center font-black">
+                          {money(item.total)}
+                        </td>
+                        <td className="p-2 text-center">
+                          <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </main>
+
+          <aside className="space-y-4">
+            <section className={`${panelClass} space-y-4`}>
+              <h3 className="font-black text-slate-950">Summary</h3>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Subtotal</span>
+                <span className="font-bold">{money(subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Tax</span>
                 <select
-                  className="border rounded px-2 py-1 w-[120px]"
+                  className={`${inputClass} w-36`}
                   value={invoice.tax_id}
                   onChange={(e) => {
-                    const selected = taxes.find((t) => t.id == e.target.value);
+                    const selected = taxes.find(
+                      (t) => t.id === Number(e.target.value),
+                    );
 
                     setInvoice({
                       ...invoice,
@@ -178,24 +201,22 @@ export default function UpdateSales() {
                   ))}
                 </select>
               </div>
-
-              <div className="border-t pt-3 flex justify-between font-bold text-lg">
+              <div className="flex justify-between border-t border-[#e5ebff] pt-4 text-xl font-black">
                 <span>Total</span>
-                <span className="text-blue-600">{netTotal.toFixed(2)}</span>
+                <span className="text-[#4663ff]">{money(netTotal)}</span>
               </div>
-            </div>
-          </div>
+            </section>
 
-          <div className="flex justify-end">
             <button
+              type="button"
               onClick={submit}
               disabled={saving}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 hover:bg-[#3854e8] disabled:opacity-60"
             >
               <Save size={16} />
               {saving ? "Saving..." : "Save Invoice"}
             </button>
-          </div>
+          </aside>
         </div>
       </div>
     </div>

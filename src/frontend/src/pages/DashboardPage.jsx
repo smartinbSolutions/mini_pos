@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import usePrimaryCurrency from "../Global/usePrimaryCurrency";
 
 export default function Dashboard() {
   const [data, setData] = useState({
@@ -9,6 +10,7 @@ export default function Dashboard() {
   });
 
   const [loading, setLoading] = useState(true);
+  const { money } = usePrimaryCurrency();
 
   useEffect(() => {
     const load = async () => {
@@ -28,12 +30,6 @@ export default function Dashboard() {
     load();
   }, []);
 
-  const formatMoney = (v) =>
-    Number(v || 0).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-
   const Card = ({ title, value, color }) => (
     <div className="bg-gray-900 text-white p-6 rounded-xl shadow-lg flex flex-col gap-2">
       <span className="text-gray-400 text-sm">{title}</span>
@@ -51,7 +47,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card
           title="Total Sales"
-          value={`$${formatMoney(data.totalSales)}`}
+          value={money(data.totalSales)}
           color="text-green-400"
         />
 
@@ -65,7 +61,7 @@ export default function Dashboard() {
 
         <Card
           title="Profit"
-          value={`$${formatMoney(data.profit)}`}
+          value={money(data.profit)}
           color="text-purple-400"
         />
       </div>

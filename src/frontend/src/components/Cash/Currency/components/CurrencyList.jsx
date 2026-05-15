@@ -18,6 +18,7 @@ const CurrencyList = () => {
     submitDraft,
     actionError,
   } = useCurrency();
+
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =

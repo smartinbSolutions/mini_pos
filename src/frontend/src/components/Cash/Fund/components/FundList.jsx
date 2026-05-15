@@ -2,7 +2,7 @@ import React from "react";
 import useFundList from "../hooks/useFundList";
 import { Edit2, Plus, Save, Trash2, X, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { formatNumber } from "../../../../Global/FormatNumber";
+import { formatMoney } from "../../../../Global/FormatNumber";
 import { ToastContainer } from "react-toastify";
 
 const FundList = () => {
@@ -149,7 +149,7 @@ const FundList = () => {
                     <div className="text-right">
                       <div className="text-sm text-slate-400">Balance</div>
                       <div className="text-xl font-black text-emerald-600">
-                        {formatNumber(fund.balance || 0)} {fund.currency_symbol}
+                        {formatMoney(fund.balance || 0, fund)}
                       </div>
                     </div>
 

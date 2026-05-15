@@ -140,9 +140,12 @@ export default function registerPaymentIPC() {
         `
       SELECT 
         p.*,
-        f.name AS fund_name
+        f.name AS fund_name,
+        c.code AS fund_currency_code,
+        c.symbol AS fund_currency_symbol
       FROM payments p
       LEFT JOIN funds f ON f.id = p.fund_id
+      LEFT JOIN currencies c ON c.id = f.currency_id
       ORDER BY p.id DESC
     `,
       )
@@ -155,9 +158,12 @@ export default function registerPaymentIPC() {
         `
       SELECT 
         p.*,
-        f.name AS fund_name
+        f.name AS fund_name,
+        c.code AS fund_currency_code,
+        c.symbol AS fund_currency_symbol
       FROM payments p
       LEFT JOIN funds f ON f.id = p.fund_id
+      LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE p.id = ?
     `,
       )
@@ -171,6 +177,8 @@ export default function registerPaymentIPC() {
       SELECT 
         p.*,
         f.name AS fund_name,
+        c.code AS fund_currency_code,
+        c.symbol AS fund_currency_symbol,
 
         SUM(
           CASE
@@ -185,6 +193,8 @@ export default function registerPaymentIPC() {
 
       LEFT JOIN funds f 
         ON f.id = p.fund_id
+      LEFT JOIN currencies c 
+        ON c.id = f.currency_id
 
       WHERE p.fund_id = ?
 
@@ -205,6 +215,8 @@ export default function registerPaymentIPC() {
           SELECT 
             p.*,
             f.name AS fund_name,
+            c.code AS fund_currency_code,
+            c.symbol AS fund_currency_symbol,
 
             SUM(
               CASE 
@@ -219,6 +231,7 @@ export default function registerPaymentIPC() {
 
           FROM payments p
           LEFT JOIN funds f ON f.id = p.fund_id
+          LEFT JOIN currencies c ON c.id = f.currency_id
           WHERE p.party_id = ?
             AND p.party_type = ?
         )

@@ -2,18 +2,106 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/raleway/v37/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVvaooCP.ttf")
+    format("truetype");
+  unicode-range: U+0000-002F, U+003A-10FFFF;
+}
+
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/raleway/v37/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVvoooCP.ttf")
+    format("truetype");
+  unicode-range: U+0000-002F, U+003A-10FFFF;
+}
+
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/raleway/v37/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVsEpYCP.ttf")
+    format("truetype");
+  unicode-range: U+0000-002F, U+003A-10FFFF;
+}
+
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/raleway/v37/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVs9pYCP.ttf")
+    format("truetype");
+  unicode-range: U+0000-002F, U+003A-10FFFF;
+}
+
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/raleway/v37/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVtapYCP.ttf")
+    format("truetype");
+  unicode-range: U+0000-002F, U+003A-10FFFF;
+}
+
+@font-face {
+  font-family: "Raleway";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url("https://fonts.gstatic.com/s/raleway/v37/1Ptxg8zYS_SKggPN4iEgvnHyvveLxVtzpYCP.ttf")
+    format("truetype");
+  unicode-range: U+0000-002F, U+003A-10FFFF;
+}
+
+@font-face {
+  font-family: "DigitMono";
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src:
+    local("SFMono-Regular"), local("Menlo"), local("Monaco"), local("Consolas"),
+    local("Liberation Mono"), local("Courier New");
+  unicode-range: U+0030-0039;
+}
+
+@font-face {
+  font-family: "DigitMono";
+  font-style: normal;
+  font-weight: 700 900;
+  font-display: swap;
+  src:
+    local("SFMono-Regular"), local("Menlo"), local("Monaco"), local("Consolas"),
+    local("Liberation Mono"), local("Courier New");
+  unicode-range: U+0030-0039;
+}
+
 body {
   margin: 0;
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-    "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family: "DigitMono", "Raleway", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 code {
   font-family:
-    source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 ::-webkit-scrollbar {
   width: 10px;

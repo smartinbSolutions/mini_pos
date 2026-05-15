@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Wallet, Save, X, Receipt, Building2, User } from "lucide-react";
+import { formatMoney } from "../../../../Global/FormatNumber";
+import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
 export default function InvoicePaymentModal({
   isOpen,
@@ -15,6 +17,7 @@ export default function InvoicePaymentModal({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [funds, setFunds] = useState([]);
+  const { money } = usePrimaryCurrency();
 
   const isPurchase = mode === "purchase";
 
@@ -154,13 +157,13 @@ export default function InvoicePaymentModal({
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border p-3">
               <p className="text-xs text-gray-500">Net Total</p>
-              <h3 className="text-lg font-bold">{invoice?.net_total}</h3>
+              <h3 className="text-lg font-bold">{money(invoice?.net_total)}</h3>
             </div>
 
             <div className="rounded-2xl border p-3">
               <p className="text-xs text-gray-500">Remaining</p>
               <h3 className="text-lg font-bold text-red-600">
-                {invoice?.net_total}
+                {money(invoice?.net_total)}
               </h3>
             </div>
           </div>
@@ -189,7 +192,7 @@ export default function InvoicePaymentModal({
 
               {funds?.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {f.name} ({f.balance})
+                  {f.name} ({formatMoney(f.balance, f)})
                 </option>
               ))}
             </select>

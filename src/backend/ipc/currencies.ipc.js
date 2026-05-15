@@ -59,10 +59,17 @@ export default function registerCurrenciesIPC() {
     db.prepare(
       `
       UPDATE currencies
-      SET name = ?, latinName = ?, code = ?, exchangeRate = ?
+      SET name = ?, latinName = ?, code = ?, exchangeRate = ?, symbol = ?
       WHERE id = ?
     `,
-    ).run(data.name, data.latinName, data.code, data.exchangeRate, data.id);
+    ).run(
+      data.name,
+      data.latinName,
+      data.code,
+      data.exchangeRate,
+      data.symbol,
+      data.id,
+    );
 
     return { success: true };
   });
