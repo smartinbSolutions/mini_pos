@@ -209,6 +209,7 @@ export default function AddPurchase() {
                   <label className="text-sm text-gray-500">Paid Amount</label>
 
                   <input
+                    disabled
                     type="number"
                     className={Input}
                     value={invoice.paid_amount || ""}

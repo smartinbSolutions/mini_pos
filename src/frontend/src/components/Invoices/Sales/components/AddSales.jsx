@@ -221,6 +221,7 @@ export default function AddSales() {
 
               {/* PAID INPUT */}
               <input
+                disabled
                 type="number"
                 className={Input + " text-lg font-bold"}
                 value={invoice.paid_amount || ""}
