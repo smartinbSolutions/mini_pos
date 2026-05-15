@@ -24,26 +24,37 @@ const FundList = () => {
     currencies,
     actionError,
   } = useFundList();
+  const pageClass =
+    "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
+  const panelClass =
+    "rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur";
+  const inputClass =
+    "rounded-xl border border-[#dbe4ff] bg-white/90 px-4 py-2.5 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100 disabled:text-slate-500";
+  const primaryButtonClass =
+    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f4f6fb] to-[#eef2f7] p-6">
+    <div className={pageClass}>
       <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_360px] gap-6">
         <div className="space-y-6">
-          <div className="bg-white/70 backdrop-blur border border-gray-200 rounded-2xl p-6 flex items-center justify-between shadow-sm">
+          <div className={`${panelClass} flex items-center justify-between`}>
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+                Setup
+              </p>
+              <h2 className="text-2xl font-black text-slate-950">
                 Funds Overview
               </h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="mt-1 text-sm text-slate-500">
                 Manage your cash, bank & wallets
               </p>
             </div>
 
             <div className="text-right">
-              <div className="text-3xl font-bold text-gray-900">
+              <div className="text-3xl font-black text-[#4663ff]">
                 {funds.length}
               </div>
-              <div className="text-xs text-gray-400 uppercase tracking-wide">
+              <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Accounts
               </div>
             </div>
@@ -55,7 +66,7 @@ const FundList = () => {
                 <form
                   key={fund.id}
                   onSubmit={submitEdit}
-                  className="bg-white rounded-2xl border shadow-sm p-5 space-y-3"
+                  className="space-y-3 rounded-2xl border border-[#cbd7ff] bg-[#f8faff] p-5 shadow-sm"
                 >
                   <input
                     required
@@ -63,7 +74,7 @@ const FundList = () => {
                     onChange={(e) =>
                       setEditing({ ...editing, name: e.target.value })
                     }
-                    className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm"
+                    className={`w-full ${inputClass}`}
                     placeholder="Fund name"
                   />
 
@@ -78,7 +89,7 @@ const FundList = () => {
                         })
                       }
                       disabled={true}
-                      className="px-3 py-2.5 rounded-xl border text-sm bg-gray-50"
+                      className={inputClass}
                     >
                       <option value="">Currency</option>
                       {currencies.map((c) => (
@@ -89,6 +100,7 @@ const FundList = () => {
                     </select>
 
                     <input
+                      required
                       type="number"
                       value={editing.balance || ""}
                       onChange={(e) =>
@@ -98,13 +110,13 @@ const FundList = () => {
                         })
                       }
                       disabled={true}
-                      className="px-3 py-2.5 rounded-xl border bg-gray-50 text-sm"
+                      className={inputClass}
                       placeholder="Balance"
                     />
                   </div>
 
                   <div className="flex gap-2 pt-1">
-                    <button className="flex-1 bg-gray-900 text-white py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-black">
+                    <button className={`flex-1 ${primaryButtonClass}`}>
                       <Save size={15} />
                       Save
                     </button>
@@ -112,7 +124,7 @@ const FundList = () => {
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="px-4 rounded-xl border hover:bg-gray-100"
+                      className="rounded-xl border border-[#dbe4ff] bg-white px-4 text-slate-500 hover:bg-[#eef3ff]"
                     >
                       <X size={16} />
                     </button>
@@ -121,22 +133,22 @@ const FundList = () => {
               ) : (
                 <div
                   key={fund.id}
-                  className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition p-5 flex items-center justify-between group"
+                  className="group flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-white p-5 shadow-sm transition hover:-translate-y-[2px] hover:border-[#cbd7ff] hover:shadow-lg hover:shadow-[#4663ff]/10"
                 >
                   <div className="space-y-1">
-                    <div className="text-lg font-semibold text-gray-900">
+                    <div className="text-lg font-bold text-slate-900">
                       {fund.name}
                     </div>
 
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs font-semibold text-[#4663ff]">
                       {fund.currency_code}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <div className="text-sm text-gray-400">Balance</div>
-                      <div className="text-xl font-semibold text-emerald-600">
+                      <div className="text-sm text-slate-400">Balance</div>
+                      <div className="text-xl font-black text-emerald-600">
                         {formatNumber(fund.balance || 0)} {fund.currency_symbol}
                       </div>
                     </div>
@@ -144,7 +156,7 @@ const FundList = () => {
                     <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition">
                       <button
                         onClick={() => navigate(`/fund/${fund.id}`)}
-                        className="p-2 rounded-xl hover:bg-blue-50 text-blue-600"
+                        className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
                         title="View Movements"
                       >
                         <Eye size={14} />
@@ -152,7 +164,7 @@ const FundList = () => {
 
                       <button
                         onClick={() => startEdit(fund)}
-                        className="p-2 rounded-xl hover:bg-gray-100"
+                        className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                       >
                         <Edit2 size={14} />
                       </button>
@@ -172,21 +184,25 @@ const FundList = () => {
         </div>
 
         {/* RIGHT */}
-        <div className="bg-white/80 backdrop-blur border rounded-2xl p-6 shadow-sm h-fit sticky top-6">
-          <h3 className="text-lg font-semibold mb-5">Create Fund</h3>
-          {/* 
+        <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
+          <h3 className="mb-1 text-lg font-black text-slate-950">
+            Create Fund
+          </h3>
+          <p className="mb-5 text-sm text-slate-500">
+            Add a cash, bank, or wallet account
+          </p>
           {actionError && (
             <div className="mb-3 text-sm text-red-600 bg-red-50 border p-2 rounded-lg">
               {actionError}
             </div>
-          )} */}
+          )}
 
           <form onSubmit={submitDraft} className="space-y-4">
             <input
               required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm"
+              className={`w-full ${inputClass}`}
               placeholder="Fund name"
             />
 
@@ -205,7 +221,7 @@ const FundList = () => {
                   exchange_rate: selected?.exchangeRate || 1,
                 });
               }}
-              className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm"
+              className={`w-full ${inputClass}`}
             >
               <option value="">Select currency</option>
 
@@ -225,13 +241,13 @@ const FundList = () => {
                   balance: Number(e.target.value),
                 })
               }
-              className="w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm"
+              className={`w-full ${inputClass}`}
               placeholder="Initial balance"
             />
 
             <button
               disabled={saving}
-              className="w-full bg-black text-white py-2.5 rounded-xl text-sm flex items-center justify-center gap-2"
+              className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={16} />
               Create Fund

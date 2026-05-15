@@ -1,25 +1,68 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+const currencies = [
+  { id: "1", name: "Syrian Pound", code: "SYP", symbol: "\u00a3" },
+  { id: "2", name: "US Dollar", code: "USD", symbol: "$" },
+  { id: "3", name: "Turkish Lira", code: "TRY", symbol: "\u20ba" },
+  { id: "4", name: "Euro", code: "EUR", symbol: "\u20ac" },
+  { id: "5", name: "British Pound", code: "GBP", symbol: "\u00a3" },
+];
+
+const defaultCurrency = currencies[0];
+
+const validateSetupForm = (form) => {
+  const nextErrors = {};
+
+  if (!form.company_name?.trim()) {
+    nextErrors.company_name = "Company name is required.";
+  }
+
+  if (!form.phone?.trim()) {
+    nextErrors.phone = "Phone is required.";
+  }
+
+  if (!form.email?.trim()) {
+    nextErrors.email = "Email is required.";
+  } else if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
+    nextErrors.email = "Enter a valid email address.";
+  }
+
+  if (!form.address?.trim()) {
+    nextErrors.address = "Address is required.";
+  }
+
+  if (!form.logo) {
+    nextErrors.logo = "Company logo is required.";
+  }
+
+  if (!form.base_currency_id) {
+    nextErrors.base_currency_id = "Base currency is required.";
+  }
+
+  return nextErrors;
+};
 
 const useSetupPage = () => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
     company_name: "",
-    currency_name: "",
+    currency_name: defaultCurrency.name,
     company_latin_name: "",
     phone: "",
     address: "",
     email: "",
     language: "en",
     timezone: "UTC",
-    base_currency_id: "1",
+    base_currency_id: defaultCurrency.id,
     logo: "",
-    code: "",
-    symbol: "",
+    code: defaultCurrency.code,
+    symbol: defaultCurrency.symbol,
   });
 
   useEffect(() => {
@@ -41,7 +84,10 @@ const useSetupPage = () => {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    setForm({ ...form, [name]: value });
+    setErrors((current) => ({ ...current, [name]: "" }));
   };
 
   const toBase64 = (file) =>
@@ -64,20 +110,41 @@ const useSetupPage = () => {
     });
 
     setForm({ ...form, logo: savedPath });
+    setErrors((current) => ({ ...current, logo: "" }));
+  };
+
+  const handleCurrencySelect = (currency) => {
+    setForm({
+      ...form,
+      base_currency_id: currency.id,
+      currency_name: currency.name,
+      code: currency.code,
+      symbol: currency.symbol,
+    });
+    setErrors((current) => ({ ...current, base_currency_id: "" }));
   };
 
   const handleSave = async () => {
+    const validationErrors = validateSetupForm(form);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
     try {
-      setLoading(true);
+      setSaving(true);
 
       const res = await window.api.createCompanySetting({
         company_name: form.company_name,
+        company_latin_name: form.company_latin_name,
         phone: form.phone,
         address: form.address,
         email: form.email,
         logo: form.logo,
 
         timezone: form.timezone,
+        base_currency_id: form.base_currency_id,
         currency_name: form.currency_name,
         code: form.code,
         symbol: form.symbol,
@@ -90,22 +157,16 @@ const useSetupPage = () => {
     } catch (err) {
       console.error(err);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
-  const currencies = [
-    { id: "1", name: "Syrian Pound", code: "SYP", symbol: "£" },
-    { id: "2", name: "US Dollar", code: "USD", symbol: "$" },
-    { id: "3", name: "Turkish Lira", code: "TRY", symbol: "₺" },
-    { id: "4", name: "Euro", code: "EUR", symbol: "€" },
-    { id: "5", name: "British Pound", code: "GBP", symbol: "£" },
-  ];
-
   return {
     handleSave,
     currencies,
+    errors,
     loading,
     handleLogo,
+    handleCurrencySelect,
     toBase64,
     handleChange,
     fileInputRef,
@@ -116,3 +177,4 @@ const useSetupPage = () => {
 };
 
 export default useSetupPage;
+

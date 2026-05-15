@@ -20,6 +20,14 @@ const TaxList = () => {
   } = useTax();
 
   const [search, setSearch] = useState("");
+  const pageClass =
+    "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
+  const panelClass =
+    "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur";
+  const inputClass =
+    "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+  const primaryButtonClass =
+    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
 
   const filteredTaxes = useMemo(() => {
     return taxes.filter((t) =>
@@ -28,30 +36,33 @@ const TaxList = () => {
   }, [taxes, search]);
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc] p-6">
+    <div className={pageClass}>
       <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
-        <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        <div className={`${panelClass} overflow-hidden`}>
           <div className="p-5 border-b flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Taxes</h2>
-              <p className="text-xs text-gray-500">Manage tax rates</p>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+                Setup
+              </p>
+              <h2 className="text-2xl font-black text-slate-950">Taxes</h2>
+              <p className="text-sm text-slate-500">Manage tax rates</p>
             </div>
 
             <div className="relative">
               <Search
-                className="absolute left-3 top-2.5 text-gray-400"
+                className="absolute left-3 top-2.5 text-slate-400"
                 size={15}
               />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search taxes..."
-                className="pl-9 pr-3 py-2 text-sm border rounded-xl bg-gray-50 focus:bg-white focus:ring-2 focus:ring-gray-900 outline-none"
+                className={`${inputClass} pl-9`}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 px-5 py-3 text-xs text-gray-400 border-b bg-gray-50">
+          <div className="grid grid-cols-3 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-400">
             <span>Name</span>
             <span>Rate</span>
             <span className="text-right">Actions</span>
@@ -63,7 +74,7 @@ const TaxList = () => {
                 <form
                   key={tax.id}
                   onSubmit={submitEdit}
-                  className="grid grid-cols-3 items-center px-5 py-3 border-b bg-blue-50"
+                  className="grid grid-cols-3 items-center border-b bg-[#f8faff] px-5 py-3"
                 >
                   <input
                     required
@@ -71,28 +82,27 @@ const TaxList = () => {
                     onChange={(e) =>
                       setEditing({ ...editing, name: e.target.value })
                     }
-                    className="px-3 py-1.5 rounded-lg border text-sm"
+                    className={inputClass}
                   />
 
                   <input
                     required
                     type="number"
-                    step="0.01"
                     value={editing.rate}
                     onChange={(e) =>
                       setEditing({ ...editing, rate: e.target.value })
                     }
-                    className="px-3 py-1.5 rounded-lg border text-sm w-24"
+                    className={`${inputClass} w-24`}
                   />
 
                   <div className="flex justify-end gap-2">
-                    <button className="p-2 bg-gray-900 text-white rounded-lg">
+                    <button className="rounded-xl bg-[#4663ff] p-2 text-white shadow-lg shadow-[#4663ff]/20">
                       <Save size={14} />
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="p-2 border rounded-lg"
+                      className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
                     >
                       <X size={14} />
                     </button>
@@ -101,14 +111,14 @@ const TaxList = () => {
               ) : (
                 <div
                   key={tax.id}
-                  className="grid grid-cols-3 items-center px-5 py-3 border-b hover:bg-gray-50 transition group"
+                  className="group grid grid-cols-3 items-center border-b px-5 py-3 transition hover:bg-[#f8faff]"
                 >
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-bold text-slate-900">
                     {tax.name}
                   </div>
 
                   <div>
-                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
                       {tax.rate}%
                     </span>
                   </div>
@@ -116,7 +126,7 @@ const TaxList = () => {
                   <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
                     <button
                       onClick={() => startEdit(tax)}
-                      className="p-2 rounded-lg hover:bg-gray-100"
+                      className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                     >
                       <Edit2 size={14} />
                     </button>
@@ -139,8 +149,9 @@ const TaxList = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border shadow-sm p-5 h-fit sticky top-6">
-          <h3 className="text-sm font-semibold mb-4">Create Tax</h3>
+        <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
+          <h3 className="mb-1 text-lg font-black text-slate-950">Create Tax</h3>
+          <p className="mb-5 text-sm text-slate-500">Add a tax rate</p>
 
           {actionError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -153,7 +164,7 @@ const TaxList = () => {
               required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border bg-gray-50 text-sm"
+              className={`w-full ${inputClass}`}
               placeholder="Tax name"
             />
 
@@ -163,13 +174,13 @@ const TaxList = () => {
               min="0"
               value={draft.rate}
               onChange={(e) => setDraft({ ...draft, rate: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg border bg-gray-50 text-sm"
+              className={`w-full ${inputClass}`}
               placeholder="Rate %"
             />
 
             <button
               disabled={saving}
-              className="w-full bg-gray-900 text-white py-2 rounded-lg text-sm flex items-center justify-center gap-2 hover:bg-black transition"
+              className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={15} />
               Add Tax

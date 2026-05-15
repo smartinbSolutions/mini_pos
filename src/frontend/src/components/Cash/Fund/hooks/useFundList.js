@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const useFundList = () => {
-  const emptyFund = { name: "", currency_id: "", balance: 0 };
+  const emptyFund = { name: "", currency_id: "", balance: "" };
 
   const [saving, setSaving] = useState(false);
   const [funds, setFunds] = useState([]);
@@ -17,15 +17,20 @@ const useFundList = () => {
 
   const api = window.api;
 
-  const normalizeFund = (fund) => ({
-    ...fund,
-    name: String(fund.name || "").trim(),
-    currency_id: Number(fund.currency_id),
-    balance: Number(fund.balance / fund.exchange_rate || 0),
-    exchange_rate: fund.exchange_rate,
-    currency_code: fund.currency_code,
-    paymentInfundCurrency: fund.balance,
-  });
+  const normalizeFund = (fund) => {
+    const exchangeRate = Number(fund.exchange_rate || 1);
+    const balance = Number(fund.balance || 0);
+
+    return {
+      ...fund,
+      name: String(fund.name || "").trim(),
+      currency_id: Number(fund.currency_id),
+      balance: Number(balance / exchangeRate || 0),
+      exchange_rate: exchangeRate,
+      currency_code: fund.currency_code,
+      paymentInfundCurrency: balance,
+    };
+  };
 
   const validateFund = (fund) => {
     if (!String(fund.name || "").trim()) {
@@ -113,7 +118,9 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Fund:", err);
-      toast.error("Failed to create Fund.");
+      const message = err?.message || "Failed to create Fund.";
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
@@ -125,7 +132,9 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Fund:", err);
-      toast.error("Failed to update Fund.");
+      const message = err?.message || "Failed to update Fund.";
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
@@ -160,6 +169,7 @@ const useFundList = () => {
       currency_name: fund.currency_name || "",
       currency_id: fund.currency_id || "",
       currency_code: fund.currency_code || "",
+      exchange_rate: fund.exchange_rate || 1,
     });
   };
 

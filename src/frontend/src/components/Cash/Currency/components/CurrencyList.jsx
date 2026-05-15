@@ -18,36 +18,49 @@ const CurrencyList = () => {
     submitDraft,
     actionError,
   } = useCurrency();
+  const pageClass =
+    "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
+  const panelClass =
+    "rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur";
+  const inputClass =
+    "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+  const primaryButtonClass =
+    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] p-2 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className={pageClass}>
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <div className="space-y-5">
-          <div className="bg-white rounded-2xl p-5 shadow-sm border flex items-center justify-between">
+          <div className={`${panelClass} flex items-center justify-between`}>
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+                Setup
+              </p>
+              <h2 className="text-2xl font-black text-slate-950">
                 Currency Management
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 Manage currencies and exchange rates
               </p>
             </div>
 
             <div className="text-right">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-3xl font-black text-[#4663ff]">
                 {currencies.length}
               </div>
-              <div className="text-xs text-gray-500">Total Currencies</div>
+              <div className="text-xs font-semibold text-slate-500">
+                Total Currencies
+              </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border p-4 space-y-3">
+          <div className={`${panelClass} space-y-3`}>
             {currencies.map((currency) =>
               editingId === currency.id ? (
                 <form
                   key={currency.id}
                   onSubmit={submitEdit}
-                  className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm animate-fadeIn"
+                  className="rounded-2xl border border-[#cbd7ff] bg-[#f8faff] p-4 shadow-sm animate-fadeIn"
                 >
                   <input
                     required
@@ -55,7 +68,7 @@ const CurrencyList = () => {
                     onChange={(e) =>
                       setEditing({ ...editing, name: e.target.value })
                     }
-                    className="mb-3 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className={`mb-3 w-full ${inputClass}`}
                     placeholder="Currency name"
                   />
 
@@ -65,7 +78,7 @@ const CurrencyList = () => {
                       onChange={(e) =>
                         setEditing({ ...editing, latinName: e.target.value })
                       }
-                      className="rounded-lg border px-3 py-2 text-sm"
+                      className={inputClass}
                       placeholder="Latin"
                     />
                     <input
@@ -74,7 +87,7 @@ const CurrencyList = () => {
                       onChange={(e) =>
                         setEditing({ ...editing, code: e.target.value })
                       }
-                      className="rounded-lg border px-3 py-2 text-sm"
+                      className={inputClass}
                       placeholder="Code"
                     />
                     <input
@@ -83,7 +96,7 @@ const CurrencyList = () => {
                       onChange={(e) =>
                         setEditing({ ...editing, symbol: e.target.value })
                       }
-                      className="rounded-lg border px-3 py-2 text-sm"
+                      className={inputClass}
                       placeholder="symbol"
                     />
                     {currency.isPrimary === 0 && (
@@ -98,21 +111,21 @@ const CurrencyList = () => {
                             exchangeRate: e.target.value,
                           })
                         }
-                        className="rounded-lg border px-3 py-2 text-sm"
+                        className={inputClass}
                         placeholder="Rate"
                       />
                     )}
                   </div>
 
                   <div className="flex gap-2">
-                    <button className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-blue-600 text-white py-2 text-sm hover:bg-blue-700">
+                    <button className={primaryButtonClass}>
                       <Save size={15} />
                       Save
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="p-2 border rounded-lg hover:bg-gray-100"
+                      className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
                     >
                       <X size={16} />
                     </button>
@@ -121,28 +134,28 @@ const CurrencyList = () => {
               ) : (
                 <div
                   key={currency.id}
-                  className="group flex items-center justify-between rounded-xl border p-4 hover:shadow-lg hover:border-gray-300 transition-all"
+                  className="group flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-white p-4 transition-all hover:-translate-y-[2px] hover:border-[#cbd7ff] hover:shadow-lg hover:shadow-[#4663ff]/10"
                 >
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="font-bold text-slate-900">
                       {currency.name}
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-2 text-xs">
                       {currency.code && (
-                        <span className="px-2 py-1 bg-gray-100 rounded-md">
+                        <span className="rounded-lg bg-[#eef3ff] px-2 py-1 font-semibold text-[#4663ff]">
                           {currency.code}
                         </span>
                       )}
 
                       {currency.latinName && (
-                        <span className="px-2 py-1 bg-gray-100 rounded-md">
+                        <span className="rounded-lg bg-slate-100 px-2 py-1 text-slate-500">
                           {currency.latinName}
                         </span>
                       )}
 
                       {currency.exchangeRate && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-md font-medium">
+                        <span className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-700">
                           Rate: {currency.exchangeRate}
                         </span>
                       )}
@@ -152,14 +165,14 @@ const CurrencyList = () => {
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
                     <button
                       onClick={() => startEdit(currency)}
-                      className="p-2 rounded-lg hover:bg-gray-100"
+                      className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                     >
                       <Edit2 size={15} />
                     </button>
                     {currency.isPrimary === 0 && (
                       <button
                         onClick={() => handleDeleteCurrency(currency)}
-                        className="p-2 rounded-lg text-red-500 hover:bg-red-50"
+                        className="rounded-xl p-2 text-red-500 hover:bg-red-50"
                       >
                         <Trash2 size={15} />
                       </button>
@@ -182,8 +195,13 @@ const CurrencyList = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border p-5 h-fit sticky top-6">
-          <h3 className="text-md font-semibold mb-4">Add Currency</h3>
+        <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
+          <h3 className="mb-1 text-lg font-black text-slate-950">
+            Add Currency
+          </h3>
+          <p className="mb-5 text-sm text-slate-500">
+            Add a currency and exchange rate
+          </p>
 
           {actionError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -196,7 +214,7 @@ const CurrencyList = () => {
               required
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900 outline-none"
+              className={`w-full ${inputClass}`}
               placeholder="Currency name"
             />{" "}
             <input
@@ -204,7 +222,7 @@ const CurrencyList = () => {
               onChange={(e) =>
                 setDraft({ ...draft, latinName: e.target.value })
               }
-              className="w-full rounded-lg border px-3 py-2 text-sm"
+              className={`w-full ${inputClass}`}
               placeholder="Latin"
             />
             <div className="grid grid-cols-2 gap-2">
@@ -212,14 +230,14 @@ const CurrencyList = () => {
                 required
                 value={draft.code}
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
-                className="rounded-lg border px-3 py-2 text-sm"
+                className={inputClass}
                 placeholder="Code"
               />
               <input
                 required
                 value={draft.symbol}
                 onChange={(e) => setDraft({ ...draft, symbol: e.target.value })}
-                className="rounded-lg border px-3 py-2 text-sm"
+                className={inputClass}
                 placeholder="Symbol"
               />
             </div>
@@ -231,13 +249,13 @@ const CurrencyList = () => {
               onChange={(e) =>
                 setDraft({ ...draft, exchangeRate: e.target.value })
               }
-              className="w-full rounded-lg border px-3 py-2 text-sm"
+              className={`w-full ${inputClass}`}
               placeholder="Exchange Rate"
             />
             <button
               type="submit"
               disabled={saving}
-              className="w-full flex items-center justify-center gap-2 rounded-lg bg-gray-900 text-white py-2 text-sm hover:bg-gray-800 transition"
+              className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={16} />
               Add Currency

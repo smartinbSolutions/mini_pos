@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const useCurrency = () => {
   const emptyCurrency = {
@@ -36,6 +36,10 @@ const useCurrency = () => {
 
     if (!String(currency.code || "").trim()) {
       return "Currency code is required.";
+    }
+
+    if (!String(currency.symbol || "").trim()) {
+      return "Currency symbol is required.";
     }
 
     if (
