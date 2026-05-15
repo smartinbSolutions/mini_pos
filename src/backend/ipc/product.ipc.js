@@ -30,7 +30,7 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("create-product", (event, data) => {
-    if (!data.name || !data.unit_id || data.costPrice <= 0 || data.price <= 0) {
+    if (!data.name || !data.unit_id) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
     const result = db

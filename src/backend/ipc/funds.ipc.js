@@ -14,6 +14,23 @@ export default function registerFundIPC() {
       )
       .run(data.name, data.currency_id, data.balance || 0);
 
+    if (data.balance !== 0) {
+      db.prepare(
+        `
+        INSERT INTO payments 
+        (type, party_type, party_id, fund_id, amount, note)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      ).run(
+        data.balance > 0 ? "income" : "expense",
+        "other",
+        null,
+        result.lastInsertRowid,
+        Math.abs(data.balance),
+        "Open Balance",
+      );
+    }
+
     return {
       success: true,
       id: result.lastInsertRowid,
@@ -27,7 +44,9 @@ export default function registerFundIPC() {
       SELECT 
         f.*,
         c.name as currency_name,
-        c.code as currency_code
+        c.code as currency_code,
+        c.symbol as currency_symbol,
+        c.exchangeRate as currency_exchangeRate
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
     `,

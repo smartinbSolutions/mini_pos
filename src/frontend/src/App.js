@@ -2,8 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./Layout";
 
 import Dashboard from "./pages/DashboardPage";
-import Payments from "./pages/PaymentsPage";
-import PosPointPage from "./pages/PosPointPage";
 import UnitList from "./components/Unit/components/UnitList";
 import CurrencyList from "./components/Cash/Currency/components/CurrencyList";
 import FundList from "./components/Cash/Fund/components/FundList";
@@ -24,6 +22,10 @@ import CompanySettings from "./components/CompanySettings/components/CompanySett
 import FundMovementsPage from "./components/Cash/Fund/components/FundPayment";
 import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
 import ActivationPage from "./renderer/ActivationPage";
+import SalesInvoiceView from "./components/Invoices/Sales/components/SalesInvoiceView";
+import PurchaseInvoiceView from "./components/Invoices/Purchase/components/PurchaseInvoiceView";
+import POSSystem from "./components/PosPoint/components/POSSystem";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
   const [licenseStatus, setLicenseStatus] = useState(null);
@@ -83,16 +85,20 @@ export default function App() {
               <Route path="products" element={<ProductList />} />
               <Route path="sales" element={<SalesList />} />
               <Route path="add-sales" element={<AddSales />} />
+              <Route path="view-sales/:id" element={<SalesInvoiceView />} />
               <Route path="edit-sales/:id" element={<UpdateSales />} />
               <Route path="purchase" element={<PurchaseList />} />
               <Route path="add-purchase" element={<AddPurchase />} />
+              <Route
+                path="view-purchase/:id"
+                element={<PurchaseInvoiceView />}
+              />
               <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
-              <Route path="payments" element={<Payments />} />
               <Route
                 path="payment/:type/:id"
                 element={<PartyLedgerPage />}
               />{" "}
-              <Route path="pos" element={<PosPointPage />} />
+              <Route path="pos" element={<POSSystem />} />
               <Route path="unit" element={<UnitList />} />
               <Route path="currency" element={<CurrencyList />} />
               <Route path="funds" element={<FundList />} />

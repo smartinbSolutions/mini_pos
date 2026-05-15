@@ -77,7 +77,15 @@ const CurrencyList = () => {
                       className="rounded-lg border px-3 py-2 text-sm"
                       placeholder="Code"
                     />
-
+                    <input
+                      required
+                      value={editing.symbol}
+                      onChange={(e) =>
+                        setEditing({ ...editing, symbol: e.target.value })
+                      }
+                      className="rounded-lg border px-3 py-2 text-sm"
+                      placeholder="symbol"
+                    />
                     {currency.isPrimary === 0 && (
                       <input
                         required
@@ -190,17 +198,16 @@ const CurrencyList = () => {
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className="w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900 outline-none"
               placeholder="Currency name"
+            />{" "}
+            <input
+              value={draft.latinName}
+              onChange={(e) =>
+                setDraft({ ...draft, latinName: e.target.value })
+              }
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+              placeholder="Latin"
             />
-
             <div className="grid grid-cols-2 gap-2">
-              <input
-                value={draft.latinName}
-                onChange={(e) =>
-                  setDraft({ ...draft, latinName: e.target.value })
-                }
-                className="rounded-lg border px-3 py-2 text-sm"
-                placeholder="Latin"
-              />
               <input
                 required
                 value={draft.code}
@@ -208,8 +215,14 @@ const CurrencyList = () => {
                 className="rounded-lg border px-3 py-2 text-sm"
                 placeholder="Code"
               />
+              <input
+                required
+                value={draft.symbol}
+                onChange={(e) => setDraft({ ...draft, symbol: e.target.value })}
+                className="rounded-lg border px-3 py-2 text-sm"
+                placeholder="Symbol"
+              />
             </div>
-
             <input
               required
               type="number"
@@ -221,7 +234,6 @@ const CurrencyList = () => {
               className="w-full rounded-lg border px-3 py-2 text-sm"
               placeholder="Exchange Rate"
             />
-
             <button
               type="submit"
               disabled={saving}

@@ -158,6 +158,11 @@ export default function useAddSales() {
   }, [subtotal, invoice]);
   const dueAmount = Number(netTotal || 0) - Number(invoice.paid_amount || 0);
 
+  const paymentInfundCurrency = useMemo(() => {
+    const payment = subtotal * (invoice.exchange_rate || 1);
+    return payment;
+  }, [subtotal, invoice]);
+
   const submit = async () => {
     try {
       setSaving(true);
@@ -168,6 +173,7 @@ export default function useAddSales() {
         net_total: netTotal,
         items,
         status,
+        paymentInfundCurrency: status === "paid" ? paymentInfundCurrency : 0,
       };
 
       const res = await api.createSalesInvoice(payload);

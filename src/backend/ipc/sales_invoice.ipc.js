@@ -45,12 +45,27 @@ export default function registerSalesInvoiceIPC() {
 
       updateStock.run(quantity, item.product_id);
     }
+    const updateCustomer = db.prepare(`
+        UPDATE customers
+        SET total = total + ?,
+            total_paid = total_paid + ?
+        WHERE id = ?
+      `);
+    const customerPaid =
+      data.status === "paid" ? Number(data.paid_amount || 0) : 0;
+
+    updateCustomer.run(
+      Number(data.net_total || 0),
+      customerPaid,
+      data.customer_id,
+    );
 
     if (data.status === "paid") {
       const insertPayment = db.prepare(`
         INSERT INTO payments
-        (type, party_type, party_id, fund_id, amount, note)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (type, party_type, party_id, fund_id, amount, note,
+         currency_code, exchange_rate, amount_fund_currency)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      `);
 
       const updateFund = db.prepare(`
@@ -68,23 +83,12 @@ export default function registerSalesInvoiceIPC() {
         data.fund_id,
         data.paid_amount,
         `Sales Invoice #${invoiceId}`,
+        data.currency_code,
+        data.exchange_rate,
+        data.paymentInfundCurrency,
       );
     }
 
-    const updateCustomer = db.prepare(`
-        UPDATE customers
-        SET total = total + ?,
-            total_paid = total_paid + ?
-        WHERE id = ?
-      `);
-    const customerPaid =
-      data.status === "paid" ? Number(data.paid_amount || 0) : 0;
-
-    updateCustomer.run(
-      Number(data.net_total || 0),
-      customerPaid,
-      data.customer_id,
-    );
     return { success: true, invoiceId };
   });
 
@@ -143,7 +147,7 @@ export default function registerSalesInvoiceIPC() {
 
   // UPDATE
   ipcMain.handle("update-sales-invoice", (event, data) => {
-    if (!data.date || data.subtotal <= 0 || data.net_total <= 0) {
+    if (data.subtotal <= 0 || data.net_total <= 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
     const transaction = db.transaction(() => {
@@ -156,6 +160,21 @@ export default function registerSalesInvoiceIPC() {
       SET quantity = quantity + ?
       WHERE id = ?
     `);
+      const oldInvoice = db
+        .prepare(`SELECT * FROM sales_invoices WHERE id = ?`)
+        .get(data.id);
+
+      const oldPaid =
+        oldInvoice.status === "paid" ? Number(oldInvoice.net_total || 0) : 0;
+
+      db.prepare(
+        `
+      UPDATE customers
+      SET total = total - ?,
+          total_paid = total_paid - ?
+      WHERE id = ?
+    `,
+      ).run(Number(oldInvoice.net_total || 0), oldPaid, oldInvoice.customer_id);
 
       for (const item of oldItems) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -208,6 +227,18 @@ export default function registerSalesInvoiceIPC() {
 
         addStock.run(quantity, item.product_id);
       }
+      const newPaid =
+        data.status === "paid" ? Number(data.paid_amount || 0) : 0;
+      const updateCustomer = db
+        .prepare(
+          `
+        UPDATE customers
+        SET total = total + ?,
+            total_paid = total_paid + ?
+        WHERE id = ?
+      `,
+        )
+        .run(Number(data.net_total || 0), newPaid, data.customer_id);
     });
 
     try {
@@ -231,6 +262,24 @@ export default function registerSalesInvoiceIPC() {
       SET quantity = quantity + ?
       WHERE id = ?
     `);
+      const invoice = db
+        .prepare(`SELECT * FROM sales_invoices WHERE id = ?`)
+        .get(id);
+      const updateCustomer = db.prepare(`
+        UPDATE customers
+        SET total = total - ?,
+            total_paid = total_paid - ?
+        WHERE id = ?
+      `);
+
+      const customerPaid =
+        invoice.status === "paid" ? Number(invoice.net_total || 0) : 0;
+
+      updateCustomer.run(
+        Number(invoice.net_total || 0),
+        customerPaid,
+        invoice.customer_id,
+      );
 
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -255,8 +304,8 @@ export default function registerSalesInvoiceIPC() {
   ipcMain.handle("pos-checkout", (event, data) => {
     const insertInvoice = db.prepare(`
     INSERT INTO sales_invoices
-    (customer_id, date, subtotal, discount, tax_id, net_total)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (customer_id, date, subtotal, discount, tax_id, net_total, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
     const insertItem = db.prepare(`
@@ -273,8 +322,8 @@ export default function registerSalesInvoiceIPC() {
 
     const insertPayment = db.prepare(`
     INSERT INTO payments
-    (type, party_type, party_id, fund_id, amount, note)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (type, party_type, party_id, fund_id, amount, note, currency_code, exchange_rate, amount_fund_currency)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
     const updateFund = db.prepare(`
@@ -291,6 +340,7 @@ export default function registerSalesInvoiceIPC() {
         data.discount || 0,
         data.tax_id || null,
         data.net_total || 0,
+        "paid",
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
@@ -311,9 +361,12 @@ export default function registerSalesInvoiceIPC() {
         data.fund_id,
         data.paid_amount,
         `POS Invoice #${invoiceId}`,
+        data.currency_code,
+        data.exchange_rate,
+        data.paymentInfundCurrency,
       );
 
-      updateFund.run(data.paid_amount, data.fund_id);
+      updateFund.run(data.paymentInfundCurrency, data.fund_id);
 
       return invoiceId;
     });

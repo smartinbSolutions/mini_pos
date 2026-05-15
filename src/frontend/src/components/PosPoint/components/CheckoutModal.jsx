@@ -1,5 +1,6 @@
 import { CheckCircle2, CreditCard, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { formatNumber } from "../../../Global/FormatNumber";
 
 const money = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
@@ -19,22 +20,38 @@ export default function CheckoutModal({
   onCheckout,
 }) {
   const [fundId, setFundId] = useState("");
-  const [received, setReceived] = useState(String(total.toFixed(2)));
+  const [currencyExchangeRate, setCurrencyExchangeRate] = useState("");
+  const [currencyCode, setCurrencyCode] = useState("");
+
+  const [received, setReceived] = useState(
+    total * toNumber(currencyExchangeRate || 1),
+  );
+  console.log(total * currencyExchangeRate);
+  console.log(total);
+
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!fundId && funds.length) {
       setFundId(String(funds[0].id));
+      setCurrencyExchangeRate(funds[0].currency_exchangeRate);
+      setCurrencyCode(funds[0]?.currency_code);
     }
+    setReceived(total * toNumber(currencyExchangeRate || 1));
   }, [fundId, funds]);
 
+  const convertedTotal = useMemo(() => {
+    return total * toNumber(currencyExchangeRate || 1);
+  }, [total, currencyExchangeRate]);
+
   const change = useMemo(
-    () => Math.max(0, toNumber(received) - total),
-    [received, total],
+    () => Math.max(0, toNumber(received) - convertedTotal),
+    [received, convertedTotal],
   );
+
   const remaining = useMemo(
-    () => Math.max(0, total - toNumber(received)),
-    [received, total],
+    () => Math.max(0, convertedTotal - toNumber(received)),
+    [received, convertedTotal],
   );
 
   const submit = async (event) => {
@@ -45,13 +62,20 @@ export default function CheckoutModal({
       return;
     }
 
-    if (toNumber(received) < total) {
-      setError("Received amount is less than the total.");
-      return;
-    }
+    // if (received * currencyExchangeRate < total) {
+    //   setError("Received amount is less than the total.");
+    //   return;
+    // }
 
     try {
-      await onCheckout({ fundId, received: toNumber(received), change });
+      await onCheckout({
+        fundId,
+        received: toNumber(received),
+        change,
+        paymentInfundCurrency: convertedTotal,
+        currency_code: currencyCode,
+        exchange_rate: currencyExchangeRate,
+      });
       onClose();
     } catch (err) {
       console.error("Checkout failed:", err);
@@ -127,6 +151,8 @@ export default function CheckoutModal({
                       key={fund.id}
                       onClick={() => {
                         setFundId(String(fund.id));
+                        setCurrencyExchangeRate(fund.currency_exchangeRate);
+                        setCurrencyCode(fund.currency_code);
                         setError("");
                       }}
                       className={`group relative min-h-28 overflow-hidden rounded-3xl border p-4 text-left transition ${
@@ -184,8 +210,6 @@ export default function CheckoutModal({
               Received amount
               <input
                 type="number"
-                min="0"
-                step="1"
                 value={received}
                 onChange={(event) => {
                   setReceived(event.target.value);
@@ -200,7 +224,7 @@ export default function CheckoutModal({
               <div className="rounded-2xl bg-white p-4">
                 <p className="text-xs font-bold text-slate-400">Change</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
-                  {money.format(change)}
+                  {money.format(change)} {currencyCode}
                 </p>
               </div>
 
@@ -211,7 +235,7 @@ export default function CheckoutModal({
                     remaining > 0 ? "text-red-600" : "text-slate-900"
                   }`}
                 >
-                  {money.format(remaining)}
+                  {money.format(remaining)} {currencyCode}
                 </p>
               </div>
             </div>

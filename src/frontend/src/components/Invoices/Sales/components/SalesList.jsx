@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import {
   Edit2,
+  Eye,
   HandCoins,
   PackagePlus,
   RefreshCw,
@@ -24,7 +25,6 @@ const SalesList = () => {
     openPaymentModel,
     setOpenPaymentModel,
   } = useSalesList();
-  console.log(selecteInvoice);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
@@ -143,13 +143,20 @@ const SalesList = () => {
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
                         <button
-                          onClick={() => navigate(`/edit-sales/${inv.id}`)}
+                          onClick={() => navigate(`/view-sales/${inv.id}`)}
                           className="rounded p-2 text-gray-500 hover:bg-gray-100"
                         >
-                          <Edit2 size={16} />
+                          <Eye size={16} />
                         </button>
                         {inv.status !== "paid" && (
                           <>
+                            <button
+                              onClick={() => navigate(`/edit-sales/${inv.id}`)}
+                              className="rounded p-2 text-gray-500 hover:bg-gray-100"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+
                             <button
                               onClick={() => {
                                 setSelecteInvoice(inv);

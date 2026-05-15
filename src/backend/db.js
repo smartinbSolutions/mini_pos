@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS customers (
   name TEXT,
   phone TEXT,
   address TEXT,
-  total INTEGER DEFAULT 0,
-  total_paid INTEGER DEFAULT 0,
+  total REAL DEFAULT 0,
+  total_paid REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `,
@@ -63,8 +63,8 @@ CREATE TABLE IF NOT EXISTS suppliers (
   name TEXT,
   phone TEXT,
   address TEXT,
-  total INTEGER DEFAULT 0,
-  total_paid INTEGER DEFAULT 0,
+  total REAL DEFAULT 0,
+  total_paid REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `,
@@ -194,7 +194,10 @@ CREATE TABLE IF NOT EXISTS payments (
   party_type TEXT, -- customer / supplier / other
   party_id INTEGER,
   fund_id INTEGER,
-  amount REAL,
+  amount REAL, -- 
+  currency_code TEXT, -- USD / TRY / EUR
+  exchange_rate REAL, -- Exchange rate at time of payment
+  amount_fund_currency REAL, 
   note TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id)

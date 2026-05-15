@@ -1,21 +1,25 @@
 import { NavLink } from "react-router-dom";
 import {
   Home,
-  Box,
+  Package,
   ShoppingCart,
-  DollarSign,
+  CreditCard,
   Landmark,
-  TicketPercent,
+  Percent,
   Factory,
   Users,
-  ShelvingUnit,
+  Boxes,
+  Building2,
+  Settings,
+  Wallet,
+  Layers,
 } from "lucide-react";
 
 export default function Sidebar() {
   return (
-    <div className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-gray-900 to-gray-950 text-white border-r border-gray-800 flex flex-col">
+    <div className="fixed left-0 top-0 h-screen w-64 bg-[#0b1220] text-white border-r border-white/5 flex flex-col">
       {/* HEADER */}
-      <div className="p-5 border-b border-gray-800">
+      <div className="p-5 border-b border-white/5">
         <h1 className="text-xl font-bold tracking-wide">
           POS <span className="text-blue-500">System</span>
         </h1>
@@ -24,8 +28,14 @@ export default function Sidebar() {
 
       {/* NAV */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+        <Section title="MAIN" />
+
         <SidebarItem to="/" icon={<Home size={18} />} title="Dashboard" />
-        <SidebarItem to="/products" icon={<Box size={18} />} title="Products" />
+        <SidebarItem
+          to="/products"
+          icon={<Package size={18} />}
+          title="Products"
+        />
         <SidebarItem
           to="/sales"
           icon={<ShoppingCart size={18} />}
@@ -33,44 +43,24 @@ export default function Sidebar() {
         />
         <SidebarItem
           to="/purchase"
-          icon={<ShoppingCart size={18} />}
+          icon={<CreditCard size={18} />}
           title="Purchase"
         />
-        <SidebarItem
+        {/* <SidebarItem
           to="/payments"
-          icon={<DollarSign size={18} />}
+          icon={<Wallet size={18} />}
           title="Payments"
-        />
+        /> */}
 
-        <div className="pt-4 pb-1 text-[10px] uppercase text-gray-500 tracking-widest">
-          Management
-        </div>
+        <Section title="MANAGEMENT" />
 
-        <SidebarItem
-          to="/pos"
-          icon={<ShoppingCart size={18} />}
-          title="POS Point"
-        />
-        <SidebarItem
-          to="/unit"
-          icon={<ShelvingUnit size={18} />}
-          title="Units"
-        />
-        <SidebarItem
-          to="/currency"
-          icon={<DollarSign size={18} />}
-          title="Currency"
-        />
+        <SidebarItem to="/pos" icon={<Layers size={18} />} title="POS System" />
+        <SidebarItem to="/unit" icon={<Boxes size={18} />} title="Units" />
+        <SidebarItem to="/currency" icon={<DollarIcon />} title="Currency" />
         <SidebarItem to="/funds" icon={<Landmark size={18} />} title="Funds" />
-        <SidebarItem
-          to="/tax"
-          icon={<TicketPercent size={18} />}
-          title="Taxes"
-        />
+        <SidebarItem to="/tax" icon={<Percent size={18} />} title="Taxes" />
 
-        <div className="pt-4 pb-1 text-[10px] uppercase text-gray-500 tracking-widest">
-          People
-        </div>
+        <Section title="PEOPLE" />
 
         <SidebarItem
           to="/supplier"
@@ -82,17 +72,33 @@ export default function Sidebar() {
           icon={<Users size={18} />}
           title="Customers"
         />
+
+        <Section title="COMPANY" />
         <SidebarItem
           to="/company-settings"
-          icon={<Users size={18} />}
-          title="Company Settings"
+          icon={<Building2 size={18} />}
+          title="Company"
         />
+        {/* <SidebarItem
+          to="/settings"
+          icon={<Settings size={18} />}
+          title="Settings"
+        /> */}
       </nav>
 
       {/* FOOTER */}
-      <div className="p-4 border-t border-gray-800 text-xs text-gray-500">
+      <div className="p-4 border-t border-white/5 text-xs text-gray-500">
         v1.0.0 • POS System
       </div>
+    </div>
+  );
+}
+
+/* ================= SECTION ================= */
+function Section({ title }) {
+  return (
+    <div className="pt-4 pb-2 px-2 text-[10px] text-gray-500 tracking-widest">
+      {title}
     </div>
   );
 }
@@ -108,27 +114,27 @@ function SidebarItem({ icon, title, to }) {
         transition-all duration-200
         ${
           isActive
-            ? "bg-blue-600/20 text-blue-400"
-            : "text-gray-300 hover:bg-gray-800 hover:text-white"
+            ? "bg-blue-500/10 text-blue-400"
+            : "text-gray-300 hover:bg-white/5 hover:text-white"
         }
       `
       }
     >
-      {/* ACTIVE INDICATOR */}
-      <span
-        className={({ isActive }) =>
-          `
-          absolute left-0 top-2 bottom-2 w-1 rounded-full transition-all
-          ${isActive ? "bg-blue-500" : "bg-transparent"}
-        `
-        }
-      />
+      {/* ACTIVE BAR */}
+      <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-blue-500 scale-y-0 group-data-[active=true]:scale-y-100 transition-transform" />
 
-      <span className="opacity-80 group-hover:opacity-100 transition">
+      {/* ICON */}
+      <span className="opacity-80 group-hover:opacity-100 transition-transform group-hover:scale-110">
         {icon}
       </span>
 
-      <span className="text-sm font-medium">{title}</span>
+      {/* TEXT */}
+      <span className="text-sm font-medium tracking-wide">{title}</span>
     </NavLink>
   );
+}
+
+/* optional nicer icon */
+function DollarIcon() {
+  return <CreditCard size={18} />;
 }

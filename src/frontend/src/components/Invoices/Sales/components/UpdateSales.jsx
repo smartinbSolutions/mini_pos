@@ -143,7 +143,7 @@ export default function UpdateSales() {
                 <span className="font-medium">{subtotal.toFixed(2)}</span>
               </div>
 
-              <div className="flex justify-between items-center">
+              {/* <div className="flex justify-between items-center">
                 <span>Discount</span>
                 <input
                   type="number"
@@ -153,7 +153,7 @@ export default function UpdateSales() {
                     setInvoice({ ...invoice, discount: e.target.value })
                   }
                 />
-              </div>
+              </div> */}
 
               <div className="flex justify-between items-center">
                 <span>Tax</span>

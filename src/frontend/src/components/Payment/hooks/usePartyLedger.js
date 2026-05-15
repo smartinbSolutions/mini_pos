@@ -4,6 +4,7 @@ const useGetPayments = (fundId) => {
   const api = window.api;
 
   const [payments, setPayments] = useState([]);
+  const [fund, setFund] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchPayments = useCallback(
@@ -12,7 +13,9 @@ const useGetPayments = (fundId) => {
       setLoading(true);
       try {
         const res = await api.getPaymentFund(id);
+        const resFund = await api.getFund(id);
         setPayments(Array.isArray(res) ? res : []);
+        setFund(resFund);
       } catch (err) {
         console.log("getPaymentFund error:", err);
         setPayments([]);
@@ -21,7 +24,6 @@ const useGetPayments = (fundId) => {
     },
     [api],
   );
-  console.log(payments);
 
   useEffect(() => {
     fetchPayments(fundId);
@@ -30,6 +32,7 @@ const useGetPayments = (fundId) => {
   return {
     payments,
     loading,
+    fund,
     refetch: () => fetchPayments(fundId),
   };
 };

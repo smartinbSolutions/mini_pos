@@ -14,6 +14,7 @@ export default function usePosCheckout() {
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
+  const [currencies, setCurrencies] = useState();
 
   const api = window.api;
 
@@ -26,11 +27,12 @@ export default function usePosCheckout() {
 
     try {
       setLoading(true);
-      const [productsResult, customersResult, fundsResult] =
+      const [productsResult, customersResult, fundsResult, currencyResult] =
         await Promise.allSettled([
           api.getProducts(),
           api.getCustomers(),
           api.getFunds(),
+          api.getCurrencies(),
         ]);
 
       if (productsResult.status === "rejected") {
@@ -54,6 +56,9 @@ export default function usePosCheckout() {
       setFunds(
         fundsResult.status === "fulfilled" ? fundsResult.value || [] : [],
       );
+
+      setCurrencies(currencyResult.value[0] || []);
+
       setError(
         [customersResult, fundsResult].some(
           (result) => result.status === "rejected",
@@ -117,7 +122,13 @@ export default function usePosCheckout() {
     [cart],
   );
 
-  const checkout = async ({ fundId, received }) => {
+  const checkout = async ({
+    fundId,
+    received,
+    paymentInfundCurrency,
+    currency_code,
+    exchange_rate,
+  }) => {
     setCheckingOut(true);
 
     try {
@@ -131,6 +142,8 @@ export default function usePosCheckout() {
         received,
         change: received - subtotal,
         customer_id: selectedCustomerId,
+        currency_code,
+        exchange_rate,
       };
 
       const sales = await api.posCheckout({
@@ -140,6 +153,9 @@ export default function usePosCheckout() {
         paid_amount: received,
         net_total: subtotal,
         customer_id: selectedCustomerId,
+        paymentInfundCurrency,
+        currency_code,
+        exchange_rate,
       });
 
       payload.id = sales.invoiceId;
@@ -235,5 +251,6 @@ export default function usePosCheckout() {
     removeFromCart,
     clearCart,
     checkout,
+    currencies,
   };
 }

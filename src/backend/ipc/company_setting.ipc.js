@@ -108,4 +108,29 @@ export default function registerCompanySettingsIPC() {
 
     return { success: true };
   });
+
+  ipcMain.handle("get-dashboard-stats", () => {
+    const totalSales =
+      db.prepare(`SELECT SUM(net_total) as total FROM sales_invoices`).get()
+        ?.total || 0;
+
+    const products =
+      db.prepare(`SELECT COUNT(*) as count FROM products`).get()?.count || 0;
+
+    const customers =
+      db.prepare(`SELECT COUNT(*) as count FROM customers`).get()?.count || 0;
+
+    const purchaseTotal =
+      db.prepare(`SELECT SUM(net_total) as total FROM purchase_invoices`).get()
+        ?.total || 0;
+
+    const profit = totalSales - purchaseTotal;
+
+    return {
+      totalSales,
+      products,
+      customers,
+      profit,
+    };
+  });
 }

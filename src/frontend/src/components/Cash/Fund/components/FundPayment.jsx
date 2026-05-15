@@ -8,26 +8,22 @@ import {
 } from "lucide-react";
 
 import useGetPayments from "../../../Payment/hooks/usePartyLedger";
-
-const formatNumber = (value) => {
-  return Number(value || 0).toLocaleString();
-};
+import { formatNumber } from "../../../../Global/FormatNumber";
 
 const FundMovementsPage = () => {
   const { id } = useParams();
 
-  const { payments, loading } = useGetPayments(id);
-  console.log(payments);
+  const { payments, loading, fund } = useGetPayments(id);
 
   const finalBalance = payments[0]?.running_balance || 0;
 
   const totalIn = payments
     .filter((p) => p.type === "income")
-    .reduce((acc, item) => acc + Number(item.amount || 0), 0);
+    .reduce((acc, item) => acc + Number(item.amount_fund_currency || 0), 0);
 
   const totalOut = payments
-    .filter((p) => p.type === "out")
-    .reduce((acc, item) => acc + Number(item.amount || 0), 0);
+    .filter((p) => p.type === "expense")
+    .reduce((acc, item) => acc + Number(item.amount_fund_currency || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f6f8fc] to-[#eef2f7] p-6">
@@ -49,7 +45,7 @@ const FundMovementsPage = () => {
               </div>
 
               <div className="text-2xl font-bold text-green-600 mt-1">
-                {formatNumber(totalIn)}
+                {formatNumber(totalIn)} {fund.currency_code}
               </div>
             </div>
 
@@ -59,7 +55,7 @@ const FundMovementsPage = () => {
               </div>
 
               <div className="text-2xl font-bold text-red-500 mt-1">
-                {formatNumber(totalOut)}
+                {formatNumber(totalOut)} {fund.currency_code}
               </div>
             </div>
 
@@ -69,7 +65,7 @@ const FundMovementsPage = () => {
               </div>
 
               <div className="text-2xl font-bold mt-1">
-                {formatNumber(finalBalance)}
+                {formatNumber(finalBalance)} {fund.currency_code}
               </div>
             </div>
           </div>
@@ -152,7 +148,8 @@ const FundMovementsPage = () => {
                       }`}
                     >
                       {isIn ? "+" : "-"}
-                      {formatNumber(payment.amount)}
+                      {formatNumber(payment.amount_fund_currency)}{" "}
+                      {fund.currency_code}
                     </div>
 
                     {/* RUNNING BALANCE */}
@@ -161,7 +158,8 @@ const FundMovementsPage = () => {
                         <Wallet size={15} className="text-gray-500" />
 
                         <span className="font-semibold text-gray-800">
-                          {formatNumber(payment.running_balance)}
+                          {formatNumber(payment.running_balance)}{" "}
+                          {fund.currency_code}
                         </span>
                       </div>
                     </div>
