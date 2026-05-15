@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const toNumber = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export default function usePosCheckout() {
+export default function usePosCheckout({ weight } = {}) {
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [funds, setFunds] = useState([]);
@@ -15,8 +15,13 @@ export default function usePosCheckout() {
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
   const [currencies, setCurrencies] = useState();
+  const weightRef = useRef(weight);
 
   const api = window.api;
+
+  useEffect(() => {
+    weightRef.current = weight;
+  }, [weight]);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -202,8 +207,8 @@ export default function usePosCheckout() {
             barcode = "";
             return;
           }
-
           setCart((prev) => {
+            const scannedQuantity = Math.max(0, toNumber(weightRef.current)) || 1;
             const existingIndex = prev.findIndex(
               (i) => Number(i.product_id) === Number(product.id),
             );
@@ -212,7 +217,7 @@ export default function usePosCheckout() {
               const updated = [...prev];
               const item = updated[existingIndex];
 
-              const newQuantity = Number(item.qty) + 1;
+              const newQuantity = toNumber(item.qty) + scannedQuantity;
 
               updated[existingIndex] = {
                 ...item,
@@ -226,11 +231,12 @@ export default function usePosCheckout() {
             return [
               ...prev,
               {
+                id: product.id,
                 product_id: product.id,
                 name: product.name,
-                qty: 1,
+                qty: scannedQuantity,
                 price: product.price || 0,
-                total: product.price || 0,
+                total: (product.price || 0) * scannedQuantity,
               },
             ];
           });

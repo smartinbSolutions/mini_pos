@@ -45,6 +45,23 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
       return undefined;
     }
 
+    api
+      .getScaleStatus?.()
+      .then((payload) => {
+        setIsConnected(Boolean(payload?.connected));
+        setStatus(payload?.message || "Disconnected");
+
+        const nextWeight = Number(payload?.weight);
+
+        if (Number.isFinite(nextWeight) && nextWeight > 0) {
+          setWeight(nextWeight);
+          setCurrentWeightRef.current?.(nextWeight);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to read scale status:", error);
+      });
+
     const removeDataListener = api.onScaleData((payload) => {
       const nextWeight = Number(payload?.weight);
 
@@ -92,7 +109,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
       try {
         const availablePorts = await refreshPorts();
         const selectedPath = path || getDefaultPortPath(availablePorts);
-        const result = await api.connectScale({ path: selectedPath, baudRate });
+      const result = await api.connectScale({ path: selectedPath, baudRate });
 
         if (!result?.ok) {
           setIsConnected(false);

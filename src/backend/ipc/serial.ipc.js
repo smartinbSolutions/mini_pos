@@ -4,6 +4,13 @@ import { ReadlineParser } from "@serialport/parser-readline";
 
 let scalePort = null;
 let scaleParser = null;
+let scaleStatus = {
+  connected: false,
+  message: "Disconnected",
+  path: "",
+  baudRate: 9600,
+};
+let lastWeight = 0;
 
 const sendToRenderer = (channel, payload) => {
   BrowserWindow.getAllWindows().forEach((window) => {
@@ -47,6 +54,11 @@ const closeScalePort = () =>
     if (!scalePort?.isOpen) {
       scaleParser = null;
       scalePort = null;
+      scaleStatus = {
+        ...scaleStatus,
+        connected: false,
+        message: "Disconnected",
+      };
       resolve();
       return;
     }
@@ -54,6 +66,11 @@ const closeScalePort = () =>
     scalePort.close(() => {
       scaleParser = null;
       scalePort = null;
+      scaleStatus = {
+        ...scaleStatus,
+        connected: false,
+        message: "Disconnected",
+      };
       resolve();
     });
   });
@@ -61,8 +78,20 @@ const closeScalePort = () =>
 export default function registerSerialIPC() {
   ipcMain.handle("scale:list-ports", async () => SerialPort.list());
 
+  ipcMain.handle("scale:get-status", async () => ({
+    ...scaleStatus,
+    weight: lastWeight,
+  }));
+
   ipcMain.handle("scale:connect", async (_event, options = {}) => {
-    await closeScalePort();
+    if (scalePort?.isOpen) {
+      return {
+        ok: true,
+        alreadyConnected: true,
+        path: scaleStatus.path,
+        baudRate: scaleStatus.baudRate,
+      };
+    }
 
     const ports = await SerialPort.list();
     const selectedPath = options.path || pickDefaultPort(ports)?.path;
@@ -86,6 +115,8 @@ export default function registerSerialIPC() {
 
       if (weight === null) return;
 
+      lastWeight = weight;
+
       sendToRenderer("scale:data", {
         weight,
         raw: line,
@@ -94,17 +125,25 @@ export default function registerSerialIPC() {
     });
 
     scalePort.on("error", (error) => {
-      sendToRenderer("scale:status", {
+      scaleStatus = {
         connected: false,
         message: error.message,
-      });
+        path: selectedPath,
+        baudRate,
+      };
+
+      sendToRenderer("scale:status", scaleStatus);
     });
 
     scalePort.on("close", () => {
-      sendToRenderer("scale:status", {
+      scaleStatus = {
         connected: false,
         message: "Disconnected",
-      });
+        path: selectedPath,
+        baudRate,
+      };
+
+      sendToRenderer("scale:status", scaleStatus);
     });
 
     await new Promise((resolve, reject) => {
@@ -118,11 +157,14 @@ export default function registerSerialIPC() {
       });
     });
 
-    sendToRenderer("scale:status", {
+    scaleStatus = {
       connected: true,
       message: `Connected to ${selectedPath}`,
       path: selectedPath,
-    });
+      baudRate,
+    };
+
+    sendToRenderer("scale:status", scaleStatus);
 
     return {
       ok: true,
@@ -134,6 +176,7 @@ export default function registerSerialIPC() {
 
   ipcMain.handle("scale:disconnect", async () => {
     await closeScalePort();
+    lastWeight = 0;
     return { ok: true };
   });
 }

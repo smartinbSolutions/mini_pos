@@ -23,6 +23,19 @@ const money = new Intl.NumberFormat("en-US", {
 });
 
 export default function POSSystem() {
+  const [currentWeight, setCurrentWeight] = useState(0);
+
+  const {
+    weight,
+    status: scaleStatus,
+    isConnected: isScaleConnected,
+    ports: scalePorts,
+    connect: connectScale,
+    close: disconnectScale,
+  } = useWeight({
+    setCurrentWeight,
+  });
+
   const {
     products,
     customers,
@@ -41,20 +54,7 @@ export default function POSSystem() {
     clearCart,
     checkout,
     currencies,
-  } = usePosCheckout();
-
-  const [currentWeight, setCurrentWeight] = useState(0);
-
-  const {
-    weight,
-    status: scaleStatus,
-    isConnected: isScaleConnected,
-    ports: scalePorts,
-    connect: connectScale,
-    close: disconnectScale,
-  } = useWeight({
-    setCurrentWeight,
-  });
+  } = usePosCheckout({ weight });
 
   const activeWeight = Number(currentWeight) > 0 ? Number(currentWeight) : 0;
 

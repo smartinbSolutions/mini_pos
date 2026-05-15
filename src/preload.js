@@ -107,6 +107,7 @@ contextBridge.exposeInMainWorld("api", {
 
   /* ================= SCALE ================= */
   listScalePorts: () => ipcRenderer.invoke("scale:list-ports"),
+  getScaleStatus: () => ipcRenderer.invoke("scale:get-status"),
   connectScale: (options) => ipcRenderer.invoke("scale:connect", options),
   disconnectScale: () => ipcRenderer.invoke("scale:disconnect"),
   onScaleData: (callback) => {
