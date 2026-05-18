@@ -19,7 +19,6 @@ export default function registerPurchaseInvoicesIPC() {
         const discount = Number(data.discount || 0);
         const tax = Number(data.tax || 0);
         const paidAmount = Number(data.paymentInfundCurrency || 0);
-        console.log(data);
 
         if (subtotal <= 0 || netTotal <= 0) {
           throw new Error("INVALID TOTALS");

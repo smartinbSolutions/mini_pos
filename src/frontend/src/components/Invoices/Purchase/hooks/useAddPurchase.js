@@ -192,8 +192,6 @@ export default function useAddPurchase() {
     return payment;
   }, [subtotal, invoice]);
 
-  console.log(invoice);
-
   const submit = useCallback(async () => {
     if (!api) {
       setError("Electron API not available");

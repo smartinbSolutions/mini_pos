@@ -95,7 +95,6 @@ export default function InvoicePaymentModal({
   useEffect(() => {
     refetchList();
   }, [loading]);
-  console.log(form);
 
   if (!isOpen) return null;
 
