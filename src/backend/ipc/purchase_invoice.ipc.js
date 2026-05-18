@@ -82,7 +82,7 @@ export default function registerPurchaseInvoicesIPC() {
 
         updateSupplier.run(
           Number(netTotal || 0),
-          Number(supplierPaid || 0),
+          Number(data.paid_amount || 0),
           data.supplier_id,
         );
 
@@ -121,8 +121,8 @@ export default function registerPurchaseInvoicesIPC() {
               "supplier",
               data.supplier_id,
               data.fund_id || null,
-              paidAmount,
-              `Purchase Invoice #${invoiceId}`,
+              data.paid_amount,
+              `Payment for Purchase Invoice #${invoiceId}`,
               data.currency_code,
               data.exchange_rate,
               data.paymentInfundCurrency,

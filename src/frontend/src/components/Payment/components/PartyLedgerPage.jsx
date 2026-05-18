@@ -18,9 +18,9 @@ const PartyLedgerPage = () => {
 
     for (const p of data) {
       if (p.type === "income") {
-        inTotal += Number(p.amount_fund_currency || 0);
+        inTotal += Number(p.amount || 0);
       } else {
-        outTotal += Number(p.amount_fund_currency || 0);
+        outTotal += Number(p.amount || 0);
       }
     }
 
@@ -46,7 +46,7 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-green-600 font-medium">TOTAL IN</div>
 
             <div className="text-lg font-bold text-green-700">
-              {formatMoney(pageTotals.inTotal, data[0])}
+              {money(pageTotals.inTotal)}
             </div>
           </div>
 
@@ -54,7 +54,7 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-red-500 font-medium">TOTAL OUT</div>
 
             <div className="text-lg font-bold text-red-600">
-              {formatMoney(pageTotals.outTotal, data[0])}
+              {money(pageTotals.outTotal)}
             </div>
           </div>
 
@@ -62,14 +62,14 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-gray-500 font-medium">Total</div>
 
             <div className="text-lg font-bold text-gray-800">
-              {formatMoney(party?.total, data[0])}
+              {money(party?.total)}
             </div>
             <div className="text-xs text-gray-500 font-medium">BALANCE</div>
 
             <div className="text-lg font-bold text-gray-800">
               {type === "supplier"
-                ? formatMoney(pageTotals.outTotal - party?.total, data[0])
-                : formatMoney(pageTotals.inTotal - party?.total, data[0])}
+                ? money(pageTotals.outTotal - party?.total)
+                : money(pageTotals.inTotal - party?.total)}
             </div>
           </div>
         </div>

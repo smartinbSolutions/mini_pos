@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Wallet, Save, X, Receipt, Building2, User } from "lucide-react";
-import { formatMoney } from "../../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { formatMoney } from "../../../../Global/FormatNumber";
 
 export default function InvoicePaymentModal({
   isOpen,
@@ -95,6 +95,7 @@ export default function InvoicePaymentModal({
   useEffect(() => {
     refetchList();
   }, [loading]);
+  console.log(form.currency_symbol);
 
   if (!isOpen) return null;
 
@@ -164,6 +165,12 @@ export default function InvoicePaymentModal({
               <h3 className="text-lg font-bold text-red-600">
                 {money(invoice?.net_total)}
               </h3>
+              <h3 className="text-lg font-bold text-red-600">
+                {formatMoney(
+                  invoice?.net_total * form.fund_exchangeRate,
+                  form.currency_symbol,
+                )}
+              </h3>
             </div>
           </div>
 
@@ -183,7 +190,8 @@ export default function InvoicePaymentModal({
                   "fund_exchangeRate",
                   fund?.currency_exchangeRate || 1,
                 );
-                handleChange("currency_code", fund?.currency_code || 1);
+                handleChange("currency_code", fund?.currency_code || "");
+                handleChange("currency_symbol", fund?.currency_symbol || "");
               }}
               className="w-full h-11 rounded-xl border px-3 mt-1"
             >
@@ -204,7 +212,10 @@ export default function InvoicePaymentModal({
             <div className="relative">
               <input
                 type="number"
-                value={invoice?.net_total}
+                value={
+                  invoice?.net_total * form.fund_exchangeRate ||
+                  invoice?.net_total
+                }
                 onChange={(e) => handleChange("amount", e.target.value)}
                 className="w-full h-11 rounded-xl border px-3 pr-10"
                 disabled

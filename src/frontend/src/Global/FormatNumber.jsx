@@ -20,6 +20,7 @@ export const formatMoney = (value, currency, options = {}) => {
     currency?.symbol ||
     currency?.currency_symbol ||
     currency?.fund_currency_symbol ||
+    currency ||
     "";
   const code =
     currency?.code ||

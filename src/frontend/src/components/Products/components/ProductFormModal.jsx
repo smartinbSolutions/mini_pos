@@ -150,7 +150,7 @@ export default function ProductFormModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-md">
         <form
           onSubmit={handleSubmit}
-          className="grid max-h-[94vh] w-full max-w-6xl overflow-hidden rounded-[34px] border border-white/80 bg-[#f8faff] shadow-[0_32px_100px_rgba(15,23,42,0.28)] lg:grid-cols-[360px_1fr]"
+          className="grid max-h-[94vh] w-full max-w-6xl overflow-y-auto  rounded-[34px] border border-white/80 bg-[#f8faff] shadow-[0_32px_100px_rgba(15,23,42,0.28)] lg:grid-cols-[360px_1fr]"
         >
           <aside className="flex min-h-0 flex-col border-b border-[#e5ebff] bg-white/70 p-6 lg:border-b-0 lg:border-r">
             <div className="mb-6 flex items-center justify-between">
@@ -173,7 +173,7 @@ export default function ProductFormModal({
               </button>
             </div>
 
-            <label className="group relative mb-5 flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-[30px] border border-dashed border-[#cbd7ff] bg-[#f8faff] transition hover:border-[#4663ff]/60">
+            <label className="group relative mb-5 flex aspect-square cursor-pointer items-center justify-center overflow-y-auto  rounded-[30px] border border-dashed border-[#cbd7ff] bg-[#f8faff] transition hover:border-[#4663ff]/60">
               {form.logo ? (
                 <img
                   src={getAssetUrl(form.logo)}
@@ -234,7 +234,8 @@ export default function ProductFormModal({
           </aside>
 
           <section className="flex min-h-0 flex-col">
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 pb-28">
+              {" "}
               <div className="grid gap-5">
                 <div className={panelClass}>
                   <div className="mb-5 flex items-center gap-3">

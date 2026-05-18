@@ -74,7 +74,7 @@ export default function registerSalesInvoiceIPC() {
        WHERE id = ?
      `);
 
-      updateFund.run(data.paid_amount, data.fund_id);
+      updateFund.run(data.paymentInfundCurrency, data.fund_id);
 
       insertPayment.run(
         "income",
@@ -82,7 +82,7 @@ export default function registerSalesInvoiceIPC() {
         data.customer_id || null,
         data.fund_id,
         data.paid_amount,
-        `Sales Invoice #${invoiceId}`,
+        `Payment for Sales Invoice #${invoiceId}`,
         data.currency_code,
         data.exchange_rate,
         data.paymentInfundCurrency,
