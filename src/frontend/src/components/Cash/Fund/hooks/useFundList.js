@@ -132,7 +132,7 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Fund:", err);
-      const message = err?.message || "Failed to update Fund.";
+      const message = "Failed to update Fund.";
       setActionError(message);
       toast.error(message);
       return false;

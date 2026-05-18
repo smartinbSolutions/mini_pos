@@ -105,7 +105,7 @@ const useSuppliersList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Supplier:", err);
-      setActionError(err?.message || "Failed to create Supplier.");
+      setActionError("Failed to create Supplier.");
       return false;
     }
   };
@@ -117,7 +117,7 @@ const useSuppliersList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Supplier:", err);
-      setActionError(err?.message || "Failed to update Supplier.");
+      setActionError("Failed to update Supplier.");
       return false;
     }
   };
@@ -133,7 +133,7 @@ const useSuppliersList = () => {
       setEditingId("");
     } catch (err) {
       console.error("Failed to delete Supplier:", err);
-      setActionError(err?.message || "Failed to delete Supplier.");
+      setActionError("Failed to delete this Supplier have Data.");
     }
   };
 

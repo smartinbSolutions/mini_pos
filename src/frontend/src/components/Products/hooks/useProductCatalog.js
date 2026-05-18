@@ -247,8 +247,7 @@ export default function useProductCatalog() {
     } catch (err) {
       console.error("Failed to delete product:", err);
       setActionError(
-        err?.message ||
-          "Failed to delete product. It may be referenced by invoices.",
+        "Failed to delete product. It may be referenced by invoices.",
       );
     }
   };

@@ -132,7 +132,7 @@ export default function useUnit() {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete unit:", err);
-      setActionError(err?.message || "Failed to delete unit.");
+      setActionError("Failed to delete this unit have data.");
     }
   };
 

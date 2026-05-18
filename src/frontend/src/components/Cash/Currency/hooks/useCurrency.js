@@ -151,7 +151,7 @@ const useCurrency = () => {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete Currency:", err);
-      setActionError(err?.message || "Failed to delete Currency.");
+      setActionError("Failed to delete Currency have Data.");
     }
   };
 

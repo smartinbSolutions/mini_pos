@@ -132,7 +132,7 @@ const useCustomerList = () => {
       setEditingId("");
     } catch (err) {
       console.error("Failed to delete Customer:", err);
-      setActionError(err?.message || "Failed to delete Customer.");
+      setActionError("Failed to delete Customer have Data.");
     }
   };
 

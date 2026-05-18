@@ -26,7 +26,11 @@ export default function useTax() {
       return "Tax name is required.";
     }
 
-    if (tax.rate === "" || tax.rate === null || !Number.isFinite(Number(tax.rate))) {
+    if (
+      tax.rate === "" ||
+      tax.rate === null ||
+      !Number.isFinite(Number(tax.rate))
+    ) {
       return "Tax value is required.";
     }
 
@@ -131,7 +135,7 @@ export default function useTax() {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete tax:", err);
-      setActionError(err?.message || "Failed to delete tax.");
+      setActionError("Failed to delete tax have data.");
     }
   };
 

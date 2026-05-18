@@ -54,7 +54,8 @@ const SalesList = () => {
       setActionError("");
       await deleteSales(id);
     } catch (err) {
-      setActionError(err.message || "Delete failed");
+      console.log(err.message);
+      setActionError("Delete failed");
     }
   };
 

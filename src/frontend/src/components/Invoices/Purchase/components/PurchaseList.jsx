@@ -54,7 +54,9 @@ const PurchaseList = () => {
       setActionError("");
       await deletePurchase(id);
     } catch (err) {
-      setActionError(err.message || "Delete failed");
+      console.log(err.message);
+
+      setActionError("Delete failed");
     }
   };
 
@@ -103,7 +105,9 @@ const PurchaseList = () => {
                   NET
                 </div>
                 <div className="text-2xl font-black">{money(totalNet)}</div>
-                <div className="text-xs font-semibold text-slate-500">Total</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Total
+                </div>
               </div>
             </div>
           </div>
