@@ -22,16 +22,6 @@ const validateSetupForm = (form) => {
     nextErrors.phone = "Phone is required.";
   }
 
-  if (!form.email?.trim()) {
-    nextErrors.email = "Email is required.";
-  } else if (!/^\S+@\S+\.\S+$/.test(form.email.trim())) {
-    nextErrors.email = "Enter a valid email address.";
-  }
-
-  if (!form.address?.trim()) {
-    nextErrors.address = "Address is required.";
-  }
-
   if (!form.logo) {
     nextErrors.logo = "Company logo is required.";
   }
@@ -99,18 +89,25 @@ const useSetupPage = () => {
     });
 
   const handleLogo = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    try {
+      const file = e.target.files[0];
 
-    const base64 = await toBase64(file);
+      if (!file) return;
 
-    const savedPath = await window.api.saveLogo({
-      base64,
-      name: `logo-${Date.now()}-${file.name}`,
-    });
+      const base64 = await toBase64(file);
 
-    setForm({ ...form, logo: savedPath });
-    setErrors((current) => ({ ...current, logo: "" }));
+      const savedPath = await window.api.saveLogo({
+        base64,
+        name: `${Date.now()}-${file.name}`,
+      });
+
+      setForm((prev) => ({
+        ...prev,
+        logo: savedPath,
+      }));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCurrencySelect = (currency) => {
@@ -177,4 +174,3 @@ const useSetupPage = () => {
 };
 
 export default useSetupPage;
-

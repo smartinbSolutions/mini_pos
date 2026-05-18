@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import useSetupPage from "../hooks/useSetupPage";
 import appLogo from "../../../assets/logo.png";
+import { getAssetUrl } from "../../../Global/assetUrl";
 
 export default function CompanySettings() {
   const {
@@ -28,12 +29,14 @@ export default function CompanySettings() {
     errors,
     form,
   } = useSetupPage();
+  console.log(form);
 
   const inputClass =
     "h-12 w-full rounded-xl border border-[#dbe4ff] bg-white/90 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
   const errorInputClass =
     "border-red-300 bg-red-50/60 focus:border-red-400 focus:ring-red-100";
-  const labelClass = "mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700";
+  const labelClass =
+    "mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700";
   const requiredMark = <span className="text-red-500">*</span>;
   const fieldClass = (name) =>
     `${inputClass} ${errors[name] ? errorInputClass : ""}`;
@@ -133,14 +136,20 @@ export default function CompanySettings() {
                 </div>
                 <div
                   className={`flex h-32 items-center justify-center rounded-2xl border border-dashed bg-[#f8faff] p-4 ${
-                    errors.logo ? "border-red-300 bg-red-50/60" : "border-[#cbd7ff]"
+                    errors.logo
+                      ? "border-red-300 bg-red-50/60"
+                      : "border-[#cbd7ff]"
                   }`}
                 >
-                  <img
-                    src={form.logo || appLogo}
-                    alt="Selected company logo"
-                    className="max-h-full max-w-full object-contain"
-                  />
+                  {form.logo ? (
+                    <img
+                      src={getAssetUrl(form.logo)}
+                      alt="Selected company logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : (
+                    <Camera size={28} className="text-[#4663ff]/50" />
+                  )}
                 </div>
                 {errorText("logo")}
               </div>
@@ -261,7 +270,7 @@ export default function CompanySettings() {
                   <label>
                     <span className={labelClass}>
                       <Mail size={15} />
-                      Email {requiredMark}
+                      Email
                     </span>
                     <input
                       name="email"
@@ -272,13 +281,12 @@ export default function CompanySettings() {
                       className={fieldClass("email")}
                       required
                     />
-                    {errorText("email")}
                   </label>
 
                   <label className="md:col-span-2">
                     <span className={labelClass}>
                       <MapPin size={15} />
-                      Address {requiredMark}
+                      Address
                     </span>
                     <textarea
                       name="address"
@@ -288,7 +296,6 @@ export default function CompanySettings() {
                       className={`${fieldClass("address")} min-h-24 resize-none py-3`}
                       required
                     />
-                    {errorText("address")}
                   </label>
                 </div>
               </div>

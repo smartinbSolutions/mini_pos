@@ -335,7 +335,7 @@ export default function registerSalesInvoiceIPC() {
     const transaction = db.transaction(() => {
       const invoiceResult = insertInvoice.run(
         data.customer_id || null,
-        data.date,
+        data.date || new Date().toISOString(),
         data.subtotal || 0,
         data.discount || 0,
         data.tax_id || null,

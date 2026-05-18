@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
+import { getAssetUrl } from "../../../Global/assetUrl";
 
 const emptyForm = {
   name: "",
@@ -175,7 +176,7 @@ export default function ProductFormModal({
             <label className="group relative mb-5 flex aspect-square cursor-pointer items-center justify-center overflow-hidden rounded-[30px] border border-dashed border-[#cbd7ff] bg-[#f8faff] transition hover:border-[#4663ff]/60">
               {form.logo ? (
                 <img
-                  src={form.logo}
+                  src={getAssetUrl(form.logo)}
                   alt="Product"
                   className="h-full w-full object-cover"
                 />

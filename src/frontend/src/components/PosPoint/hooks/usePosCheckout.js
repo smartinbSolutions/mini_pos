@@ -208,7 +208,8 @@ export default function usePosCheckout({ weight } = {}) {
             return;
           }
           setCart((prev) => {
-            const scannedQuantity = Math.max(0, toNumber(weightRef.current)) || 1;
+            const scannedQuantity =
+              Math.max(0, toNumber(weightRef.current)) || 1;
             const existingIndex = prev.findIndex(
               (i) => Number(i.product_id) === Number(product.id),
             );

@@ -1,6 +1,9 @@
 const { ipcMain } = require("electron");
 import db from "../db";
 
+const toAppFileUrl = (filePath) =>
+  `app-file://local/${encodeURIComponent(filePath)}`;
+
 export default function registerCompanySettingsIPC() {
   ipcMain.handle("get-company-settings", () => {
     const settings = db
@@ -75,7 +78,7 @@ export default function registerCompanySettingsIPC() {
 
     fs.writeFileSync(filePath, base64Data, "base64");
 
-    return filePath;
+    return toAppFileUrl(filePath);
   });
   ipcMain.handle("update-company-settings", (event, data) => {
     db.prepare(

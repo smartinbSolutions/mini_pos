@@ -62,7 +62,9 @@ const SalesList = () => {
     (sum, inv) => sum + Number(inv.net_total || 0),
     0,
   );
-  const unpaidCount = salesInvoices.filter((inv) => inv.status !== "paid").length;
+  const unpaidCount = salesInvoices.filter(
+    (inv) => inv.status !== "paid",
+  ).length;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
@@ -84,7 +86,9 @@ const SalesList = () => {
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <Receipt size={20} className="mb-4 text-[#4663ff]" />
-                <div className="text-2xl font-black">{salesInvoices.length}</div>
+                <div className="text-2xl font-black">
+                  {salesInvoices.length}
+                </div>
                 <div className="text-xs font-semibold text-slate-500">
                   Invoices
                 </div>
@@ -99,7 +103,9 @@ const SalesList = () => {
                   NET
                 </div>
                 <div className="text-2xl font-black">{money(totalNet)}</div>
-                <div className="text-xs font-semibold text-slate-500">Total</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  Total
+                </div>
               </div>
             </div>
           </div>
@@ -181,7 +187,9 @@ const SalesList = () => {
                       <td className="px-5 py-4 font-bold text-slate-900">
                         {inv.customer_name || "-"}
                       </td>
-                      <td className="px-5 py-4 text-slate-500">{inv.date}</td>
+                      <td className="px-5 py-4 text-slate-500">
+                        {inv?.date?.slice(0, 10)}
+                      </td>
                       <td className="px-5 py-4 text-right">
                         {money(inv.subtotal || 0)}
                       </td>
@@ -202,7 +210,9 @@ const SalesList = () => {
                           {inv.status !== "paid" && (
                             <>
                               <button
-                                onClick={() => navigate(`/edit-sales/${inv.id}`)}
+                                onClick={() =>
+                                  navigate(`/edit-sales/${inv.id}`)
+                                }
                                 className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               >
                                 <Edit2 size={16} />

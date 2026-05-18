@@ -14,6 +14,7 @@ import useProductCatalog from "../hooks/useProductCatalog";
 import DeleteModal from "../../../Global/DeleteModel";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { formatNumber } from "../../../Global/FormatNumber";
+import { getAssetUrl } from "../../../Global/assetUrl";
 
 export default function ProductList() {
   const catalog = useProductCatalog();
@@ -170,7 +171,7 @@ export default function ProductList() {
                 <div className="relative h-28 bg-[#f8faff]">
                   {product.logo ? (
                     <img
-                      src={product.logo}
+                      src={getAssetUrl(product.logo)}
                       alt={product.name || "Product"}
                       className="h-full w-full object-cover"
                     />

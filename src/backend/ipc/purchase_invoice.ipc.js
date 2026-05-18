@@ -18,7 +18,8 @@ export default function registerPurchaseInvoicesIPC() {
         const netTotal = Number(data.net_total || 0);
         const discount = Number(data.discount || 0);
         const tax = Number(data.tax || 0);
-        const paidAmount = Number(data.paid_amount || 0);
+        const paidAmount = Number(data.paymentInfundCurrency || 0);
+        console.log(data);
 
         if (subtotal <= 0 || netTotal <= 0) {
           throw new Error("INVALID TOTALS");
@@ -97,9 +98,6 @@ export default function registerPurchaseInvoicesIPC() {
               .get(data.fund_id);
 
             if (!fundCheck) throw new Error("FUND NOT FOUND");
-            if (fundCheck.balance < paidAmount) {
-              throw new Error("INSUFFICIENT FUND BALANCE");
-            }
 
             db.prepare(
               `

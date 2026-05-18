@@ -1,9 +1,10 @@
-import { app, BrowserWindow, ipcMain, session } from "electron";
+import { app, BrowserWindow, ipcMain, net, protocol, session } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
 
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { pathToFileURL } from "node:url";
 import registerAllIPC from "./backend/registerAllIPC";
 import activateLicense from "./main/license/activateLicense";
 import verifyLicenseFile from "./main/license/verifyLicenseFile";
@@ -13,9 +14,44 @@ const __dirname = dirname(__filename);
 
 app.commandLine.appendSwitch("enable-experimental-web-platform-features");
 
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: "app-file",
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+]);
+
 if (started) app.quit();
 
 let mainWindow;
+
+function registerAppFileProtocol() {
+  protocol.handle("app-file", async (request) => {
+    const url = new URL(request.url);
+    const filePath = decodeURIComponent(url.pathname.slice(1));
+
+    if (!filePath) {
+      return new Response("Missing file path", { status: 400 });
+    }
+
+    const uploadsDir = path.join(app.getPath("userData"), "uploads");
+    const resolvedFilePath = path.resolve(filePath);
+    const resolvedUploadsDir = path.resolve(uploadsDir);
+
+    const relativePath = path.relative(resolvedUploadsDir, resolvedFilePath);
+
+    if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    return net.fetch(pathToFileURL(resolvedFilePath).toString());
+  });
+}
 
 function loadRendererRoute(window, routePath) {
   const devServerUrl = app.isPackaged
@@ -69,6 +105,7 @@ function registerLicenseIPC() {
 }
 
 app.whenReady().then(async () => {
+  registerAppFileProtocol();
   registerLicenseIPC();
 
   try {

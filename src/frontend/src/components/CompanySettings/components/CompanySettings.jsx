@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
 } from "lucide-react";
 import useUpdateCompanySettings from "../hooks/useUpdateCompanySettings";
+import { getAssetUrl } from "../../../Global/assetUrl";
 
 export default function CompanySettings() {
   const { handleSave, handleLogo, handleChange, form, saving, loading } =
@@ -41,7 +42,7 @@ export default function CompanySettings() {
                   <div className="w-28 h-28 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center overflow-hidden backdrop-blur-sm">
                     {form.logo ? (
                       <img
-                        src={`file://${form.logo}`}
+                        src={getAssetUrl(form.logo)}
                         alt="logo"
                         className="w-full h-full object-cover"
                       />
