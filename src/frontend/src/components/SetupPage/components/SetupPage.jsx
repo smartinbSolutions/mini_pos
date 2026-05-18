@@ -16,7 +16,7 @@ import useSetupPage from "../hooks/useSetupPage";
 import appLogo from "../../../assets/logo.png";
 import { getAssetUrl } from "../../../Global/assetUrl";
 
-export default function CompanySettings() {
+export default function CompanySettings({ onSetupComplete }) {
   const {
     handleSave,
     currencies,
@@ -28,7 +28,7 @@ export default function CompanySettings() {
     saving,
     errors,
     form,
-  } = useSetupPage();
+  } = useSetupPage({ onSetupComplete });
 
   const inputClass =
     "h-12 w-full rounded-xl border border-[#dbe4ff] bg-white/90 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";

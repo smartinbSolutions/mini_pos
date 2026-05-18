@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./Layout";
 
 import Dashboard from "./pages/DashboardPage";
@@ -70,12 +70,15 @@ export default function App() {
   if (isSetup === null) return <div>Loading...</div>;
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* SETUP MODE */}
         {!isSetup ? (
           <>
-            <Route path="/setup" element={<SetupPage />} />
+            <Route
+              path="/setup"
+              element={<SetupPage onSetupComplete={() => setIsSetup(true)} />}
+            />
             <Route path="*" element={<Navigate to="/setup" />} />
           </>
         ) : (
@@ -114,6 +117,6 @@ export default function App() {
           </>
         )}
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }

@@ -54,12 +54,15 @@ function registerAppFileProtocol() {
 }
 
 function loadRendererRoute(window, routePath) {
-  const devServerUrl = app.isPackaged
-    ? null
-    : process.env.RENDERER_DEV_SERVER_URL || "http://localhost:3000";
+  const devServerUrl =
+    !app.isPackaged && typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== "undefined"
+      ? MAIN_WINDOW_VITE_DEV_SERVER_URL
+      : null;
 
   if (devServerUrl) {
-    window.loadURL(new URL(routePath, devServerUrl).toString());
+    const url = new URL(devServerUrl);
+    url.hash = routePath;
+    window.loadURL(url.toString());
     return;
   }
 
@@ -70,6 +73,7 @@ function loadRendererRoute(window, routePath) {
 
   window.loadFile(
     path.join(__dirname, `../renderer/${rendererName}/index.html`),
+    { hash: routePath },
   );
 }
 
@@ -87,7 +91,10 @@ function createWindow(routePath = "/") {
   });
 
   loadRendererRoute(mainWindow, routePath);
-  mainWindow.webContents.openDevTools();
+
+  if (!app.isPackaged && process.env.OPEN_DEVTOOLS === "true") {
+    mainWindow.webContents.openDevTools();
+  }
 }
 
 function registerLicenseIPC() {

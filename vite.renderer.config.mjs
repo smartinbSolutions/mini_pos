@@ -1,4 +1,12 @@
 import { defineConfig, transformWithEsbuild } from "vite";
+import path from "node:path";
+import { createRequire } from "node:module";
+
+const frontendRequire = createRequire(
+  path.resolve("src/frontend/package.json"),
+);
+const tailwindcss = frontendRequire("tailwindcss");
+const autoprefixer = frontendRequire("autoprefixer");
 
 // https://vitejs.dev/config
 export default defineConfig({
@@ -25,6 +33,16 @@ export default defineConfig({
       loader: {
         ".js": "jsx",
       },
+    },
+  },
+  css: {
+    postcss: {
+      plugins: [
+        tailwindcss({
+          config: path.resolve("src/frontend/tailwind.config.js"),
+        }),
+        autoprefixer(),
+      ],
     },
   },
 });

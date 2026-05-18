@@ -33,7 +33,7 @@ const validateSetupForm = (form) => {
   return nextErrors;
 };
 
-const useSetupPage = () => {
+const useSetupPage = ({ onSetupComplete } = {}) => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -147,9 +147,9 @@ const useSetupPage = () => {
         symbol: form.symbol,
       });
 
-      navigate("/");
       if (res?.success) {
-        window.location.replace("/");
+        onSetupComplete?.();
+        navigate("/", { replace: true });
       }
     } catch (err) {
       console.error(err);

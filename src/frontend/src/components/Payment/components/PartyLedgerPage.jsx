@@ -11,6 +11,10 @@ const PartyLedgerPage = () => {
 
   const { data = [], loading, party } = usePartyLedger(id, type);
   const { money } = usePrimaryCurrency();
+  const partyTotal = Number(party?.total || 0);
+  const partyPaid = Number(party?.total_paid || 0);
+  const partyBalance = partyTotal - partyPaid;
+  const partyName = party?.name || `${type === "customer" ? "Customer" : "Supplier"} #${id}`;
 
   const pageTotals = useMemo(() => {
     let inTotal = 0;
@@ -27,49 +31,63 @@ const PartyLedgerPage = () => {
     return { inTotal, outTotal };
   }, [data]);
 
-  const lastBalance = data.length ? Number(data[0].running_balance || 0) : 0;
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* HEADER */}
       <div className="bg-white p-5 rounded-3xl border shadow-sm mb-5 flex flex-col lg:flex-row justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">
-            {type === "customer" ? "Customer" : "Supplier"} Ledger
+            {partyName}
           </h1>
 
-          <p className="text-sm text-gray-500 mt-1">Party ID: #{id}</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {type === "customer" ? "Customer" : "Supplier"} Ledger - Party ID:
+            #{id}
+          </p>
         </div>
 
         <div className="flex gap-4 flex-wrap">
-          <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-green-600 font-medium">TOTAL IN</div>
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 min-w-[140px]">
+            <div className="text-xs text-blue-600 font-medium">
+              PARTY TOTAL
+            </div>
 
-            <div className="text-lg font-bold text-green-700">
-              {money(pageTotals.inTotal)}
+            <div className="text-lg font-bold text-blue-700">
+              {money(partyTotal)}
             </div>
           </div>
 
-          <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-red-500 font-medium">TOTAL OUT</div>
+          <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 min-w-[140px]">
+            <div className="text-xs text-green-600 font-medium">
+              TOTAL PAID
+            </div>
 
-            <div className="text-lg font-bold text-red-600">
-              {money(pageTotals.outTotal)}
+            <div className="text-lg font-bold text-green-700">
+              {money(partyPaid)}
             </div>
           </div>
 
           <div className="bg-gray-100 border rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-gray-500 font-medium">Total</div>
-
-            <div className="text-lg font-bold text-gray-800">
-              {money(party?.total)}
-            </div>
             <div className="text-xs text-gray-500 font-medium">BALANCE</div>
 
             <div className="text-lg font-bold text-gray-800">
-              {type === "supplier"
-                ? money(pageTotals.outTotal - party?.total)
-                : money(pageTotals.inTotal - party?.total)}
+              {money(partyBalance)}
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-2xl px-4 py-3 min-w-[140px]">
+            <div className="text-xs text-gray-500 font-medium">PAGE IN</div>
+
+            <div className="text-lg font-bold text-gray-800">
+              {money(pageTotals.inTotal)}
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-2xl px-4 py-3 min-w-[140px]">
+            <div className="text-xs text-gray-500 font-medium">PAGE OUT</div>
+
+            <div className="text-lg font-bold text-gray-800">
+              {money(pageTotals.outTotal)}
             </div>
           </div>
         </div>
