@@ -354,12 +354,24 @@ export default function registerSalesInvoiceIPC() {
         updateStock.run(quantity, item.id);
       }
 
+      if (data.customer_id) {
+        const updateCustomer = db
+          .prepare(
+            `
+        UPDATE customers
+        SET total = total + ?,
+            total_paid = total_paid + ?
+        WHERE id = ?
+      `,
+          )
+          .run(Number(data.net_total || 0), data.net_total, data.customer_id);
+      }
       insertPayment.run(
         "income",
         data.customer_id ? "customer" : "walk-in",
         data.customer_id || null,
         data.fund_id,
-        data.paid_amount,
+        data.net_total,
         `POS Invoice #${invoiceId}`,
         data.currency_code,
         data.exchange_rate,

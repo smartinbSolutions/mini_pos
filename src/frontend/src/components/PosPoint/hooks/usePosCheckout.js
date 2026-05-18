@@ -166,15 +166,14 @@ export default function usePosCheckout({ weight } = {}) {
         currency_code,
         exchange_rate,
       };
-
       const sales = await api.posCheckout({
         fund_id: Number(fundId),
         items: cart,
         subtotal,
-        paid_amount: received,
+        paid_amount: subtotal,
         net_total: subtotal,
         customer_id: selectedCustomerId,
-        paymentInfundCurrency,
+        paymentInfundCurrency: paymentInfundCurrency,
         currency_code,
         exchange_rate,
       });

@@ -220,8 +220,8 @@ export default function registerPaymentIPC() {
 
             SUM(
               CASE 
-                WHEN p.type = 'income' THEN p.amount_fund_currency
-                WHEN p.type = 'expense' THEN -p.amount_fund_currency
+                WHEN p.type = 'income' THEN p.amount
+                WHEN p.type = 'expense' THEN -p.amount
                 ELSE 0
               END
             ) OVER (

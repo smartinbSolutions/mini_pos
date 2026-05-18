@@ -1,8 +1,16 @@
-import React, { useMemo, useState } from "react";
-import { Plus, Trash2, Save, ArrowLeft, Receipt, HandCoins } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Plus,
+  Trash2,
+  Save,
+  ArrowLeft,
+  Receipt,
+  HandCoins,
+} from "lucide-react";
 import useAddSales from "../hooks/useAddSales";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { ToastContainer } from "react-toastify";
 
 export default function AddSales() {
   const {
@@ -30,12 +38,10 @@ export default function AddSales() {
 
   const total = toNum(netTotal);
   const paid = toNum(invoice.paid_amount);
-  const due = Math.max(total - paid, 0);
 
   const status = useMemo(() => {
     if (total === 0) return "unpaid";
     if (paid >= total) return "paid";
-    if (paid > 0) return "partial";
     return "unpaid";
   }, [paid, total]);
 
@@ -59,7 +65,9 @@ export default function AddSales() {
               <h1 className="text-3xl font-black text-slate-950">
                 Create Sales Invoice
               </h1>
-              <p className="text-sm text-slate-500">Manage items and payments</p>
+              <p className="text-sm text-slate-500">
+                Manage items and payments
+              </p>
             </div>
           </div>
 
@@ -119,7 +127,9 @@ export default function AddSales() {
               <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
                 <div>
                   <h2 className="text-lg font-black text-slate-950">Items</h2>
-                  <p className="text-sm text-slate-500">Products on this invoice</p>
+                  <p className="text-sm text-slate-500">
+                    Products on this invoice
+                  </p>
                 </div>
 
                 <button
@@ -242,9 +252,9 @@ export default function AddSales() {
                   </span>
                 </div>
                 <div className="mt-2 flex justify-between text-sm">
-                  <span className="text-slate-500">Recorded payment</span>
+                  <span className="text-slate-500">payment in CASH</span>
                   <span className="font-black text-[#4663ff]">
-                    {money(paid)}
+                    {money(total * invoice.exchange_rate)}
                   </span>
                 </div>
               </div>
@@ -288,11 +298,6 @@ export default function AddSales() {
                 </button>
               </div>
 
-              <div className="flex justify-between font-black">
-                <span>Due</span>
-                <span className="text-red-500">{money(due)}</span>
-              </div>
-
               {paid > 0 && (
                 <SearchableSelect
                   options={funds}
@@ -321,6 +326,7 @@ export default function AddSales() {
           </aside>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }

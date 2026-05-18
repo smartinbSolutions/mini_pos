@@ -3,6 +3,8 @@ import { Plus, Trash2, Save, Receipt, HandCoins } from "lucide-react";
 import useAddPurchase from "../hooks/useAddPurchase";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { formatMoney } from "../../../../Global/FormatNumber";
+import { ToastContainer } from "react-toastify";
 
 export default function AddPurchase() {
   const {
@@ -29,10 +31,7 @@ export default function AddPurchase() {
 
   const paid = num(invoice.paid_amount);
   const total = num(netTotal);
-  const due = Math.max(total - paid, 0);
-  const status =
-    paid >= total && total > 0 ? "paid" : paid > 0 ? "partial" : "unpaid";
-
+  const status = invoice.status === "paid" ? "paid" : "unpaid";
   const inputClass =
     "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100";
   const panelClass =
@@ -74,7 +73,9 @@ export default function AddPurchase() {
                   placeholder="Select Supplier"
                   options={suppliers}
                   selectedValue={invoice?.supplier_id}
-                  onChange={(e) => setInvoice({ ...invoice, supplier_id: e.id })}
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, supplier_id: e.id })
+                  }
                 />
 
                 <input
@@ -211,7 +212,6 @@ export default function AddPurchase() {
                   {status.toUpperCase()}
                 </span>
               </div>
-
               <div className="rounded-2xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Amount to pay</span>
@@ -220,13 +220,12 @@ export default function AddPurchase() {
                   </span>
                 </div>
                 <div className="mt-2 flex justify-between text-sm">
-                  <span className="text-slate-500">Recorded payment</span>
+                  <span className="text-slate-500">payment in CASH</span>
                   <span className="font-black text-[#4663ff]">
-                    {money(paid)}
+                    {money(total * invoice.exchange_rate)}
                   </span>
                 </div>
               </div>
-
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -260,11 +259,6 @@ export default function AddPurchase() {
                 </button>
               </div>
 
-              <div className="flex justify-between font-black">
-                <span>Due</span>
-                <span className="text-red-500">{money(due)}</span>
-              </div>
-
               {paid > 0 && (
                 <SearchableSelect
                   placeholder="Select Fund"
@@ -276,6 +270,7 @@ export default function AddPurchase() {
                       fund_id: e.id,
                       exchange_rate: e.currency_exchangeRate,
                       currency_code: e.currency_code,
+                      currency_symbol: e.currency_symbol,
                     }))
                   }
                 />
@@ -294,6 +289,7 @@ export default function AddPurchase() {
           </aside>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 }

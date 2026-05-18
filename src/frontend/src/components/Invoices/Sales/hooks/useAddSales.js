@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const emptyItem = {
   product_id: "",
@@ -156,14 +157,24 @@ export default function useAddSales() {
 
     return subtotal - discount + taxValue;
   }, [subtotal, invoice]);
-  const dueAmount = Number(netTotal || 0) - Number(invoice.paid_amount || 0);
-
+  useEffect(() => {
+    if (status === "paid") {
+      setInvoice((p) => ({
+        ...p,
+        paid_amount: netTotal,
+      }));
+    }
+  }, [netTotal]);
   const paymentInfundCurrency = useMemo(() => {
     const payment = subtotal * (invoice.exchange_rate || 1);
     return payment;
   }, [subtotal, invoice]);
 
   const submit = async () => {
+    if (status === "paid" && !invoice.fund_id) {
+      toast.error("PLS SELECT FUND");
+      return false;
+    }
     try {
       setSaving(true);
 
@@ -208,7 +219,6 @@ export default function useAddSales() {
     taxes,
     funds,
     status,
-    dueAmount,
     setStatus,
   };
 }

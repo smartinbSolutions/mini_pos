@@ -140,7 +140,7 @@ const PartyLedgerPage = () => {
 
                   <div className="text-xs text-gray-400 flex items-center gap-1 justify-end mt-2">
                     <Wallet size={12} />
-                    Balance: {formatMoney(p.running_balance, p)}
+                    Balance: {money(p.running_balance)}
                   </div>
                 </div>
               </div>

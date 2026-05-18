@@ -25,9 +25,7 @@ export default function CheckoutModal({
   const [currencyCode, setCurrencyCode] = useState("");
   const { money } = usePrimaryCurrency();
 
-  const [received, setReceived] = useState(
-    total * toNumber(currencyExchangeRate || 1),
-  );
+  const [received, setReceived] = useState(total);
 
   const [error, setError] = useState("");
 
@@ -222,11 +220,7 @@ export default function CheckoutModal({
               <div className="rounded-2xl bg-white p-4">
                 <p className="text-xs font-bold text-slate-400">Change</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
-                  {money(
-                    change,
-                    { currency_code: currencyCode },
-                    { showCode: true },
-                  )}
+                  {money(change, currencyCode)}
                 </p>
               </div>
 
@@ -237,11 +231,7 @@ export default function CheckoutModal({
                     remaining > 0 ? "text-red-600" : "text-slate-900"
                   }`}
                 >
-                  {money(
-                    remaining,
-                    { currency_code: currencyCode },
-                    { showCode: true },
-                  )}
+                  {money(remaining, currencyCode)}
                 </p>
               </div>
             </div>
