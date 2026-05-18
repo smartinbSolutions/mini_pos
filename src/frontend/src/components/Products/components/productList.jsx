@@ -223,7 +223,9 @@ export default function ProductList() {
 
                   <div className="grid grid-cols-3 gap-1.5">
                     <div className="rounded-xl bg-[#f8faff] px-2 py-2">
-                      <div className="text-[10px] font-semibold text-slate-400">Qty</div>
+                      <div className="text-[10px] font-semibold text-slate-400">
+                        Qty
+                      </div>
                       <div className="mt-0.5 truncate text-xs font-black text-slate-950">
                         {formatNumber(product.quantity || 0, 2)}
                       </div>
@@ -302,10 +304,10 @@ export default function ProductList() {
         )}
       </main>
 
-      <div className="fixed bottom-6 right-6 hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-bold text-slate-600 shadow-lg backdrop-blur lg:flex">
+      {/* <div className="fixed bottom-6 right-6 hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-bold text-slate-600 shadow-lg backdrop-blur lg:flex">
         <Barcode size={16} className="text-[#4663ff]" />
         {barcodeCount} barcodes tracked
-      </div>
+      </div> */}
 
       {isFormOpen && (
         <ProductFormModal
