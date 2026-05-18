@@ -9,7 +9,7 @@ import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 const PartyLedgerPage = () => {
   const { id, type } = useParams();
 
-  const { data = [], loading } = usePartyLedger(id, type);
+  const { data = [], loading, party } = usePartyLedger(id, type);
   const { money } = usePrimaryCurrency();
 
   const pageTotals = useMemo(() => {
@@ -28,6 +28,7 @@ const PartyLedgerPage = () => {
   }, [data]);
 
   const lastBalance = data.length ? Number(data[0].running_balance || 0) : 0;
+  console.log(party);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -59,10 +60,17 @@ const PartyLedgerPage = () => {
           </div>
 
           <div className="bg-gray-100 border rounded-2xl px-4 py-3 min-w-[140px]">
+            <div className="text-xs text-gray-500 font-medium">Total</div>
+
+            <div className="text-lg font-bold text-gray-800">
+              {formatMoney(party?.total, data[0])}
+            </div>
             <div className="text-xs text-gray-500 font-medium">BALANCE</div>
 
             <div className="text-lg font-bold text-gray-800">
-              {formatMoney(lastBalance, data[0])}
+              {type === "supplier"
+                ? formatMoney(pageTotals.outTotal - party?.total, data[0])
+                : formatMoney(pageTotals.inTotal - party?.total, data[0])}
             </div>
           </div>
         </div>

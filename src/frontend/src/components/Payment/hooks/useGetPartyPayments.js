@@ -7,6 +7,7 @@ export default function usePartyLedger(partyId, partyType, page = 1) {
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [party, setParty] = useState("");
 
   const fetchData = async () => {
     if (!partyId || !partyType) return;
@@ -22,7 +23,13 @@ export default function usePartyLedger(partyId, partyType, page = 1) {
         limit: LIMIT,
         offset,
       });
-
+      if (partyType === "customer") {
+        const customer = await api.getCustomer(partyId);
+        setParty(customer);
+      } else if (partyType === "supplier") {
+        const supplier = await api.getSupplier(partyId);
+        setParty(supplier);
+      }
       setData(rows);
     } catch (err) {
       console.log("Ledger Error:", err);
@@ -36,5 +43,5 @@ export default function usePartyLedger(partyId, partyType, page = 1) {
     fetchData();
   }, [partyId, partyType, page]);
 
-  return { data, loading, refetch: fetchData };
+  return { data, loading, refetch: fetchData, party };
 }
