@@ -28,7 +28,6 @@ const PartyLedgerPage = () => {
   }, [data]);
 
   const lastBalance = data.length ? Number(data[0].running_balance || 0) : 0;
-  console.log(party);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
