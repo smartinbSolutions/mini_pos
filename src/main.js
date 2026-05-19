@@ -92,7 +92,7 @@ function createWindow(routePath = "/") {
 
   loadRendererRoute(mainWindow, routePath);
 
-  if (!app.isPackaged && process.env.OPEN_DEVTOOLS === "true") {
+  if (!app.isPackaged && process.env.DISABLE_DEVTOOLS !== "true") {
     mainWindow.webContents.openDevTools();
   }
 }
