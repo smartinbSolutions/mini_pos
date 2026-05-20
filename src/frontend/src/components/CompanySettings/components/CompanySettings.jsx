@@ -10,15 +10,17 @@ import {
 } from "lucide-react";
 import useUpdateCompanySettings from "../hooks/useUpdateCompanySettings";
 import { getAssetUrl } from "../../../Global/assetUrl";
+import { useTranslation } from "react-i18next";
 
 export default function CompanySettings() {
+  const { t } = useTranslation();
   const { handleSave, handleLogo, handleChange, form, saving, loading } =
     useUpdateCompanySettings();
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-gray-500 text-lg">
-        Loading...
+        {t("common.loading")}
       </div>
     );
   }
@@ -27,10 +29,10 @@ export default function CompanySettings() {
     <div className="p-6 bg-[#f5f7fb] min-h-screen">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Company Settings</h1>
+          <h1 className="text-3xl font-bold text-gray-800">{t("screens.company.title")}</h1>
 
           <p className="text-gray-500 mt-2">
-            Manage your company information and system settings
+            {t("screens.company.subtitle")}
           </p>
         </div>
 
@@ -43,7 +45,7 @@ export default function CompanySettings() {
                     {form.logo ? (
                       <img
                         src={getAssetUrl(form.logo)}
-                        alt="logo"
+                        alt={t("screens.setupPage.logo")}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -57,10 +59,10 @@ export default function CompanySettings() {
 
               <div>
                 <h2 className="text-2xl font-semibold">
-                  {form.company_name || "Your Company"}
+                  {form.company_name || t("screens.company.fallbackName")}
                 </h2>
 
-                <p className="text-white/80 mt-1">ERP System Configuration</p>
+                <p className="text-white/80 mt-1">{t("screens.company.configuration")}</p>
               </div>
             </div>
           </div>
@@ -69,7 +71,7 @@ export default function CompanySettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  Company Name
+                  {t("screens.company.companyName")}
                 </label>
 
                 <div className="relative">
@@ -82,7 +84,7 @@ export default function CompanySettings() {
                     name="company_name"
                     value={form.company_name}
                     onChange={handleChange}
-                    placeholder="Company Name"
+                    placeholder={t("screens.company.companyName")}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -90,7 +92,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  Latin Name
+                  {t("ui.latinName")}
                 </label>
 
                 <div className="relative">
@@ -103,7 +105,7 @@ export default function CompanySettings() {
                     name="company_latin_name"
                     value={form.company_latin_name}
                     onChange={handleChange}
-                    placeholder="Latin Name"
+                    placeholder={t("ui.latinName")}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -111,7 +113,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  Phone
+                  {t("ui.phone")}
                 </label>
 
                 <div className="relative">
@@ -124,7 +126,7 @@ export default function CompanySettings() {
                     name="phone"
                     value={form.phone}
                     onChange={handleChange}
-                    placeholder="Phone Number"
+                    placeholder={t("screens.company.phoneNumber")}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -132,7 +134,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  Email
+                  {t("ui.email")}
                 </label>
 
                 <div className="relative">
@@ -145,7 +147,7 @@ export default function CompanySettings() {
                     name="email"
                     value={form.email}
                     onChange={handleChange}
-                    placeholder="Email Address"
+                    placeholder={t("screens.company.emailAddress")}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -153,7 +155,7 @@ export default function CompanySettings() {
 
               <div className="md:col-span-2">
                 <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  Address
+                  {t("ui.address")}
                 </label>
 
                 <div className="relative">
@@ -166,7 +168,7 @@ export default function CompanySettings() {
                     name="address"
                     value={form.address}
                     onChange={handleChange}
-                    placeholder="Company Address"
+                    placeholder={t("screens.company.companyAddress")}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
@@ -174,7 +176,7 @@ export default function CompanySettings() {
 
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  Language
+                  {t("common.language")}
                 </label>
 
                 <select
@@ -183,22 +185,22 @@ export default function CompanySettings() {
                   onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
                 >
-                  <option value="en">English</option>
-                  <option value="ar">Arabic</option>
-                  <option value="tr">Turkish</option>
+                  <option value="en">{t("languages.en")}</option>
+                  <option value="ar">{t("languages.ar")}</option>
+                  <option value="tr">{t("languages.tr")}</option>
                 </select>
               </div>
 
               <div>
                 <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  Timezone
+                  {t("ui.timezone")}
                 </label>
 
                 <input
                   name="timezone"
                   value={form.timezone}
                   onChange={handleChange}
-                  placeholder="Timezone"
+                  placeholder={t("ui.timezone")}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
@@ -212,7 +214,7 @@ export default function CompanySettings() {
               >
                 <Save size={18} />
 
-                {saving ? "Saving..." : "Save Settings"}
+                {saving ? t("common.saving") : t("screens.company.saveSettings")}
               </button>
             </div>
           </div>

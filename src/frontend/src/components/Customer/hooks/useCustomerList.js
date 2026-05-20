@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const useCustomerList = () => {
+  const { t } = useTranslation();
   const emptyCustomer = { name: "", phone: "", address: "" };
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -25,7 +27,7 @@ const useCustomerList = () => {
 
   const validateCustomer = (cust) => {
     if (!String(cust.name || "").trim()) {
-      return "Customer name is required.";
+      return t("errors.nameRequired", { field: t("ui.customer") });
     }
 
     return "";
@@ -33,7 +35,7 @@ const useCustomerList = () => {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -46,7 +48,7 @@ const useCustomerList = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || "Failed to load product catalog.");
+      setError(err?.message || t("errors.createFailed", { field: t("ui.customer") }));
     } finally {
       setLoading(false);
     }
@@ -104,7 +106,7 @@ const useCustomerList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Customer:", err);
-      setActionError(err?.message || "Failed to create Customer.");
+      setActionError(err?.message || t("errors.createFailed", { field: t("ui.customer") }));
       return false;
     }
   };
@@ -116,7 +118,7 @@ const useCustomerList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Customer:", err);
-      setActionError(err?.message || "Failed to update Customer.");
+      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.customer") }));
       return false;
     }
   };
@@ -132,7 +134,7 @@ const useCustomerList = () => {
       setEditingId("");
     } catch (err) {
       console.error("Failed to delete Customer:", err);
-      setActionError("Failed to delete Customer have Data.");
+      setActionError(t("errors.deleteHasData", { field: t("ui.customer") }));
     }
   };
 

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function useUnit() {
+  const { t } = useTranslation();
   const emptyUnit = { name: "", latinName: "", code: "" };
 
   const [saving, setSaving] = useState(false);
@@ -24,11 +26,11 @@ export default function useUnit() {
 
   const validateUnit = (unit) => {
     if (!String(unit.name || "").trim()) {
-      return "Unit name is required.";
+      return t("errors.nameRequired", { field: t("ui.unit") });
     }
 
     if (!String(unit.code || "").trim()) {
-      return "Unit code is required.";
+      return t("errors.codeRequired", { field: t("ui.unit") });
     }
 
     return "";
@@ -36,7 +38,7 @@ export default function useUnit() {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -49,7 +51,7 @@ export default function useUnit() {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || "Failed to load product catalog.");
+      setError(err?.message || t("errors.createFailed", { field: t("ui.units") }));
     } finally {
       setLoading(false);
     }
@@ -106,7 +108,7 @@ export default function useUnit() {
       return true;
     } catch (err) {
       console.error("Failed to create unit:", err);
-      setActionError(err?.message || "Failed to create unit.");
+      setActionError(err?.message || t("errors.createFailed", { field: t("ui.unit") }));
       return false;
     }
   };
@@ -118,7 +120,7 @@ export default function useUnit() {
       return true;
     } catch (err) {
       console.error("Failed to update unit:", err);
-      setActionError(err?.message || "Failed to update unit.");
+      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.unit") }));
       return false;
     }
   };
@@ -132,7 +134,7 @@ export default function useUnit() {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete unit:", err);
-      setActionError("Failed to delete this unit have data.");
+      setActionError(t("errors.deleteHasData", { field: t("ui.unit") }));
     }
   };
 

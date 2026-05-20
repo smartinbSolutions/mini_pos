@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const useCurrency = () => {
+  const { t } = useTranslation();
   const emptyCurrency = {
     name: "",
     latinName: "",
@@ -31,15 +33,15 @@ const useCurrency = () => {
 
   const validateCurrency = (currency) => {
     if (!String(currency.name || "").trim()) {
-      return "Currency name is required.";
+      return t("errors.nameRequired", { field: t("ui.currency") });
     }
 
     if (!String(currency.code || "").trim()) {
-      return "Currency code is required.";
+      return t("errors.codeRequired", { field: t("ui.currency") });
     }
 
     if (!String(currency.symbol || "").trim()) {
-      return "Currency symbol is required.";
+      return t("errors.symbolRequired", { field: t("ui.currency") });
     }
 
     if (
@@ -47,7 +49,7 @@ const useCurrency = () => {
       currency.exchangeRate === null ||
       !Number.isFinite(Number(currency.exchangeRate))
     ) {
-      return "Currency exchange rate is required.";
+      return t("errors.exchangeRateRequired", { field: t("ui.currency") });
     }
 
     return "";
@@ -55,7 +57,7 @@ const useCurrency = () => {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -68,7 +70,7 @@ const useCurrency = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || "Failed to load product catalog.");
+      setError(err?.message || t("errors.createFailed", { field: t("ui.currency") }));
     } finally {
       setLoading(false);
     }
@@ -125,7 +127,7 @@ const useCurrency = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Currency:", err);
-      setActionError(err?.message || "Failed to create Currency.");
+      setActionError(err?.message || t("errors.createFailed", { field: t("ui.currency") }));
       return false;
     }
   };
@@ -137,7 +139,7 @@ const useCurrency = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Currency:", err);
-      setActionError(err?.message || "Failed to update Currency.");
+      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.currency") }));
       return false;
     }
   };
@@ -151,7 +153,7 @@ const useCurrency = () => {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete Currency:", err);
-      setActionError("Failed to delete Currency have Data.");
+      setActionError(t("errors.deleteHasData", { field: t("ui.currency") }));
     }
   };
 

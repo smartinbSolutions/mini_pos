@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
 import useTax from "../hooks/useTax";
+import { useTranslation } from "react-i18next";
 
 const TaxList = () => {
+  const { t } = useTranslation();
   const {
     saving,
     taxes,
@@ -42,10 +44,10 @@ const TaxList = () => {
           <div className="p-5 border-b flex items-center justify-between">
             <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
-                Setup
+                {t("ui.setup")}
               </p>
-              <h2 className="text-2xl font-black text-slate-950">Taxes</h2>
-              <p className="text-sm text-slate-500">Manage tax rates</p>
+              <h2 className="text-2xl font-black text-slate-950">{t("screens.taxes.title")}</h2>
+              <p className="text-sm text-slate-500">{t("screens.taxes.subtitle")}</p>
             </div>
 
             <div className="relative">
@@ -56,16 +58,16 @@ const TaxList = () => {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search taxes..."
+                placeholder={t("screens.taxes.search")}
                 className={`${inputClass} pl-9`}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-3 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-400">
-            <span>Name</span>
-            <span>Rate</span>
-            <span className="text-right">Actions</span>
+            <span>{t("ui.name")}</span>
+            <span>{t("ui.rate")}</span>
+            <span className="text-right">{t("ui.actions")}</span>
           </div>
 
           <div>
@@ -143,15 +145,15 @@ const TaxList = () => {
 
             {filteredTaxes.length === 0 && (
               <div className="p-10 text-center text-gray-400 text-sm">
-                No taxes found
+                {t("screens.taxes.empty")}
               </div>
             )}
           </div>
         </div>
 
         <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
-          <h3 className="mb-1 text-lg font-black text-slate-950">Create Tax</h3>
-          <p className="mb-5 text-sm text-slate-500">Add a tax rate</p>
+          <h3 className="mb-1 text-lg font-black text-slate-950">{t("screens.taxes.createTitle")}</h3>
+          <p className="mb-5 text-sm text-slate-500">{t("screens.taxes.createSubtitle")}</p>
 
           {actionError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -165,7 +167,7 @@ const TaxList = () => {
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Tax name"
+              placeholder={t("screens.taxes.namePlaceholder")}
             />
 
             <input
@@ -175,7 +177,7 @@ const TaxList = () => {
               value={draft.rate}
               onChange={(e) => setDraft({ ...draft, rate: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Rate %"
+              placeholder={t("screens.taxes.ratePlaceholder")}
             />
 
             <button
@@ -183,7 +185,7 @@ const TaxList = () => {
               className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={15} />
-              Add Tax
+              {t("screens.taxes.addButton")}
             </button>
           </form>
         </div>

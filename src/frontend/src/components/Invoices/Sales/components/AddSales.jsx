@@ -11,8 +11,10 @@ import useAddSales from "../hooks/useAddSales";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 export default function AddSales() {
+  const { t } = useTranslation();
   const {
     invoice,
     setInvoice,
@@ -60,13 +62,13 @@ export default function AddSales() {
             </span>
             <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
-                Sales
+                {t("ui.sales")}
               </p>
               <h1 className="text-3xl font-black text-slate-950">
-                Create Sales Invoice
+                {t("screens.invoices.createSales")}
               </h1>
               <p className="text-sm text-slate-500">
-                Manage items and payments
+                {t("screens.invoices.manageItemsPayments")}
               </p>
             </div>
           </div>
@@ -77,7 +79,7 @@ export default function AddSales() {
             className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
           >
             <ArrowLeft size={16} />
-            Back
+            {t("common.back")}
           </button>
         </section>
 
@@ -101,7 +103,7 @@ export default function AddSales() {
                     }))
                   }
                 >
-                  <option value="">Select Customer</option>
+                  <option value="">{t("ui.selectCustomer")}</option>
                   {customers.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -126,9 +128,9 @@ export default function AddSales() {
             <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
               <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-950">Items</h2>
+                  <h2 className="text-lg font-black text-slate-950">{t("ui.items")}</h2>
                   <p className="text-sm text-slate-500">
-                    Products on this invoice
+                    {t("screens.invoices.productsOnInvoice")}
                   </p>
                 </div>
 
@@ -138,7 +140,7 @@ export default function AddSales() {
                   className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20"
                 >
                   <Plus size={14} />
-                  Add Item
+                  {t("screens.invoices.addItem")}
                 </button>
               </div>
 
@@ -146,10 +148,10 @@ export default function AddSales() {
                 <table className="w-full min-w-[760px] text-sm">
                   <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="p-3 text-left">Product</th>
-                      <th className="p-3">Qty</th>
-                      <th className="p-3">Price</th>
-                      <th className="p-3">Total</th>
+                      <th className="p-3 text-left">{t("ui.product")}</th>
+                      <th className="p-3">{t("ui.qty")}</th>
+                      <th className="p-3">{t("ui.price")}</th>
+                      <th className="p-3">{t("ui.total")}</th>
                       <th className="p-3"></th>
                     </tr>
                   </thead>
@@ -211,18 +213,18 @@ export default function AddSales() {
                   <HandCoins size={19} />
                 </span>
                 <div>
-                  <h3 className="font-black text-slate-950">Totals</h3>
-                  <p className="text-sm text-slate-500">Invoice summary</p>
+                  <h3 className="font-black text-slate-950">{t("ui.totals")}</h3>
+                  <p className="text-sm text-slate-500">{t("screens.invoices.invoiceSummary")}</p>
                 </div>
               </div>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Subtotal</span>
+                  <span className="text-slate-500">{t("ui.subtotal")}</span>
                   <span className="font-bold">{money(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-black">
-                  <span>Total</span>
+                  <span>{t("ui.total")}</span>
                   <span className="text-[#4663ff]">{money(total)}</span>
                 </div>
               </div>
@@ -230,7 +232,7 @@ export default function AddSales() {
 
             <section className={`${panelClass} space-y-4`}>
               <div className="flex items-center justify-between">
-                <span className="font-black text-slate-950">Payment</span>
+                <span className="font-black text-slate-950">{t("ui.payment")}</span>
                 <span
                   className={`rounded-xl px-3 py-1 text-xs font-black ${
                     status === "paid"
@@ -246,13 +248,13 @@ export default function AddSales() {
 
               <div className="rounded-2xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">Amount to pay</span>
+                  <span className="text-slate-500">{t("screens.invoices.amountToPay")}</span>
                   <span className="font-black text-slate-950">
                     {money(total)}
                   </span>
                 </div>
                 <div className="mt-2 flex justify-between text-sm">
-                  <span className="text-slate-500">payment in CASH</span>
+                  <span className="text-slate-500">{t("screens.invoices.paymentInCash")}</span>
                   <span className="font-black text-[#4663ff]">
                     {money(total * invoice.exchange_rate)}
                   </span>
@@ -275,7 +277,7 @@ export default function AddSales() {
                       : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff]"
                   }`}
                 >
-                  No payment now
+                  {t("screens.invoices.noPaymentNow")}
                 </button>
 
                 <button
@@ -294,7 +296,7 @@ export default function AddSales() {
                       : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff]"
                   }`}
                 >
-                  Pay in full
+                  {t("screens.invoices.payInFull")}
                 </button>
               </div>
 
@@ -321,7 +323,7 @@ export default function AddSales() {
               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 hover:bg-[#3854e8] disabled:opacity-60"
             >
               <Save size={16} />
-              {saving ? "Saving..." : "Save Invoice"}
+              {saving ? t("common.saving") : t("screens.invoices.saveInvoice")}
             </button>
           </aside>
         </div>

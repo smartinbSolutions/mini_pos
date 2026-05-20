@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const SearchableSelect = ({
   label,
@@ -16,6 +17,7 @@ const SearchableSelect = ({
   disableTyping = false,
   onKeyDown,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
@@ -205,7 +207,7 @@ const SearchableSelect = ({
             ))
           ) : (
             <div className="px-4 py-2 text-xs text-slate-500">
-              No options found
+              {t("ui.noOptionsFound")}
             </div>
           )}
         </div>

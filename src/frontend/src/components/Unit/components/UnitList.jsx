@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
 import useUnit from "../hooks/useUnit";
 import { Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const UnitList = () => {
+  const { t } = useTranslation();
   const {
     saving,
     units,
@@ -44,10 +46,10 @@ const UnitList = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
-                Setup
+                {t("ui.setup")}
               </p>
-              <h2 className="text-2xl font-black text-slate-950">Units</h2>
-              <p className="text-sm text-slate-500">Manage measurement units</p>
+              <h2 className="text-2xl font-black text-slate-950">{t("screens.units.title")}</h2>
+              <p className="text-sm text-slate-500">{t("screens.units.subtitle")}</p>
             </div>
 
             <div className="relative">
@@ -58,7 +60,7 @@ const UnitList = () => {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search..."
+                placeholder={t("screens.units.search")}
                 className={`${inputClass} pl-9`}
               />
             </div>
@@ -79,7 +81,7 @@ const UnitList = () => {
                       setEditing({ ...editing, name: e.target.value })
                     }
                     className={`mb-3 w-full ${inputClass}`}
-                    placeholder="Unit name"
+                    placeholder={t("screens.units.namePlaceholder")}
                   />
 
                   <div className="grid grid-cols-2 gap-2 mb-3">
@@ -89,7 +91,7 @@ const UnitList = () => {
                         setEditing({ ...editing, latinName: e.target.value })
                       }
                       className={inputClass}
-                      placeholder="Latin"
+                      placeholder={t("screens.units.latinPlaceholder")}
                     />
                     <input
                       required
@@ -98,14 +100,14 @@ const UnitList = () => {
                         setEditing({ ...editing, code: e.target.value })
                       }
                       className={inputClass}
-                      placeholder="Code"
+                      placeholder={t("screens.units.codePlaceholder")}
                     />
                   </div>
 
                   <div className="flex gap-2">
                     <button className={primaryButtonClass}>
                       <Save size={15} />
-                      Save
+                      {t("common.save")}
                     </button>
                     <button
                       type="button"
@@ -126,7 +128,7 @@ const UnitList = () => {
                     <div className="mt-1 text-xs text-slate-500">
                       {[unit.latinName, unit.code]
                         .filter(Boolean)
-                        .join(" • ") || "No details"}
+                        .join(" - ") || t("ui.noDetails")}
                     </div>
                   </div>
 
@@ -150,16 +152,16 @@ const UnitList = () => {
 
             {filteredUnits.length === 0 && (
               <div className="text-center text-sm text-gray-500 py-12">
-                No units found
+                {t("screens.units.empty")}
               </div>
             )}
           </div>
         </div>
 
         <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
-          <h3 className="mb-1 text-lg font-black text-slate-950">Add Unit</h3>
+          <h3 className="mb-1 text-lg font-black text-slate-950">{t("screens.units.createTitle")}</h3>
           <p className="mb-5 text-sm text-slate-500">
-            Create a measurement unit
+            {t("screens.units.createSubtitle")}
           </p>
 
           {actionError && (
@@ -174,7 +176,7 @@ const UnitList = () => {
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Unit name"
+              placeholder={t("screens.units.namePlaceholder")}
             />
 
             <div className="grid grid-cols-2 gap-2">
@@ -184,14 +186,14 @@ const UnitList = () => {
                   setDraft({ ...draft, latinName: e.target.value })
                 }
                 className={inputClass}
-                placeholder="Latin"
+                placeholder={t("screens.units.latinPlaceholder")}
               />
               <input
                 required
                 value={draft.code}
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
                 className={inputClass}
-                placeholder="Code"
+                placeholder={t("screens.units.codePlaceholder")}
               />
             </div>
 
@@ -201,7 +203,7 @@ const UnitList = () => {
               className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={16} />
-              Add Unit
+              {t("screens.units.addButton")}
             </button>
           </form>
         </div>

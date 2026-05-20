@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const emptyItem = {
   product_id: "",
@@ -18,6 +19,7 @@ const emptyInvoice = {
 };
 
 export default function useAddPurchase() {
+  const { t } = useTranslation();
   const navigat = useNavigate();
   const api = window.api;
 
@@ -33,7 +35,7 @@ export default function useAddPurchase() {
   const [funds, setFunds] = useState([]);
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("API not available");
+      setError(t("errors.apiNotAvailable"));
       return;
     }
 
@@ -49,7 +51,7 @@ export default function useAddPurchase() {
       setFunds(fundResult || []);
       setError("");
     } catch (err) {
-      setError(err?.message || "Failed to load purchases");
+      setError(err?.message || t("errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -108,7 +110,7 @@ export default function useAddPurchase() {
           const product = await api.getProductByBarcode(barcodeRef);
 
           if (!product) {
-            setError("Product not found");
+            setError(t("errors.productNotFound"));
             barcodeRef = "";
             return;
           }
@@ -202,21 +204,21 @@ export default function useAddPurchase() {
 
   const submit = useCallback(async () => {
     if (status === "paid" && !invoice.fund_id) {
-      toast.error("PLS SELECT FUND");
+      toast.error(t("errors.selectFund"));
       return false;
     }
     if (!api) {
-      setError("Electron API not available");
+      setError(t("errors.apiNotAvailable"));
       return;
     }
 
     if (!invoice.supplier_id) {
-      setError("Supplier is required");
+      setError(t("errors.supplierRequired"));
       return;
     }
 
     if (items.length === 0) {
-      setError("Add at least one item");
+      setError(t("errors.addOneItem"));
       return;
     }
 
@@ -238,7 +240,7 @@ export default function useAddPurchase() {
       if (!res?.success) {
         console.error(res);
 
-        throw new Error("Failed to create invoice");
+        throw new Error(t("errors.createInvoiceFailed"));
       }
 
       setInvoice(emptyInvoice);
@@ -247,7 +249,7 @@ export default function useAddPurchase() {
       navigat("/purchase");
       return res;
     } catch (err) {
-      setError(err.message || "Error creating invoice");
+      setError(err.message || t("errors.createInvoiceFailed"));
     } finally {
       setSaving(false);
     }

@@ -2,6 +2,7 @@ import { CheckCircle2, CreditCard, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatNumber } from "../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
+import { useTranslation } from "react-i18next";
 
 const money = new Intl.NumberFormat("en-US", {
   minimumFractionDigits: 2,
@@ -20,6 +21,7 @@ export default function CheckoutModal({
   onClose,
   onCheckout,
 }) {
+  const { t } = useTranslation();
   const [fundId, setFundId] = useState("");
   const [currencyExchangeRate, setCurrencyExchangeRate] = useState("");
   const [currencyCode, setCurrencyCode] = useState("");
@@ -56,7 +58,7 @@ export default function CheckoutModal({
     event.preventDefault();
 
     if (!fundId) {
-      setError("Select a fund.");
+      setError(t("screens.checkout.selectFundError"));
       return;
     }
 
@@ -77,7 +79,7 @@ export default function CheckoutModal({
       onClose();
     } catch (err) {
       console.error("Checkout failed:", err);
-      setError(err?.message || "Checkout failed.");
+      setError(err?.message || t("screens.checkout.failed"));
     }
   };
 
@@ -91,13 +93,13 @@ export default function CheckoutModal({
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="mb-2 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-200">
-                Payment
+                {t("ui.payment")}
               </div>
 
-              <h2 className="text-2xl font-black">Checkout</h2>
+              <h2 className="text-2xl font-black">{t("screens.checkout.title")}</h2>
 
               <p className="mt-1 text-sm text-slate-300">
-                Select the destination fund and confirm the received amount.
+                {t("screens.checkout.subtitle")}
               </p>
             </div>
 
@@ -105,7 +107,7 @@ export default function CheckoutModal({
               type="button"
               onClick={onClose}
               className="rounded-2xl p-2 text-slate-300 transition hover:bg-white/10 hover:text-white"
-              aria-label="Close checkout"
+              aria-label={t("screens.checkout.close")}
             >
               <X size={20} />
             </button>
@@ -115,8 +117,8 @@ export default function CheckoutModal({
         <div className="max-h-[calc(92vh-190px)] overflow-auto px-6 py-6">
           <div className="mb-6 rounded-3xl bg-slate-950 p-5 text-white">
             <div className="flex items-center justify-between text-sm text-slate-300">
-              <span>Total due</span>
-              <span>Current sale</span>
+              <span>{t("screens.checkout.totalDue")}</span>
+              <span>{t("screens.checkout.currentSale")}</span>
             </div>
 
             <div className="mt-2 text-4xl font-black">{money(total)}</div>
@@ -125,14 +127,14 @@ export default function CheckoutModal({
           <div className="mb-6">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="font-black text-slate-950">Paid into fund</h3>
+                <h3 className="font-black text-slate-950">{t("screens.checkout.paidIntoFund")}</h3>
                 <p className="text-xs text-slate-500">
-                  Choose where this sale payment will be saved.
+                  {t("screens.checkout.fundHint")}
                 </p>
               </div>
 
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                {funds.length} fund{funds.length === 1 ? "" : "s"}
+                {t("screens.checkout.fundCount", { count: funds.length })}
               </span>
             </div>
 
@@ -166,7 +168,7 @@ export default function CheckoutModal({
                           <p className="mt-1 text-xs font-semibold text-slate-500">
                             {fund.currency_code ||
                               fund.currency_name ||
-                              "No currency"}
+                              t("screens.checkout.noCurrency")}
                           </p>
                         </div>
 
@@ -182,7 +184,7 @@ export default function CheckoutModal({
                       </div>
 
                       <div className="mt-5 rounded-2xl bg-white/80 px-3 py-2">
-                        <p className="text-xs text-slate-400">Balance</p>
+                        <p className="text-xs text-slate-400">{t("ui.balance")}</p>
                         <p className="mt-0.5 font-black text-slate-800">
                           {money(fund.balance || 0, fund)}
                         </p>
@@ -193,9 +195,9 @@ export default function CheckoutModal({
               </div>
             ) : (
               <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                <p className="font-bold text-slate-800">No funds available</p>
+                <p className="font-bold text-slate-800">{t("screens.checkout.noFunds")}</p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Add a fund before completing the sale.
+                  {t("screens.checkout.noFundsHint")}
                 </p>
               </div>
             )}
@@ -203,7 +205,7 @@ export default function CheckoutModal({
 
           <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
             <label className="flex flex-col gap-2 text-sm font-black text-slate-800">
-              Received amount
+              {t("screens.checkout.receivedAmount")}
               <input
                 type="number"
                 value={received}
@@ -218,14 +220,14 @@ export default function CheckoutModal({
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-white p-4">
-                <p className="text-xs font-bold text-slate-400">Change</p>
+                <p className="text-xs font-bold text-slate-400">{t("screens.checkout.change")}</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {money(change, currencyCode)}
                 </p>
               </div>
 
               <div className="rounded-2xl bg-white p-4">
-                <p className="text-xs font-bold text-slate-400">Remaining</p>
+                <p className="text-xs font-bold text-slate-400">{t("ui.remaining")}</p>
                 <p
                   className={`mt-1 text-xl font-black ${
                     remaining > 0 ? "text-red-600" : "text-slate-900"
@@ -250,7 +252,7 @@ export default function CheckoutModal({
             onClick={onClose}
             className="h-12 rounded-2xl border border-slate-300 px-5 font-bold text-slate-700 transition hover:bg-slate-50"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
 
           <button
@@ -259,7 +261,7 @@ export default function CheckoutModal({
             className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 font-black text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <CreditCard size={18} />
-            {checkingOut ? "Saving..." : "Complete sale"}
+            {checkingOut ? t("common.saving") : t("screens.checkout.completeSale")}
           </button>
         </div>
       </form>

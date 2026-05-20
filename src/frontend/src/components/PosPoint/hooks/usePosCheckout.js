@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -6,6 +7,7 @@ const toNumber = (value) => {
 };
 
 export default function usePosCheckout({ weight } = {}) {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [funds, setFunds] = useState([]);
@@ -25,7 +27,7 @@ export default function usePosCheckout({ weight } = {}) {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -68,12 +70,12 @@ export default function usePosCheckout({ weight } = {}) {
         [customersResult, fundsResult].some(
           (result) => result.status === "rejected",
         )
-          ? "Products loaded, but customers or funds are unavailable because their IPC handlers are not registered."
+          ? t("errors.partialLoad", { field: t("ui.products") })
           : "",
       );
     } catch (err) {
       console.error("Failed to load POS data:", err);
-      setError(err?.message || "Failed to load POS data.");
+      setError(err?.message || t("errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -202,7 +204,7 @@ export default function usePosCheckout({ weight } = {}) {
           const product = await api.getProductByBarcode(barcode);
 
           if (!product) {
-            setError("Product not found");
+            setError(t("errors.productNotFound"));
             barcode = "";
             return;
           }

@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { getAssetUrl } from "../../../Global/assetUrl";
+import { useTranslation } from "react-i18next";
 
 const emptyForm = {
   name: "",
@@ -35,6 +36,7 @@ export default function ProductFormModal({
   onSubmit,
   handleLogo,
 }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState(emptyForm);
   const isEditing = Boolean(product);
 
@@ -103,10 +105,10 @@ export default function ProductFormModal({
         logo: savedPath,
       }));
 
-      toast.success("Image uploaded successfully");
+      toast.success(t("screens.products.uploaded"));
     } catch (err) {
       console.error(err);
-      toast.error("Failed to upload image");
+      toast.error(t("screens.products.uploadFailed"));
     }
   };
 
@@ -114,17 +116,17 @@ export default function ProductFormModal({
     event.preventDefault();
 
     if (!form.name.trim()) {
-      toast.error("Please enter product name");
+      toast.error(t("screens.products.nameRequired"));
       return;
     }
 
     if (Number(form.costPrice) <= 0) {
-      toast.error("Please enter a valid cost price");
+      toast.error(t("screens.products.validCost"));
       return;
     }
 
     if (Number(form.price) <= 0) {
-      toast.error("Please enter a valid sale price");
+      toast.error(t("screens.products.validSale"));
       return;
     }
 
@@ -156,10 +158,10 @@ export default function ProductFormModal({
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
-                  Inventory
+                  {t("ui.inventory")}
                 </p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">
-                  {isEditing ? "Edit Product" : "Create Product"}
+                  {isEditing ? t("screens.products.edit") : t("screens.products.create")}
                 </h2>
               </div>
 
@@ -167,7 +169,7 @@ export default function ProductFormModal({
                 type="button"
                 onClick={onClose}
                 className="inline-flex h-10 w-10 items-center justify-center rounded-2xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-slate-950"
-                aria-label="Close"
+                aria-label={t("common.close")}
               >
                 <X size={20} />
               </button>
@@ -177,23 +179,23 @@ export default function ProductFormModal({
               {form.logo ? (
                 <img
                   src={getAssetUrl(form.logo)}
-                  alt="Product"
+                  alt={t("ui.product")}
                   className="h-full w-full object-cover"
                 />
               ) : (
                 <div className="px-8 text-center">
                   <ImagePlus size={44} className="mx-auto text-[#4663ff]" />
                   <p className="mt-4 text-sm font-black text-slate-800">
-                    Drop in the product image
+                    {t("screens.products.imageDrop")}
                   </p>
                   <p className="mt-1 text-xs font-semibold text-slate-400">
-                    PNG, JPG, or WEBP
+                    {t("screens.products.imageTypes")}
                   </p>
                 </div>
               )}
 
               <div className="absolute inset-x-4 bottom-4 rounded-2xl bg-white/90 px-4 py-3 text-center text-sm font-bold text-[#4663ff] opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100">
-                Change image
+                {t("screens.products.changeImage")}
               </div>
 
               <input
@@ -207,14 +209,14 @@ export default function ProductFormModal({
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-3xl bg-[#eef3ff] p-4">
                 <Boxes size={18} className="mb-3 text-[#4663ff]" />
-                <p className="text-xs font-bold text-slate-500">Quantity</p>
+                <p className="text-xs font-bold text-slate-500">{t("ui.quantity")}</p>
                 <p className="mt-1 text-xl font-black text-slate-950">
                   {form.quantity || 0}
                 </p>
               </div>
               <div className="rounded-3xl bg-emerald-50 p-4">
                 <DollarSign size={18} className="mb-3 text-emerald-600" />
-                <p className="text-xs font-bold text-slate-500">Sale Price</p>
+                <p className="text-xs font-bold text-slate-500">{t("ui.salePrice")}</p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {form.price || 0}
                 </p>
@@ -223,12 +225,12 @@ export default function ProductFormModal({
 
             <div className="mt-auto rounded-3xl border border-[#e5ebff] bg-white p-4">
               <p className="text-sm font-black text-slate-900">
-                Product Status
+                {t("screens.products.statusTitle")}
               </p>
               <p className="mt-1 text-sm leading-6 text-slate-500">
                 {isEditing
-                  ? "Changes will update the existing product."
-                  : "A new product will be added to inventory."}
+                  ? t("screens.products.statusEdit")
+                  : t("screens.products.statusCreate")}
               </p>
             </div>
           </aside>
@@ -244,42 +246,42 @@ export default function ProductFormModal({
                     </span>
                     <div>
                       <h3 className="font-black text-slate-950">
-                        Product Identity
+                        {t("screens.products.identity")}
                       </h3>
                       <p className="text-sm text-slate-500">
-                        Name, unit, and stock position
+                        {t("screens.products.identityHint")}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className={labelClass}>Product Name</label>
+                      <label className={labelClass}>{t("ui.product")} {t("ui.name")}</label>
                       <input
                         required
                         value={form.name}
                         onChange={(event) =>
                           updateField("name", event.target.value)
                         }
-                        placeholder="Enter product name"
+                        placeholder={t("screens.products.enterProductName")}
                         className={inputClass}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <label className={labelClass}>Latin Name</label>
+                      <label className={labelClass}>{t("ui.latinName")}</label>
                       <input
                         value={form.latinName}
                         onChange={(event) =>
                           updateField("latinName", event.target.value)
                         }
-                        placeholder="Optional"
+                        placeholder={t("ui.optional")}
                         className={inputClass}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <label className={labelClass}>Quantity</label>
+                      <label className={labelClass}>{t("ui.quantity")}</label>
                       <input
                         type="number"
                         value={form.quantity}
@@ -291,7 +293,7 @@ export default function ProductFormModal({
                     </div>
 
                     <div className="space-y-2">
-                      <label className={labelClass}>Unit</label>
+                      <label className={labelClass}>{t("ui.unit")}</label>
                       <select
                         value={form.unit_id}
                         onChange={(event) =>
@@ -301,7 +303,7 @@ export default function ProductFormModal({
                         className={inputClass}
                       >
                         <option value="">
-                          {canUseUnits ? "Select unit" : "Units unavailable"}
+                          {canUseUnits ? t("ui.selectUnit") : t("ui.unitsUnavailable")}
                         </option>
 
                         {units?.map((unit) => (
@@ -320,16 +322,16 @@ export default function ProductFormModal({
                       <DollarSign size={19} />
                     </span>
                     <div>
-                      <h3 className="font-black text-slate-950">Pricing</h3>
+                      <h3 className="font-black text-slate-950">{t("ui.price")}</h3>
                       <p className="text-sm text-slate-500">
-                        Cost and retail values
+                        {t("screens.products.pricingHint")}
                       </p>
                     </div>
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className={labelClass}>Cost Price</label>
+                      <label className={labelClass}>{t("ui.costPrice")}</label>
                       <input
                         required
                         type="number"
@@ -344,7 +346,7 @@ export default function ProductFormModal({
                     </div>
 
                     <div className="space-y-2">
-                      <label className={labelClass}>Sale Price</label>
+                      <label className={labelClass}>{t("ui.salePrice")}</label>
                       <input
                         required
                         type="number"
@@ -369,10 +371,10 @@ export default function ProductFormModal({
                         </span>
                         <div>
                           <h3 className="font-black text-slate-950">
-                            Barcodes
+                            {t("ui.barcodes")}
                           </h3>
                           <p className="text-sm text-slate-500">
-                            Add scan codes for this product
+                            {t("screens.products.barcodesHint")}
                           </p>
                         </div>
                       </div>
@@ -383,7 +385,7 @@ export default function ProductFormModal({
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-3 text-sm font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
                       >
                         <Plus size={15} />
-                        Add
+                        {t("common.add")}
                       </button>
                     </div>
 
@@ -398,7 +400,7 @@ export default function ProductFormModal({
                             onChange={(event) =>
                               updateBarcode(index, event.target.value)
                             }
-                            placeholder="Enter barcode"
+                            placeholder={t("screens.products.enterBarcode")}
                             className={inputClass}
                           />
 
@@ -406,7 +408,7 @@ export default function ProductFormModal({
                             type="button"
                             onClick={() => removeBarcode(index)}
                             className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-red-600 transition hover:bg-red-50"
-                            aria-label="Remove barcode"
+                            aria-label={t("screens.products.removeBarcode")}
                           >
                             <Trash2 size={17} />
                           </button>
@@ -418,8 +420,7 @@ export default function ProductFormModal({
 
                 {!canManageBarcodes && (
                   <section className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                    Barcode editing is unavailable until the product barcode IPC
-                    handler is registered.
+                    {t("screens.products.barcodeUnavailable")}
                   </section>
                 )}
               </div>
@@ -431,7 +432,7 @@ export default function ProductFormModal({
                 onClick={onClose}
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff]"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
 
               <button
@@ -441,10 +442,10 @@ export default function ProductFormModal({
               >
                 <Save size={16} />
                 {saving
-                  ? "Saving..."
+                  ? t("common.saving")
                   : isEditing
-                    ? "Update Product"
-                    : "Create Product"}
+                    ? t("screens.products.update")
+                    : t("screens.products.create")}
               </button>
             </div>
           </section>

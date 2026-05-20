@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { Printer, ArrowLeft, Receipt } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { useTranslation } from "react-i18next";
 
 export default function PurchaseInvoiceView() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -60,13 +62,13 @@ export default function PurchaseInvoiceView() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
-        Loading invoice...
+        {t("screens.invoices.loadingInvoice")}
       </div>
     );
   }
 
   if (!invoice) {
-    return <div className="p-6 text-red-500">Invoice not found</div>;
+    return <div className="p-6 text-red-500">{t("screens.invoices.notFound")}</div>;
   }
 
   return (
@@ -79,7 +81,7 @@ export default function PurchaseInvoiceView() {
             className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 hover:bg-[#eef3ff]"
           >
             <ArrowLeft size={18} />
-            Back
+            {t("common.back")}
           </button>
 
           {/* <button
@@ -100,13 +102,13 @@ export default function PurchaseInvoiceView() {
               </span>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
-                  Purchase Invoice
+                  {t("screens.invoices.purchaseInvoice")}
                 </p>
                 <h1 className="text-3xl font-black text-slate-950">
-                  Invoice #{invoice.id}
+                  {t("ui.invoice")} #{invoice.id}
                 </h1>
                 <p className="text-sm text-slate-500">
-                  Date: {formatDate(invoice.date)}
+                  {t("screens.invoices.invoiceDate", { date: formatDate(invoice.date) })}
                 </p>
               </div>
             </div>
@@ -115,7 +117,7 @@ export default function PurchaseInvoiceView() {
               <p className="text-lg font-black text-slate-950">
                 {invoice.supplier_name || "-"}
               </p>
-              <p className="text-sm text-slate-500">Supplier</p>
+              <p className="text-sm text-slate-500">{t("ui.supplier")}</p>
               <span
                 className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-black ${
                   isPaid
@@ -123,7 +125,7 @@ export default function PurchaseInvoiceView() {
                     : "bg-red-100 text-red-600"
                 }`}
               >
-                {isPaid ? "PAID" : status.toUpperCase()}
+                {isPaid ? t("ui.paidStatus") : status.toUpperCase()}
               </span>
             </div>
           </div>
@@ -133,11 +135,11 @@ export default function PurchaseInvoiceView() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="p-3 text-left">Product</th>
-                    <th className="p-3 text-center">Price</th>
-                    <th className="p-3 text-center">Qty</th>
-                    <th className="p-3 text-center">Tax</th>
-                    <th className="p-3 text-center">Total</th>
+                    <th className="p-3 text-left">{t("ui.product")}</th>
+                    <th className="p-3 text-center">{t("ui.price")}</th>
+                    <th className="p-3 text-center">{t("ui.qty")}</th>
+                    <th className="p-3 text-center">{t("ui.tax")}</th>
+                    <th className="p-3 text-center">{t("ui.total")}</th>
                   </tr>
                 </thead>
 
@@ -148,7 +150,7 @@ export default function PurchaseInvoiceView() {
                         className="p-5 text-center text-slate-500"
                         colSpan={5}
                       >
-                        No items found
+                        {t("screens.invoices.noItems")}
                       </td>
                     </tr>
                   ) : (
@@ -179,19 +181,19 @@ export default function PurchaseInvoiceView() {
             <div className="mt-6 flex justify-end">
               <div className="w-80 max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Subtotal</span>
+                  <span className="text-slate-500">{t("ui.subtotal")}</span>
                   <span className="font-bold">
                     {money(invoice.subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Tax</span>
+                  <span className="text-slate-500">{t("ui.tax")}</span>
                   <span>
                     {money(invoice.net_total - invoice.subtotal)}
                   </span>
                 </div>
                 <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl font-black">
-                  <span>Total</span>
+                  <span>{t("ui.total")}</span>
                   <span className="text-[#4663ff]">
                     {money(invoice.net_total)}
                   </span>

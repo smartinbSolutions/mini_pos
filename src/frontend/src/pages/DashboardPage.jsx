@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import usePrimaryCurrency from "../Global/usePrimaryCurrency";
+import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const [data, setData] = useState({
     totalSales: 0,
     products: 0,
@@ -38,7 +40,7 @@ export default function Dashboard() {
   );
 
   if (loading) {
-    return <div className="p-6 text-gray-500">Loading dashboard...</div>;
+    return <div className="p-6 text-gray-500">{t("dashboard.loading")}</div>;
   }
 
   return (
@@ -46,21 +48,21 @@ export default function Dashboard() {
       {/* TOP CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card
-          title="Total Sales"
+          title={t("dashboard.totalSales")}
           value={money(data.totalSales)}
           color="text-green-400"
         />
 
-        <Card title="Products" value={data.products} color="text-blue-400" />
+        <Card title={t("dashboard.products")} value={data.products} color="text-blue-400" />
 
         <Card
-          title="Customers"
+          title={t("dashboard.customers")}
           value={data.customers}
           color="text-yellow-400"
         />
 
         <Card
-          title="Profit"
+          title={t("dashboard.profit")}
           value={money(data.profit)}
           color="text-purple-400"
         />
@@ -68,7 +70,7 @@ export default function Dashboard() {
 
       {/* FUTURE CHART AREA */}
       <div className="mt-10 bg-white rounded-xl p-6 shadow">
-        <h2 className="text-lg font-bold mb-4">Analytics</h2>
+        <h2 className="text-lg font-bold mb-4">{t("dashboard.analytics")}</h2>
 
         <div className="h-64 flex items-center justify-center text-gray-400"></div>
       </div>

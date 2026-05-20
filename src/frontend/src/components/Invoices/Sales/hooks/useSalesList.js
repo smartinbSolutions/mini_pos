@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const useSalesList = () => {
+  const { t } = useTranslation();
   const api = window.api;
 
   const [salesInvoices, setSalesInvoices] = useState([]);
@@ -13,7 +15,7 @@ const useSalesList = () => {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("API not available");
+      setError(t("errors.apiNotAvailable"));
       return;
     }
 
@@ -23,7 +25,7 @@ const useSalesList = () => {
       setSalesInvoices(res || []);
       setError("");
     } catch (err) {
-      setError(err?.message || "Failed to load purchases");
+      setError(err?.message || t("errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -39,7 +41,7 @@ const useSalesList = () => {
       await api.deleteSalesInvoice(id);
       setSalesInvoices((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
-      setError(err?.message || "Delete failed");
+      setError(err?.message || t("errors.deleteFailed", { field: t("ui.invoice") }));
     } finally {
       setSaving(false);
     }

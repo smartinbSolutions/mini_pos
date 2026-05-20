@@ -13,8 +13,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { useTranslation } from "react-i18next";
 
 const PurchaseList = () => {
+  const { t } = useTranslation();
   const {
     purchaseInvoices,
     loading,
@@ -56,7 +58,7 @@ const PurchaseList = () => {
     } catch (err) {
       console.log(err.message);
 
-      setActionError("Delete failed");
+      setActionError(t("screens.invoices.deleteFailed"));
     }
   };
 
@@ -75,13 +77,13 @@ const PurchaseList = () => {
           <div className="grid gap-6 p-7 lg:grid-cols-[1fr_360px]">
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
-                Purchasing
+                {t("ui.purchase")}
               </p>
               <h1 className="text-4xl font-black leading-tight text-slate-950">
-                Purchase invoices
+                {t("screens.invoices.purchaseTitle")}
               </h1>
               <p className="mt-3 text-sm leading-6 text-slate-500">
-                Track supplier purchases, payment status, and invoice totals.
+                {t("screens.invoices.purchaseSubtitle")}
               </p>
             </div>
 
@@ -92,13 +94,13 @@ const PurchaseList = () => {
                   {purchaseInvoices.length}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  Invoices
+                  {t("ui.invoices")}
                 </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <HandCoins size={20} className="mb-4 text-[#4663ff]" />
                 <div className="text-2xl font-black">{unpaidCount}</div>
-                <div className="text-xs font-semibold text-slate-500">Open</div>
+                <div className="text-xs font-semibold text-slate-500">{t("ui.open")}</div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <div className="mb-4 text-sm font-black text-[#4663ff]">
@@ -106,7 +108,7 @@ const PurchaseList = () => {
                 </div>
                 <div className="text-2xl font-black">{money(totalNet)}</div>
                 <div className="text-xs font-semibold text-slate-500">
-                  Total
+                  {t("ui.total")}
                 </div>
               </div>
             </div>
@@ -122,7 +124,7 @@ const PurchaseList = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-12 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 pl-11 pr-4 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10"
-                placeholder="Search invoices..."
+                placeholder={t("screens.invoices.search")}
               />
             </div>
 
@@ -131,7 +133,7 @@ const PurchaseList = () => {
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
             >
               <RefreshCw size={16} />
-              Refresh
+              {t("common.refresh")}
             </button>
 
             <button
@@ -139,7 +141,7 @@ const PurchaseList = () => {
               className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
             >
               <PackagePlus size={16} />
-              Add Invoice
+              {t("screens.invoices.addInvoice")}
             </button>
           </div>
         </section>
@@ -155,13 +157,13 @@ const PurchaseList = () => {
             <table className="w-full min-w-[900px] text-left text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4">Invoice</th>
-                  <th className="px-5 py-4">Supplier</th>
-                  <th className="px-5 py-4">Date</th>
-                  <th className="px-5 py-4 text-right">Subtotal</th>
-                  <th className="px-5 py-4 text-right">Discount</th>
-                  <th className="px-5 py-4 text-right">Net</th>
-                  <th className="px-5 py-4 text-right">Actions</th>
+                  <th className="px-5 py-4">{t("ui.invoice")}</th>
+                  <th className="px-5 py-4">{t("ui.supplier")}</th>
+                  <th className="px-5 py-4">{t("ui.date")}</th>
+                  <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
+                  <th className="px-5 py-4 text-right">{t("ui.discount")}</th>
+                  <th className="px-5 py-4 text-right">{t("ui.net")}</th>
+                  <th className="px-5 py-4 text-right">{t("ui.actions")}</th>
                 </tr>
               </thead>
 
@@ -169,13 +171,13 @@ const PurchaseList = () => {
                 {loading ? (
                   <tr>
                     <td colSpan="7" className="p-8 text-center text-slate-500">
-                      Loading...
+                      {t("common.loading")}
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="p-8 text-center text-slate-500">
-                      No invoices found
+                      {t("screens.invoices.empty")}
                     </td>
                   </tr>
                 ) : (

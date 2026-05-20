@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const emptyItem = {
   product_id: "",
@@ -17,6 +18,7 @@ const emptyInvoice = {
 };
 
 export default function useAddSales() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const api = window.api;
 
@@ -42,7 +44,7 @@ export default function useAddSales() {
       setCustomers(custRes || []);
       setFunds(fundResult || []);
     } catch (err) {
-      setError("Load error");
+      setError(t("errors.loadError"));
     }
   }, [api]);
 
@@ -93,7 +95,7 @@ export default function useAddSales() {
           const product = await api.getProductByBarcode(barcode);
 
           if (!product) {
-            setError("Product not found");
+            setError(t("errors.productNotFound"));
             barcode = "";
             return;
           }
@@ -172,7 +174,7 @@ export default function useAddSales() {
 
   const submit = async () => {
     if (status === "paid" && !invoice.fund_id) {
-      toast.error("PLS SELECT FUND");
+      toast.error(t("errors.selectFund"));
       return false;
     }
     try {
@@ -195,7 +197,7 @@ export default function useAddSales() {
     } catch (e) {
       console.log(e);
 
-      setError("Save error");
+      setError(t("errors.saveError"));
     } finally {
       setSaving(false);
     }

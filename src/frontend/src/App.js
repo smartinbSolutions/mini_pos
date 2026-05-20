@@ -18,6 +18,7 @@ import UpdateSales from "./components/Invoices/Sales/components/UpdateSales";
 import SetupPage from "./components/SetupPage/components/SetupPage";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import CompanySettings from "./components/CompanySettings/components/CompanySettings";
 import FundMovementsPage from "./components/Cash/Fund/components/FundPayment";
 import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
@@ -28,6 +29,7 @@ import POSSystem from "./components/PosPoint/components/POSSystem";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function App() {
+  const { t } = useTranslation();
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [isSetup, setIsSetup] = useState(null);
 
@@ -61,13 +63,13 @@ export default function App() {
     check();
   }, [licenseStatus]);
 
-  if (licenseStatus === null) return <div>Loading...</div>;
+  if (licenseStatus === null) return <div>{t("common.loading")}</div>;
 
   if (!licenseStatus) {
     return <ActivationPage onActivated={() => setLicenseStatus(true)} />;
   }
 
-  if (isSetup === null) return <div>Loading...</div>;
+  if (isSetup === null) return <div>{t("common.loading")}</div>;
 
   return (
     <HashRouter>

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const useFundList = () => {
+  const { t } = useTranslation();
   const emptyFund = { name: "", currency_id: "", balance: "" };
 
   const [saving, setSaving] = useState(false);
@@ -34,11 +36,11 @@ const useFundList = () => {
 
   const validateFund = (fund) => {
     if (!String(fund.name || "").trim()) {
-      return "Fund name is required.";
+      return t("errors.nameRequired", { field: t("ui.fund") });
     }
 
     if (!fund.currency_id) {
-      return "Fund currency is required.";
+      return t("errors.currencyRequired", { field: t("ui.fund") });
     }
 
     return "";
@@ -46,7 +48,7 @@ const useFundList = () => {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -61,7 +63,7 @@ const useFundList = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || "Failed to load product catalog.");
+      setError(err?.message || t("errors.createFailed", { field: t("ui.fund") }));
     } finally {
       setLoading(false);
     }
@@ -118,7 +120,7 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Fund:", err);
-      const message = err?.message || "Failed to create Fund.";
+      const message = err?.message || t("errors.createFailed", { field: t("ui.fund") });
       setActionError(message);
       toast.error(message);
       return false;
@@ -132,7 +134,7 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Fund:", err);
-      const message = "Failed to update Fund.";
+      const message = t("errors.updateFailed", { field: t("ui.fund") });
       setActionError(message);
       toast.error(message);
       return false;
@@ -148,7 +150,7 @@ const useFundList = () => {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete Fund:", err);
-      toast.error("Failed to delete Fund.");
+      toast.error(t("errors.deleteFailed", { field: t("ui.fund") }));
     }
   };
 

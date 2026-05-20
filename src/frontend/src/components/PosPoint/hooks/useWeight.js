@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
+  const { t } = useTranslation();
   const [weight, setWeight] = useState(0);
-  const [status, setStatus] = useState("Disconnected");
+  const [status, setStatus] = useState(t("screens.pos.disconnected"));
   const [isConnected, setIsConnected] = useState(false);
   const [ports, setPorts] = useState([]);
 
@@ -41,7 +43,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
     const api = window.api;
 
     if (!api?.onScaleData || !api?.onScaleStatus) {
-      setStatus("Scale API not available");
+      setStatus(t("screens.pos.scaleApiUnavailable"));
       return undefined;
     }
 
@@ -49,7 +51,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
       .getScaleStatus?.()
       .then((payload) => {
         setIsConnected(Boolean(payload?.connected));
-        setStatus(payload?.message || "Disconnected");
+        setStatus(payload?.message || t("screens.pos.disconnected"));
 
         const nextWeight = Number(payload?.weight);
 
@@ -73,7 +75,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
 
     const removeStatusListener = api.onScaleStatus((payload) => {
       setIsConnected(Boolean(payload?.connected));
-      setStatus(payload?.message || "Disconnected");
+      setStatus(payload?.message || t("screens.pos.disconnected"));
     });
 
     return () => {
@@ -86,7 +88,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
     const api = window.api;
 
     if (!api?.listScalePorts) {
-      setStatus("Scale API not available");
+      setStatus(t("screens.pos.scaleApiUnavailable"));
       return [];
     }
 
@@ -100,11 +102,11 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
       const api = window.api;
 
       if (!api?.connectScale) {
-        setStatus("Scale API not available");
+        setStatus(t("screens.pos.scaleApiUnavailable"));
         return;
       }
 
-        setStatus("Connecting scale...");
+        setStatus(t("screens.pos.connectingScale"));
 
       try {
         const availablePorts = await refreshPorts();
@@ -113,16 +115,16 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
 
         if (!result?.ok) {
           setIsConnected(false);
-          setStatus(result?.message || "Scale connection failed");
+          setStatus(result?.message || t("screens.pos.scaleConnectionFailed"));
           return;
         }
 
         setIsConnected(true);
-        setStatus(`Connected to ${result.path}`);
+        setStatus(t("screens.pos.connectedTo", { path: result.path }));
       } catch (error) {
         console.error("Scale connection failed:", error);
         setIsConnected(false);
-        setStatus(error?.message || "Scale connection failed");
+        setStatus(error?.message || t("screens.pos.scaleConnectionFailed"));
       }
     },
     [baudRate, getDefaultPortPath, refreshPorts],
@@ -135,7 +137,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
 
     await api.disconnectScale();
     setIsConnected(false);
-    setStatus("Disconnected");
+    setStatus(t("screens.pos.disconnected"));
     setWeight(0);
     setCurrentWeightRef.current?.(0);
   }, []);
@@ -143,7 +145,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
   useEffect(() => {
     refreshPorts().catch((error) => {
       console.error("Failed to list scale ports:", error);
-      setStatus(error?.message || "Failed to list scale ports");
+      setStatus(error?.message || t("screens.pos.listScalePortsFailed"));
     });
   }, [refreshPorts]);
 

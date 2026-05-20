@@ -4,8 +4,10 @@ import { Edit2, Plus, Save, Trash2, X, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { ToastContainer } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 const FundList = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const {
@@ -40,13 +42,13 @@ const FundList = () => {
           <div className={`${panelClass} flex items-center justify-between`}>
             <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
-                Setup
+                {t("ui.setup")}
               </p>
               <h2 className="text-2xl font-black text-slate-950">
-                Funds Overview
+                {t("screens.funds.title")}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                Manage your cash, bank & wallets
+                {t("screens.funds.subtitle")}
               </p>
             </div>
 
@@ -55,7 +57,7 @@ const FundList = () => {
                 {funds.length}
               </div>
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Accounts
+                {t("screens.funds.accounts")}
               </div>
             </div>
           </div>
@@ -75,7 +77,7 @@ const FundList = () => {
                       setEditing({ ...editing, name: e.target.value })
                     }
                     className={`w-full ${inputClass}`}
-                    placeholder="Fund name"
+                    placeholder={t("screens.funds.namePlaceholder")}
                   />
 
                   <div className="grid grid-cols-2 gap-3">
@@ -91,7 +93,7 @@ const FundList = () => {
                       disabled={true}
                       className={inputClass}
                     >
-                      <option value="">Currency</option>
+                      <option value="">{t("ui.currency")}</option>
                       {currencies.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name} ({c.code})
@@ -111,14 +113,14 @@ const FundList = () => {
                       }
                       disabled={true}
                       className={inputClass}
-                      placeholder="Balance"
+                      placeholder={t("ui.balance")}
                     />
                   </div>
 
                   <div className="flex gap-2 pt-1">
                     <button className={`flex-1 ${primaryButtonClass}`}>
                       <Save size={15} />
-                      Save
+                      {t("common.save")}
                     </button>
 
                     <button
@@ -147,7 +149,7 @@ const FundList = () => {
 
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <div className="text-sm text-slate-400">Balance</div>
+                      <div className="text-sm text-slate-400">{t("ui.balance")}</div>
                       <div className="text-xl font-black text-emerald-600">
                         {formatMoney(fund.balance || 0, fund)}
                       </div>
@@ -157,7 +159,7 @@ const FundList = () => {
                       <button
                         onClick={() => navigate(`/fund/${fund.id}`)}
                         className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
-                        title="View Movements"
+                        title={t("screens.funds.viewMovements")}
                       >
                         <Eye size={14} />
                       </button>
@@ -186,10 +188,10 @@ const FundList = () => {
         {/* RIGHT */}
         <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
           <h3 className="mb-1 text-lg font-black text-slate-950">
-            Create Fund
+            {t("screens.funds.createTitle")}
           </h3>
           <p className="mb-5 text-sm text-slate-500">
-            Add a cash, bank, or wallet account
+            {t("screens.funds.createSubtitle")}
           </p>
           {actionError && (
             <div className="mb-3 text-sm text-red-600 bg-red-50 border p-2 rounded-lg">
@@ -203,7 +205,7 @@ const FundList = () => {
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Fund name"
+              placeholder={t("screens.funds.namePlaceholder")}
             />
 
             <select
@@ -223,7 +225,7 @@ const FundList = () => {
               }}
               className={`w-full ${inputClass}`}
             >
-              <option value="">Select currency</option>
+              <option value="">{t("ui.selectCurrency")}</option>
 
               {currencies.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -242,7 +244,7 @@ const FundList = () => {
                 })
               }
               className={`w-full ${inputClass}`}
-              placeholder="Initial balance"
+              placeholder={t("screens.funds.initialBalance")}
             />
 
             <button
@@ -250,7 +252,7 @@ const FundList = () => {
               className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={16} />
-              Create Fund
+              {t("screens.funds.createButton")}
             </button>
           </form>
         </div>

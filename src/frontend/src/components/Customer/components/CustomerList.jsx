@@ -2,8 +2,10 @@ import React, { useMemo, useState } from "react";
 import { Eye, Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
 import useCustomerList from "../hooks/useCustomerList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
+import { useTranslation } from "react-i18next";
 
 export const CustomerList = () => {
+  const { t } = useTranslation();
   const {
     saving,
     customers,
@@ -47,11 +49,11 @@ export const CustomerList = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
-                Contacts
+                {t("ui.contacts")}
               </p>
-              <h2 className="text-2xl font-black text-slate-950">Customers</h2>
+              <h2 className="text-2xl font-black text-slate-950">{t("ui.customers")}</h2>
               <p className="text-sm text-slate-500">
-                Manage your customers easily
+                {t("screens.contacts.customersSubtitle")}
               </p>
             </div>
 
@@ -63,7 +65,7 @@ export const CustomerList = () => {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search customer..."
+                placeholder={t("screens.contacts.searchCustomer")}
                 className={`${inputClass} pl-9`}
               />
             </div>
@@ -88,7 +90,7 @@ export const CustomerList = () => {
                       setEditing({ ...editing, name: e.target.value })
                     }
                     className={`w-full ${inputClass}`}
-                    placeholder="Name"
+                    placeholder={t("ui.name")}
                   />
 
                   <input
@@ -97,7 +99,7 @@ export const CustomerList = () => {
                       setEditing({ ...editing, phone: e.target.value })
                     }
                     className={`w-full ${inputClass}`}
-                    placeholder="Phone"
+                    placeholder={t("ui.phone")}
                   />
 
                   <input
@@ -106,13 +108,13 @@ export const CustomerList = () => {
                       setEditing({ ...editing, address: e.target.value })
                     }
                     className={`w-full ${inputClass}`}
-                    placeholder="Address"
+                    placeholder={t("ui.address")}
                   />
 
                   <div className="flex gap-2 pt-2">
                     <button className={`flex-1 ${primaryButtonClass}`}>
                       <Save size={14} />
-                      Save
+                      {t("common.save")}
                     </button>
                     <button
                       type="button"
@@ -141,7 +143,7 @@ export const CustomerList = () => {
                           navigate(`/payment/customer/${customer.id}`)
                         }
                         className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
-                        title="View Movements"
+                        title={t("screens.funds.viewMovements")}
                       >
                         <Eye size={14} />
                       </button>
@@ -166,23 +168,23 @@ export const CustomerList = () => {
                     </div>
 
                     <div className="text-xs text-gray-500">
-                      📞 {customer.phone || "No phone"}
+                      {customer.phone || t("ui.noPhone")}
                     </div>
 
                     <div className="text-xs text-gray-400 truncate">
-                      📍 {customer.address || "No address"}
+                      {customer.address || t("ui.noAddress")}
                     </div>
 
                     <div className="mt-3 border-t pt-3 space-y-1 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Sales</span>
+                        <span className="text-gray-500">{t("screens.contacts.sales")}</span>
                         <span className="font-medium text-gray-800">
                           {money(sales)}
                         </span>
                       </div>
 
                       <div className="flex justify-between">
-                        <span className="text-gray-500">Paid</span>
+                        <span className="text-gray-500">{t("ui.paid")}</span>
                         <span className="font-medium text-green-600">
                           {money(paid)}
                         </span>
@@ -190,7 +192,7 @@ export const CustomerList = () => {
 
                       <div className="flex justify-between border-t pt-1">
                         <span className="text-gray-600 font-medium">
-                          Balance
+                          {t("ui.balance")}
                         </span>
                         <span
                           className={`font-semibold ${
@@ -209,16 +211,16 @@ export const CustomerList = () => {
 
           {filteredCustomer.length === 0 && (
             <div className="text-center text-gray-400 text-sm py-10">
-              No Customer found
+              {t("screens.contacts.noCustomers")}
             </div>
           )}
         </div>
 
         <div className="top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
           <h3 className="mb-1 text-lg font-black text-slate-950">
-            Create Customer
+            {t("screens.contacts.createCustomer")}
           </h3>
-          <p className="mb-5 text-sm text-slate-500">Add a customer contact</p>
+          <p className="mb-5 text-sm text-slate-500">{t("screens.contacts.addCustomerContact")}</p>
 
           {actionError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -232,21 +234,21 @@ export const CustomerList = () => {
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Name"
+              placeholder={t("ui.name")}
             />
 
             <input
               value={draft.phone}
               onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Phone"
+              placeholder={t("ui.phone")}
             />
 
             <input
               value={draft.address}
               onChange={(e) => setDraft({ ...draft, address: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Address"
+              placeholder={t("ui.address")}
             />
 
             <button
@@ -254,7 +256,7 @@ export const CustomerList = () => {
               className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={15} />
-              Add Customer
+              {t("screens.contacts.addCustomer")}
             </button>
           </form>
         </div>

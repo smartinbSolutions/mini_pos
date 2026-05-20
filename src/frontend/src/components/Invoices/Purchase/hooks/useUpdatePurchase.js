@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const emptyItem = {
   product_id: "",
@@ -10,6 +11,7 @@ const emptyItem = {
 };
 
 export default function useUpdatePurchase() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const api = window.api;
   const navigat = useNavigate();
@@ -94,7 +96,7 @@ export default function useUpdatePurchase() {
           const product = await api.getProductByBarcode(barcodeRef);
 
           if (!product) {
-            setError("Product not found");
+            setError(t("errors.productNotFound"));
             barcodeRef = "";
             return;
           }

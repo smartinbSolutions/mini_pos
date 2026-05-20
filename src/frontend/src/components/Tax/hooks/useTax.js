@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export default function useTax() {
+  const { t } = useTranslation();
   const emptyTax = { name: "", rate: 0 };
 
   const [saving, setSaving] = useState(false);
@@ -23,7 +25,7 @@ export default function useTax() {
 
   const validateTax = (tax) => {
     if (!String(tax.name || "").trim()) {
-      return "Tax name is required.";
+      return t("errors.nameRequired", { field: t("ui.tax") });
     }
 
     if (
@@ -31,7 +33,7 @@ export default function useTax() {
       tax.rate === null ||
       !Number.isFinite(Number(tax.rate))
     ) {
-      return "Tax value is required.";
+      return t("errors.valueRequired", { field: t("ui.tax") });
     }
 
     return "";
@@ -39,7 +41,7 @@ export default function useTax() {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -52,7 +54,7 @@ export default function useTax() {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || "Failed to load product catalog.");
+      setError(err?.message || t("errors.createFailed", { field: t("ui.tax") }));
     } finally {
       setLoading(false);
     }
@@ -109,7 +111,7 @@ export default function useTax() {
       return true;
     } catch (err) {
       console.error("Failed to create tax:", err);
-      setActionError(err?.message || "Failed to create tax.");
+      setActionError(err?.message || t("errors.createFailed", { field: t("ui.tax") }));
       return false;
     }
   };
@@ -121,7 +123,7 @@ export default function useTax() {
       return true;
     } catch (err) {
       console.error("Failed to update tax:", err);
-      setActionError(err?.message || "Failed to update tax.");
+      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.tax") }));
       return false;
     }
   };
@@ -135,7 +137,7 @@ export default function useTax() {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete tax:", err);
-      setActionError("Failed to delete tax have data.");
+      setActionError(t("errors.deleteHasData", { field: t("ui.tax") }));
     }
   };
 

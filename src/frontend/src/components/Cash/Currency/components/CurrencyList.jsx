@@ -1,8 +1,10 @@
 import React from "react";
 import useCurrency from "../hooks/useCurrency";
 import { Edit2, Plus, Save, Trash2, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const CurrencyList = () => {
+  const { t } = useTranslation();
   const {
     saving,
     currencies,
@@ -35,13 +37,13 @@ const CurrencyList = () => {
           <div className={`${panelClass} flex items-center justify-between`}>
             <div>
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
-                Setup
+                {t("ui.setup")}
               </p>
               <h2 className="text-2xl font-black text-slate-950">
-                Currency Management
+                {t("screens.currency.title")}
               </h2>
               <p className="text-sm text-slate-500">
-                Manage currencies and exchange rates
+                {t("screens.currency.subtitle")}
               </p>
             </div>
 
@@ -50,7 +52,7 @@ const CurrencyList = () => {
                 {currencies.length}
               </div>
               <div className="text-xs font-semibold text-slate-500">
-                Total Currencies
+                {t("screens.currency.total")}
               </div>
             </div>
           </div>
@@ -70,7 +72,7 @@ const CurrencyList = () => {
                       setEditing({ ...editing, name: e.target.value })
                     }
                     className={`mb-3 w-full ${inputClass}`}
-                    placeholder="Currency name"
+                    placeholder={t("screens.currency.namePlaceholder")}
                   />
 
                   <div className="grid grid-cols-3 gap-2 mb-3">
@@ -80,7 +82,7 @@ const CurrencyList = () => {
                         setEditing({ ...editing, latinName: e.target.value })
                       }
                       className={inputClass}
-                      placeholder="Latin"
+                      placeholder={t("screens.units.latinPlaceholder")}
                     />
                     <input
                       required
@@ -89,7 +91,7 @@ const CurrencyList = () => {
                         setEditing({ ...editing, code: e.target.value })
                       }
                       className={inputClass}
-                      placeholder="Code"
+                      placeholder={t("ui.code")}
                     />
                     <input
                       required
@@ -98,7 +100,7 @@ const CurrencyList = () => {
                         setEditing({ ...editing, symbol: e.target.value })
                       }
                       className={inputClass}
-                      placeholder="symbol"
+                      placeholder={t("ui.symbol")}
                     />
                     {currency.isPrimary === 0 && (
                       <input
@@ -113,7 +115,7 @@ const CurrencyList = () => {
                           })
                         }
                         className={inputClass}
-                        placeholder="Rate"
+                        placeholder={t("ui.rate")}
                       />
                     )}
                   </div>
@@ -121,7 +123,7 @@ const CurrencyList = () => {
                   <div className="flex gap-2">
                     <button className={primaryButtonClass}>
                       <Save size={15} />
-                      Save
+                      {t("common.save")}
                     </button>
                     <button
                       type="button"
@@ -157,7 +159,7 @@ const CurrencyList = () => {
 
                       {currency.exchangeRate && (
                         <span className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-700">
-                          Rate: {currency.exchangeRate}
+                          {t("ui.rate")}: {currency.exchangeRate}
                         </span>
                       )}
                     </div>
@@ -186,10 +188,10 @@ const CurrencyList = () => {
             {currencies.length === 0 && (
               <div className="text-center py-16">
                 <div className="text-gray-400 mb-2 text-sm">
-                  No currencies yet
+                  {t("screens.currency.empty")}
                 </div>
                 <div className="text-xs text-gray-400">
-                  Start by adding your first currency
+                  {t("screens.currency.emptyHint")}
                 </div>
               </div>
             )}
@@ -198,10 +200,10 @@ const CurrencyList = () => {
 
         <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
           <h3 className="mb-1 text-lg font-black text-slate-950">
-            Add Currency
+            {t("screens.currency.createTitle")}
           </h3>
           <p className="mb-5 text-sm text-slate-500">
-            Add a currency and exchange rate
+            {t("screens.currency.createSubtitle")}
           </p>
 
           {actionError && (
@@ -216,7 +218,7 @@ const CurrencyList = () => {
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className={`w-full ${inputClass}`}
-              placeholder="Currency name"
+              placeholder={t("screens.currency.namePlaceholder")}
             />{" "}
             <input
               value={draft.latinName}
@@ -224,7 +226,7 @@ const CurrencyList = () => {
                 setDraft({ ...draft, latinName: e.target.value })
               }
               className={`w-full ${inputClass}`}
-              placeholder="Latin"
+              placeholder={t("screens.units.latinPlaceholder")}
             />
             <div className="grid grid-cols-2 gap-2">
               <input
@@ -232,14 +234,14 @@ const CurrencyList = () => {
                 value={draft.code}
                 onChange={(e) => setDraft({ ...draft, code: e.target.value })}
                 className={inputClass}
-                placeholder="Code"
+                placeholder={t("ui.code")}
               />
               <input
                 required
                 value={draft.symbol}
                 onChange={(e) => setDraft({ ...draft, symbol: e.target.value })}
                 className={inputClass}
-                placeholder="Symbol"
+                placeholder={t("ui.symbol")}
               />
             </div>
             <input
@@ -251,7 +253,7 @@ const CurrencyList = () => {
                 setDraft({ ...draft, exchangeRate: e.target.value })
               }
               className={`w-full ${inputClass}`}
-              placeholder="Exchange Rate"
+              placeholder={t("ui.exchangeRate")}
             />
             <button
               type="submit"
@@ -259,7 +261,7 @@ const CurrencyList = () => {
               className={`w-full ${primaryButtonClass}`}
             >
               <Plus size={16} />
-              Add Currency
+              {t("screens.currency.addButton")}
             </button>
           </form>
         </div>

@@ -15,8 +15,10 @@ import DeleteModal from "../../../Global/DeleteModel";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { formatNumber } from "../../../Global/FormatNumber";
 import { getAssetUrl } from "../../../Global/assetUrl";
+import { useTranslation } from "react-i18next";
 
 export default function ProductList() {
+  const { t } = useTranslation();
   const catalog = useProductCatalog();
   const { money } = usePrimaryCurrency();
   const {
@@ -50,7 +52,7 @@ export default function ProductList() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
-        Loading product catalog...
+        {t("screens.products.loading")}
       </div>
     );
   }
@@ -76,14 +78,13 @@ export default function ProductList() {
           <div className="grid gap-6 p-7 xl:grid-cols-[1fr_420px]">
             <div>
               <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
-                Inventory
+                {t("ui.inventory")}
               </p>
               <h1 className="max-w-2xl text-4xl font-black leading-tight text-slate-950">
-                Product command center
+                {t("screens.products.title")}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                Browse stock, pricing, units, and barcodes in one calmer
-                workspace.
+                {t("screens.products.subtitle")}
               </p>
             </div>
 
@@ -94,7 +95,7 @@ export default function ProductList() {
                   {products.length}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  Products
+                  {t("ui.products")}
                 </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
@@ -103,7 +104,7 @@ export default function ProductList() {
                   {formatNumber(totalQuantity, 2)}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  Quantity
+                  {t("ui.quantity")}
                 </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
@@ -112,7 +113,7 @@ export default function ProductList() {
                   {money(totalValue)}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  Retail Value
+                  {t("ui.retailValue")}
                 </div>
               </div>
             </div>
@@ -128,7 +129,7 @@ export default function ProductList() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 className="h-12 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10"
-                placeholder="Search by name, unit, or barcode"
+                placeholder={t("screens.products.search")}
               />
             </div>
 
@@ -139,7 +140,7 @@ export default function ProductList() {
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
               >
                 <RefreshCw size={16} />
-                Refresh
+                {t("common.refresh")}
               </button>
               <button
                 type="button"
@@ -147,7 +148,7 @@ export default function ProductList() {
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
               >
                 <PackagePlus size={17} />
-                Add product
+                {t("screens.products.add")}
               </button>
             </div>
           </div>
@@ -172,14 +173,14 @@ export default function ProductList() {
                   {product.logo ? (
                     <img
                       src={getAssetUrl(product.logo)}
-                      alt={product.name || "Product"}
+                      alt={product.name || t("ui.product")}
                       className="h-full w-full object-cover"
                     />
                   ) : (
                     <div className="flex h-full flex-col items-center justify-center text-[#4663ff]">
                       <Package size={28} />
                       <span className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                        No Image
+                        {t("ui.noImage")}
                       </span>
                     </div>
                   )}
@@ -193,7 +194,7 @@ export default function ProductList() {
                       type="button"
                       onClick={() => openEdit(product)}
                       className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:bg-[#4663ff] hover:text-white"
-                      aria-label="Edit product"
+                      aria-label={t("screens.products.editAria")}
                     >
                       <Edit2 size={14} />
                     </button>
@@ -204,7 +205,7 @@ export default function ProductList() {
                         setSelectDeleteProduct(product);
                       }}
                       className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 text-red-500 shadow-sm backdrop-blur transition hover:bg-red-50"
-                      aria-label="Delete product"
+                      aria-label={t("screens.products.deleteAria")}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -214,17 +215,17 @@ export default function ProductList() {
                 <div className="space-y-3 p-4">
                   <div>
                     <h2 className="truncate text-base font-black text-slate-950">
-                      {product.name || "Unnamed product"}
+                      {product.name || t("ui.unnamedProduct")}
                     </h2>
                     <p className="mt-0.5 truncate text-xs text-slate-500">
-                      {product.latinName || "No Latin name"}
+                      {product.latinName || t("ui.noLatinName")}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-3 gap-1.5">
                     <div className="rounded-xl bg-[#f8faff] px-2 py-2">
                       <div className="text-[10px] font-semibold text-slate-400">
-                        Qty
+                        {t("ui.qty")}
                       </div>
                       <div className="mt-0.5 truncate text-xs font-black text-slate-950">
                         {formatNumber(product.quantity || 0, 2)}
@@ -232,7 +233,7 @@ export default function ProductList() {
                     </div>
                     <div className="rounded-xl bg-red-50 px-2 py-2">
                       <div className="text-[10px] font-semibold text-red-300">
-                        Cost
+                        {t("ui.cost")}
                       </div>
                       <div className="mt-0.5 truncate text-xs font-black text-red-600">
                         {money(product.costPrice || 0)}
@@ -240,7 +241,7 @@ export default function ProductList() {
                     </div>
                     <div className="rounded-xl bg-emerald-50 px-2 py-2">
                       <div className="text-[10px] font-semibold text-emerald-300">
-                        Price
+                        {t("ui.price")}
                       </div>
                       <div className="mt-0.5 truncate text-xs font-black text-emerald-700">
                         {money(product.price || 0)}
@@ -257,7 +258,7 @@ export default function ProductList() {
                           {product.unit_code ? ` (${product.unit_code})` : ""}
                         </span>
                       ) : (
-                        <span className="text-slate-400">No unit</span>
+                        <span className="text-slate-400">{t("ui.noUnit")}</span>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-1 text-[11px] font-bold text-slate-400">
@@ -277,7 +278,7 @@ export default function ProductList() {
                         </span>
                       ))
                     ) : (
-                      <span className="text-xs text-slate-400">No barcode</span>
+                      <span className="text-xs text-slate-400">{t("ui.noBarcode")}</span>
                     )}
                     {productBarcodes.length > 2 && (
                       <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">
@@ -295,10 +296,10 @@ export default function ProductList() {
           <div className="rounded-[28px] border border-white/80 bg-white/80 p-12 text-center shadow-[0_24px_80px_rgba(70,99,255,0.12)]">
             <Package size={42} className="mx-auto text-[#4663ff]" />
             <h2 className="mt-4 text-xl font-black text-slate-950">
-              No products found
+              {t("screens.products.empty")}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              Try another search or add a new product.
+              {t("screens.products.emptyHint")}
             </p>
           </div>
         )}
@@ -329,8 +330,8 @@ export default function ProductList() {
         open={openDeleteModel}
         onClose={() => setOpenDeleteModel(false)}
         onConfirm={() => handleDeleteProduct(selectDeleteProduct)}
-        title="Delete Product"
-        message="Do you want to delete this product?"
+        title={t("screens.products.deleteTitle")}
+        message={t("screens.products.deleteMessage")}
       />
     </div>
   );

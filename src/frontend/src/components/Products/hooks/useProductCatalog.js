@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const normalizeBarcodes = (barcodes = []) => {
   const seen = new Set();
@@ -27,6 +28,7 @@ const productPayload = (product) => ({
 });
 
 export default function useProductCatalog() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [barcodes, setBarcodes] = useState([]);
   const [units, setUnits] = useState([]);
@@ -48,7 +50,7 @@ export default function useProductCatalog() {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -93,13 +95,13 @@ export default function useProductCatalog() {
 
       setError(
         nextUnavailableHandlers.length
-          ? "Products loaded, but some product features are unavailable because IPC handlers are not registered."
+          ? t("errors.partialLoad", { field: t("ui.products") })
           : "",
       );
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || "Failed to load product catalog.");
+      setError(err?.message || t("errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -234,7 +236,7 @@ export default function useProductCatalog() {
       setActionError("");
     } catch (err) {
       console.error("Failed to save product:", err);
-      setActionError(err?.message || "Failed to save product.");
+      setActionError(err?.message || t("errors.saveError"));
     }
   };
 
@@ -247,7 +249,7 @@ export default function useProductCatalog() {
     } catch (err) {
       console.error("Failed to delete product:", err);
       setActionError(
-        "Failed to delete product. It may be referenced by invoices.",
+        t("errors.deleteHasData", { field: t("ui.product") }),
       );
     }
   };

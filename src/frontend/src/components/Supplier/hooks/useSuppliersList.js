@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const useSuppliersList = () => {
+  const { t } = useTranslation();
   const emptySupplier = { name: "", phone: "", address: "" };
   const navigate = useNavigate();
 
@@ -26,7 +28,7 @@ const useSuppliersList = () => {
 
   const validateSupplier = (sup) => {
     if (!String(sup.name || "").trim()) {
-      return "Supplier name is required.";
+      return t("errors.nameRequired", { field: t("ui.supplier") });
     }
 
     return "";
@@ -34,7 +36,7 @@ const useSuppliersList = () => {
 
   const refetch = useCallback(async () => {
     if (!api) {
-      setError("Electron preload API is not available.");
+      setError(t("errors.apiUnavailable"));
       setLoading(false);
       return;
     }
@@ -47,7 +49,7 @@ const useSuppliersList = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || "Failed to load product catalog.");
+      setError(err?.message || t("errors.createFailed", { field: t("ui.supplier") }));
     } finally {
       setLoading(false);
     }
@@ -105,7 +107,7 @@ const useSuppliersList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Supplier:", err);
-      setActionError("Failed to create Supplier.");
+      setActionError(t("errors.createFailed", { field: t("ui.supplier") }));
       return false;
     }
   };
@@ -117,7 +119,7 @@ const useSuppliersList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Supplier:", err);
-      setActionError("Failed to update Supplier.");
+      setActionError(t("errors.updateFailed", { field: t("ui.supplier") }));
       return false;
     }
   };
@@ -133,7 +135,7 @@ const useSuppliersList = () => {
       setEditingId("");
     } catch (err) {
       console.error("Failed to delete Supplier:", err);
-      setActionError("Failed to delete this Supplier have Data.");
+      setActionError(t("errors.deleteHasData", { field: t("ui.supplier") }));
     }
   };
 

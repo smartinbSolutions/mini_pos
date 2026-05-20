@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Wallet, Save, X, Receipt, Building2, User } from "lucide-react";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { formatMoney } from "../../../../Global/FormatNumber";
+import { useTranslation } from "react-i18next";
 
 export default function InvoicePaymentModal({
   isOpen,
@@ -12,6 +13,7 @@ export default function InvoicePaymentModal({
   mode = "purchase",
   refetchList,
 }) {
+  const { t } = useTranslation();
   const api = window.api;
 
   const [loading, setLoading] = useState(false);
@@ -49,8 +51,8 @@ export default function InvoicePaymentModal({
         fund_id: "",
         amount: remaining,
         note: isPurchase
-          ? `Payment for Purchase Invoice #${invoice?.id}`
-          : `Payment for Sales Invoice #${invoice?.id}`,
+          ? t("screens.payments.paymentForPurchase", { id: invoice?.id })
+          : t("screens.payments.paymentForSales", { id: invoice?.id }),
       });
 
       setMessage("");
@@ -80,7 +82,7 @@ export default function InvoicePaymentModal({
 
       if (!res.success) throw new Error(res.message);
 
-      setMessage("Payment saved successfully");
+      setMessage(t("screens.payments.saved"));
 
       setTimeout(() => {
         onClose();
@@ -117,9 +119,9 @@ export default function InvoicePaymentModal({
 
             <div>
               <h2 className="font-semibold text-gray-800">
-                {isPurchase ? "Purchase Payment" : "Sales Payment"}
+                {isPurchase ? t("screens.payments.purchasePayment") : t("screens.payments.salesPayment")}
               </h2>
-              <p className="text-xs text-gray-500">Invoice #{invoice?.id}</p>
+              <p className="text-xs text-gray-500">{t("ui.invoice")} #{invoice?.id}</p>
             </div>
           </div>
 
@@ -147,7 +149,7 @@ export default function InvoicePaymentModal({
 
             <div>
               <p className="text-sm text-gray-500">
-                {isPurchase ? "Supplier" : "Customer"}
+                {isPurchase ? t("ui.supplier") : t("ui.customer")}
               </p>
               <h3 className="font-medium text-gray-800">{partyName}</h3>
             </div>
@@ -156,12 +158,12 @@ export default function InvoicePaymentModal({
           {/* Invoice */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border p-3">
-              <p className="text-xs text-gray-500">Net Total</p>
+              <p className="text-xs text-gray-500">{t("ui.netTotal")}</p>
               <h3 className="text-lg font-bold">{money(invoice?.net_total)}</h3>
             </div>
 
             <div className="rounded-2xl border p-3">
-              <p className="text-xs text-gray-500">Remaining</p>
+              <p className="text-xs text-gray-500">{t("ui.remaining")}</p>
               <h3 className="text-lg font-bold text-red-600">
                 {money(invoice?.net_total)}
               </h3>
@@ -176,7 +178,7 @@ export default function InvoicePaymentModal({
 
           {/* Fund */}
           <div>
-            <label className="text-sm text-gray-600">Cash Fund</label>
+            <label className="text-sm text-gray-600">{t("ui.cashFund")}</label>
 
             <select
               value={form.fund_id}
@@ -195,7 +197,7 @@ export default function InvoicePaymentModal({
               }}
               className="w-full h-11 rounded-xl border px-3 mt-1"
             >
-              <option value="">Select Fund</option>
+              <option value="">{t("ui.selectFund")}</option>
 
               {funds?.map((f) => (
                 <option key={f.id} value={f.id}>
@@ -207,7 +209,7 @@ export default function InvoicePaymentModal({
 
           {/* Amount */}
           <div>
-            <label className="text-sm text-gray-600">Amount</label>
+            <label className="text-sm text-gray-600">{t("ui.amount")}</label>
 
             <div className="relative">
               <input
@@ -230,7 +232,7 @@ export default function InvoicePaymentModal({
             value={form.note}
             onChange={(e) => handleChange("note", e.target.value)}
             className="w-full rounded-xl border p-2"
-            placeholder="Note..."
+            placeholder={t("ui.note")}
           />
 
           {/* Message */}
@@ -253,7 +255,7 @@ export default function InvoicePaymentModal({
             }`}
           >
             <Save size={18} />
-            {loading ? "Saving..." : "Save Payment"}
+            {loading ? t("common.saving") : t("screens.payments.savePayment")}
           </button>
         </div>
       </div>

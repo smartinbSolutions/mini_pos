@@ -5,8 +5,10 @@ import { ArrowDownLeft, ArrowUpRight, Wallet, RefreshCcw } from "lucide-react";
 import usePartyLedger from "../hooks/useGetPartyPayments";
 import { formatMoney, formatNumber } from "../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
+import { useTranslation } from "react-i18next";
 
 const PartyLedgerPage = () => {
+  const { t } = useTranslation();
   const { id, type } = useParams();
 
   const { data = [], loading, party } = usePartyLedger(id, type);
@@ -14,7 +16,8 @@ const PartyLedgerPage = () => {
   const partyTotal = Number(party?.total || 0);
   const partyPaid = Number(party?.total_paid || 0);
   const partyBalance = partyTotal - partyPaid;
-  const partyName = party?.name || `${type === "customer" ? "Customer" : "Supplier"} #${id}`;
+  const typeLabel = type === "customer" ? t("ui.customer") : t("ui.supplier");
+  const partyName = party?.name || `${typeLabel} #${id}`;
 
   const pageTotals = useMemo(() => {
     let inTotal = 0;
@@ -41,15 +44,14 @@ const PartyLedgerPage = () => {
           </h1>
 
           <p className="text-sm text-gray-500 mt-1">
-            {type === "customer" ? "Customer" : "Supplier"} Ledger - Party ID:
-            #{id}
+            {t("screens.ledger.partyId", { type: typeLabel, id })}
           </p>
         </div>
 
         <div className="flex gap-4 flex-wrap">
           <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 min-w-[140px]">
             <div className="text-xs text-blue-600 font-medium">
-              PARTY TOTAL
+              {t("screens.ledger.partyTotal")}
             </div>
 
             <div className="text-lg font-bold text-blue-700">
@@ -59,7 +61,7 @@ const PartyLedgerPage = () => {
 
           <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 min-w-[140px]">
             <div className="text-xs text-green-600 font-medium">
-              TOTAL PAID
+              {t("screens.ledger.totalPaid")}
             </div>
 
             <div className="text-lg font-bold text-green-700">
@@ -68,7 +70,7 @@ const PartyLedgerPage = () => {
           </div>
 
           <div className="bg-gray-100 border rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-gray-500 font-medium">BALANCE</div>
+            <div className="text-xs text-gray-500 font-medium">{t("ui.balance")}</div>
 
             <div className="text-lg font-bold text-gray-800">
               {money(partyBalance)}
@@ -76,7 +78,7 @@ const PartyLedgerPage = () => {
           </div>
 
           <div className="bg-white border rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-gray-500 font-medium">PAGE IN</div>
+            <div className="text-xs text-gray-500 font-medium">{t("screens.ledger.pageIn")}</div>
 
             <div className="text-lg font-bold text-gray-800">
               {money(pageTotals.inTotal)}
@@ -84,7 +86,7 @@ const PartyLedgerPage = () => {
           </div>
 
           <div className="bg-white border rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-gray-500 font-medium">PAGE OUT</div>
+            <div className="text-xs text-gray-500 font-medium">{t("screens.ledger.pageOut")}</div>
 
             <div className="text-lg font-bold text-gray-800">
               {money(pageTotals.outTotal)}
@@ -96,9 +98,9 @@ const PartyLedgerPage = () => {
       {/* LIST */}
       <div className="bg-white border rounded-3xl overflow-hidden shadow-sm">
         {loading ? (
-          <div className="p-6 text-gray-400">Loading...</div>
+          <div className="p-6 text-gray-400">{t("common.loading")}</div>
         ) : data.length === 0 ? (
-          <div className="p-6 text-gray-400">No movements</div>
+          <div className="p-6 text-gray-400">{t("screens.ledger.noMovements")}</div>
         ) : (
           data.map((p) => {
             const isIn = p.type === "income";
@@ -126,7 +128,7 @@ const PartyLedgerPage = () => {
 
                   <div>
                     <div className="font-semibold text-gray-800">
-                      {p.note || "Transaction"}
+                      {p.note || t("screens.ledger.transaction")}
                     </div>
 
                     <div className="text-sm text-gray-400 mt-1">
@@ -135,7 +137,7 @@ const PartyLedgerPage = () => {
 
                     <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
                       <RefreshCcw size={12} />
-                      Rate: {formatNumber(p.exchange_rate)}
+                      {t("screens.ledger.rate", { rate: formatNumber(p.exchange_rate) })}
                     </div>
                   </div>
                 </div>
@@ -158,7 +160,7 @@ const PartyLedgerPage = () => {
 
                   <div className="text-xs text-gray-400 flex items-center gap-1 justify-end mt-2">
                     <Wallet size={12} />
-                    Balance: {money(p.running_balance)}
+                    {t("screens.ledger.balance", { balance: money(p.running_balance) })}
                   </div>
                 </div>
               </div>

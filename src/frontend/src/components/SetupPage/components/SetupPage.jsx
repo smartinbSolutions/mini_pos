@@ -15,8 +15,10 @@ import {
 import useSetupPage from "../hooks/useSetupPage";
 import appLogo from "../../../assets/logo.png";
 import { getAssetUrl } from "../../../Global/assetUrl";
+import { useTranslation } from "react-i18next";
 
 export default function CompanySettings({ onSetupComplete }) {
+  const { t } = useTranslation();
   const {
     handleSave,
     currencies,
@@ -51,7 +53,7 @@ export default function CompanySettings({ onSetupComplete }) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#eef3ff]">
         <div className="flex flex-col items-center gap-4">
-          <img src={appLogo} alt="App logo" className="h-16 w-16 rounded-2xl" />
+          <img src={appLogo} alt={t("app.name")} className="h-16 w-16 rounded-2xl" />
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#cbd7ff] border-t-[#4663ff]" />
         </div>
       </div>
@@ -67,15 +69,15 @@ export default function CompanySettings({ onSetupComplete }) {
               <div className="mb-10 flex items-center gap-3">
                 <img
                   src={appLogo}
-                  alt="Company setup"
+                  alt={t("screens.setupPage.title")}
                   className="h-14 w-14 rounded-[18px] shadow-sm"
                 />
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
-                    POS System
+                    {t("app.name")}
                   </p>
                   <h1 className="text-2xl font-black text-slate-950">
-                    Company Setup
+                    {t("screens.setupPage.title")}
                   </h1>
                 </div>
               </div>
@@ -83,22 +85,21 @@ export default function CompanySettings({ onSetupComplete }) {
               <div className="mb-8">
                 <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#dbe4ff] bg-white px-3 py-1 text-xs font-semibold text-[#4663ff]">
                   <ShieldCheck size={14} />
-                  First-time configuration
+                  {t("screens.setupPage.firstTime")}
                 </p>
                 <h2 className="max-w-xs text-4xl font-black leading-tight text-slate-950">
-                  Set up your workspace calmly.
+                  {t("screens.setupPage.headline")}
                 </h2>
                 <p className="mt-4 max-w-sm text-sm leading-6 text-slate-500">
-                  Add the company details that will appear across invoices,
-                  receipts, and daily POS records.
+                  {t("screens.setupPage.description")}
                 </p>
               </div>
 
               <div className="space-y-3">
                 {[
-                  "Company profile",
-                  "Contact information",
-                  "Base currency",
+                  t("screens.setupPage.profile"),
+                  t("screens.setupPage.contact"),
+                  t("screens.setupPage.baseCurrency"),
                 ].map((item) => (
                   <div
                     key={item}
@@ -123,10 +124,10 @@ export default function CompanySettings({ onSetupComplete }) {
                 <div className="mb-3 flex items-center justify-between">
                   <div>
                     <h3 className="font-bold text-slate-900">
-                      Company Logo {requiredMark}
+                      {t("screens.setupPage.logo")} {requiredMark}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Required brand image
+                      {t("screens.setupPage.logoHint")}
                     </p>
                   </div>
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef3ff] text-[#4663ff]">
@@ -143,7 +144,7 @@ export default function CompanySettings({ onSetupComplete }) {
                   {form.logo ? (
                     <img
                       src={getAssetUrl(form.logo)}
-                      alt="Selected company logo"
+                      alt={t("screens.setupPage.logo")}
                       className="max-h-full max-w-full object-contain"
                     />
                   ) : (
@@ -167,14 +168,13 @@ export default function CompanySettings({ onSetupComplete }) {
             <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div>
                 <p className="mb-2 text-sm font-bold text-[#4663ff]">
-                  Setup details
+                  {t("screens.setupPage.details")}
                 </p>
                 <h2 className="text-3xl font-black text-slate-950">
-                  Tell us about your company
+                  {t("screens.setupPage.tellUs")}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  All fields are required except Latin name. You can refine
-                  these details later from company settings.
+                  {t("screens.setupPage.fieldsHint")}
                 </p>
               </div>
 
@@ -184,7 +184,7 @@ export default function CompanySettings({ onSetupComplete }) {
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Save size={18} />
-                {saving ? "Saving..." : "Save Setup"}
+                {saving ? t("common.saving") : t("screens.setupPage.saveSetup")}
                 <ArrowRight size={17} />
               </button>
             </div>
@@ -197,10 +197,10 @@ export default function CompanySettings({ onSetupComplete }) {
                   </span>
                   <div>
                     <h3 className="font-black text-slate-950">
-                      Company Profile
+                      {t("screens.setupPage.companyProfile")}
                     </h3>
                     <p className="text-sm text-slate-500">
-                      Your official business identity
+                      {t("screens.setupPage.businessIdentity")}
                     </p>
                   </div>
                 </div>
@@ -208,13 +208,13 @@ export default function CompanySettings({ onSetupComplete }) {
                 <div className="grid gap-5 md:grid-cols-2">
                   <label>
                     <span className={labelClass}>
-                      Company Name {requiredMark}
+                      {t("screens.company.companyName")} {requiredMark}
                     </span>
                     <input
                       name="company_name"
                       value={form.company_name}
                       onChange={handleChange}
-                      placeholder="Company Name"
+                      placeholder={t("screens.company.companyName")}
                       className={fieldClass("company_name")}
                       required
                     />
@@ -222,12 +222,12 @@ export default function CompanySettings({ onSetupComplete }) {
                   </label>
 
                   <label>
-                    <span className={labelClass}>Latin Name</span>
+                    <span className={labelClass}>{t("ui.latinName")}</span>
                     <input
                       name="company_latin_name"
                       value={form.company_latin_name}
                       onChange={handleChange}
-                      placeholder="Latin Name"
+                      placeholder={t("ui.latinName")}
                       className={inputClass}
                     />
                   </label>
@@ -241,10 +241,10 @@ export default function CompanySettings({ onSetupComplete }) {
                   </span>
                   <div>
                     <h3 className="font-black text-slate-950">
-                      Contact Details
+                      {t("screens.setupPage.contactDetails")}
                     </h3>
                     <p className="text-sm text-slate-500">
-                      Public information for invoices and receipts
+                      {t("screens.setupPage.publicInfo")}
                     </p>
                   </div>
                 </div>
@@ -253,13 +253,13 @@ export default function CompanySettings({ onSetupComplete }) {
                   <label>
                     <span className={labelClass}>
                       <Phone size={15} />
-                      Phone {requiredMark}
+                      {t("ui.phone")} {requiredMark}
                     </span>
                     <input
                       name="phone"
                       value={form.phone}
                       onChange={handleChange}
-                      placeholder="Phone"
+                      placeholder={t("ui.phone")}
                       className={fieldClass("phone")}
                       required
                     />
@@ -269,14 +269,14 @@ export default function CompanySettings({ onSetupComplete }) {
                   <label>
                     <span className={labelClass}>
                       <Mail size={15} />
-                      Email
+                      {t("ui.email")}
                     </span>
                     <input
                       name="email"
                       type="email"
                       value={form.email}
                       onChange={handleChange}
-                      placeholder="Email"
+                      placeholder={t("ui.email")}
                       className={fieldClass("email")}
                       required
                     />
@@ -285,13 +285,13 @@ export default function CompanySettings({ onSetupComplete }) {
                   <label className="md:col-span-2">
                     <span className={labelClass}>
                       <MapPin size={15} />
-                      Address
+                      {t("ui.address")}
                     </span>
                     <textarea
                       name="address"
                       value={form.address}
                       onChange={handleChange}
-                      placeholder="Address"
+                      placeholder={t("ui.address")}
                       className={`${fieldClass("address")} min-h-24 resize-none py-3`}
                       required
                     />
@@ -307,10 +307,10 @@ export default function CompanySettings({ onSetupComplete }) {
                     </span>
                     <div>
                       <h3 className="font-black text-slate-950">
-                        Base Currency {requiredMark}
+                        {t("screens.setupPage.baseCurrency")} {requiredMark}
                       </h3>
                       <p className="text-sm text-slate-500">
-                        Choose the default currency for transactions
+                        {t("screens.setupPage.chooseCurrency")}
                       </p>
                     </div>
                   </div>

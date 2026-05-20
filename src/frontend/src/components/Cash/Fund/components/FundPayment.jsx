@@ -9,8 +9,10 @@ import {
 
 import useGetPayments from "../../../Payment/hooks/usePartyLedger";
 import { formatMoney } from "../../../../Global/FormatNumber";
+import { useTranslation } from "react-i18next";
 
 const FundMovementsPage = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
 
   const { payments, loading, fund } = useGetPayments(id);
@@ -32,17 +34,17 @@ const FundMovementsPage = () => {
         {/* HEADER */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Fund Movements</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{t("screens.fundMovements.title")}</h1>
 
             <p className="text-sm text-gray-500 mt-1">
-              Track all fund transactions and running balances
+              {t("screens.fundMovements.subtitle")}
             </p>
           </div>
 
           <div className="flex gap-4">
             <div className="bg-green-50 border border-green-100 rounded-2xl px-5 py-3 min-w-[140px]">
               <div className="text-xs text-green-700 uppercase font-medium">
-                Total In
+                {t("screens.fundMovements.totalIn")}
               </div>
 
               <div className="text-2xl font-bold text-green-600 mt-1">
@@ -52,7 +54,7 @@ const FundMovementsPage = () => {
 
             <div className="bg-red-50 border border-red-100 rounded-2xl px-5 py-3 min-w-[140px]">
               <div className="text-xs text-red-700 uppercase font-medium">
-                Total Out
+                {t("screens.fundMovements.totalOut")}
               </div>
 
               <div className="text-2xl font-bold text-red-500 mt-1">
@@ -62,7 +64,7 @@ const FundMovementsPage = () => {
 
             <div className="bg-gray-900 text-white rounded-2xl px-5 py-3 min-w-[170px]">
               <div className="text-xs uppercase tracking-wide opacity-70">
-                Current Balance
+                {t("screens.fundMovements.currentBalance")}
               </div>
 
               <div className="text-2xl font-bold mt-1">
@@ -76,21 +78,21 @@ const FundMovementsPage = () => {
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
           {/* TABLE HEADER */}
           <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b text-xs uppercase tracking-wide text-gray-500 font-semibold">
-            <div className="col-span-4">Description</div>
-            <div className="col-span-2">Type</div>
-            <div className="col-span-2 text-right">Amount</div>
-            <div className="col-span-2 text-right">Running Balance</div>
-            <div className="col-span-2 text-right">Date</div>
+            <div className="col-span-4">{t("ui.description")}</div>
+            <div className="col-span-2">{t("ui.type")}</div>
+            <div className="col-span-2 text-right">{t("ui.amount")}</div>
+            <div className="col-span-2 text-right">{t("ui.runningBalance")}</div>
+            <div className="col-span-2 text-right">{t("ui.date")}</div>
           </div>
 
           {/* CONTENT */}
           {loading ? (
             <div className="p-10 text-center text-gray-400">
-              Loading movements...
+              {t("screens.fundMovements.loading")}
             </div>
           ) : payments.length === 0 ? (
             <div className="p-10 text-center text-gray-400">
-              No movements found
+              {t("screens.fundMovements.empty")}
             </div>
           ) : (
             <div className="divide-y">
@@ -120,7 +122,7 @@ const FundMovementsPage = () => {
 
                       <div>
                         <div className="font-semibold text-gray-900">
-                          {payment.description || "Fund Movement"}
+                          {payment.description || t("screens.fundMovements.fundMovement")}
                         </div>
 
                         <div className="text-xs text-gray-400 mt-1">
@@ -138,7 +140,7 @@ const FundMovementsPage = () => {
                             : "bg-red-100 text-red-600"
                         }`}
                       >
-                        {isIn ? "INCOME" : "EXPENSE"}
+                        {isIn ? t("ui.income") : t("ui.expense")}
                       </span>
                     </div>
 
