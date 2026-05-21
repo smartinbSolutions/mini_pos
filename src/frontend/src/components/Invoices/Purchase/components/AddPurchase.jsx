@@ -3,7 +3,6 @@ import { Plus, Trash2, Save, Receipt, HandCoins } from "lucide-react";
 import useAddPurchase from "../hooks/useAddPurchase";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
-import { formatMoney } from "../../../../Global/FormatNumber";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 
@@ -15,6 +14,7 @@ export default function AddPurchase() {
     items,
     products,
     suppliers,
+    taxes,
     addItem,
     removeItem,
     updateItem,
@@ -191,6 +191,31 @@ export default function AddPurchase() {
                 <div className="flex justify-between">
                   <span className="text-slate-500">{t("ui.subtotal")}</span>
                   <span className="font-bold">{money(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">{t("ui.tax")}</span>
+                  <select
+                    className={`${inputClass} w-36`}
+                    value={invoice.tax || ""}
+                    onChange={(e) => {
+                      const selected = taxes.find(
+                        (tax) => tax.id === Number(e.target.value),
+                      );
+
+                      setInvoice((p) => ({
+                        ...p,
+                        tax: selected?.id || "",
+                        tax_rate: selected?.rate || 0,
+                      }));
+                    }}
+                  >
+                    <option value="">{t("ui.selectTax")}</option>
+                    {taxes.map((tax) => (
+                      <option key={tax.id} value={tax.id}>
+                        {tax.name} ({tax.rate}%)
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex justify-between text-xl font-black">
                   <span>{t("ui.total")}</span>

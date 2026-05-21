@@ -75,7 +75,9 @@ export default function UpdateSales() {
                   placeholder={t("ui.selectCustomer")}
                   options={customers}
                   selectedValue={invoice?.customer_id}
-                  onChange={(e) => setInvoice({ ...invoice, customer_id: e })}
+                  onChange={(customer) =>
+                    setInvoice({ ...invoice, customer_id: customer.id })
+                  }
                 />
                 <input
                   type="date"

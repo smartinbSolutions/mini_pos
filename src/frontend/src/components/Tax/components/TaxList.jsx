@@ -46,8 +46,12 @@ const TaxList = () => {
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
                 {t("ui.setup")}
               </p>
-              <h2 className="text-2xl font-black text-slate-950">{t("screens.taxes.title")}</h2>
-              <p className="text-sm text-slate-500">{t("screens.taxes.subtitle")}</p>
+              <h2 className="text-2xl font-black text-slate-950">
+                {t("screens.taxes.title")}
+              </h2>
+              <p className="text-sm text-slate-500">
+                {t("screens.taxes.subtitle")}
+              </p>
             </div>
 
             <div className="relative">
@@ -67,7 +71,7 @@ const TaxList = () => {
           <div className="grid grid-cols-3 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-400">
             <span>{t("ui.name")}</span>
             <span>{t("ui.rate")}</span>
-            <span className="text-right">{t("ui.actions")}</span>
+            <span className="text-right">{t("common.actions")}</span>
           </div>
 
           <div>
@@ -152,8 +156,12 @@ const TaxList = () => {
         </div>
 
         <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
-          <h3 className="mb-1 text-lg font-black text-slate-950">{t("screens.taxes.createTitle")}</h3>
-          <p className="mb-5 text-sm text-slate-500">{t("screens.taxes.createSubtitle")}</p>
+          <h3 className="mb-1 text-lg font-black text-slate-950">
+            {t("screens.taxes.createTitle")}
+          </h3>
+          <p className="mb-5 text-sm text-slate-500">
+            {t("screens.taxes.createSubtitle")}
+          </p>
 
           {actionError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">

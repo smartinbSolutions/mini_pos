@@ -99,7 +99,9 @@ const SalesList = () => {
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <HandCoins size={20} className="mb-4 text-[#4663ff]" />
                 <div className="text-2xl font-black">{unpaidCount}</div>
-                <div className="text-xs font-semibold text-slate-500">{t("ui.open")}</div>
+                <div className="text-xs font-semibold text-slate-500">
+                  {t("ui.open")}
+                </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <div className="mb-4 text-sm font-black text-[#4663ff]">
@@ -162,7 +164,9 @@ const SalesList = () => {
                   <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
                   <th className="px-5 py-4 text-right">{t("ui.discount")}</th>
                   <th className="px-5 py-4 text-right">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.actions")}</th>
+                  <th className="px-5 py-4 text-right">
+                    {t("common.actions")}
+                  </th>
                 </tr>
               </thead>
 

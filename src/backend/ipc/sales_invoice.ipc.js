@@ -1,5 +1,58 @@
 const { ipcMain, BrowserWindow } = require("electron");
 import db from "../db";
+
+const receiptLabels = {
+  en: {
+    invoice: "Invoice",
+    item: "Item",
+    quantity: "Qty",
+    price: "Price",
+    total: "Total",
+    subtotal: "Subtotal",
+    paid: "Paid",
+    change: "Change",
+    thankYou: "Thank you",
+    visitAgain: "Visit again",
+  },
+  tr: {
+    invoice: "Fatura",
+    item: "Urun",
+    quantity: "Miktar",
+    price: "Fiyat",
+    total: "Toplam",
+    subtotal: "Ara Toplam",
+    paid: "Odenen",
+    change: "Para Ustu",
+    thankYou: "Tesekkurler",
+    visitAgain: "Yine bekleriz",
+  },
+  ar: {
+    invoice: "فاتورة",
+    item: "الصنف",
+    quantity: "الكمية",
+    price: "السعر",
+    total: "الإجمالي",
+    subtotal: "المجموع الفرعي",
+    paid: "المدفوع",
+    change: "الباقي",
+    thankYou: "شكرا لك",
+    visitAgain: "نراك مرة أخرى",
+  },
+};
+
+const getReceiptLanguage = (value) => {
+  const language = String(value || "en").split("-")[0];
+  return receiptLabels[language] ? language : "en";
+};
+
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
 export default function registerSalesInvoiceIPC() {
   // CREATE
   ipcMain.handle("create-sales-invoice", (event, data) => {
@@ -393,6 +446,17 @@ export default function registerSalesInvoiceIPC() {
   });
 
   ipcMain.handle("print-receipt", async (event, data) => {
+    const companySettings = db
+      .prepare(`SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`)
+      .get();
+    const language = getReceiptLanguage(data.language || companySettings?.language);
+    const labels = receiptLabels[language];
+    const direction = language === "ar" ? "rtl" : "ltr";
+    const companyName =
+      companySettings?.company_name ||
+      companySettings?.company_latin_name ||
+      "POS System";
+
     const win = new BrowserWindow({
       show: false,
       webPreferences: {
@@ -405,8 +469,8 @@ export default function registerSalesInvoiceIPC() {
       .map(
         (item) => `
       <tr>
-        <td class="item">${item.name}</td>
-        <td class="center">${item.quantity}</td>
+        <td class="item">${escapeHtml(item.name)}</td>
+        <td class="center">${escapeHtml(item.quantity)}</td>
         <td class="right">${Number(item.price).toFixed(2)}</td>
         <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
@@ -417,6 +481,7 @@ export default function registerSalesInvoiceIPC() {
     const html = `
   <html>
     <head>
+      <meta charset="UTF-8" />
       <style>
         @page {
           margin: 0;
@@ -430,6 +495,7 @@ export default function registerSalesInvoiceIPC() {
           padding: 4mm;
           box-sizing: border-box;
           color: #000;
+          direction: ${direction};
         }
 
         .header {
@@ -460,7 +526,7 @@ export default function registerSalesInvoiceIPC() {
         }
 
         th {
-          text-align: left;
+          text-align: start;
           border-bottom: 1px solid #000;
           padding-bottom: 4px;
         }
@@ -507,8 +573,8 @@ export default function registerSalesInvoiceIPC() {
     <body>
 
       <div class="header">
-        <h1>MY STORE</h1>
-        <p>Invoice #${data.id}</p>
+        <h1>${escapeHtml(companyName)}</h1>
+        <p>${labels.invoice} #${escapeHtml(data.id)}</p>
         <p>${new Date().toLocaleString()}</p>
       </div>
 
@@ -517,10 +583,10 @@ export default function registerSalesInvoiceIPC() {
       <table>
         <thead>
           <tr>
-            <th>Item</th>
-            <th class="center">Qty</th>
-            <th class="right">Price</th>
-            <th class="right">Total</th>
+            <th>${labels.item}</th>
+            <th class="center">${labels.quantity}</th>
+            <th class="right">${labels.price}</th>
+            <th class="right">${labels.total}</th>
           </tr>
         </thead>
         <tbody>
@@ -532,29 +598,29 @@ export default function registerSalesInvoiceIPC() {
 
       <div class="summary">
         <div>
-          <span>Subtotal</span>
-          <span>${data.total}</span>
+          <span>${labels.subtotal}</span>
+          <span>${escapeHtml(data.total)}</span>
         </div>
 
         <div>
-          <span>Paid</span>
-          <span>${data.received}</span>
+          <span>${labels.paid}</span>
+          <span>${escapeHtml(data.received)}</span>
         </div>
 
         <div>
-          <span>Change</span>
-          <span>${data.change}</span>
+          <span>${labels.change}</span>
+          <span>${escapeHtml(data.change)}</span>
         </div>
 
         <div class="total">
-          <span>TOTAL</span>
-          <span>${data.total}</span>
+          <span>${labels.total}</span>
+          <span>${escapeHtml(data.total)}</span>
         </div>
       </div>
 
       <div class="footer">
-        Thank you <br/>
-        Visit again
+        ${labels.thankYou} <br/>
+        ${labels.visitAgain}
       </div>
 
     </body>

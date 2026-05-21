@@ -8,7 +8,6 @@ import {
   Scale,
   Wallet,
   Package2,
-  Sparkles,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
@@ -17,6 +16,7 @@ import usePosCheckout from "../hooks/usePosCheckout";
 import { formatNumber } from "../../../Global/FormatNumber";
 import useWeight from "../hooks/useWeight";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
+import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 
 export default function POSSystem() {
@@ -280,57 +280,36 @@ export default function POSSystem() {
                       );
                       setActionError("");
                     }}
-                    className="group rounded-2xl border border-stone-200 bg-white p-4 text-left shadow-sm shadow-stone-200/70 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-100"
+                    className="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm shadow-stone-200/70 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-100"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600 transition group-hover:bg-teal-500 group-hover:text-white">
-                        <Package2 size={23} />
-                      </div>
+                    <div className="relative aspect-[4/3] bg-stone-100">
+                      {product.logo ? (
+                        <img
+                          src={getAssetUrl(product.logo)}
+                          alt={product.name || t("ui.product")}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-teal-600">
+                          <Package2 size={34} />
+                        </div>
+                      )}
 
-                      <div className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-right">
-                        <p className="text-[11px] font-semibold uppercase text-teal-700/70">
-                          {t("ui.price")}
-                        </p>
-                        <h3 className="text-lg font-black text-teal-700">
-                          {money(product.price || 0)}
+                      <div className="absolute right-3 top-3 rounded-xl bg-white/95 px-3 py-1.5 text-sm font-black text-teal-700 shadow-sm backdrop-blur">
+                        {money(product.price || 0)}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 p-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-black text-stone-950">
+                          {product.name || t("ui.unnamedProduct")}
                         </h3>
                       </div>
-                    </div>
 
-                    <div className="mt-4 min-w-0">
-                      <h3 className="truncate text-base font-black text-stone-950">
-                        {product.name || t("ui.unnamedProduct")}
-                      </h3>
-                      <p className="mt-1 truncate text-sm text-stone-500">
-                        {product.latinName ||
-                          product.unit_name ||
-                          `ID ${product.id}`}
-                      </p>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-                        <p className="text-[11px] font-semibold uppercase text-stone-500">
-                          {t("ui.unit")}
-                        </p>
-                        <p className="mt-1 truncate text-sm font-bold text-stone-700">
-                          {product.unit_name || t("ui.noUnit")}
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
-                        <p className="text-[11px] font-semibold uppercase text-stone-500">
-                          {t("screens.pos.stock")}
-                        </p>
-                        <p className="mt-1 truncate text-sm font-bold text-stone-700">
-                          {formatNumber(product.quantity || 0, 2)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-500 text-sm font-black text-white transition group-hover:bg-teal-600">
-                      <Sparkles size={16} />
-                      {t("screens.pos.addToCart")}
+                      <span className="shrink-0 rounded-xl bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-600">
+                        {formatNumber(product.quantity || 0, 2)}
+                      </span>
                     </div>
                   </button>
                 ))}

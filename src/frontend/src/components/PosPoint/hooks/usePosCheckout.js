@@ -7,7 +7,7 @@ const toNumber = (value) => {
 };
 
 export default function usePosCheckout({ weight } = {}) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [funds, setFunds] = useState([]);
@@ -167,6 +167,7 @@ export default function usePosCheckout({ weight } = {}) {
         customer_id: selectedCustomerId,
         currency_code,
         exchange_rate,
+        language: i18n.language,
       };
       const sales = await api.posCheckout({
         fund_id: Number(fundId),

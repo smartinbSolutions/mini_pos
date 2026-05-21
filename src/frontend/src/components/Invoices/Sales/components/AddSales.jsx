@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -21,6 +21,7 @@ export default function AddSales() {
     items,
     products,
     customers,
+    taxes,
     addItem,
     removeItem,
     updateItem,
@@ -93,23 +94,17 @@ export default function AddSales() {
           <main className="space-y-6">
             <section className={panelClass}>
               <div className="mb-4 grid gap-3 md:grid-cols-2">
-                <select
-                  className={inputClass}
-                  value={invoice.customer_id || ""}
-                  onChange={(e) =>
+                <SearchableSelect
+                  placeholder={t("ui.selectCustomer")}
+                  options={customers}
+                  selectedValue={invoice.customer_id}
+                  onChange={(customer) =>
                     setInvoice((p) => ({
                       ...p,
-                      customer_id: e.target.value,
+                      customer_id: customer.id,
                     }))
                   }
-                >
-                  <option value="">{t("ui.selectCustomer")}</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                />
 
                 <input
                   type="date"
@@ -128,7 +123,9 @@ export default function AddSales() {
             <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
               <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-950">{t("ui.items")}</h2>
+                  <h2 className="text-lg font-black text-slate-950">
+                    {t("ui.items")}
+                  </h2>
                   <p className="text-sm text-slate-500">
                     {t("screens.invoices.productsOnInvoice")}
                   </p>
@@ -213,8 +210,12 @@ export default function AddSales() {
                   <HandCoins size={19} />
                 </span>
                 <div>
-                  <h3 className="font-black text-slate-950">{t("ui.totals")}</h3>
-                  <p className="text-sm text-slate-500">{t("screens.invoices.invoiceSummary")}</p>
+                  <h3 className="font-black text-slate-950">
+                    {t("ui.totals")}
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    {t("screens.invoices.invoiceSummary")}
+                  </p>
                 </div>
               </div>
 
@@ -222,6 +223,31 @@ export default function AddSales() {
                 <div className="flex justify-between">
                   <span className="text-slate-500">{t("ui.subtotal")}</span>
                   <span className="font-bold">{money(subtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">{t("ui.tax")}</span>
+                  <select
+                    className={`${inputClass} w-36`}
+                    value={invoice.tax_id || ""}
+                    onChange={(e) => {
+                      const selected = taxes.find(
+                        (tax) => tax.id === Number(e.target.value),
+                      );
+
+                      setInvoice((p) => ({
+                        ...p,
+                        tax_id: selected?.id || "",
+                        tax_rate: selected?.rate || 0,
+                      }));
+                    }}
+                  >
+                    <option value="">{t("ui.selectTax")}</option>
+                    {taxes.map((tax) => (
+                      <option key={tax.id} value={tax.id}>
+                        {tax.name} ({tax.rate}%)
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex justify-between text-xl font-black">
                   <span>{t("ui.total")}</span>
@@ -232,7 +258,9 @@ export default function AddSales() {
 
             <section className={`${panelClass} space-y-4`}>
               <div className="flex items-center justify-between">
-                <span className="font-black text-slate-950">{t("ui.payment")}</span>
+                <span className="font-black text-slate-950">
+                  {t("ui.payment")}
+                </span>
                 <span
                   className={`rounded-xl px-3 py-1 text-xs font-black ${
                     status === "paid"
@@ -248,13 +276,17 @@ export default function AddSales() {
 
               <div className="rounded-2xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t("screens.invoices.amountToPay")}</span>
+                  <span className="text-slate-500">
+                    {t("screens.invoices.amountToPay")}
+                  </span>
                   <span className="font-black text-slate-950">
                     {money(total)}
                   </span>
                 </div>
                 <div className="mt-2 flex justify-between text-sm">
-                  <span className="text-slate-500">{t("screens.invoices.paymentInCash")}</span>
+                  <span className="text-slate-500">
+                    {t("screens.invoices.paymentInCash")}
+                  </span>
                   <span className="font-black text-[#4663ff]">
                     {money(total * invoice.exchange_rate)}
                   </span>
@@ -270,6 +302,7 @@ export default function AddSales() {
                       ...p,
                       paid_amount: 0,
                     }));
+                    setStatus("unpaid");
                   }}
                   className={`rounded-2xl border py-2 text-sm font-bold transition ${
                     paymentChoice === "unpaid"
