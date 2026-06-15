@@ -106,12 +106,12 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
         return;
       }
 
-        setStatus(t("screens.pos.connectingScale"));
+      setStatus(t("screens.pos.connectingScale"));
 
       try {
         const availablePorts = await refreshPorts();
         const selectedPath = path || getDefaultPortPath(availablePorts);
-      const result = await api.connectScale({ path: selectedPath, baudRate });
+        const result = await api.connectScale({ path: selectedPath, baudRate });
 
         if (!result?.ok) {
           setIsConnected(false);
@@ -124,7 +124,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
       } catch (error) {
         console.error("Scale connection failed:", error);
         setIsConnected(false);
-        setStatus(error?.message || t("screens.pos.scaleConnectionFailed"));
+        setStatus(t("screens.pos.scaleConnectionFailed"));
       }
     },
     [baudRate, getDefaultPortPath, refreshPorts],

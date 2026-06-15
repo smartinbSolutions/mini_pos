@@ -2,7 +2,7 @@
   "app": {
     "name": "POS System",
     "tagline": "Inventory & Sales Manager",
-    "version": "v1.0.0 - POS System"
+    "version": "v1.0.5 - POS System"
   },
   "common": {
     "loading": "Loading...",

@@ -2,7 +2,7 @@
   "app": {
     "name": "POS Sistemi",
     "tagline": "Stok ve Satış Yöneticisi",
-    "version": "v1.0.0 - POS Sistemi"
+    "version": "v1.0.5 - POS Sistemi"
   },
   "common": {
     "loading": "Yükleniyor...",

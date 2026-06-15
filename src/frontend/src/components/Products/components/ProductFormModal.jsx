@@ -161,7 +161,9 @@ export default function ProductFormModal({
                   {t("ui.inventory")}
                 </p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">
-                  {isEditing ? t("screens.products.edit") : t("screens.products.create")}
+                  {isEditing
+                    ? t("screens.products.edit")
+                    : t("screens.products.create")}
                 </h2>
               </div>
 
@@ -209,14 +211,18 @@ export default function ProductFormModal({
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-3xl bg-[#eef3ff] p-4">
                 <Boxes size={18} className="mb-3 text-[#4663ff]" />
-                <p className="text-xs font-bold text-slate-500">{t("ui.quantity")}</p>
+                <p className="text-xs font-bold text-slate-500">
+                  {t("ui.quantity")}
+                </p>
                 <p className="mt-1 text-xl font-black text-slate-950">
                   {form.quantity || 0}
                 </p>
               </div>
               <div className="rounded-3xl bg-emerald-50 p-4">
                 <DollarSign size={18} className="mb-3 text-emerald-600" />
-                <p className="text-xs font-bold text-slate-500">{t("ui.salePrice")}</p>
+                <p className="text-xs font-bold text-slate-500">
+                  {t("ui.salePrice")}
+                </p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
                   {form.price || 0}
                 </p>
@@ -256,7 +262,9 @@ export default function ProductFormModal({
 
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <label className={labelClass}>{t("ui.product")} {t("ui.name")}</label>
+                      <label className={labelClass}>
+                        {t("ui.product")} {t("ui.name")}
+                      </label>
                       <input
                         required
                         value={form.name}
@@ -301,9 +309,12 @@ export default function ProductFormModal({
                         }
                         disabled={!canUseUnits}
                         className={inputClass}
+                        required
                       >
                         <option value="">
-                          {canUseUnits ? t("ui.selectUnit") : t("ui.unitsUnavailable")}
+                          {canUseUnits
+                            ? t("ui.selectUnit")
+                            : t("ui.unitsUnavailable")}
                         </option>
 
                         {units?.map((unit) => (
@@ -322,7 +333,9 @@ export default function ProductFormModal({
                       <DollarSign size={19} />
                     </span>
                     <div>
-                      <h3 className="font-black text-slate-950">{t("ui.price")}</h3>
+                      <h3 className="font-black text-slate-950">
+                        {t("ui.price")}
+                      </h3>
                       <p className="text-sm text-slate-500">
                         {t("screens.products.pricingHint")}
                       </p>

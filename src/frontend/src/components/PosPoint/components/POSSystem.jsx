@@ -157,7 +157,9 @@ export default function POSSystem() {
                         : "text-teal-700 hover:bg-teal-50"
                     }`}
                   >
-                    {isScaleConnected ? t("screens.pos.disconnect") : t("screens.pos.connect")}
+                    {isScaleConnected
+                      ? t("screens.pos.disconnect")
+                      : t("screens.pos.connect")}
                   </button>
                 </div>
 
@@ -352,14 +354,21 @@ export default function POSSystem() {
             </div>
 
             <div className="mt-5">
-              <p className="mb-2 text-sm font-bold text-stone-700">{t("ui.customer")}</p>
+              <p className="mb-2 text-sm font-bold text-stone-700">
+                {t("ui.customer")}
+              </p>
 
               <SearchableSelect
                 label=""
                 labelWidth="0"
                 placeholder={t("screens.pos.walkInCustomer")}
                 options={[
-                  { id: "", name: t("screens.pos.walkInCustomer"), phone: "", address: "" },
+                  {
+                    id: "",
+                    name: t("screens.pos.walkInCustomer"),
+                    phone: "",
+                    address: "",
+                  },
                   ...customers,
                 ]}
                 selectedValue={selectedCustomerId}
@@ -367,7 +376,10 @@ export default function POSSystem() {
                   setSelectedCustomerId(customer.id ? String(customer.id) : "")
                 }
                 getOptionLabel={(customer) =>
-                  [customer.name || t("screens.pos.walkInCustomer"), customer.phone]
+                  [
+                    customer.name || t("screens.pos.walkInCustomer"),
+                    customer.phone,
+                  ]
                     .filter(Boolean)
                     .join(" - ")
                 }
@@ -443,7 +455,9 @@ export default function POSSystem() {
                       </div>
 
                       <div className="text-right">
-                        <p className="text-xs text-stone-500">{t("ui.subtotal")}</p>
+                        <p className="text-xs text-stone-500">
+                          {t("ui.subtotal")}
+                        </p>
                         <h3 className="text-lg font-black text-teal-700">
                           {money((item.price || 0) * item.qty)}
                         </h3>
@@ -477,7 +491,9 @@ export default function POSSystem() {
               disabled={!cart.length || checkingOut}
               className="mt-4 flex h-14 w-full items-center justify-center rounded-2xl bg-teal-600 text-lg font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {checkingOut ? t("screens.pos.processing") : t("screens.pos.checkout")}
+              {checkingOut
+                ? t("screens.pos.processing")
+                : t("screens.pos.checkout")}
             </button>
           </div>
         </aside>

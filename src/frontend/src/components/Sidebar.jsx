@@ -31,7 +31,11 @@ export default function Sidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         <Section title={t("navigation.main")} />
 
-        <SidebarItem to="/" icon={<Home size={18} />} title={t("navigation.dashboard")} />
+        <SidebarItem
+          to="/"
+          icon={<Home size={18} />}
+          title={t("navigation.dashboard")}
+        />
         <SidebarItem
           to="/products"
           icon={<Package size={18} />}
@@ -50,11 +54,31 @@ export default function Sidebar() {
 
         <Section title={t("navigation.management")} />
 
-        <SidebarItem to="/pos" icon={<Layers size={18} />} title={t("navigation.posSystem")} />
-        <SidebarItem to="/unit" icon={<Boxes size={18} />} title={t("navigation.units")} />
-        <SidebarItem to="/currency" icon={<DollarIcon />} title={t("navigation.currency")} />
-        <SidebarItem to="/funds" icon={<Landmark size={18} />} title={t("navigation.funds")} />
-        <SidebarItem to="/tax" icon={<Percent size={18} />} title={t("navigation.taxes")} />
+        <SidebarItem
+          to="/pos"
+          icon={<Layers size={18} />}
+          title={t("navigation.posSystem")}
+        />
+        <SidebarItem
+          to="/unit"
+          icon={<Boxes size={18} />}
+          title={t("navigation.units")}
+        />
+        <SidebarItem
+          to="/currency"
+          icon={<DollarIcon />}
+          title={t("navigation.currency")}
+        />
+        <SidebarItem
+          to="/funds"
+          icon={<Landmark size={18} />}
+          title={t("navigation.funds")}
+        />
+        <SidebarItem
+          to="/tax"
+          icon={<Percent size={18} />}
+          title={t("navigation.taxes")}
+        />
 
         <Section title={t("navigation.people")} />
 
@@ -79,6 +103,8 @@ export default function Sidebar() {
 
       <div className="space-y-3 p-4 border-t border-white/5 text-xs text-gray-500">
         <LanguageSwitcher />
+      </div>
+      <div className="space-y-3 p-4 border-t border-white/5 text-xs text-gray-400">
         <div>{t("app.version")}</div>
       </div>
     </div>
