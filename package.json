@@ -1,7 +1,7 @@
 {
   "name": "mine_pos",
   "productName": "mine_pos",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "My Electron application description",
   "main": ".vite/build/main.js",
   "private": true,
