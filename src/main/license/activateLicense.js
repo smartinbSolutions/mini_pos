@@ -4,7 +4,8 @@ import getDeviceHash from "./getDeviceHash";
 import saveLicenseFile from "./saveLicenseFile";
 import verifyLicenseFile from "./verifyLicenseFile";
 
-const DEFAULT_ACTIVATION_URL = "http://127.0.0.1:8787/api/activateLicense";
+const DEFAULT_ACTIVATION_URL =
+  "https://panel-server.smartinb.com/api/activateLicense";
 
 export default async function activateLicense(licenseKey) {
   if (!licenseKey?.trim()) {
