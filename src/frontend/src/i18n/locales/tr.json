@@ -387,7 +387,21 @@
     "products": "Ürünler",
     "customers": "Müşteriler",
     "profit": "Kar",
-    "analytics": "Analizler"
+    "analytics": "Analizler",
+    "todaySales": "Bugünkü Satış",
+    "todayPurchases": "Bugünkü Satın Alma",
+    "inventoryValue": "Stok Değeri",
+    "lowStock": "Düşük Stok",
+    "salesPurchasesTrend": "Satışlar ve Satın Almalar",
+    "sales": "Satışlar",
+    "purchases": "Satın Almalar",
+    "invoiceStatus": "Fatura Durumu",
+    "paidInvoices": "Ödenen Faturalar",
+    "unpaidInvoices": "Ödenmeyen Faturalar",
+    "invoices": "Faturalar",
+    "cashFlow": "Nakit Akışı",
+    "topProducts": "En Çok Satan Ürünler",
+    "noSalesData": "Henüz satış verisi yok"
   },
   "activation": {
     "title": "POS Lisansını Etkinleştir",

@@ -387,7 +387,21 @@
     "products": "Products",
     "customers": "Customers",
     "profit": "Profit",
-    "analytics": "Analytics"
+    "analytics": "Analytics",
+    "todaySales": "Today's Sales",
+    "todayPurchases": "Today's Purchases",
+    "inventoryValue": "Inventory Value",
+    "lowStock": "Low Stock",
+    "salesPurchasesTrend": "Sales and Purchases",
+    "sales": "Sales",
+    "purchases": "Purchases",
+    "invoiceStatus": "Invoice Status",
+    "paidInvoices": "Paid Invoices",
+    "unpaidInvoices": "Unpaid Invoices",
+    "invoices": "Invoices",
+    "cashFlow": "Cash Flow",
+    "topProducts": "Top Products",
+    "noSalesData": "No sales data yet"
   },
   "activation": {
     "title": "Activate POS License",

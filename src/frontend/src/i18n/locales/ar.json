@@ -387,7 +387,21 @@
     "products": "المنتجات",
     "customers": "العملاء",
     "profit": "الربح",
-    "analytics": "التحليلات"
+    "analytics": "التحليلات",
+    "todaySales": "مبيعات اليوم",
+    "todayPurchases": "مشتريات اليوم",
+    "inventoryValue": "قيمة المخزون",
+    "lowStock": "مخزون منخفض",
+    "salesPurchasesTrend": "المبيعات والمشتريات",
+    "sales": "المبيعات",
+    "purchases": "المشتريات",
+    "invoiceStatus": "حالة الفواتير",
+    "paidInvoices": "فواتير مدفوعة",
+    "unpaidInvoices": "فواتير غير مدفوعة",
+    "invoices": "الفواتير",
+    "cashFlow": "التدفق النقدي",
+    "topProducts": "أفضل المنتجات",
+    "noSalesData": "لا توجد بيانات مبيعات بعد"
   },
   "activation": {
     "title": "تفعيل رخصة نقاط البيع",

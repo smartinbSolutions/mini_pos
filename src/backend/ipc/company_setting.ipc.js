@@ -113,6 +113,8 @@ export default function registerCompanySettingsIPC() {
   });
 
   ipcMain.handle("get-dashboard-stats", () => {
+    const scalar = (query) => db.prepare(query).get()?.value || 0;
+
     const totalSales =
       db.prepare(`SELECT SUM(net_total) as total FROM sales_invoices`).get()
         ?.total || 0;
@@ -129,11 +131,129 @@ export default function registerCompanySettingsIPC() {
 
     const profit = totalSales - purchaseTotal;
 
+    const todaySales = scalar(`
+      SELECT COALESCE(SUM(net_total), 0) AS value
+      FROM sales_invoices
+      WHERE date(date) = date('now')
+    `);
+
+    const todayPurchases = scalar(`
+      SELECT COALESCE(SUM(net_total), 0) AS value
+      FROM purchase_invoices
+      WHERE date(date) = date('now')
+    `);
+
+    const invoiceCount = scalar(`
+      SELECT COUNT(*) AS value
+      FROM sales_invoices
+    `);
+
+    const paidInvoices = scalar(`
+      SELECT COUNT(*) AS value
+      FROM sales_invoices
+      WHERE status = 'paid'
+    `);
+
+    const unpaidInvoices = scalar(`
+      SELECT COUNT(*) AS value
+      FROM sales_invoices
+      WHERE status != 'paid' OR status IS NULL
+    `);
+
+    const inventoryValue = scalar(`
+      SELECT COALESCE(SUM(quantity * costPrice), 0) AS value
+      FROM products
+    `);
+
+    const lowStockProducts = scalar(`
+      SELECT COUNT(*) AS value
+      FROM products
+      WHERE COALESCE(quantity, 0) <= 5
+    `);
+
+    const totalIncome = scalar(`
+      SELECT COALESCE(SUM(amount), 0) AS value
+      FROM payments
+      WHERE type = 'income'
+    `);
+
+    const totalExpense = scalar(`
+      SELECT COALESCE(SUM(amount), 0) AS value
+      FROM payments
+      WHERE type = 'expense'
+    `);
+
+    const salesTrend = db
+      .prepare(
+        `
+        WITH RECURSIVE days(day) AS (
+          SELECT date('now', '-6 days')
+          UNION ALL
+          SELECT date(day, '+1 day') FROM days WHERE day < date('now')
+        )
+        SELECT
+          days.day,
+          COALESCE(SUM(sales_invoices.net_total), 0) AS sales
+        FROM days
+        LEFT JOIN sales_invoices ON date(sales_invoices.date) = days.day
+        GROUP BY days.day
+        ORDER BY days.day
+      `,
+      )
+      .all();
+
+    const purchaseTrend = db
+      .prepare(
+        `
+        WITH RECURSIVE days(day) AS (
+          SELECT date('now', '-6 days')
+          UNION ALL
+          SELECT date(day, '+1 day') FROM days WHERE day < date('now')
+        )
+        SELECT
+          days.day,
+          COALESCE(SUM(purchase_invoices.net_total), 0) AS purchases
+        FROM days
+        LEFT JOIN purchase_invoices ON date(purchase_invoices.date) = days.day
+        GROUP BY days.day
+        ORDER BY days.day
+      `,
+      )
+      .all();
+
+    const topProducts = db
+      .prepare(
+        `
+        SELECT
+          COALESCE(products.name, 'Unknown') AS name,
+          COALESCE(SUM(sales_invoice_items.quantity), 0) AS quantity,
+          COALESCE(SUM(sales_invoice_items.total), 0) AS total
+        FROM sales_invoice_items
+        LEFT JOIN products ON products.id = sales_invoice_items.product_id
+        GROUP BY sales_invoice_items.product_id
+        ORDER BY quantity DESC
+        LIMIT 5
+      `,
+      )
+      .all();
+
     return {
       totalSales,
       products,
       customers,
       profit,
+      todaySales,
+      todayPurchases,
+      invoiceCount,
+      paidInvoices,
+      unpaidInvoices,
+      inventoryValue,
+      lowStockProducts,
+      totalIncome,
+      totalExpense,
+      salesTrend,
+      purchaseTrend,
+      topProducts,
     };
   });
 }
