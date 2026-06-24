@@ -155,10 +155,19 @@ export default function useAddSales() {
   const netTotal = useMemo(() => {
     const discount = Number(invoice.discount || 0);
     const taxRate = Number(invoice.tax_rate || 0);
-    const taxValue = (subtotal * taxRate) / 100;
+    const taxableAmount = Math.max(0, subtotal - discount);
+    const taxValue = (taxableAmount * taxRate) / 100;
 
-    return subtotal - discount + taxValue;
+    return Math.max(0, taxableAmount + taxValue);
   }, [subtotal, invoice]);
+
+  const taxableAmount = useMemo(() => {
+    return Math.max(0, subtotal - Number(invoice.discount || 0));
+  }, [subtotal, invoice.discount]);
+
+  const taxValue = useMemo(() => {
+    return (taxableAmount * Number(invoice.tax_rate || 0)) / 100;
+  }, [taxableAmount, invoice.tax_rate]);
   useEffect(() => {
     if (status === "paid") {
       setInvoice((p) => ({
@@ -168,13 +177,17 @@ export default function useAddSales() {
     }
   }, [netTotal]);
   const paymentInfundCurrency = useMemo(() => {
-    const payment = subtotal * (invoice.exchange_rate || 1);
+    const payment = netTotal * (invoice.exchange_rate || 1);
     return payment;
-  }, [subtotal, invoice]);
+  }, [netTotal, invoice]);
 
   const submit = async () => {
     if (status === "paid" && !invoice.fund_id) {
       toast.error(t("errors.selectFund"));
+      return false;
+    }
+    if (!items.length) {
+      setError(t("errors.addOneItem"));
       return false;
     }
     try {
@@ -187,6 +200,7 @@ export default function useAddSales() {
         items,
         status,
         paymentInfundCurrency: status === "paid" ? paymentInfundCurrency : 0,
+        taxValue,
       };
 
       const res = await api.createSalesInvoice(payload);
@@ -214,6 +228,8 @@ export default function useAddSales() {
     updateItem,
     submit,
     subtotal,
+    taxableAmount,
+    taxValue,
     netTotal,
     saving,
     error,

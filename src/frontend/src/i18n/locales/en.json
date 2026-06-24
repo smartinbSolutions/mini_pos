@@ -229,6 +229,8 @@
       "addItem": "Add Item",
       "invoiceSummary": "Invoice summary",
       "purchaseTotal": "Purchase total",
+      "taxableAmount": "After discount",
+      "taxAmount": "Tax amount",
       "amountToPay": "Amount to pay",
       "paymentInCash": "payment in CASH",
       "noPaymentNow": "Unpaid",

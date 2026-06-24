@@ -1,10 +1,18 @@
 import React, { useState } from "react";
-import { Plus, Trash2, Save, Receipt, HandCoins } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Save,
+  Receipt,
+  HandCoins,
+} from "lucide-react";
 import useAddPurchase from "../hooks/useAddPurchase";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../../Global/DeleteModel";
 
 export default function AddPurchase() {
   const { t } = useTranslation();
@@ -20,13 +28,17 @@ export default function AddPurchase() {
     updateItem,
     submit,
     subtotal,
+    taxableAmount,
+    taxValue,
     netTotal,
     saving,
     error,
     funds,
     setStatus,
+    reset,
   } = useAddPurchase();
   const [paymentChoice, setPaymentChoice] = useState(null);
+  const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const { money } = usePrimaryCurrency();
 
   const num = (v) => (isNaN(Number(v)) ? 0 : Number(v));
@@ -42,7 +54,7 @@ export default function AddPurchase() {
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-[32px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
+        <section className="flex flex-col gap-4 rounded-[32px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#4663ff] text-white shadow-lg shadow-[#4663ff]/20">
               <Receipt size={24} />
@@ -58,6 +70,24 @@ export default function AddPurchase() {
                 {t("screens.invoices.manageItemsPayments")}
               </p>
             </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+            >
+              {t("common.refresh")}
+            </button>
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+            >
+              <ArrowLeft size={16} />
+              {t("common.back")}
+            </button>
           </div>
         </section>
 
@@ -163,7 +193,7 @@ export default function AddPurchase() {
                         <td className="p-2 text-center">
                           <button
                             type="button"
-                            onClick={() => removeItem(index)}
+                            onClick={() => setDeleteItemIndex(index)}
                             className="rounded-xl p-2 text-red-500 hover:bg-red-50"
                           >
                             <Trash2 size={16} />
@@ -199,6 +229,22 @@ export default function AddPurchase() {
                   <span className="font-bold">{money(subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">{t("ui.discount")}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    className={`${inputClass} w-36`}
+                    value={invoice.discount || ""}
+                    onChange={(e) =>
+                      setInvoice((p) => ({
+                        ...p,
+                        discount: e.target.value,
+                      }))
+                    }
+                    placeholder="0"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-500">{t("ui.tax")}</span>
                   <select
                     className={`${inputClass} w-36`}
@@ -223,14 +269,26 @@ export default function AddPurchase() {
                     ))}
                   </select>
                 </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">
+                    {t("screens.invoices.taxableAmount")}
+                  </span>
+                  <span className="font-bold">{money(taxableAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">
+                    {t("screens.invoices.taxAmount")}
+                  </span>
+                  <span className="font-bold text-emerald-700">
+                    {money(taxValue)}
+                  </span>
+                </div>
                 <div className="flex justify-between text-xl font-black">
                   <span>{t("ui.total")}</span>
                   <span className="text-[#4663ff]">{money(netTotal)}</span>
                 </div>
               </div>
             </section>
-            {console.log(status)}
-
             <section className={`${panelClass} space-y-4`}>
               <div className="flex items-center justify-between">
                 <h3 className="font-black">{t("ui.payment")}</h3>
@@ -329,6 +387,16 @@ export default function AddPurchase() {
           </aside>
         </div>
       </div>
+      <DeleteModal
+        open={deleteItemIndex !== null}
+        onClose={() => setDeleteItemIndex(null)}
+        onConfirm={() => {
+          removeItem(deleteItemIndex);
+          setDeleteItemIndex(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
       <ToastContainer />
     </div>
   );

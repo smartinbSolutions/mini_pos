@@ -73,7 +73,7 @@ export default function useUpdatePurchase() {
         const product = products.find((p) => p.id == value);
 
         if (product) {
-          item.price = product.price || 0;
+          item.price = product.costPrice || 0;
           item.name = product.name;
         }
       }
@@ -171,10 +171,22 @@ export default function useUpdatePurchase() {
   const netTotal = useMemo(() => {
     const discount = Number(invoice?.discount || 0);
     const taxRate = Number(invoice?.tax_rate || 0);
-    const taxValue = subtotal * (taxRate / 100);
+    const taxableAmount = Math.max(0, subtotal - discount);
+    const taxValue = taxableAmount * (taxRate / 100);
 
-    return subtotal - discount + taxValue;
+    return Math.max(0, taxableAmount + taxValue);
   }, [subtotal, invoice]);
+
+  const taxableAmount = useMemo(() => {
+    return Math.max(0, subtotal - Number(invoice?.discount || 0));
+  }, [subtotal, invoice?.discount]);
+
+  const taxValue = useMemo(() => {
+    return taxableAmount * (Number(invoice?.tax_rate || 0) / 100);
+  }, [taxableAmount, invoice?.tax_rate]);
+
+  console.log(invoice);
+
   const submit = async () => {
     try {
       setSaving(true);
@@ -184,6 +196,7 @@ export default function useUpdatePurchase() {
         items,
         subtotal,
         net_total: netTotal,
+        taxValue,
       });
       navigat("/purchase");
       return true;
@@ -211,6 +224,8 @@ export default function useUpdatePurchase() {
     submit,
 
     subtotal,
+    taxableAmount,
+    taxValue,
     netTotal,
   };
 }

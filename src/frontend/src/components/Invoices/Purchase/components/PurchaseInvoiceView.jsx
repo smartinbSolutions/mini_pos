@@ -68,7 +68,9 @@ export default function PurchaseInvoiceView() {
   }
 
   if (!invoice) {
-    return <div className="p-6 text-red-500">{t("screens.invoices.notFound")}</div>;
+    return (
+      <div className="p-6 text-red-500">{t("screens.invoices.notFound")}</div>
+    );
   }
 
   return (
@@ -108,7 +110,9 @@ export default function PurchaseInvoiceView() {
                   {t("ui.invoice")} #{invoice.id}
                 </h1>
                 <p className="text-sm text-slate-500">
-                  {t("screens.invoices.invoiceDate", { date: formatDate(invoice.date) })}
+                  {t("screens.invoices.invoiceDate", {
+                    date: formatDate(invoice.date),
+                  })}
                 </p>
               </div>
             </div>
@@ -138,7 +142,6 @@ export default function PurchaseInvoiceView() {
                     <th className="p-3 text-left">{t("ui.product")}</th>
                     <th className="p-3 text-center">{t("ui.price")}</th>
                     <th className="p-3 text-center">{t("ui.qty")}</th>
-                    <th className="p-3 text-center">{t("ui.tax")}</th>
                     <th className="p-3 text-center">{t("ui.total")}</th>
                   </tr>
                 </thead>
@@ -159,15 +162,11 @@ export default function PurchaseInvoiceView() {
                         <td className="p-3 font-bold text-slate-900">
                           {item.product_name || item.name || "-"}
                         </td>
-                        <td className="p-3 text-center">
-                          {money(item.price)}
-                        </td>
+                        <td className="p-3 text-center">{money(item.price)}</td>
                         <td className="p-3 text-center">
                           {Number(item.quantity || 0)}
                         </td>
-                        <td className="p-3 text-center">
-                          {Number(item.tax || 0)}%
-                        </td>
+
                         <td className="p-3 text-center font-black">
                           {money(item.total)}
                         </td>
@@ -182,16 +181,24 @@ export default function PurchaseInvoiceView() {
               <div className="w-80 max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5">
                 <div className="flex justify-between">
                   <span className="text-slate-500">{t("ui.subtotal")}</span>
-                  <span className="font-bold">
-                    {money(invoice.subtotal)}
-                  </span>
+                  <span className="font-bold">{money(invoice.subtotal)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">{t("ui.tax")}</span>
-                  <span>
-                    {money(invoice.net_total - invoice.subtotal)}
-                  </span>
-                </div>
+                {invoice.discount > 0 ? (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">{t("ui.discount")}</span>
+                    <span>-{money(invoice.discount)}</span>
+                  </div>
+                ) : (
+                  ""
+                )}
+                {invoice.taxValue > 0 ? (
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">{t("ui.tax")}</span>
+                    <span>{money(invoice.taxValue)}</span>
+                  </div>
+                ) : (
+                  ""
+                )}
                 <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl font-black">
                   <span>{t("ui.total")}</span>
                   <span className="text-[#4663ff]">

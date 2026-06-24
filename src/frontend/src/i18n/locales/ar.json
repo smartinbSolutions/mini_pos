@@ -229,6 +229,8 @@
       "addItem": "إضافة عنصر",
       "invoiceSummary": "ملخص الفاتورة",
       "purchaseTotal": "إجمالي الشراء",
+      "taxableAmount": "بعد الخصم",
+      "taxAmount": "قيمة الضريبة",
       "amountToPay": "المبلغ المطلوب دفعه",
       "paymentInCash": "الدفع نقداً",
       "noPaymentNow": "غير مدفوعة",

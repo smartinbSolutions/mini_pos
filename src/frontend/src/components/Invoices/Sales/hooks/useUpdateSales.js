@@ -126,8 +126,8 @@ export default function useUpdateSales() {
                 product_id: product.id,
                 name: product.name,
                 quantity: 1,
-                price: product.costPrice || 0,
-                total: product.costPrice || 0,
+                price: product.price || 0,
+                total: product.price || 0,
               },
             ];
           });
@@ -155,10 +155,19 @@ export default function useUpdateSales() {
   const netTotal = useMemo(() => {
     const discount = Number(invoice?.discount || 0);
     const taxRate = Number(invoice?.tax_rate || 0);
-    const taxValue = (subtotal * taxRate) / 100;
+    const taxableAmount = Math.max(0, subtotal - discount);
+    const taxValue = (taxableAmount * taxRate) / 100;
 
-    return subtotal - discount + taxValue;
+    return Math.max(0, taxableAmount + taxValue);
   }, [subtotal, invoice]);
+
+  const taxableAmount = useMemo(() => {
+    return Math.max(0, subtotal - Number(invoice?.discount || 0));
+  }, [subtotal, invoice?.discount]);
+
+  const taxValue = useMemo(() => {
+    return (taxableAmount * Number(invoice?.tax_rate || 0)) / 100;
+  }, [taxableAmount, invoice?.tax_rate]);
 
   const submit = async () => {
     try {
@@ -169,12 +178,13 @@ export default function useUpdateSales() {
         items,
         subtotal,
         net_total: netTotal,
+        taxValue,
       });
+      navigate("/sales");
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
-      navigate("/sales");
     }
   };
 
@@ -195,6 +205,8 @@ export default function useUpdateSales() {
     submit,
 
     subtotal,
+    taxableAmount,
+    taxValue,
     netTotal,
   };
 }

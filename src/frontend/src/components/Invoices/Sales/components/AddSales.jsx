@@ -12,6 +12,7 @@ import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../../Global/DeleteModel";
 
 export default function AddSales() {
   const { t } = useTranslation();
@@ -27,6 +28,8 @@ export default function AddSales() {
     updateItem,
     submit,
     subtotal,
+    taxableAmount,
+    taxValue,
     netTotal,
     saving,
     error,
@@ -35,6 +38,7 @@ export default function AddSales() {
     setStatus,
   } = useAddSales();
   const [paymentChoice, setPaymentChoice] = useState(null);
+  const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const { money } = usePrimaryCurrency();
 
   const toNum = (v) => (isNaN(Number(v)) ? 0 : Number(v));
@@ -189,7 +193,7 @@ export default function AddSales() {
                         <td className="p-2 text-center">
                           <button
                             type="button"
-                            onClick={() => removeItem(i)}
+                            onClick={() => setDeleteItemIndex(i)}
                             className="rounded-xl p-2 text-red-500 hover:bg-red-50"
                           >
                             <Trash2 size={16} />
@@ -225,6 +229,22 @@ export default function AddSales() {
                   <span className="font-bold">{money(subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">{t("ui.discount")}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    className={`${inputClass} w-36`}
+                    value={invoice.discount || ""}
+                    onChange={(e) =>
+                      setInvoice((p) => ({
+                        ...p,
+                        discount: e.target.value,
+                      }))
+                    }
+                    placeholder="0"
+                  />
+                </div>
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-slate-500">{t("ui.tax")}</span>
                   <select
                     className={`${inputClass} w-36`}
@@ -248,6 +268,20 @@ export default function AddSales() {
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">
+                    {t("screens.invoices.taxableAmount")}
+                  </span>
+                  <span className="font-bold">{money(taxableAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">
+                    {t("screens.invoices.taxAmount")}
+                  </span>
+                  <span className="font-bold text-emerald-700">
+                    {money(taxValue)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-xl font-black">
                   <span>{t("ui.total")}</span>
@@ -361,6 +395,16 @@ export default function AddSales() {
           </aside>
         </div>
       </div>
+      <DeleteModal
+        open={deleteItemIndex !== null}
+        onClose={() => setDeleteItemIndex(null)}
+        onConfirm={() => {
+          removeItem(deleteItemIndex);
+          setDeleteItemIndex(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
       <ToastContainer />
     </div>
   );

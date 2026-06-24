@@ -183,10 +183,19 @@ export default function useAddPurchase() {
   const netTotal = useMemo(() => {
     const discount = Number(invoice.discount || 0);
     const taxRate = Number(invoice.tax_rate || 0);
-    const taxValue = subtotal * (taxRate / 100);
+    const taxableAmount = Math.max(0, subtotal - discount);
+    const taxValue = taxableAmount * (taxRate / 100);
 
-    return subtotal - discount + taxValue;
+    return Math.max(0, taxableAmount + taxValue);
   }, [subtotal, invoice]);
+
+  const taxableAmount = useMemo(() => {
+    return Math.max(0, subtotal - Number(invoice.discount || 0));
+  }, [subtotal, invoice.discount]);
+
+  const taxValue = useMemo(() => {
+    return taxableAmount * (Number(invoice.tax_rate || 0) / 100);
+  }, [taxableAmount, invoice.tax_rate]);
 
   useEffect(() => {
     if (status === "paid") {
@@ -198,9 +207,9 @@ export default function useAddPurchase() {
   }, [netTotal]);
 
   const paymentInfundCurrency = useMemo(() => {
-    const payment = subtotal * (invoice.exchange_rate || 1);
+    const payment = netTotal * (invoice.exchange_rate || 1);
     return payment;
-  }, [subtotal, invoice]);
+  }, [netTotal, invoice]);
 
   const submit = useCallback(async () => {
     if (status === "paid" && !invoice.fund_id) {
@@ -233,6 +242,7 @@ export default function useAddPurchase() {
         items,
         status,
         paymentInfundCurrency,
+        taxValue,
       };
 
       const res = await api.createPurchaseInvoice(payload);
@@ -274,6 +284,8 @@ export default function useAddPurchase() {
     submit,
     reset,
     subtotal,
+    taxableAmount,
+    taxValue,
     netTotal,
     loading,
     saving,

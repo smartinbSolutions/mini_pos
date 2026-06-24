@@ -28,8 +28,8 @@ export default function registerPurchaseInvoicesIPC() {
           .prepare(
             `
         INSERT INTO purchase_invoices
-        (supplier_id, date, subtotal, discount, tax, net_total, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (supplier_id, date, subtotal, discount, tax, net_total, status, taxValue)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `,
           )
           .run(
@@ -40,6 +40,7 @@ export default function registerPurchaseInvoicesIPC() {
             tax,
             netTotal,
             data.status || "unpaid",
+            data.taxValue,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -251,7 +252,8 @@ export default function registerPurchaseInvoicesIPC() {
           subtotal = ?,
           discount = ?,
           tax = ?,
-          net_total = ?
+          net_total = ?,
+          taxValue = ?
       WHERE id = ?
     `,
       ).run(
@@ -261,6 +263,7 @@ export default function registerPurchaseInvoicesIPC() {
         data.discount || 0,
         data.tax || 0,
         data.net_total || 0,
+        data.taxValue || 0,
         data.id,
       );
 

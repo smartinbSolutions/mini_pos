@@ -229,6 +229,8 @@
       "addItem": "Kalem Ekle",
       "invoiceSummary": "Fatura özeti",
       "purchaseTotal": "Satın alma toplamı",
+      "taxableAmount": "İndirim sonrası",
+      "taxAmount": "Vergi tutarı",
       "amountToPay": "Ödenecek tutar",
       "paymentInCash": "nakit ödeme",
       "noPaymentNow": "Ödenmedi",

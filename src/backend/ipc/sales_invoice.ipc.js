@@ -63,8 +63,8 @@ export default function registerSalesInvoiceIPC() {
       .prepare(
         `
       INSERT INTO sales_invoices
-      (customer_id, date, subtotal, discount, tax_id, net_total, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (customer_id, date, subtotal, discount, tax_id, net_total, status, taxValue)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
       )
       .run(
@@ -75,6 +75,7 @@ export default function registerSalesInvoiceIPC() {
         data.tax_id || null,
         data.net_total || 0,
         data.status || "unpaid",
+        data.taxValue,
       );
 
     const invoiceId = invoiceResult.lastInsertRowid;
@@ -245,7 +246,8 @@ export default function registerSalesInvoiceIPC() {
          subtotal = ?,
          discount = ?,
          tax_id = ?,
-         net_total = ?
+         net_total = ?, 
+         taxValue = ?
       WHERE id = ?
     `,
       ).run(
@@ -255,6 +257,7 @@ export default function registerSalesInvoiceIPC() {
         data.discount || 0,
         data.tax_id || null,
         data.net_total || 0,
+        data.taxValue || 0,
         data.id,
       );
       const insertItem = db.prepare(`
