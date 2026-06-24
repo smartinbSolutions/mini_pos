@@ -94,7 +94,9 @@ export default function AddPurchase() {
             <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
               <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-950">{t("ui.items")}</h2>
+                  <h2 className="text-lg font-black text-slate-950">
+                    {t("ui.items")}
+                  </h2>
                   <p className="text-sm text-slate-500">
                     {t("screens.invoices.productsOnInvoice")}
                   </p>
@@ -182,8 +184,12 @@ export default function AddPurchase() {
                   <HandCoins size={19} />
                 </span>
                 <div>
-                  <h3 className="font-black text-slate-950">{t("ui.summary")}</h3>
-                  <p className="text-sm text-slate-500">{t("screens.invoices.purchaseTotal")}</p>
+                  <h3 className="font-black text-slate-950">
+                    {t("ui.summary")}
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    {t("screens.invoices.purchaseTotal")}
+                  </p>
                 </div>
               </div>
 
@@ -223,6 +229,7 @@ export default function AddPurchase() {
                 </div>
               </div>
             </section>
+            {console.log(status)}
 
             <section className={`${panelClass} space-y-4`}>
               <div className="flex items-center justify-between">
@@ -241,15 +248,21 @@ export default function AddPurchase() {
               </div>
               <div className="rounded-2xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-slate-500">{t("screens.invoices.amountToPay")}</span>
+                  <span className="text-slate-500">
+                    {t("screens.invoices.amountToPay")}
+                  </span>
                   <span className="font-black text-slate-950">
                     {money(total)}
                   </span>
                 </div>
                 <div className="mt-2 flex justify-between text-sm">
-                  <span className="text-slate-500">{t("screens.invoices.paymentInCash")}</span>
+                  <span className="text-slate-500">
+                    {t("screens.invoices.paymentInCash")}
+                  </span>
                   <span className="font-black text-[#4663ff]">
-                    {money(total * invoice.exchange_rate)}
+                    {invoice.currency_symbol}
+                    {""}
+                    {total * invoice.exchange_rate || money(total)}{" "}
                   </span>
                 </div>
               </div>

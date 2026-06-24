@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import useFundList from "../hooks/useFundList";
 import { Edit2, Plus, Save, Trash2, X, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../../Global/DeleteModel";
 
 const FundList = () => {
   const { t } = useTranslation();
@@ -26,6 +27,7 @@ const FundList = () => {
     currencies,
     actionError,
   } = useFundList();
+  const [deleteFund, setDeleteFund] = useState(null);
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =
@@ -172,7 +174,7 @@ const FundList = () => {
                       </button>
 
                       <button
-                        onClick={() => handleDeleteFund(fund)}
+                        onClick={() => setDeleteFund(fund)}
                         className="p-2 rounded-xl hover:bg-red-50 text-red-500"
                       >
                         <Trash2 size={14} />
@@ -257,6 +259,16 @@ const FundList = () => {
           </form>
         </div>
       </div>
+      <DeleteModal
+        open={Boolean(deleteFund)}
+        onClose={() => setDeleteFund(null)}
+        onConfirm={async () => {
+          await handleDeleteFund(deleteFund);
+          setDeleteFund(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
       <ToastContainer />
     </div>
   );

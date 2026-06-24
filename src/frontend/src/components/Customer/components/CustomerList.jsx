@@ -3,6 +3,7 @@ import { Eye, Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
 import useCustomerList from "../hooks/useCustomerList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../Global/DeleteModel";
 
 export const CustomerList = () => {
   const { t } = useTranslation();
@@ -25,6 +26,7 @@ export const CustomerList = () => {
   const { money } = usePrimaryCurrency();
 
   const [search, setSearch] = useState("");
+  const [deleteCustomer, setDeleteCustomer] = useState(null);
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =
@@ -154,7 +156,7 @@ export const CustomerList = () => {
                         <Edit2 size={14} />
                       </button>
                       <button
-                        onClick={() => handleDeleteCustomer(customer)}
+                        onClick={() => setDeleteCustomer(customer)}
                         className="p-2 rounded-lg text-red-500 hover:bg-red-50"
                       >
                         <Trash2 size={14} />
@@ -261,6 +263,17 @@ export const CustomerList = () => {
           </form>
         </div>
       </div>
+
+      <DeleteModal
+        open={Boolean(deleteCustomer)}
+        onClose={() => setDeleteCustomer(null)}
+        onConfirm={async () => {
+          await handleDeleteCustomer(deleteCustomer);
+          setDeleteCustomer(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
     </div>
   );
 };

@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import useCurrency from "../hooks/useCurrency";
 import { Edit2, Plus, Save, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../../Global/DeleteModel";
 
 const CurrencyList = () => {
   const { t } = useTranslation();
@@ -20,6 +21,7 @@ const CurrencyList = () => {
     submitDraft,
     actionError,
   } = useCurrency();
+  const [deleteCurrency, setDeleteCurrency] = useState(null);
 
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
@@ -174,7 +176,7 @@ const CurrencyList = () => {
                     </button>
                     {currency.isPrimary === 0 && (
                       <button
-                        onClick={() => handleDeleteCurrency(currency)}
+                        onClick={() => setDeleteCurrency(currency)}
                         className="rounded-xl p-2 text-red-500 hover:bg-red-50"
                       >
                         <Trash2 size={15} />
@@ -266,6 +268,16 @@ const CurrencyList = () => {
           </form>
         </div>
       </div>
+      <DeleteModal
+        open={Boolean(deleteCurrency)}
+        onClose={() => setDeleteCurrency(null)}
+        onConfirm={async () => {
+          await handleDeleteCurrency(deleteCurrency);
+          setDeleteCurrency(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
     </div>
   );
 };

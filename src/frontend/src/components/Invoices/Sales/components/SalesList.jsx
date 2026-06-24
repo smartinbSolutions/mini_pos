@@ -14,6 +14,7 @@ import useSalesList from "../hooks/useSalesList";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../../Global/DeleteModel";
 
 const SalesList = () => {
   const { t } = useTranslation();
@@ -31,6 +32,7 @@ const SalesList = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
+  const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
 
   const filtered = useMemo(() => {
@@ -234,7 +236,7 @@ const SalesList = () => {
                                 <HandCoins size={16} />
                               </button>
                               <button
-                                onClick={() => handleDelete(inv.id)}
+                                onClick={() => setDeleteInvoice(inv)}
                                 className="rounded-xl p-2 text-red-500 hover:bg-red-50"
                               >
                                 <Trash2 size={16} />
@@ -260,6 +262,16 @@ const SalesList = () => {
         partyName={selecteInvoice?.customer_name}
         mode="sales"
         refetchList={refetch}
+      />
+      <DeleteModal
+        open={Boolean(deleteInvoice)}
+        onClose={() => setDeleteInvoice(null)}
+        onConfirm={async () => {
+          await handleDelete(deleteInvoice.id);
+          setDeleteInvoice(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
       />
     </div>
   );

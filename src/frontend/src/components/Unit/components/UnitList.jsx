@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import useUnit from "../hooks/useUnit";
 import { Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../Global/DeleteModel";
 
 const UnitList = () => {
   const { t } = useTranslation();
@@ -22,6 +23,7 @@ const UnitList = () => {
   } = useUnit();
 
   const [search, setSearch] = useState("");
+  const [deleteUnit, setDeleteUnit] = useState(null);
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =
@@ -140,7 +142,7 @@ const UnitList = () => {
                       <Edit2 size={15} />
                     </button>
                     <button
-                      onClick={() => handleDeleteUnit(unit)}
+                      onClick={() => setDeleteUnit(unit)}
                       className="rounded-xl p-2 text-red-500 hover:bg-red-50"
                     >
                       <Trash2 size={15} />
@@ -208,6 +210,16 @@ const UnitList = () => {
           </form>
         </div>
       </div>
+      <DeleteModal
+        open={Boolean(deleteUnit)}
+        onClose={() => setDeleteUnit(null)}
+        onConfirm={async () => {
+          await handleDeleteUnit(deleteUnit);
+          setDeleteUnit(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
     </div>
   );
 };

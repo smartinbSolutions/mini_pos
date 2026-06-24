@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
 import useTax from "../hooks/useTax";
 import { useTranslation } from "react-i18next";
+import DeleteModal from "../../../Global/DeleteModel";
 
 const TaxList = () => {
   const { t } = useTranslation();
@@ -22,6 +23,7 @@ const TaxList = () => {
   } = useTax();
 
   const [search, setSearch] = useState("");
+  const [deleteTax, setDeleteTax] = useState(null);
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =
@@ -137,7 +139,7 @@ const TaxList = () => {
                       <Edit2 size={14} />
                     </button>
                     <button
-                      onClick={() => handleDeleteTax(tax)}
+                      onClick={() => setDeleteTax(tax)}
                       className="p-2 rounded-lg text-red-500 hover:bg-red-50"
                     >
                       <Trash2 size={14} />
@@ -198,6 +200,16 @@ const TaxList = () => {
           </form>
         </div>
       </div>
+      <DeleteModal
+        open={Boolean(deleteTax)}
+        onClose={() => setDeleteTax(null)}
+        onConfirm={async () => {
+          await handleDeleteTax(deleteTax);
+          setDeleteTax(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
     </div>
   );
 };
