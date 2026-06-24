@@ -34,7 +34,9 @@ const FundMovementsPage = () => {
         {/* HEADER */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{t("screens.fundMovements.title")}</h1>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {t("screens.fundMovements.title")}
+            </h1>
 
             <p className="text-sm text-gray-500 mt-1">
               {t("screens.fundMovements.subtitle")}
@@ -81,7 +83,9 @@ const FundMovementsPage = () => {
             <div className="col-span-4">{t("ui.description")}</div>
             <div className="col-span-2">{t("ui.type")}</div>
             <div className="col-span-2 text-right">{t("ui.amount")}</div>
-            <div className="col-span-2 text-right">{t("ui.runningBalance")}</div>
+            <div className="col-span-2 text-right">
+              {t("ui.runningBalance")}
+            </div>
             <div className="col-span-2 text-right">{t("ui.date")}</div>
           </div>
 
@@ -122,7 +126,8 @@ const FundMovementsPage = () => {
 
                       <div>
                         <div className="font-semibold text-gray-900">
-                          {payment.description || t("screens.fundMovements.fundMovement")}
+                          {payment.description ||
+                            t("screens.fundMovements.fundMovement")}
                         </div>
 
                         <div className="text-xs text-gray-400 mt-1">
@@ -130,7 +135,6 @@ const FundMovementsPage = () => {
                         </div>
                       </div>
                     </div>
-
                     {/* TYPE */}
                     <div className="col-span-2">
                       <span
@@ -140,7 +144,13 @@ const FundMovementsPage = () => {
                             : "bg-red-100 text-red-600"
                         }`}
                       >
-                        {isIn ? t("ui.income") : t("ui.expense")}
+                        {console.log(payment.type)}
+
+                        {isIn
+                          ? t("ui.income")
+                          : payment.type === "change"
+                            ? t("screens.checkout.change")
+                            : t("ui.expense")}
                       </span>
                     </div>
 

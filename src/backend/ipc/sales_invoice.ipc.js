@@ -503,7 +503,7 @@ export default function registerSalesInvoiceIPC() {
         const changeFundAmount = roundCents(changeAmount * changeExchangeRate);
 
         insertPayment.run(
-          "expense",
+          "change",
           data.customer_id ? "customer" : "walk-in",
           data.customer_id || null,
           changeFund.id,
