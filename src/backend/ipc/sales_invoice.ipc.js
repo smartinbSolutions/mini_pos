@@ -355,6 +355,54 @@ export default function registerSalesInvoiceIPC() {
   });
 
   ipcMain.handle("pos-checkout", (event, data) => {
+    const roundCents = (value) => Math.round(Number(value || 0) * 100) / 100;
+    const payments = Array.isArray(data.payments)
+      ? data.payments
+          .map((payment) => ({
+            fundId: Number(payment.fundId || payment.fund_id),
+            amount: Number(payment.amount || 0),
+            amountFundCurrency: Number(
+              payment.amount_fund_currency ||
+                payment.amountFundCurrency ||
+                payment.paymentInfundCurrency ||
+                0,
+            ),
+            currencyCode: payment.currency_code,
+            exchangeRate: Number(payment.exchange_rate || 1) || 1,
+          }))
+          .filter(
+            (payment) =>
+              payment.fundId &&
+              payment.amount > 0 &&
+              payment.amountFundCurrency > 0,
+          )
+      : [];
+
+    if (!payments.length && data.fund_id && data.paymentInfundCurrency) {
+      payments.push({
+        fundId: Number(data.fund_id),
+        amount: Number(data.net_total || 0),
+        amountFundCurrency: Number(data.paymentInfundCurrency || 0),
+        currencyCode: data.currency_code,
+        exchangeRate: Number(data.exchange_rate || 1) || 1,
+      });
+    }
+
+    const paidTotal = payments.reduce(
+      (sum, payment) => sum + payment.amount,
+      0,
+    );
+    const invoiceTotal = Number(data.net_total || 0);
+    const changeAmount = roundCents(Math.max(0, paidTotal - invoiceTotal));
+
+    if (!payments.length || paidTotal + 0.01 < invoiceTotal) {
+      throw new Error("POS payments must cover invoice total");
+    }
+
+    if (changeAmount > 0 && !data.change_fund_id) {
+      throw new Error("POS change fund is required");
+    }
+
     const insertInvoice = db.prepare(`
     INSERT INTO sales_invoices
     (customer_id, date, subtotal, discount, tax_id, net_total, status)
@@ -419,19 +467,54 @@ export default function registerSalesInvoiceIPC() {
           )
           .run(Number(data.net_total || 0), data.net_total, data.customer_id);
       }
-      insertPayment.run(
-        "income",
-        data.customer_id ? "customer" : "walk-in",
-        data.customer_id || null,
-        data.fund_id,
-        data.net_total,
-        `POS Invoice #${invoiceId}`,
-        data.currency_code,
-        data.exchange_rate,
-        data.paymentInfundCurrency,
-      );
 
-      updateFund.run(data.paymentInfundCurrency, data.fund_id);
+      for (const payment of payments) {
+        insertPayment.run(
+          "income",
+          data.customer_id ? "customer" : "walk-in",
+          data.customer_id || null,
+          payment.fundId,
+          payment.amount,
+          `POS Invoice #${invoiceId}`,
+          payment.currencyCode,
+          payment.exchangeRate,
+          payment.amountFundCurrency,
+        );
+        updateFund.run(payment.amountFundCurrency, payment.fundId);
+      }
+
+      if (changeAmount > 0) {
+        const changeFund = db
+          .prepare(
+            `
+        SELECT f.id, c.code AS currency_code, c.exchangeRate AS exchange_rate
+        FROM funds f
+        LEFT JOIN currencies c ON c.id = f.currency_id
+        WHERE f.id = ?
+      `,
+          )
+          .get(data.change_fund_id);
+
+        if (!changeFund) {
+          throw new Error("POS change fund was not found");
+        }
+
+        const changeExchangeRate = Number(changeFund.exchange_rate || 1) || 1;
+        const changeFundAmount = roundCents(changeAmount * changeExchangeRate);
+
+        insertPayment.run(
+          "expense",
+          data.customer_id ? "customer" : "walk-in",
+          data.customer_id || null,
+          changeFund.id,
+          changeAmount,
+          `Change for POS Invoice #${invoiceId}`,
+          changeFund.currency_code,
+          changeExchangeRate,
+          changeFundAmount,
+        );
+        updateFund.run(-changeFundAmount, changeFund.id);
+      }
 
       return invoiceId;
     });
@@ -447,9 +530,13 @@ export default function registerSalesInvoiceIPC() {
 
   ipcMain.handle("print-receipt", async (event, data) => {
     const companySettings = db
-      .prepare(`SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`)
+      .prepare(
+        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`,
+      )
       .get();
-    const language = getReceiptLanguage(data.language || companySettings?.language);
+    const language = getReceiptLanguage(
+      data.language || companySettings?.language,
+    );
     const labels = receiptLabels[language];
     const direction = language === "ar" ? "rtl" : "ltr";
     const companyName =

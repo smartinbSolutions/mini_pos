@@ -146,15 +146,29 @@ export default function usePosCheckout({ weight } = {}) {
   );
 
   const checkout = async ({
-    fundId,
+    payments,
     received,
-    paymentInfundCurrency,
-    currency_code,
-    exchange_rate,
+    receivedFundTotal,
+    changeFundId,
   }) => {
     setCheckingOut(true);
 
     try {
+      const normalizedPayments = (payments || [])
+        .map((payment) => ({
+          fundId: Number(payment.fundId),
+          amount: toNumber(payment.amount),
+          amount_fund_currency: toNumber(payment.amount_fund_currency),
+          currency_code: payment.currency_code,
+          exchange_rate: toNumber(payment.exchange_rate || 1) || 1,
+        }))
+        .filter(
+          (payment) =>
+            payment.fundId &&
+            payment.amount > 0 &&
+            payment.amount_fund_currency > 0,
+        );
+
       const payload = {
         items: cart.map((i) => ({
           name: i.name,
@@ -164,21 +178,20 @@ export default function usePosCheckout({ weight } = {}) {
         total: subtotal,
         received,
         change: received - subtotal,
+        payments: normalizedPayments,
+        receivedFundTotal,
+        changeFundId,
         customer_id: selectedCustomerId,
-        currency_code,
-        exchange_rate,
         language: i18n.language,
       };
       const sales = await api.posCheckout({
-        fund_id: Number(fundId),
         items: cart,
         subtotal,
         paid_amount: subtotal,
         net_total: subtotal,
         customer_id: selectedCustomerId,
-        paymentInfundCurrency: paymentInfundCurrency,
-        currency_code,
-        exchange_rate,
+        payments: normalizedPayments,
+        change_fund_id: changeFundId,
       });
 
       payload.id = sales.invoiceId;

@@ -18,6 +18,7 @@ import useWeight from "../hooks/useWeight";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
+import { ToastContainer } from "react-toastify";
 
 export default function POSSystem() {
   const { t } = useTranslation();
@@ -430,7 +431,12 @@ export default function POSSystem() {
                       <div className="flex h-10 items-center overflow-hidden rounded-xl border border-stone-200 bg-white">
                         <button
                           type="button"
-                          onClick={() => updateQuantity(item.id, item.qty - 1)}
+                          onClick={() =>
+                            updateQuantity(
+                              item.id,
+                              item.qty === 1 ? -1 : item.qty - 1,
+                            )
+                          }
                           className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
                         >
                           <Minus size={14} />
@@ -532,6 +538,7 @@ export default function POSSystem() {
           onCheckout={completeCheckout}
         />
       )}
+      <ToastContainer />
     </div>
   );
 }
