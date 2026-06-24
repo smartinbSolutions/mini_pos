@@ -23,7 +23,7 @@ export default function useAddSales() {
   const api = window.api;
 
   const [invoice, setInvoice] = useState(emptyInvoice);
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState([emptyItem]);
   const [products, setProducts] = useState([]);
   const [taxes, setTaxes] = useState([]);
   const [customers, setCustomers] = useState([]);

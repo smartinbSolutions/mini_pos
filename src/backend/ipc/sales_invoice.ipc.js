@@ -59,6 +59,12 @@ export default function registerSalesInvoiceIPC() {
     if (!data.items || data.subtotal <= 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
+
+    const dateOnly = data.date;
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 8);
+    const fullDateTime = `${dateOnly} ${time}`;
+
     const invoiceResult = db
       .prepare(
         `
@@ -69,7 +75,7 @@ export default function registerSalesInvoiceIPC() {
       )
       .run(
         data.customer_id || null,
-        data.date,
+        fullDateTime,
         data.subtotal || 0,
         data.discount || 0,
         data.tax_id || null,
@@ -238,6 +244,11 @@ export default function registerSalesInvoiceIPC() {
         data.id,
       );
 
+      const dateOnly = data.date;
+      const now = new Date();
+      const time = now.toTimeString().slice(0, 8);
+      const fullDateTime = `${dateOnly} ${time}`;
+
       db.prepare(
         `
       UPDATE sales_invoices
@@ -252,7 +263,7 @@ export default function registerSalesInvoiceIPC() {
     `,
       ).run(
         data.customer_id || null,
-        data.date,
+        fullDateTime,
         data.subtotal || 0,
         data.discount || 0,
         data.tax_id || null,

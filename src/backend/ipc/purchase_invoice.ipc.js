@@ -24,6 +24,11 @@ export default function registerPurchaseInvoicesIPC() {
           throw new Error("INVALID TOTALS");
         }
 
+        const dateOnly = data.date;
+        const now = new Date();
+        const time = now.toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
+
         const invoiceResult = db
           .prepare(
             `
@@ -34,7 +39,7 @@ export default function registerPurchaseInvoicesIPC() {
           )
           .run(
             data.supplier_id,
-            data.date,
+            fullDateTime,
             subtotal,
             discount,
             tax,
@@ -244,6 +249,11 @@ export default function registerPurchaseInvoicesIPC() {
         data.id,
       );
 
+      const dateOnly = data.date;
+      const now = new Date();
+      const time = now.toTimeString().slice(0, 8);
+      const fullDateTime = `${dateOnly} ${time}`;
+
       db.prepare(
         `
       UPDATE purchase_invoices
@@ -258,7 +268,7 @@ export default function registerPurchaseInvoicesIPC() {
     `,
       ).run(
         data.supplier_id,
-        data.date,
+        fullDateTime,
         data.subtotal || 0,
         data.discount || 0,
         data.tax || 0,

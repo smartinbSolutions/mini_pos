@@ -185,8 +185,6 @@ export default function useUpdatePurchase() {
     return taxableAmount * (Number(invoice?.tax_rate || 0) / 100);
   }, [taxableAmount, invoice?.tax_rate]);
 
-  console.log(invoice);
-
   const submit = async () => {
     try {
       setSaving(true);

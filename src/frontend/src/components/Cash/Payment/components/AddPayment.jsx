@@ -97,7 +97,6 @@ export default function InvoicePaymentModal({
   useEffect(() => {
     refetchList();
   }, [loading]);
-  console.log(form.currency_symbol);
 
   if (!isOpen) return null;
 
@@ -119,9 +118,13 @@ export default function InvoicePaymentModal({
 
             <div>
               <h2 className="font-semibold text-gray-800">
-                {isPurchase ? t("screens.payments.purchasePayment") : t("screens.payments.salesPayment")}
+                {isPurchase
+                  ? t("screens.payments.purchasePayment")
+                  : t("screens.payments.salesPayment")}
               </h2>
-              <p className="text-xs text-gray-500">{t("ui.invoice")} #{invoice?.id}</p>
+              <p className="text-xs text-gray-500">
+                {t("ui.invoice")} #{invoice?.id}
+              </p>
             </div>
           </div>
 

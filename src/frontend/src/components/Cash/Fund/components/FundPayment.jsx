@@ -144,8 +144,6 @@ const FundMovementsPage = () => {
                             : "bg-red-100 text-red-600"
                         }`}
                       >
-                        {console.log(payment.type)}
-
                         {isIn
                           ? t("ui.income")
                           : payment.type === "change"
