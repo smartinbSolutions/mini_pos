@@ -19,6 +19,7 @@ import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
+import CheckoutSingleFundModal from "./CheckoutSingleFundModal";
 
 export default function POSSystem() {
   const { t } = useTranslation();
@@ -60,6 +61,7 @@ export default function POSSystem() {
   const [selectedScalePort, setSelectedScalePort] = useState("");
   const [search, setSearch] = useState("");
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isCheckoutMultiOpen, setIsCheckoutMultiOpen] = useState(false);
   const [actionError, setActionError] = useState("");
 
   const filteredProducts = useMemo(() => {
@@ -74,6 +76,20 @@ export default function POSSystem() {
     );
   }, [products, search]);
 
+  const openMultiCheckout = () => {
+    if (!cart.length) {
+      setActionError(t("screens.pos.addBeforeCheckout"));
+      return;
+    }
+
+    if (!funds.length) {
+      setActionError(t("screens.pos.noFundsForPayment"));
+      return;
+    }
+
+    setActionError("");
+    setIsCheckoutMultiOpen(true);
+  };
   const openCheckout = () => {
     if (!cart.length) {
       setActionError(t("screens.pos.addBeforeCheckout"));
@@ -88,11 +104,11 @@ export default function POSSystem() {
     setActionError("");
     setIsCheckoutOpen(true);
   };
-
   const completeCheckout = async (details) => {
     await checkout(details);
     setActionError("");
     setIsCheckoutOpen(false);
+    setIsCheckoutMultiOpen(false);
   };
 
   if (loading) {
@@ -501,6 +517,17 @@ export default function POSSystem() {
                 ? t("screens.pos.processing")
                 : t("screens.pos.checkout")}
             </button>
+
+            <button
+              type="button"
+              onClick={openMultiCheckout}
+              disabled={!cart.length || checkingOut}
+              className="mt-4 flex h-14 w-full items-center justify-center rounded-2xl bg-teal-600 text-lg font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {checkingOut
+                ? t("screens.pos.processing")
+                : t("screens.pos.multipleFundCheckout")}
+            </button>
           </div>
         </aside>
       </div>
@@ -519,9 +546,8 @@ export default function POSSystem() {
 
             <button
               type="button"
-              onClick={openCheckout}
+              onClick={openMultiCheckout}
               disabled={!cart.length || checkingOut}
-              className="shrink-0 rounded-xl bg-teal-500 px-5 py-3 text-sm font-black text-white transition hover:bg-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t("screens.pos.checkout")} ({cart.length})
             </button>
@@ -530,11 +556,21 @@ export default function POSSystem() {
       </div>
 
       {isCheckoutOpen && (
-        <CheckoutModal
+        <CheckoutSingleFundModal
           funds={funds}
           total={subtotal}
           checkingOut={checkingOut}
           onClose={() => setIsCheckoutOpen(false)}
+          onCheckout={completeCheckout}
+        />
+      )}
+
+      {isCheckoutMultiOpen && (
+        <CheckoutModal
+          funds={funds}
+          total={subtotal}
+          checkingOut={checkingOut}
+          onClose={() => setIsCheckoutMultiOpen(false)}
           onCheckout={completeCheckout}
         />
       )}

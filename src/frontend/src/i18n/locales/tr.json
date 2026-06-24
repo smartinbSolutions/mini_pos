@@ -292,6 +292,7 @@
       "totalAmount": "Toplam Tutar",
       "cartTotal": "Sepet Toplamı",
       "checkout": "Ödeme",
+      "multipleFundCheckout": "Çoklu kasa ödeme",
       "processing": "İşleniyor...",
       "addBeforeCheckout": "Ödeme öncesi sepete ürün ekleyin.",
       "noFundsForPayment": "Ödeme için kullanılabilir kasa yok.",

@@ -292,6 +292,7 @@
       "totalAmount": "المبلغ الإجمالي",
       "cartTotal": "إجمالي السلة",
       "checkout": "الدفع",
+      "multipleFundCheckout": "إتمام الدفع من عدة صناديق",
       "processing": "جار المعالجة...",
       "addBeforeCheckout": "أضف منتجات إلى السلة قبل الدفع.",
       "noFundsForPayment": "لا توجد صناديق متاحة للدفع.",

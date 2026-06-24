@@ -292,6 +292,7 @@
       "totalAmount": "Total Amount",
       "cartTotal": "Cart Total",
       "checkout": "Checkout",
+      "multipleFundCheckout": "Multiple fund checkout",
       "processing": "Processing...",
       "addBeforeCheckout": "Add products to the cart before checkout.",
       "noFundsForPayment": "No funds are available for payment.",

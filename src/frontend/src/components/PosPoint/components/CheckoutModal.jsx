@@ -78,10 +78,10 @@ export default function CheckoutModal({
     [payments],
   );
 
-  const change = useMemo(() => Math.max(0, cents(paidTotal - total)), [
-    paidTotal,
-    total,
-  ]);
+  const change = useMemo(
+    () => Math.max(0, cents(paidTotal - total)),
+    [paidTotal, total],
+  );
 
   const remaining = useMemo(
     () => Math.max(0, cents(total - paidTotal)),
@@ -166,70 +166,72 @@ export default function CheckoutModal({
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
             <section className="min-w-0">
               <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="font-black text-stone-950">
-                  {t("screens.checkout.paidIntoFund")}
-                </h3>
-                <p className="text-xs text-stone-500">
-                  {t("screens.checkout.fundHint")}
-                </p>
+                <div>
+                  <h3 className="font-black text-stone-950">
+                    {t("screens.checkout.paidIntoFund")}
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    {t("screens.checkout.fundHint")}
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-stone-600 shadow-sm ring-1 ring-stone-200">
+                  {t("screens.checkout.fundCount", { count: funds.length })}
+                </span>
               </div>
 
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-stone-600 shadow-sm ring-1 ring-stone-200">
-                {t("screens.checkout.fundCount", { count: funds.length })}
-              </span>
-            </div>
+              {funds.length > 0 ? (
+                <div className="space-y-2.5">
+                  {funds.map((fund) => {
+                    const amount = paymentAmounts[String(fund.id)] ?? "";
+                    const exchangeRate =
+                      toNumber(fund.currency_exchangeRate || 1) || 1;
+                    const convertedAmount = cents(
+                      toNumber(amount) / exchangeRate,
+                    );
+                    const paidWithoutThis = cents(paidTotal - convertedAmount);
+                    const amountNeeded = Math.max(
+                      0,
+                      cents(total - paidWithoutThis),
+                    );
+                    const suggestedAmount = cents(amountNeeded * exchangeRate);
 
-            {funds.length > 0 ? (
-              <div className="space-y-2.5">
-                {funds.map((fund) => {
-                  const amount = paymentAmounts[String(fund.id)] ?? "";
-                  const exchangeRate =
-                    toNumber(fund.currency_exchangeRate || 1) || 1;
-                  const convertedAmount = cents(toNumber(amount) / exchangeRate);
-                  const paidWithoutThis = cents(paidTotal - convertedAmount);
-                  const amountNeeded = Math.max(
-                    0,
-                    cents(total - paidWithoutThis),
-                  );
-                  const suggestedAmount = cents(amountNeeded * exchangeRate);
+                    return (
+                      <div
+                        key={fund.id}
+                        className="grid gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/60 sm:grid-cols-[minmax(0,1fr)_150px_220px] sm:items-center"
+                      >
+                        <div className="flex min-w-0 items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
+                            <Wallet size={19} />
+                          </div>
 
-                  return (
-                    <div
-                      key={fund.id}
-                      className="grid gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/60 sm:grid-cols-[minmax(0,1fr)_150px_220px] sm:items-center"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                          <Wallet size={19} />
+                          <div className="min-w-0">
+                            <h4 className="truncate font-black text-stone-950">
+                              {fund.name}
+                            </h4>
+
+                            <p className="mt-1 truncate text-xs font-semibold text-stone-500">
+                              {fund.currency_code ||
+                                fund.currency_name ||
+                                t("screens.checkout.noCurrency")}
+                            </p>
+                          </div>
                         </div>
 
-                        <div className="min-w-0">
-                          <h4 className="truncate font-black text-stone-950">
-                            {fund.name}
-                          </h4>
-
-                          <p className="mt-1 truncate text-xs font-semibold text-stone-500">
-                            {fund.currency_code ||
-                              fund.currency_name ||
-                              t("screens.checkout.noCurrency")}
+                        <div className="min-w-0 rounded-xl bg-stone-50 px-3 py-2">
+                          <p className="text-xs font-semibold text-stone-400">
+                            {t("ui.balance")}
+                          </p>
+                          <p className="mt-0.5 truncate text-sm font-black text-stone-800">
+                            {money(fund.balance || 0, fund)}
                           </p>
                         </div>
-                      </div>
 
-                      <div className="min-w-0 rounded-xl bg-stone-50 px-3 py-2">
-                        <p className="text-xs font-semibold text-stone-400">
-                          {t("ui.balance")}
-                        </p>
-                        <p className="mt-0.5 truncate text-sm font-black text-stone-800">
-                          {money(fund.balance || 0, fund)}
-                        </p>
-                      </div>
-
-                      <label className="flex min-w-0 flex-col gap-1.5 text-xs font-black text-stone-600">
-                        <span className="flex items-center justify-between gap-2">
-                          <span>{t("ui.amount")}</span>
-                          <button
+                        <label className="flex min-w-0 flex-col gap-1.5 text-xs font-black text-stone-600">
+                          <span className="flex items-center justify-between gap-2">
+                            <span>{t("ui.amount")}</span>
+                            {/* <button
                             type="button"
                             onClick={() => {
                               setPaymentAmounts((current) => ({
@@ -241,50 +243,50 @@ export default function CheckoutModal({
                             className="rounded-lg bg-teal-50 px-2 py-1 text-[11px] font-black text-teal-700 transition hover:bg-teal-100"
                           >
                             {t("screens.checkout.fillRemaining")}
-                          </button>
-                        </span>
-
-                        <div className="flex h-11 overflow-hidden rounded-xl border border-stone-200 bg-white focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100">
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={amount}
-                            onChange={(event) => {
-                              setPaymentAmounts((current) => ({
-                                ...current,
-                                [String(fund.id)]: event.target.value,
-                              }));
-                              setError("");
-                            }}
-                            className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400"
-                            placeholder="0"
-                          />
-                          <span className="flex items-center border-l border-stone-200 bg-stone-50 px-3 text-xs font-black text-stone-500">
-                            {fund.currency_code || fund.currency_symbol || ""}
+                          </button> */}
                           </span>
-                        </div>
 
-                        {toNumber(amount) > 0 && (
-                          <span className="truncate text-[11px] font-bold text-stone-400">
-                            {money(convertedAmount)}
-                          </span>
-                        )}
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
-                <p className="font-bold text-slate-800">
-                  {t("screens.checkout.noFunds")}
-                </p>
-                <p className="mt-1 text-sm text-slate-500">
-                  {t("screens.checkout.noFundsHint")}
-                </p>
-              </div>
-            )}
+                          <div className="flex h-11 overflow-hidden rounded-xl border border-stone-200 bg-white focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={amount}
+                              onChange={(event) => {
+                                setPaymentAmounts((current) => ({
+                                  ...current,
+                                  [String(fund.id)]: event.target.value,
+                                }));
+                                setError("");
+                              }}
+                              className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400"
+                              placeholder="0"
+                            />
+                            <span className="flex items-center border-l border-stone-200 bg-stone-50 px-3 text-xs font-black text-stone-500">
+                              {fund.currency_code || fund.currency_symbol || ""}
+                            </span>
+                          </div>
+
+                          {toNumber(amount) > 0 && (
+                            <span className="truncate text-[11px] font-bold text-stone-400">
+                              {money(convertedAmount)}
+                            </span>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                  <p className="font-bold text-slate-800">
+                    {t("screens.checkout.noFunds")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {t("screens.checkout.noFundsHint")}
+                  </p>
+                </div>
+              )}
             </section>
 
             <aside className="lg:sticky lg:top-0 lg:self-start">
