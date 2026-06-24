@@ -92,9 +92,9 @@ function createWindow(routePath = "/") {
 
   loadRendererRoute(mainWindow, routePath);
 
-  if (!app.isPackaged && process.env.DISABLE_DEVTOOLS !== "true") {
-    mainWindow.webContents.openDevTools();
-  }
+  // if (!app.isPackaged && process.env.DISABLE_DEVTOOLS !== "true") {
+  //   mainWindow.webContents.openDevTools();
+  // }
 }
 
 function registerLicenseIPC() {
