@@ -22,10 +22,6 @@ const validateSetupForm = (form) => {
     nextErrors.phone = "Phone is required.";
   }
 
-  if (!form.logo) {
-    nextErrors.logo = "Company logo is required.";
-  }
-
   if (!form.base_currency_id) {
     nextErrors.base_currency_id = "Base currency is required.";
   }

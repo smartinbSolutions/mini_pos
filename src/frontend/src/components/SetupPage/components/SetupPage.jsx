@@ -53,7 +53,11 @@ export default function CompanySettings({ onSetupComplete }) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#eef3ff]">
         <div className="flex flex-col items-center gap-4">
-          <img src={appLogo} alt={t("app.name")} className="h-16 w-16 rounded-2xl" />
+          <img
+            src={appLogo}
+            alt={t("app.name")}
+            className="h-16 w-16 rounded-2xl"
+          />
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#cbd7ff] border-t-[#4663ff]" />
         </div>
       </div>
@@ -124,7 +128,7 @@ export default function CompanySettings({ onSetupComplete }) {
                 <div className="mb-3 flex items-center justify-between">
                   <div>
                     <h3 className="font-bold text-slate-900">
-                      {t("screens.setupPage.logo")} {requiredMark}
+                      {t("screens.setupPage.logo")}
                     </h3>
                     <p className="text-xs text-slate-500">
                       {t("screens.setupPage.logoHint")}
@@ -135,11 +139,7 @@ export default function CompanySettings({ onSetupComplete }) {
                   </span>
                 </div>
                 <div
-                  className={`flex h-32 items-center justify-center rounded-2xl border border-dashed bg-[#f8faff] p-4 ${
-                    errors.logo
-                      ? "border-red-300 bg-red-50/60"
-                      : "border-[#cbd7ff]"
-                  }`}
+                  className={`flex h-32 items-center justify-center rounded-2xl border border-dashed bg-[#f8faff] p-4 `}
                 >
                   {form.logo ? (
                     <img
@@ -151,14 +151,13 @@ export default function CompanySettings({ onSetupComplete }) {
                     <Camera size={28} className="text-[#4663ff]/50" />
                   )}
                 </div>
-                {errorText("logo")}
               </div>
 
               <input
                 type="file"
                 hidden
                 ref={fileInputRef}
-                accept="image/*"
+                accept="image"
                 onChange={handleLogo}
               />
             </div>

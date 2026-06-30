@@ -13,6 +13,9 @@ import registerTaxesIPC from "./ipc/taxes.ipc";
 import registerUnitIPC from "./ipc/unit.ipc";
 import registerCompanySettingIPC from "./ipc/company_setting.ipc";
 import registerSerialIPC from "./ipc/serial.ipc";
+import registerPartnersIPC from "./ipc/partners.ipc";
+import registerExpenseIPC from "./ipc/expense.ipc";
+import registerExpenceCategoryIPC from "./ipc/expence_category.ipc";
 
 export default function registerAllIPC() {
   registerCompanySettingIPC();
@@ -30,4 +33,7 @@ export default function registerAllIPC() {
   registerSuppliersIPC();
   registerTaxesIPC();
   registerUnitIPC();
+  registerPartnersIPC();
+  registerExpenseIPC();
+  registerExpenceCategoryIPC();
 }

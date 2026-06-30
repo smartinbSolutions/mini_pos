@@ -105,7 +105,8 @@
     "unitsUnavailable": "الوحدات غير متاحة",
     "paidStatus": "مدفوعة",
     "unpaidStatus": "غير مدفوعة",
-    "partialStatus": "جزئية"
+    "partialStatus": "جزئية",
+    "expenseCategory": "تصنيف المصاريف"
   },
   "screens": {
     "units": {
@@ -357,6 +358,18 @@
       "loading": "جار تحميل الحركات...",
       "empty": "لا توجد حركات",
       "fundMovement": "حركة صندوق"
+    },
+    "expensesCategory": {
+      "categoryTitle": "تصنيف المصاريف",
+      "emptyCategories": "لا يوجد تصنيف مصاريف",
+      "createCategory": "انشاء تصنيف مصروف",
+      "createCategoryDesc": "Create and organize your expense categories to better track your company spending.",
+      "categoryName": "اسم تصنيف المصروفات"
+    },
+    "expenses": {
+      "createExpense": "انشاء مصروف",
+      "manageItemsPayments": "إدارة العناصر",
+      "expensesTotal": "إجمالي المصروفات"
     }
   },
   "languages": {
@@ -380,8 +393,12 @@
     "taxes": "الضرائب",
     "suppliers": "الموردون",
     "customers": "العملاء",
-    "companySettings": "الشركة"
+    "companySettings": "الشركة",
+    "settings": "الاعدادات",
+    "expensesCategory": "ـصنيف المصاريف",
+    "expense": "المصاريف"
   },
+
   "dashboard": {
     "loading": "جار تحميل لوحة التحكم...",
     "totalSales": "إجمالي المبيعات",
@@ -402,7 +419,8 @@
     "invoices": "الفواتير",
     "cashFlow": "التدفق النقدي",
     "topProducts": "أفضل المنتجات",
-    "noSalesData": "لا توجد بيانات مبيعات بعد"
+    "noSalesData": "لا توجد بيانات مبيعات بعد",
+    "expense": "المصاريف"
   },
   "activation": {
     "title": "تفعيل رخصة نقاط البيع",

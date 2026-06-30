@@ -82,7 +82,7 @@ const PurchaseList = () => {
                 {t("ui.purchase")}
               </p>
               <h1 className="text-4xl font-black leading-tight text-slate-950">
-                {t("screens.invoices.purchaseTitle")}
+                {t("screens.invoices.purchaseInvoice")}
               </h1>
               <p className="mt-3 text-sm leading-6 text-slate-500">
                 {t("screens.invoices.purchaseSubtitle")}

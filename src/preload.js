@@ -141,6 +141,24 @@ contextBridge.exposeInMainWorld("api", {
   createUnit: (data) => ipcRenderer.invoke("create-unit", data),
   updateUnit: (data) => ipcRenderer.invoke("update-unit", data),
   deleteUnit: (id) => ipcRenderer.invoke("delete-unit", id),
+
+  /* ================= EXPENSES ================= */
+  getExpenses: () => ipcRenderer.invoke("get-expenses"),
+  getExpense: (id) => ipcRenderer.invoke("get-expense", id),
+  createExpense: (data) => ipcRenderer.invoke("create-expense", data),
+  updateExpense: (data) => ipcRenderer.invoke("update-expense", data),
+  deleteExpense: (id) => ipcRenderer.invoke("delete-expense", id),
+
+  /* ================= EXPENSES CATEGORY ================= */
+  getExpensesCategory: () => ipcRenderer.invoke("get-expence_category"),
+  getExpenseCategoryById: (id) =>
+    ipcRenderer.invoke("get-expence_category-by-id", id),
+  createExpenseCategory: (data) =>
+    ipcRenderer.invoke("create-expence_category", data),
+  updateExpenseCategory: (data) =>
+    ipcRenderer.invoke("update-expence_category", data),
+  deleteExpenseCategory: (id) =>
+    ipcRenderer.invoke("delete-expence_category", id),
 });
 
 contextBridge.exposeInMainWorld("license", {

@@ -27,6 +27,11 @@ import SalesInvoiceView from "./components/Invoices/Sales/components/SalesInvoic
 import PurchaseInvoiceView from "./components/Invoices/Purchase/components/PurchaseInvoiceView";
 import POSSystem from "./components/PosPoint/components/POSSystem";
 import "react-toastify/dist/ReactToastify.css";
+import ExpenseList from "./components/Invoices/expense/components/ExpenseList";
+import AddExpense from "./components/Invoices/expense/components/AddExpense";
+import ExpenseCategoryList from "./components/ExpenseCategory/components/ExpenseCategoryList";
+import UpdateExpense from "./components/Invoices/expense/components/UpdateExpense";
+import ExpenseView from "./components/Invoices/expense/components/ExpenseView";
 
 export default function App() {
   const { t } = useTranslation();
@@ -104,6 +109,14 @@ export default function App() {
                 element={<PartyLedgerPage />}
               />{" "}
               <Route path="pos" element={<POSSystem />} />
+              <Route path="/expense" element={<ExpenseList />} />
+              <Route path="/view-expense/:id" element={<ExpenseView />} />
+              <Route path="/add-expense" element={<AddExpense />} />
+              <Route path="/edit-expense/:id" element={<UpdateExpense />} />
+              <Route
+                path="/expense-category"
+                element={<ExpenseCategoryList />}
+              />
               <Route path="unit" element={<UnitList />} />
               <Route path="currency" element={<CurrencyList />} />
               <Route path="funds" element={<FundList />} />

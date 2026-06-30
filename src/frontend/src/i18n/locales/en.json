@@ -105,7 +105,8 @@
     "unitsUnavailable": "Units unavailable",
     "paidStatus": "PAID",
     "unpaidStatus": "UNPAID",
-    "partialStatus": "PARTIAL"
+    "partialStatus": "PARTIAL",
+    "expenseCategory": "Expense Category"
   },
   "screens": {
     "units": {
@@ -205,9 +206,9 @@
       "validSale": "Please enter a valid sale price"
     },
     "invoices": {
-      "salesTitle": "Sales invoices",
+      "salesTitle": "Sales",
       "salesSubtitle": "Track customer invoices, payments, and outstanding balances.",
-      "purchaseTitle": "Purchase invoices",
+      "purchaseTitle": "Purchase",
       "purchaseSubtitle": "Track supplier invoices, payments, and outstanding balances.",
       "search": "Search invoices...",
       "addInvoice": "Add Invoice",
@@ -235,7 +236,9 @@
       "paymentInCash": "payment in CASH",
       "noPaymentNow": "Unpaid",
       "payInFull": "Paid",
-      "saveInvoice": "Save Invoice"
+      "saveInvoice": "Save Invoice",
+      "expensesTitle": "Expenses",
+      "expenseSubtitle": "Track supplier invoices, payments, and outstanding balances."
     },
     "company": {
       "title": "Company Settings",
@@ -357,6 +360,19 @@
       "loading": "Loading movements...",
       "empty": "No movements found",
       "fundMovement": "Fund Movement"
+    },
+    "expensesCategory": {
+      "categoryTitle": "Expenses Category",
+      "emptyCategories": "No expense categories",
+      "createCategory": "Create expense category",
+      "createCategoryDesc": "Create and organize your expense categories to better track your company spending.",
+      "categoryName": "Expense category Name",
+      "addButton": "Add expense category"
+    },
+    "expenses": {
+      "createExpense": "Create Expense",
+      "manageItemsPayments": "Manage Items",
+      "expensesTotal": "Expenses Total"
     }
   },
   "languages": {
@@ -380,7 +396,10 @@
     "taxes": "Taxes",
     "suppliers": "Suppliers",
     "customers": "Customers",
-    "companySettings": "Company"
+    "companySettings": "Company",
+    "settings": "Settings",
+    "expensesCategory": "Expenses Category",
+    "expense": "Expenses"
   },
   "dashboard": {
     "loading": "Loading dashboard...",
@@ -402,7 +421,8 @@
     "invoices": "Invoices",
     "cashFlow": "Cash Flow",
     "topProducts": "Top Products",
-    "noSalesData": "No sales data yet"
+    "noSalesData": "No sales data yet",
+    "expense": "Expenses"
   },
   "activation": {
     "title": "Activate POS License",

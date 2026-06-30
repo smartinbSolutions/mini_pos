@@ -73,6 +73,20 @@ CREATE TABLE IF NOT EXISTS suppliers (
 
 db.prepare(
   `
+CREATE TABLE IF NOT EXISTS partners (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  phone TEXT,
+  address TEXT,
+  total REAL DEFAULT 0,
+  total_paid REAL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now'))
+)
+`,
+).run();
+
+db.prepare(
+  `
 CREATE TABLE IF NOT EXISTS currencies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
@@ -163,6 +177,45 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
+`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS expense (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  supplier_id INTEGER,
+  invoice_name TEXT,
+  date TEXT,
+  subtotal REAL DEFAULT 0,
+  net_total REAL DEFAULT 0,
+  status TEXT DEFAULT unpaid,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
+)
+`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS expence_category (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  createdAt TEXT DEFAULT (datetime('now'))
+)
+`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS expense_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  expense_id INTEGER,
+  category_id INTEGER,
+  price REAL,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (expense_id) REFERENCES expense(id)
+)
 `,
 ).run();
 

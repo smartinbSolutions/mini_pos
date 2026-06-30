@@ -105,7 +105,8 @@
     "unitsUnavailable": "Birimler kullanılamıyor",
     "paidStatus": "ÖDENDİ",
     "unpaidStatus": "ÖDENMEDİ",
-    "partialStatus": "KISMİ"
+    "partialStatus": "KISMİ",
+    "expenseCategory": "Gider Kategorisi"
   },
   "screens": {
     "units": {
@@ -357,6 +358,17 @@
       "loading": "Hareketler yükleniyor...",
       "empty": "Hareket bulunamadı",
       "fundMovement": "Kasa Hareketi"
+    },
+    "expensesCategory": {
+      "categoryTitle": "Gider Kategorisi",
+      "emptyCategories": "Masraf Kategorileri Yok",
+      "createCategory": "Gider kategorisi oluştur",
+      "categoryName": "Gider kategorisi adı"
+    },
+    "expenses": {
+      "createExpense": "Gider Oluştur",
+      "manageItemsPayments": "Öğeleri Yönet",
+      "expensesTotal": "Toplam Giderler"
     }
   },
   "languages": {
@@ -380,7 +392,10 @@
     "taxes": "Vergiler",
     "suppliers": "Tedarikçiler",
     "customers": "Müşteriler",
-    "companySettings": "Şirket"
+    "companySettings": "Şirket",
+    "settings": "Ayarlar",
+    "expensesCategory": "Gider Kategorisi",
+    "expense": "Giderler"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",
@@ -402,7 +417,8 @@
     "invoices": "Faturalar",
     "cashFlow": "Nakit Akışı",
     "topProducts": "En Çok Satan Ürünler",
-    "noSalesData": "Henüz satış verisi yok"
+    "noSalesData": "Henüz satış verisi yok",
+    "expense": "Giderler"
   },
   "activation": {
     "title": "POS Lisansını Etkinleştir",

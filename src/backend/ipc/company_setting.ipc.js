@@ -129,7 +129,11 @@ export default function registerCompanySettingsIPC() {
       db.prepare(`SELECT SUM(net_total) as total FROM purchase_invoices`).get()
         ?.total || 0;
 
-    const profit = totalSales - purchaseTotal;
+    const expenseTotal =
+      db.prepare(`SELECT SUM(net_total) as total FROM expense`).get()?.total ||
+      0;
+
+    const profit = totalSales - purchaseTotal - expenseTotal;
 
     const todaySales = scalar(`
       SELECT COALESCE(SUM(net_total), 0) AS value
@@ -221,6 +225,25 @@ export default function registerCompanySettingsIPC() {
       )
       .all();
 
+    const expenseTrend = db
+      .prepare(
+        `
+        WITH RECURSIVE days(day) AS (
+          SELECT date('now', '-6 days')
+          UNION ALL
+          SELECT date(day, '+1 day') FROM days WHERE day < date('now')
+        )
+        SELECT
+          days.day,
+          COALESCE(SUM(expense.net_total), 0) AS expense
+        FROM days
+        LEFT JOIN expense ON date(expense.date) = days.day
+        GROUP BY days.day
+        ORDER BY days.day
+      `,
+      )
+      .all();
+
     const topProducts = db
       .prepare(
         `
@@ -254,6 +277,7 @@ export default function registerCompanySettingsIPC() {
       salesTrend,
       purchaseTrend,
       topProducts,
+      expenseTrend,
     };
   });
 }
