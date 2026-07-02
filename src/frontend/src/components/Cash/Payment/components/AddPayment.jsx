@@ -32,6 +32,7 @@ export default function InvoicePaymentModal({
   const { money } = usePrimaryCurrency();
 
   const isPurchase = mode === "purchase";
+  const isExpense = mode === "expense";
   const isSales = mode === "sales";
   const isPartner = mode === "partner";
 
@@ -44,13 +45,10 @@ export default function InvoicePaymentModal({
     currency_code: "",
     currency_symbol: "",
     note: "",
-    partner_transaction_type: "income", // "income" (عطاء/قبض) أو "expense" (أخذ/صرف)
+    partner_transaction_type: "income",
   });
-  console.log(invoice);
 
   const handleChange = (key, value) => {
-    console.log(value);
-
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -71,6 +69,10 @@ export default function InvoicePaymentModal({
         });
       } else if (isSales) {
         defaultNote = t("screens.payments.paymentForSales", {
+          id: invoice?.id,
+        });
+      } else if (isExpense) {
+        defaultNote = t("screens.payments.paymentForExpense", {
           id: invoice?.id,
         });
       } else {
@@ -97,6 +99,7 @@ export default function InvoicePaymentModal({
     invoice,
     remaining,
     isPurchase,
+    isExpense,
     isSales,
     isPartner,
     partyName,
@@ -117,13 +120,14 @@ export default function InvoicePaymentModal({
     setLoading(true);
     setMessage("");
 
-    // تحديد نوع الحركة الماليّة والجهة
-    let paymentType = isPurchase
-      ? "expense"
-      : isSales
-        ? "income"
-        : form.partner_transaction_type;
-    let partyType = isPurchase ? "supplier" : isSales ? "customer" : "partner";
+    let paymentType =
+      isPurchase || isExpense
+        ? "expense"
+        : isSales
+          ? "income"
+          : form.partner_transaction_type;
+    let partyType =
+      isPurchase || isExpense ? "supplier" : isSales ? "customer" : "partner";
 
     try {
       const res = await api.createPayment({
@@ -137,6 +141,7 @@ export default function InvoicePaymentModal({
         paymentInfundCurrency,
         exchange_rate: form.fund_exchangeRate,
         currency_code: form.currency_code,
+        mode,
       });
 
       if (!res.success) throw new Error(res.message);
@@ -161,9 +166,8 @@ export default function InvoicePaymentModal({
 
   if (!isOpen) return null;
 
-  // تحديد أيقونة الترويسة ولونها بناءً على نوع الحركة
   const getHeaderStyle = () => {
-    if (isPurchase) return "bg-red-100 text-red-600";
+    if (isPurchase || isExpense) return "bg-red-100 text-red-600";
     if (isSales) return "bg-green-100 text-green-600";
     return form.partner_transaction_type === "income"
       ? "bg-emerald-100 text-emerald-600"
@@ -183,6 +187,7 @@ export default function InvoicePaymentModal({
             <div>
               <h2 className="font-semibold text-gray-800">
                 {isPurchase && t("screens.payments.purchasePayment")}
+                {isExpense && t("screens.payments.expensePayment")}
                 {isSales && t("screens.payments.salesPayment")}
                 {isPartner &&
                   (form.partner_transaction_type === "income"
@@ -211,14 +216,14 @@ export default function InvoicePaymentModal({
           <div className="rounded-2xl border p-4 bg-gray-50 flex items-center gap-3">
             <div
               className={`p-2 rounded-xl ${
-                isPurchase
+                isPurchase || isExpense
                   ? "bg-blue-100 text-blue-600"
                   : isSales
                     ? "bg-green-100 text-green-600"
                     : "bg-purple-100 text-purple-600"
               }`}
             >
-              {isPurchase ? (
+              {isPurchase || isExpense ? (
                 <Building2 size={18} />
               ) : isSales ? (
                 <User size={18} />
@@ -229,7 +234,7 @@ export default function InvoicePaymentModal({
 
             <div>
               <p className="text-sm text-gray-500">
-                {isPurchase && t("ui.supplier")}
+                {isPurchase || (isExpense && t("ui.supplier"))}
                 {isSales && t("ui.customer")}
                 {isPartner && "الشريك"}
               </p>
@@ -237,7 +242,6 @@ export default function InvoicePaymentModal({
             </div>
           </div>
 
-          {/* خيار الأخذ والعطاء للشريك فقط */}
           {isPartner && (
             <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl">
               <button
@@ -271,7 +275,6 @@ export default function InvoicePaymentModal({
             </div>
           )}
 
-          {/* Invoice Summary (if exists) */}
           {invoice && (
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl border p-3">
@@ -374,7 +377,7 @@ export default function InvoicePaymentModal({
             onClick={submit}
             disabled={loading}
             className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 ${
-              isPurchase
+              isPurchase || isExpense
                 ? "bg-red-600 hover:bg-red-700"
                 : isSales
                   ? "bg-green-600 hover:bg-green-700"
