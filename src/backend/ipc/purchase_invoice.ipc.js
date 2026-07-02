@@ -58,7 +58,7 @@ export default function registerPurchaseInvoicesIPC() {
 
         const updateStock = db.prepare(`
         UPDATE products
-        SET quantity = quantity + ?
+        SET quantity = quantity + ?, costPrice =?
         WHERE id = ?
       `);
 
@@ -73,7 +73,7 @@ export default function registerPurchaseInvoicesIPC() {
           const total = quantity * price;
 
           insertItem.run(invoiceId, item.product_id, quantity, price, total);
-          updateStock.run(quantity, item.product_id);
+          updateStock.run(quantity, price, item.product_id);
         }
 
         let insertPaymentId = null;
