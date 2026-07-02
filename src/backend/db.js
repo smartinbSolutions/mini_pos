@@ -34,6 +34,24 @@ CREATE TABLE IF NOT EXISTS products (
 
 db.prepare(
   `
+CREATE TABLE IF NOT EXISTS productMovement (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER,
+  reference INTEGER,
+  referenceType TEXT -- purchase / sale / expense,
+  type TEXT, -- in / out,
+  action TEXT NOT NULL,
+  enterPrice REAL DEFAULT 0,
+  outPrice REAL DEFAULT 0,
+  quantity REAL DEFAULT 0,
+    createdAt TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+)
+`,
+).run();
+
+db.prepare(
+  `
   CREATE TABLE IF NOT EXISTS product_barcodes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   product_id INTEGER,
@@ -190,8 +208,7 @@ CREATE TABLE IF NOT EXISTS expense (
   subtotal REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
   status TEXT DEFAULT unpaid,
-  createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (tax_id) REFERENCES taxes(id)
+  createdAt TEXT DEFAULT (datetime('now'))
 )
 `,
 ).run();
