@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import createProductMovement from "../utils/createPorductMovment";
 export default function registerPurchaseInvoicesIPC() {
   // CREATE
   ipcMain.handle("create-purchase-invoice", (event, data) => {
@@ -74,6 +75,16 @@ export default function registerPurchaseInvoicesIPC() {
 
           insertItem.run(invoiceId, item.product_id, quantity, price, total);
           updateStock.run(quantity, price, item.product_id);
+
+          createProductMovement(db, {
+            product_id: item.product_id,
+            reference_id: invoiceId,
+            reference_type: "purchase_invoice",
+            type: "in",
+            action: "create",
+            quantity: quantity,
+            enterPrice: price,
+          });
         }
 
         let insertPaymentId = null;
@@ -243,13 +254,23 @@ export default function registerPurchaseInvoicesIPC() {
 
       for (const item of oldItems) {
         reverseStock.run(item.quantity || 0, item.product_id);
+
+        createProductMovement(db, {
+          product_id: item.product_id,
+          reference_id: oldInvoice.id,
+          reference_type: "purchase_invoice",
+          action: "update",
+          type: "out",
+          quantity: item.quantity,
+          outPrice: item.price,
+        });
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
         data.id,
       );
 
-      const dateOnly = data.date;
+      const dateOnly = data.date.slice(0, 10);
       const now = new Date();
       const time = now.toTimeString().slice(0, 8);
       const fullDateTime = `${dateOnly} ${time}`;
@@ -300,6 +321,16 @@ export default function registerPurchaseInvoicesIPC() {
         insertItem.run(data.id, item.product_id, quantity, price, total);
 
         addStock.run(quantity, item.product_id);
+
+        createProductMovement(db, {
+          product_id: item.product_id,
+          reference_id: data.id,
+          reference_type: "purchase_invoice",
+          action: "update",
+          type: "in",
+          quantity,
+          enterPrice: price,
+        });
       }
       const newPaid = data.status === "paid" ? Number(data.net_total || 0) : 0;
 
@@ -337,6 +368,16 @@ export default function registerPurchaseInvoicesIPC() {
 
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
+
+        createProductMovement(db, {
+          product_id: item.product_id,
+          reference_id: id,
+          reference_type: "purchase_invoice",
+          action: "delete",
+          type: "out",
+          quantity: item.quantity,
+          enterPrice: item.price,
+        });
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
