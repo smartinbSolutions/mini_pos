@@ -10,11 +10,15 @@ export default function registerPaymentIPC() {
         return { message: "ERROR ENTER DATA", status: 400 };
       }
 
-      if (data.party_type !== "other" && !data.invoiceId) {
+      if (
+        data.party_type !== "other" &&
+        data.party_type !== "partner" &&
+        !data.invoiceId
+      ) {
         return { message: "ERROR ENTER INVOICE", status: 400 };
       }
 
-      const validPartyTypes = ["supplier", "customer", "other"];
+      const validPartyTypes = ["supplier", "customer", "partner", "other"];
       const validTypes = ["income", "expense"];
 
       if (!validPartyTypes.includes(data.party_type)) {
@@ -96,6 +100,28 @@ export default function registerPaymentIPC() {
           WHERE id = ?
           `,
           ).run(data.paymentInfundCurrency, data.fund_id);
+        }
+        if (data.party_type === "partner") {
+          const partnerAmount = data.type === "income" ? amount : -amount;
+          db.prepare(
+            `
+          UPDATE partners
+          SET total_paid = COALESCE(total_paid, 0) + ?
+          WHERE id = ?
+          `,
+          ).run(partnerAmount, data.party_id);
+          const fundAmount =
+            data.type === "income"
+              ? data.paymentInfundCurrency
+              : -data.paymentInfundCurrency;
+
+          db.prepare(
+            `
+          UPDATE funds
+          SET balance = COALESCE(balance, 0) + ?
+          WHERE id = ?
+          `,
+          ).run(fundAmount, data.fund_id);
         }
 
         if (data.party_type === "other") {

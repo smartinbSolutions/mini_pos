@@ -1,0 +1,321 @@
+import React, { useMemo, useState } from "react";
+import usePartnersList from "../hooks/usePartnersList";
+import { useTranslation } from "react-i18next";
+import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
+import {
+  Edit2,
+  Eye,
+  HandCoins,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
+import DeleteModal from "../../../Global/DeleteModel";
+import AddPayment from "../../Cash/Payment/components/AddPayment";
+
+const PartnersList = () => {
+  const { t } = useTranslation();
+  const {
+    saving,
+    partners,
+    handleDeletePartner,
+    submitDraft,
+    startEdit,
+    submitEdit,
+    setEditing,
+    editing,
+    setEditingId,
+    editingId,
+    setDraft,
+    draft,
+    actionError,
+    navigate,
+    selectePartner,
+    setSelectePartner,
+    refetch,
+    openPaymentModel,
+    setOpenPaymentModel,
+  } = usePartnersList();
+  const { money } = usePrimaryCurrency();
+
+  const [search, setSearch] = useState("");
+  const [deletePartners, setDeletePartners] = useState(null);
+  const pageClass =
+    "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
+  const panelClass =
+    "rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur";
+  const inputClass =
+    "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+  const primaryButtonClass =
+    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
+
+  const filteredpartners = useMemo(() => {
+    return partners.filter((s) =>
+      `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+    );
+  }, [partners, search]);
+
+  return (
+    <div className={pageClass}>
+      <div className="max-w-7xl mx-auto grid xl:grid-cols-[1fr_320px] gap-6">
+        <div className={panelClass}>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+                {t("ui.contacts")}
+              </p>
+              <h2 className="text-2xl font-black text-slate-950">
+                {t("ui.partners")}
+              </h2>
+              <p className="text-sm text-slate-500">
+                {t("screens.contacts.partnerSubtitle")}
+              </p>
+            </div>
+
+            <div className="relative">
+              <Search
+                className="absolute left-3 top-2.5 text-slate-400"
+                size={16}
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("screens.contacts.searchPartner")}
+                className={`${inputClass} pl-9`}
+              />
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredpartners.map((partners) => {
+              const sales = partners.total || 0;
+              const paid = partners.total_paid || 0;
+              const balance = sales - paid;
+
+              return editingId === partners.id ? (
+                <form
+                  key={partners.id}
+                  onSubmit={submitEdit}
+                  className="space-y-2 rounded-2xl border border-[#cbd7ff] bg-[#f8faff] p-4"
+                >
+                  <input
+                    required
+                    value={editing.name}
+                    onChange={(e) =>
+                      setEditing({ ...editing, name: e.target.value })
+                    }
+                    className={`w-full ${inputClass}`}
+                    placeholder={t("ui.name")}
+                  />
+
+                  <input
+                    value={editing.phone}
+                    onChange={(e) =>
+                      setEditing({ ...editing, phone: e.target.value })
+                    }
+                    className={`w-full ${inputClass}`}
+                    placeholder={t("ui.phone")}
+                  />
+
+                  <input
+                    value={editing.address}
+                    onChange={(e) =>
+                      setEditing({ ...editing, address: e.target.value })
+                    }
+                    className={`w-full ${inputClass}`}
+                    placeholder={t("ui.address")}
+                  />
+
+                  <div className="flex gap-2 pt-2">
+                    <button className={`flex-1 ${primaryButtonClass}`}>
+                      <Save size={14} />
+                      {t("common.save")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div
+                  key={partners.id}
+                  className={`group rounded-2xl border bg-white p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#4663ff]/10 ${
+                    balance > 0 ? "border-red-200" : "border-[#e5ebff]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4663ff] text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20">
+                      {partners.name?.charAt(0)?.toUpperCase() || "S"}
+                    </div>
+
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                      <button
+                        onClick={() =>
+                          navigate(`/payment/partners/${partners.id}`)
+                        }
+                        className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
+                        title={t("screens.funds.viewMovements")}
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          (setSelectePartner(partners),
+                            setOpenPaymentModel(partners));
+                        }}
+                        className="p-2 rounded-lg text-[#4663ff] hover:bg-[#eef3ff]"
+                      >
+                        <HandCoins size={14} />
+                      </button>
+                      <button
+                        onClick={() => startEdit(partners)}
+                        className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+
+                      <button
+                        onClick={() => setDeletePartners(partners)}
+                        className="p-2 rounded-lg text-red-500 hover:bg-red-50"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="font-bold text-slate-900">
+                      {partners.name}
+                    </div>
+
+                    <div className="text-xs text-gray-500">
+                      {partners.phone || t("ui.noPhone")}
+                    </div>
+
+                    <div className="text-xs text-gray-400 truncate">
+                      {partners.address || t("ui.noAddress")}
+                    </div>
+
+                    <div className="mt-3 border-t pt-3 space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">
+                          {t("screens.contacts.sales")}
+                        </span>
+                        <span className="font-medium text-gray-800">
+                          {money(sales)}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">{t("ui.paid")}</span>
+                        <span className="font-medium text-green-600">
+                          {money(paid)}
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between border-t pt-1">
+                        <span className="text-gray-600 font-medium">
+                          {t("ui.balance")}
+                        </span>
+                        <span
+                          className={`font-semibold ${
+                            balance > 0 ? "text-red-500" : "text-green-600"
+                          }`}
+                        >
+                          {money(balance)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {filteredpartners.length === 0 && (
+            <div className="text-center text-gray-400 text-sm py-10">
+              {t("screens.contacts.noPartner")}
+            </div>
+          )}
+        </div>
+
+        <div className="top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
+          <h3 className="mb-1 text-lg font-black text-slate-950">
+            {t("screens.contacts.createPartner")}
+          </h3>
+          <p className="mb-5 text-sm text-slate-500">
+            {t("screens.contacts.addPartnerContact")}
+          </p>
+
+          {actionError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
+          <form onSubmit={submitDraft} className="space-y-3">
+            <input
+              required
+              value={draft.name}
+              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              className={`w-full ${inputClass}`}
+              placeholder={t("ui.name")}
+            />
+
+            <input
+              value={draft.phone}
+              onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
+              className={`w-full ${inputClass}`}
+              placeholder={t("ui.phone")}
+            />
+
+            <input
+              value={draft.address}
+              onChange={(e) => setDraft({ ...draft, address: e.target.value })}
+              className={`w-full ${inputClass}`}
+              placeholder={t("ui.address")}
+            />
+
+            <button
+              disabled={saving}
+              className={`w-full ${primaryButtonClass}`}
+            >
+              <Plus size={15} />
+              {t("screens.contacts.addPartner")}
+            </button>
+          </form>
+        </div>
+      </div>
+      <AddPayment
+        isOpen={openPaymentModel}
+        onClose={() => setOpenPaymentModel(false)}
+        invoice={null}
+        party={selectePartner?.id}
+        partyName={selectePartner?.name}
+        mode="partner"
+        refetchList={refetch}
+      />
+
+      <DeleteModal
+        open={Boolean(deletePartners)}
+        onClose={() => setDeletePartners(null)}
+        onConfirm={async () => {
+          await handleDeletePartner(deletePartners);
+          setDeletePartners(null);
+        }}
+        title={t("deleteModal.title")}
+        message={t("deleteModal.message")}
+      />
+    </div>
+  );
+};
+
+export default PartnersList;

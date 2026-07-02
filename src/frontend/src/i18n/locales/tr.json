@@ -157,18 +157,24 @@
     "contacts": {
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
       "suppliersSubtitle": "Tedarikçilerinizi kolayca yönetin",
+      "partnerSubtitle": "ortaklarınızı kolayca yönetin",
       "searchCustomer": "Müşteri ara...",
       "searchSupplier": "Tedarikçi ara...",
+      "searchPartner": "Ortak ara...",
       "sales": "Satışlar",
       "purchases": "Satın almalar",
       "noCustomers": "Müşteri bulunamadı",
       "noSuppliers": "Tedarikçi bulunamadı",
+      "noPartner": "Ortak bulunamadı",
       "createCustomer": "Müşteri Oluştur",
       "createSupplier": "Tedarikçi Oluştur",
+      "createPartner": "Ortak Oluştur",
       "addCustomerContact": "Müşteri iletişimi ekle",
       "addSupplierContact": "Tedarikçi iletişimi ekle",
+      "addPartnerContact": "Ortak iletişimi ekle",
       "addCustomer": "Müşteri Ekle",
-      "addSupplier": "Tedarikçi Ekle"
+      "addSupplier": "Tedarikçi Ekle",
+      "addPartner": "Ortak Ekle"
     },
     "products": {
       "loading": "Ürün kataloğu yükleniyor...",
@@ -395,7 +401,9 @@
     "companySettings": "Şirket",
     "settings": "Ayarlar",
     "expensesCategory": "Gider Kategorisi",
-    "expense": "Giderler"
+    "expense": "Giderler",
+    "partner": "Ortak",
+    "partners": "Ortaklar"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",

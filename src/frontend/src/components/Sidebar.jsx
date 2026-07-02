@@ -16,6 +16,7 @@ import {
   Layers,
   ChevronDown,
   Settings,
+  Handshake,
 } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -31,7 +32,16 @@ export default function Sidebar() {
 
   const menu = [
     {
-      type: "group",
+      title: "navigation.posSystem",
+      icon: <Layers size={18} />,
+      path: "/pos",
+    },
+    {
+      title: "navigation.dashboard",
+      icon: <Home size={18} />,
+      path: "/",
+    },
+    {
       title: "navigation.purchase",
       icon: <CreditCard size={18} />,
       children: [
@@ -40,7 +50,6 @@ export default function Sidebar() {
       ],
     },
     {
-      type: "group",
       title: "navigation.sales",
       icon: <ShoppingCart size={18} />,
       children: [
@@ -49,7 +58,16 @@ export default function Sidebar() {
       ],
     },
     {
-      type: "group",
+      title: "navigation.funds",
+      icon: <Landmark size={18} />,
+      path: "/funds",
+    },
+    {
+      title: "navigation.partners",
+      icon: <Handshake size={18} />,
+      path: "/partners",
+    },
+    {
       title: "navigation.expense",
       icon: <CreditCard size={18} />,
       children: [
@@ -58,36 +76,28 @@ export default function Sidebar() {
       ],
     },
     {
-      type: "group",
+      title: "navigation.products",
+      icon: <Package size={18} />,
+      path: "/products",
+    },
+    {
       title: "navigation.settings",
       icon: <Settings size={18} />,
       children: [
-        { title: "navigation.units", path: "/unit", icon: <Boxes size={18} /> },
-        {
-          title: "navigation.currency",
-          path: "/currency",
-          icon: <DollarIcon />,
-        },
-        {
-          title: "navigation.funds",
-          path: "/funds",
-          icon: <Landmark size={18} />,
-        },
-        {
-          title: "navigation.taxes",
-          path: "/tax",
-          icon: <Percent size={18} />,
-        },
+        { title: "navigation.units", path: "/unit" },
+        { title: "navigation.currency", path: "/currency" },
+        { title: "navigation.taxes", path: "/tax" },
         { title: "navigation.companySettings", path: "/company" },
       ],
     },
   ];
 
-  // 🔥 Auto open group based on route
   useEffect(() => {
     const newOpen = {};
 
     menu.forEach((item, index) => {
+      if (!item.children) return;
+
       const match = item.children.some((c) =>
         location.pathname.startsWith(c.path),
       );
@@ -105,7 +115,6 @@ export default function Sidebar() {
     }));
   }
 
-  // 🚨 POS MODE (hide sidebar completely)
   if (isPos) {
     return (
       <div className="fixed top-4 left-4 z-50">
@@ -167,66 +176,56 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <SidebarItem
-          to="/pos"
-          icon={<Layers size={18} />}
-          title={t("navigation.posSystem")}
-        />
-        <SidebarItem
-          to="/"
-          icon={<Home size={18} />}
-          title={t("navigation.dashboard")}
-        />
+        {menu.map((item, index) => {
+          const hasChildren = item.children && item.children.length > 0;
 
-        <SidebarItem
-          to="/products"
-          icon={<Package size={18} />}
-          title={t("navigation.products")}
-        />
-        {menu.map((item, index) => (
-          <div key={index}>
-            <SidebarGroupTitle
-              icon={item.icon}
-              title={item.title}
-              index={index}
-            />
+          if (!hasChildren) {
+            return (
+              <NavLink
+                key={index}
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                    isActive
+                      ? "bg-blue-500/10 text-blue-400"
+                      : "text-gray-300 hover:bg-white/5 hover:text-white"
+                  }`
+                }
+              >
+                {item.icon}
+                <span>{t(item.title)}</span>
+              </NavLink>
+            );
+          }
 
-            {open[index] && (
-              <div className="ml-4 border-l border-white/10 pl-2 space-y-1">
-                {item.children.map((child, i) => (
-                  <SidebarSubItem key={i} to={child.path} title={child.title} />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+          return (
+            <div key={index}>
+              <SidebarGroupTitle
+                icon={item.icon}
+                title={item.title}
+                index={index}
+              />
+
+              {open[index] && (
+                <div className="ml-4 border-l border-white/10 pl-2 space-y-1">
+                  {item.children.map((child) => (
+                    <SidebarSubItem
+                      key={child.path}
+                      to={child.path}
+                      title={child.title}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
+      {/* Footer */}
       <div className="p-4 border-t border-white/5">
         <LanguageSwitcher />
       </div>
     </div>
   );
-}
-
-function SidebarItem({ icon, title, to }) {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        `flex items-center gap-3 px-3 py-2 rounded-lg ${
-          isActive
-            ? "bg-blue-500/10 text-blue-400"
-            : "text-gray-300 hover:bg-white/5 hover:text-white"
-        }`
-      }
-    >
-      {icon}
-      <span className="text-sm">{title}</span>
-    </NavLink>
-  );
-}
-
-function DollarIcon() {
-  return <CreditCard size={18} />;
 }

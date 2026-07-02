@@ -106,7 +106,9 @@
     "paidStatus": "PAID",
     "unpaidStatus": "UNPAID",
     "partialStatus": "PARTIAL",
-    "expenseCategory": "Expense Category"
+    "expenseCategory": "Expense Category",
+    "partner": "Partner",
+    "partners": "Partners"
   },
   "screens": {
     "units": {
@@ -157,18 +159,24 @@
     "contacts": {
       "customersSubtitle": "Manage your customers easily",
       "suppliersSubtitle": "Manage your suppliers easily",
+      "partnerSubtitle": "Manage your partner easily",
       "searchCustomer": "Search customer...",
       "searchSupplier": "Search supplier...",
+      "searchPartner": "Search partner...",
       "sales": "Sales",
       "purchases": "Purchases",
       "noCustomers": "No customers found",
       "noSuppliers": "No suppliers found",
+      "noPartner": "No partner found",
       "createCustomer": "Create Customer",
       "createSupplier": "Create Supplier",
+      "createPartner": "Create Partner",
       "addCustomerContact": "Add a customer contact",
       "addSupplierContact": "Add a supplier contact",
+      "addPartnerContact": "Add a partner contact",
       "addCustomer": "Add Customer",
-      "addSupplier": "Add Supplier"
+      "addSupplier": "Add Supplier",
+      "addPartner": "Add Partner"
     },
     "products": {
       "loading": "Loading product catalog...",
@@ -399,7 +407,8 @@
     "companySettings": "Company",
     "settings": "Settings",
     "expensesCategory": "Expenses Category",
-    "expense": "Expenses"
+    "expense": "Expenses",
+    "partners": "Partners"
   },
   "dashboard": {
     "loading": "Loading dashboard...",

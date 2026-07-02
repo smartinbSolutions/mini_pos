@@ -1,5 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Wallet, Save, X, Receipt, Building2, User } from "lucide-react";
+import {
+  Wallet,
+  Save,
+  X,
+  Receipt,
+  Building2,
+  User,
+  Users,
+  ArrowUpRight,
+  ArrowDownLeft,
+} from "lucide-react";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { useTranslation } from "react-i18next";
@@ -10,7 +20,7 @@ export default function InvoicePaymentModal({
   invoice,
   party,
   partyName,
-  mode = "purchase",
+  mode = "purchase", // "purchase" | "sales" | "partner"
   refetchList,
 }) {
   const { t } = useTranslation();
@@ -22,18 +32,25 @@ export default function InvoicePaymentModal({
   const { money } = usePrimaryCurrency();
 
   const isPurchase = mode === "purchase";
+  const isSales = mode === "sales";
+  const isPartner = mode === "partner";
 
   const remaining = Number(invoice?.remaining || 0);
 
   const [form, setForm] = useState({
     fund_id: "",
-    amount: invoice?.net_total,
+    amount: invoice?.net_total || 0,
     fund_exchangeRate: 1,
     currency_code: "",
+    currency_symbol: "",
     note: "",
+    partner_transaction_type: "income", // "income" (عطاء/قبض) أو "expense" (أخذ/صرف)
   });
+  console.log(invoice);
 
   const handleChange = (key, value) => {
+    console.log(value);
+
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -47,34 +64,76 @@ export default function InvoicePaymentModal({
     if (isOpen) {
       refetch();
 
+      let defaultNote = "";
+      if (isPurchase) {
+        defaultNote = t("screens.payments.paymentForPurchase", {
+          id: invoice?.id,
+        });
+      } else if (isSales) {
+        defaultNote = t("screens.payments.paymentForSales", {
+          id: invoice?.id,
+        });
+      } else {
+        defaultNote = t("screens.payments.partnerTransaction", {
+          name: partyName,
+        });
+      }
+
       setForm({
         fund_id: "",
-        amount: remaining,
-        note: isPurchase
-          ? t("screens.payments.paymentForPurchase", { id: invoice?.id })
-          : t("screens.payments.paymentForSales", { id: invoice?.id }),
+        amount: invoice ? remaining : 0,
+        fund_exchangeRate: 1,
+        currency_code: "",
+        currency_symbol: "",
+        note: defaultNote,
+        partner_transaction_type: "income",
       });
 
       setMessage("");
     }
-  }, [isOpen, refetch, invoice?.id, remaining, isPurchase]);
+  }, [
+    isOpen,
+    refetch,
+    invoice,
+    remaining,
+    isPurchase,
+    isSales,
+    isPartner,
+    partyName,
+    t,
+  ]);
+
   const paymentInfundCurrency = useMemo(() => {
-    return invoice?.net_total * Number(form.fund_exchangeRate || 1);
-  }, [invoice, form]);
+    const baseAmount = invoice ? invoice.net_total : Number(form.amount || 0);
+    return baseAmount * Number(form.fund_exchangeRate || 1);
+  }, [invoice, form.fund_exchangeRate, form.amount]);
 
   const submit = async () => {
+    if (!form.fund_id) {
+      setMessage(t("ui.selectFundRequired") || "الرجاء اختيار الصندوق أولاً");
+      return;
+    }
+
     setLoading(true);
     setMessage("");
 
+    // تحديد نوع الحركة الماليّة والجهة
+    let paymentType = isPurchase
+      ? "expense"
+      : isSales
+        ? "income"
+        : form.partner_transaction_type;
+    let partyType = isPurchase ? "supplier" : isSales ? "customer" : "partner";
+
     try {
       const res = await api.createPayment({
-        type: isPurchase ? "expense" : "income",
-        party_type: isPurchase ? "supplier" : "customer",
+        type: paymentType,
+        party_type: partyType,
         party_id: party,
         fund_id: form.fund_id,
-        amount: Number(invoice.net_total),
+        amount: invoice ? Number(invoice.net_total) : Number(form.amount),
         note: form.note,
-        invoiceId: invoice.id,
+        invoiceId: invoice?.id || null,
         paymentInfundCurrency,
         exchange_rate: form.fund_exchangeRate,
         currency_code: form.currency_code,
@@ -95,10 +154,21 @@ export default function InvoicePaymentModal({
   };
 
   useEffect(() => {
-    refetchList();
-  }, [loading]);
+    if (isOpen) {
+      refetchList();
+    }
+  }, [loading, isOpen, refetchList]);
 
   if (!isOpen) return null;
+
+  // تحديد أيقونة الترويسة ولونها بناءً على نوع الحركة
+  const getHeaderStyle = () => {
+    if (isPurchase) return "bg-red-100 text-red-600";
+    if (isSales) return "bg-green-100 text-green-600";
+    return form.partner_transaction_type === "income"
+      ? "bg-emerald-100 text-emerald-600"
+      : "bg-orange-100 text-orange-600";
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -106,25 +176,24 @@ export default function InvoicePaymentModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
           <div className="flex items-center gap-3">
-            <div
-              className={`p-2 rounded-2xl ${
-                isPurchase
-                  ? "bg-red-100 text-red-600"
-                  : "bg-green-100 text-green-600"
-              }`}
-            >
-              <Receipt size={20} />
+            <div className={`p-2 rounded-2xl ${getHeaderStyle()}`}>
+              {isPartner ? <Users size={20} /> : <Receipt size={20} />}
             </div>
 
             <div>
               <h2 className="font-semibold text-gray-800">
-                {isPurchase
-                  ? t("screens.payments.purchasePayment")
-                  : t("screens.payments.salesPayment")}
+                {isPurchase && t("screens.payments.purchasePayment")}
+                {isSales && t("screens.payments.salesPayment")}
+                {isPartner &&
+                  (form.partner_transaction_type === "income"
+                    ? "قبض من شريك (عطاء)"
+                    : "صرف لشريك (أخذ)")}
               </h2>
-              <p className="text-xs text-gray-500">
-                {t("ui.invoice")} #{invoice?.id}
-              </p>
+              {invoice && (
+                <p className="text-xs text-gray-500">
+                  {t("ui.invoice")} #{invoice?.id}
+                </p>
+              )}
             </div>
           </div>
 
@@ -144,50 +213,98 @@ export default function InvoicePaymentModal({
               className={`p-2 rounded-xl ${
                 isPurchase
                   ? "bg-blue-100 text-blue-600"
-                  : "bg-green-100 text-green-600"
+                  : isSales
+                    ? "bg-green-100 text-green-600"
+                    : "bg-purple-100 text-purple-600"
               }`}
             >
-              {isPurchase ? <Building2 size={18} /> : <User size={18} />}
+              {isPurchase ? (
+                <Building2 size={18} />
+              ) : isSales ? (
+                <User size={18} />
+              ) : (
+                <Users size={18} />
+              )}
             </div>
 
             <div>
               <p className="text-sm text-gray-500">
-                {isPurchase ? t("ui.supplier") : t("ui.customer")}
+                {isPurchase && t("ui.supplier")}
+                {isSales && t("ui.customer")}
+                {isPartner && "الشريك"}
               </p>
               <h3 className="font-medium text-gray-800">{partyName}</h3>
             </div>
           </div>
 
-          {/* Invoice */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border p-3">
-              <p className="text-xs text-gray-500">{t("ui.netTotal")}</p>
-              <h3 className="text-lg font-bold">{money(invoice?.net_total)}</h3>
+          {/* خيار الأخذ والعطاء للشريك فقط */}
+          {isPartner && (
+            <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl">
+              <button
+                type="button"
+                onClick={() =>
+                  handleChange("partner_transaction_type", "income")
+                }
+                className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${
+                  form.partner_transaction_type === "income"
+                    ? "bg-white text-emerald-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <ArrowDownLeft size={16} />
+                قبض (عطاء)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleChange("partner_transaction_type", "expense")
+                }
+                className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${
+                  form.partner_transaction_type === "expense"
+                    ? "bg-white text-orange-600 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <ArrowUpRight size={16} />
+                صرف (أخذ)
+              </button>
             </div>
+          )}
 
-            <div className="rounded-2xl border p-3">
-              <p className="text-xs text-gray-500">{t("ui.remaining")}</p>
-              <h3 className="text-lg font-bold text-red-600">
-                {money(invoice?.net_total)}
-              </h3>
-              <h3 className="text-lg font-bold text-red-600">
-                {formatMoney(
-                  invoice?.net_total * form.fund_exchangeRate,
-                  form.currency_symbol,
+          {/* Invoice Summary (if exists) */}
+          {invoice && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border p-3">
+                <p className="text-xs text-gray-500">{t("ui.netTotal")}</p>
+                <h3 className="text-lg font-bold">
+                  {money(invoice?.net_total)}
+                </h3>
+              </div>
+
+              <div className="rounded-2xl border p-3">
+                <p className="text-xs text-gray-500">{t("ui.remaining")}</p>
+                <h3 className="text-lg font-bold text-red-600">
+                  {money(invoice?.net_total)}
+                </h3>
+                {form.currency_symbol && (
+                  <h3 className="text-sm font-semibold text-gray-600">
+                    {formatMoney(
+                      invoice?.net_total * form.fund_exchangeRate,
+                      form.currency_symbol,
+                    )}
+                  </h3>
                 )}
-              </h3>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Fund */}
+          {/* Fund Selection */}
           <div>
             <label className="text-sm text-gray-600">{t("ui.cashFund")}</label>
-
             <select
               value={form.fund_id}
               onChange={(e) => {
                 const fundId = Number(e.target.value);
-
                 const fund = funds.find((f) => f.id === fundId);
 
                 handleChange("fund_id", fundId);
@@ -201,7 +318,6 @@ export default function InvoicePaymentModal({
               className="w-full h-11 rounded-xl border px-3 mt-1"
             >
               <option value="">{t("ui.selectFund")}</option>
-
               {funds?.map((f) => (
                 <option key={f.id} value={f.id}>
                   {f.name} ({formatMoney(f.balance, f)})
@@ -210,33 +326,39 @@ export default function InvoicePaymentModal({
             </select>
           </div>
 
-          {/* Amount */}
+          {/* Amount Input */}
           <div>
             <label className="text-sm text-gray-600">{t("ui.amount")}</label>
-
-            <div className="relative">
+            <div className="relative mt-1">
               <input
                 type="number"
                 value={
-                  invoice?.net_total * form.fund_exchangeRate ||
-                  invoice?.net_total
+                  invoice
+                    ? invoice?.net_total * form.fund_exchangeRate
+                    : form.amount
                 }
                 onChange={(e) => handleChange("amount", e.target.value)}
                 className="w-full h-11 rounded-xl border px-3 pr-10"
-                disabled
+                disabled={invoice} // معطل فقط إذا كان الدفع مرتبطاً بفاتورة محددة
               />
-              <Wallet className="absolute right-3 top-3 text-gray-400" />
+              <Wallet
+                className="absolute right-3 top-3 text-gray-400"
+                size={18}
+              />
             </div>
           </div>
 
           {/* Note */}
-          <textarea
-            rows={3}
-            value={form.note}
-            onChange={(e) => handleChange("note", e.target.value)}
-            className="w-full rounded-xl border p-2"
-            placeholder={t("ui.note")}
-          />
+          <div>
+            <label className="text-sm text-gray-600">{t("ui.note")}</label>
+            <textarea
+              rows={2}
+              value={form.note}
+              onChange={(e) => handleChange("note", e.target.value)}
+              className="w-full rounded-xl border p-2 mt-1"
+              placeholder={t("ui.note")}
+            />
+          </div>
 
           {/* Message */}
           {message && (
@@ -254,7 +376,11 @@ export default function InvoicePaymentModal({
             className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 ${
               isPurchase
                 ? "bg-red-600 hover:bg-red-700"
-                : "bg-green-600 hover:bg-green-700"
+                : isSales
+                  ? "bg-green-600 hover:bg-green-700"
+                  : form.partner_transaction_type === "income"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-orange-600 hover:bg-orange-700"
             }`}
           >
             <Save size={18} />

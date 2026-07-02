@@ -32,6 +32,7 @@ import AddExpense from "./components/Invoices/expense/components/AddExpense";
 import ExpenseCategoryList from "./components/ExpenseCategory/components/ExpenseCategoryList";
 import UpdateExpense from "./components/Invoices/expense/components/UpdateExpense";
 import ExpenseView from "./components/Invoices/expense/components/ExpenseView";
+import PartnersList from "./components/Partners/components/PartnersList";
 
 export default function App() {
   const { t } = useTranslation();
@@ -118,6 +119,7 @@ export default function App() {
                 element={<ExpenseCategoryList />}
               />
               <Route path="unit" element={<UnitList />} />
+              <Route path="/partners" element={<PartnersList />} />
               <Route path="currency" element={<CurrencyList />} />
               <Route path="funds" element={<FundList />} />
               <Route path="/fund/:id" element={<FundMovementsPage />} />

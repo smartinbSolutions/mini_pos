@@ -157,18 +157,24 @@
     "contacts": {
       "customersSubtitle": "إدارة العملاء بسهولة",
       "suppliersSubtitle": "إدارة الموردين بسهولة",
+      "partnerSubtitle": "إدارة الشركاء بسهولة",
       "searchCustomer": "بحث عن عميل...",
       "searchSupplier": "بحث عن مورد...",
+      "searchPartner": "بحث عن شريك...",
       "sales": "المبيعات",
       "purchases": "المشتريات",
       "noCustomers": "لا يوجد عملاء",
       "noSuppliers": "لا يوجد موردون",
+      "noPartner": "لا يوجد شركاء",
       "createCustomer": "إنشاء عميل",
       "createSupplier": "إنشاء مورد",
+      "createPartner": "إنشاء شريك",
       "addCustomerContact": "إضافة جهة اتصال عميل",
       "addSupplierContact": "إضافة جهة اتصال مورد",
+      "addPartnerContact": "إضافة جهة اتصال الشريك",
       "addCustomer": "إضافة عميل",
-      "addSupplier": "إضافة مورد"
+      "addSupplier": "إضافة مورد",
+      "addPartner": "إضافة الشريك"
     },
     "products": {
       "loading": "جار تحميل كتالوج المنتجات...",
@@ -396,7 +402,9 @@
     "companySettings": "الشركة",
     "settings": "الاعدادات",
     "expensesCategory": "ـصنيف المصاريف",
-    "expense": "المصاريف"
+    "expense": "المصاريف",
+    "partners": "الشركاء",
+    "partner": "الشريك"
   },
 
   "dashboard": {
