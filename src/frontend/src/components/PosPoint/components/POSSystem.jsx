@@ -8,6 +8,10 @@ import {
   Scale,
   Wallet,
   Package2,
+  LayoutDashboard,
+  Percent,
+  X,
+  Check,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
@@ -20,10 +24,17 @@ import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
 import CheckoutSingleFundModal from "./CheckoutSingleFundModal";
+import POSSystemEditPriceProdcutCart from "./POSSystemEditPriceProdcutCart";
+import POSSystemEditTotalPrice from "./POSSystemEditTotalPrice";
 
 export default function POSSystem() {
   const { t } = useTranslation();
   const [currentWeight, setCurrentWeight] = useState(0);
+
+  // حالات مودال تعديل سعر المنتج
+  const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [newPrice, setNewPrice] = useState("");
 
   const {
     weight,
@@ -41,15 +52,19 @@ export default function POSSystem() {
     customers,
     funds,
     cart,
+    discount,
+    setDiscount,
     selectedCustomerId,
     loading,
     checkingOut,
     error,
     subtotal,
+    netTotal,
     refetch,
     setSelectedCustomerId,
     addToCart,
     updateQuantity,
+    updatePrice,
     removeFromCart,
     clearCart,
     checkout,
@@ -63,12 +78,12 @@ export default function POSSystem() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCheckoutMultiOpen, setIsCheckoutMultiOpen] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [isTotalModalOpen, setIsTotalModalOpen] = useState(false);
+  const [customNetTotal, setCustomNetTotal] = useState("");
 
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
-
     if (!term) return products;
-
     return products.filter((product) =>
       [product.name, product.latinName, product.unit_name, product.unit_code]
         .filter(Boolean)
@@ -76,34 +91,62 @@ export default function POSSystem() {
     );
   }, [products, search]);
 
+  const openPriceModal = (item) => {
+    setEditingItem(item);
+    setNewPrice(item.price);
+    setIsPriceModalOpen(true);
+  };
+
+  const handleSavePrice = () => {
+    if (editingItem && newPrice !== "") {
+      updatePrice(editingItem.id, newPrice);
+    }
+    setIsPriceModalOpen(false);
+    setEditingItem(null);
+  };
+
+  const openTotalModal = () => {
+    setCustomNetTotal(netTotal.toString());
+    setIsTotalModalOpen(true);
+  };
+
+  const handleSaveTotal = () => {
+    const targetTotal = parseFloat(customNetTotal);
+    if (!isNaN(targetTotal) && targetTotal >= 0 && targetTotal <= subtotal) {
+      const calculatedDiscount = subtotal - targetTotal;
+      setDiscount({ type: "amount", value: calculatedDiscount.toFixed(2) });
+    }
+    setIsTotalModalOpen(false);
+  };
+
+  console.log(discount);
+
   const openMultiCheckout = () => {
     if (!cart.length) {
       setActionError(t("screens.pos.addBeforeCheckout"));
       return;
     }
-
     if (!funds.length) {
       setActionError(t("screens.pos.noFundsForPayment"));
       return;
     }
-
     setActionError("");
     setIsCheckoutMultiOpen(true);
   };
+
   const openCheckout = () => {
     if (!cart.length) {
       setActionError(t("screens.pos.addBeforeCheckout"));
       return;
     }
-
     if (!funds.length) {
       setActionError(t("screens.pos.noFundsForPayment"));
       return;
     }
-
     setActionError("");
     setIsCheckoutOpen(true);
   };
+
   const completeCheckout = async (details) => {
     await checkout(details);
     setActionError("");
@@ -131,11 +174,19 @@ export default function POSSystem() {
           <div className="sticky top-0 z-20 border-b border-stone-200/80 bg-white/90 shadow-sm shadow-stone-200/50 backdrop-blur-xl">
             <div className="flex flex-col gap-4 px-4 py-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex items-center gap-3">
+                <div className="p-3"></div>
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white shadow-lg shadow-teal-500/20">
                   <ShoppingCart size={21} strokeWidth={2.6} />
                 </div>
 
                 <div>
+                  <a
+                    href="/"
+                    className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm font-medium text-stone-700 shadow-sm transition-all hover:bg-stone-50 hover:text-stone-900"
+                  >
+                    <LayoutDashboard size={16} />
+                    <span>Dashboard</span>
+                  </a>
                   <h1 className="text-xl font-black tracking-tight text-stone-950 sm:text-2xl">
                     {t("screens.pos.title")}
                   </h1>
@@ -154,7 +205,7 @@ export default function POSSystem() {
                         isScaleConnected ? "text-teal-600" : "text-stone-400"
                       }
                     />
-                    <span className="min-w-[96px] text-sm font800 font-bold">
+                    <span className="min-w-[96px] text-sm font-bold">
                       {activeWeight
                         ? `${formatNumber(weight)} KG`
                         : scaleStatus}
@@ -189,7 +240,6 @@ export default function POSSystem() {
                     className="h-11 max-w-[220px] rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
                   >
                     <option value="">{t("screens.pos.autoCom")}</option>
-
                     {scalePorts.map((port) => (
                       <option key={port.path} value={port.path}>
                         {[port.path, port.friendlyName || port.manufacturer]
@@ -205,7 +255,6 @@ export default function POSSystem() {
                     size={17}
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"
                   />
-
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
@@ -253,25 +302,9 @@ export default function POSSystem() {
 
             <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
               <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                    {t("screens.pos.cartItems")}
-                  </p>
-                  <h2 className="mt-2 text-3xl font-black text-stone-950">
-                    {cart.length}
-                  </h2>
-                </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
-                  <ShoppingCart size={23} />
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-              <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                    {t("ui.total")}
+                    {t("ui.totalWithOutDiscont")}
                   </p>
                   <h2 className="mt-2 truncate text-3xl font-black text-stone-950">
                     {money(subtotal)}
@@ -374,7 +407,6 @@ export default function POSSystem() {
               <p className="mb-2 text-sm font-bold text-stone-700">
                 {t("ui.customer")}
               </p>
-
               <SearchableSelect
                 label=""
                 labelWidth="0"
@@ -423,20 +455,21 @@ export default function POSSystem() {
                   <div
                     key={item.id}
                     className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
+                    onClick={() => openPriceModal(item)}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <h3 className="truncate text-sm font-black text-stone-950">
                           {item.name}
                         </h3>
-                        <p className="mt-1 text-xs text-stone-500">
-                          {money(item.price || 0)} {t("screens.pos.each")}
-                        </p>
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromCart(item.id);
+                        }}
                         className="rounded-xl bg-rose-50 p-2 text-rose-600 transition hover:bg-rose-100"
                       >
                         <Trash2 size={16} />
@@ -447,12 +480,13 @@ export default function POSSystem() {
                       <div className="flex h-10 items-center overflow-hidden rounded-xl border border-stone-200 bg-white">
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.stopPropagation();
                             updateQuantity(
                               item.id,
                               item.qty === 1 ? -1 : item.qty - 1,
-                            )
-                          }
+                            );
+                          }}
                           className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
                         >
                           <Minus size={14} />
@@ -461,15 +495,19 @@ export default function POSSystem() {
                         <input
                           type="number"
                           value={item.qty}
-                          onChange={(event) =>
-                            updateQuantity(item.id, event.target.value)
-                          }
+                          onChange={(event) => {
+                            (event.stopPropagation(),
+                              updateQuantity(item.id, event.target.value));
+                          }}
                           className="h-10 w-16 bg-transparent text-center text-sm font-black text-stone-950 outline-none"
                         />
 
                         <button
                           type="button"
-                          onClick={() => updateQuantity(item.id, item.qty + 1)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateQuantity(item.id, item.qty + 1);
+                          }}
                           className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
                         >
                           <Plus size={14} />
@@ -480,6 +518,7 @@ export default function POSSystem() {
                         <p className="text-xs text-stone-500">
                           {t("ui.subtotal")}
                         </p>
+
                         <h3 className="text-lg font-black text-teal-700">
                           {money((item.price || 0) * item.qty)}
                         </h3>
@@ -490,20 +529,57 @@ export default function POSSystem() {
               </div>
             )}
           </div>
-          <div className="border-t border-stone-200 p-5">
+
+          <div className="border-t border-stone-200 p-5 space-y-3">
+            {cart.length > 0 && (
+              <div className="flex gap-2">
+                <select
+                  value={discount.type}
+                  onChange={(e) =>
+                    setDiscount((prev) => ({
+                      ...prev,
+                      type: e.target.value,
+                    }))
+                  }
+                  className="h-9 rounded-xl border px-2"
+                >
+                  <option value="amount">$</option>
+                  <option value="percent">%</option>
+                </select>
+
+                <input
+                  type="number"
+                  value={discount.value}
+                  onChange={(e) =>
+                    setDiscount((prev) => ({
+                      ...prev,
+                      value: e.target.value,
+                    }))
+                  }
+                  className="h-9 w-24 rounded-xl border text-center"
+                />
+              </div>
+            )}
+
             <div className="rounded-2xl bg-teal-500 p-5 text-white shadow-xl shadow-teal-200">
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs font-black uppercase tracking-wide">
                   {t("screens.pos.totalAmount")}
                 </span>
-
                 <span className="text-xs font-black uppercase tracking-wide">
                   {t("screens.pos.itemCount", { count: cart.length })}
                 </span>
               </div>
-
-              <h2 className="mt-3 truncate text-4xl font-black tracking-tight">
-                {money(subtotal)}
+              {Number(discount) > 0 && (
+                <p className="mt-1 text-xs font-bold line-through opacity-75">
+                  {money(subtotal)}
+                </p>
+              )}
+              <h2
+                onClick={openTotalModal}
+                className="mt-1 truncate text-4xl font-black tracking-tight"
+              >
+                {money(netTotal)}
               </h2>
             </div>
 
@@ -511,7 +587,7 @@ export default function POSSystem() {
               type="button"
               onClick={openCheckout}
               disabled={!cart.length || checkingOut}
-              className="mt-4 flex h-14 w-full items-center justify-center rounded-2xl bg-teal-600 text-lg font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-teal-600 text-lg font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {checkingOut
                 ? t("screens.pos.processing")
@@ -522,7 +598,7 @@ export default function POSSystem() {
               type="button"
               onClick={openMultiCheckout}
               disabled={!cart.length || checkingOut}
-              className="mt-4 flex h-14 w-full items-center justify-center rounded-2xl bg-teal-600 text-lg font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-14 w-full items-center justify-center rounded-2xl bg-stone-800 text-lg font-black text-white transition hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {checkingOut
                 ? t("screens.pos.processing")
@@ -540,14 +616,14 @@ export default function POSSystem() {
                 {t("screens.pos.cartTotal")}
               </p>
               <h2 className="truncate text-2xl font-black text-stone-950">
-                {money(subtotal)}
+                {money(netTotal)}
               </h2>
             </div>
-
             <button
               type="button"
-              onClick={openMultiCheckout}
+              onClick={openCheckout}
               disabled={!cart.length || checkingOut}
+              className="rounded-xl bg-teal-600 px-4 py-2 text-sm font-black text-white transition hover:bg-teal-700"
             >
               {t("screens.pos.checkout")} ({cart.length})
             </button>
@@ -555,10 +631,34 @@ export default function POSSystem() {
         </div>
       </div>
 
+      {isTotalModalOpen && (
+        <POSSystemEditTotalPrice
+          isTotalModalOpen={isTotalModalOpen}
+          setIsTotalModalOpen={setIsTotalModalOpen}
+          subtotal={netTotal}
+          customNetTotal={customNetTotal}
+          setCustomNetTotal={setCustomNetTotal}
+          handleSaveTotal={handleSaveTotal}
+          money={money}
+          t={t}
+        />
+      )}
+      {isPriceModalOpen && (
+        <POSSystemEditPriceProdcutCart
+          setIsPriceModalOpen={setIsPriceModalOpen}
+          t={t}
+          newPrice={newPrice}
+          setNewPrice={setNewPrice}
+          handleSavePrice={handleSavePrice}
+          editingItem={editingItem}
+          isPriceModalOpen={isPriceModalOpen}
+        />
+      )}
+
       {isCheckoutOpen && (
         <CheckoutSingleFundModal
           funds={funds}
-          total={subtotal}
+          total={netTotal}
           checkingOut={checkingOut}
           onClose={() => setIsCheckoutOpen(false)}
           onCheckout={completeCheckout}
@@ -568,7 +668,7 @@ export default function POSSystem() {
       {isCheckoutMultiOpen && (
         <CheckoutModal
           funds={funds}
-          total={subtotal}
+          total={netTotal}
           checkingOut={checkingOut}
           onClose={() => setIsCheckoutMultiOpen(false)}
           onCheckout={completeCheckout}

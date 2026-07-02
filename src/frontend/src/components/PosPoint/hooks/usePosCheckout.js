@@ -12,6 +12,10 @@ export default function usePosCheckout({ weight } = {}) {
   const [customers, setCustomers] = useState([]);
   const [funds, setFunds] = useState([]);
   const [cart, setCart] = useState([]);
+  const [discount, setDiscount] = useState({
+    type: "amount", // amount | percent
+    value: 0,
+  });
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
@@ -28,7 +32,6 @@ export default function usePosCheckout({ weight } = {}) {
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiUnavailable"));
-      setLoading(false);
       return;
     }
 
@@ -64,7 +67,7 @@ export default function usePosCheckout({ weight } = {}) {
         fundsResult.status === "fulfilled" ? fundsResult.value || [] : [],
       );
 
-      setCurrencies(currencyResult.value[0] || []);
+      setCurrencies(currencyResult.value?.[0] || []);
 
       setError(
         [customersResult, fundsResult].some(
@@ -127,12 +130,25 @@ export default function usePosCheckout({ weight } = {}) {
     );
   };
 
+  const updatePrice = (productId, nextPrice) => {
+    const price = Math.max(0, toNumber(nextPrice));
+    setCart((current) =>
+      current.map((item) =>
+        item.id === productId ? { ...item, price: price } : item,
+      ),
+    );
+  };
+
   const removeFromCart = (productId) => {
     setCart((current) => current.filter((item) => item.id !== productId));
   };
 
   const clearCart = () => {
     setCart([]);
+    setDiscount({
+      type: "amount",
+      value: 0,
+    });
     setSelectedCustomerId("");
   };
 
@@ -144,6 +160,21 @@ export default function usePosCheckout({ weight } = {}) {
       ),
     [cart],
   );
+
+  const discountAmount = useMemo(() => {
+    const value = toNumber(discount.value);
+
+    if (discount.type === "percent") {
+      return (subtotal * value) / 100;
+    }
+
+    return value;
+  }, [subtotal, discount]);
+
+  const netTotal = useMemo(() => {
+    return Math.max(0, subtotal - discountAmount);
+  }, [subtotal, discountAmount]);
+  console.log(subtotal);
 
   const checkout = async ({
     payments,
@@ -175,20 +206,24 @@ export default function usePosCheckout({ weight } = {}) {
           quantity: i.qty,
           price: i.price,
         })),
-        total: subtotal,
+        subtotal,
+        discount: toNumber(discount.value),
+        total: netTotal,
         received,
-        change: received - subtotal,
+        change: received - netTotal,
         payments: normalizedPayments,
         receivedFundTotal,
         changeFundId,
         customer_id: selectedCustomerId,
         language: i18n.language,
       };
+
       const sales = await api.posCheckout({
         items: cart,
         subtotal,
-        paid_amount: subtotal,
-        net_total: subtotal,
+        discount: toNumber(discount?.value || 0),
+        net_total: netTotal,
+        paid_amount: netTotal,
         customer_id: selectedCustomerId,
         payments: normalizedPayments,
         change_fund_id: changeFundId,
@@ -198,7 +233,10 @@ export default function usePosCheckout({ weight } = {}) {
       await api.printReceipt(payload);
 
       setCart([]);
-
+      setDiscount({
+        type: "amount",
+        value: 0,
+      });
       refetch();
     } catch (err) {
       console.error(err);
@@ -232,7 +270,6 @@ export default function usePosCheckout({ weight } = {}) {
             if (existingIndex !== -1) {
               const updated = [...prev];
               const item = updated[existingIndex];
-
               const newQuantity = toNumber(item.qty) + scannedQuantity;
 
               updated[existingIndex] = {
@@ -267,7 +304,6 @@ export default function usePosCheckout({ weight } = {}) {
     };
 
     window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
@@ -277,15 +313,19 @@ export default function usePosCheckout({ weight } = {}) {
     customers,
     funds,
     cart,
+    discount,
+    setDiscount,
     selectedCustomerId,
     loading,
     checkingOut,
     error,
     subtotal,
+    netTotal,
     refetch,
     setSelectedCustomerId,
     addToCart,
     updateQuantity,
+    updatePrice,
     removeFromCart,
     clearCart,
     checkout,
