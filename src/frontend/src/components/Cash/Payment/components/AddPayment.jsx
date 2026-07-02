@@ -17,11 +17,14 @@ import { useTranslation } from "react-i18next";
 export default function InvoicePaymentModal({
   isOpen,
   onClose,
-  invoice,
+  onSubmit,
+  invoice, // null/undefined => collector mode, existing invoice => execute mode
+  totalAmount, // used in collector mode: the in-progress invoice's net_total
   party,
   partyName,
-  mode = "purchase", // "purchase" | "sales" | "partner"
+  mode = "purchase", // "purchase" | "sales" | "expense" | "partner"
   refetchList,
+  confirmLabel,
 }) {
   const { t } = useTranslation();
   const api = window.api;
@@ -35,13 +38,17 @@ export default function InvoicePaymentModal({
   const isExpense = mode === "expense";
   const isSales = mode === "sales";
   const isPartner = mode === "partner";
+  const isCollectorMode = !invoice;
 
-  const remaining = Number(invoice?.remaining || 0);
+  // Full amount only — no partial payments, no "remaining" concept.
+  const baseAmount = invoice
+    ? Number(invoice.net_total || 0)
+    : Number(totalAmount || 0);
 
   const [form, setForm] = useState({
     fund_id: "",
-    amount: invoice?.net_total || 0,
-    fund_exchangeRate: 1,
+    fund_exchangeRate: 1, // fund's nominal/reference rate
+    collected_amount: 0, // what's actually collected, editable, in fund currency
     currency_code: "",
     currency_symbol: "",
     note: "",
@@ -83,8 +90,8 @@ export default function InvoicePaymentModal({
 
       setForm({
         fund_id: "",
-        amount: invoice ? remaining : 0,
         fund_exchangeRate: 1,
+        collected_amount: 0,
         currency_code: "",
         currency_symbol: "",
         note: defaultNote,
@@ -97,7 +104,6 @@ export default function InvoicePaymentModal({
     isOpen,
     refetch,
     invoice,
-    remaining,
     isPurchase,
     isExpense,
     isSales,
@@ -106,10 +112,31 @@ export default function InvoicePaymentModal({
     t,
   ]);
 
-  const paymentInfundCurrency = useMemo(() => {
-    const baseAmount = invoice ? invoice.net_total : Number(form.amount || 0);
-    return baseAmount * Number(form.fund_exchangeRate || 1);
-  }, [invoice, form.fund_exchangeRate, form.amount]);
+  // When a fund is picked, default collected_amount to base * nominal rate.
+  // User can still hand-adjust it afterward (till count, negotiated rate, etc).
+  const handleFundChange = (e) => {
+    const fundId = Number(e.target.value);
+    const fund = funds.find((f) => f.id === fundId);
+    const rate = fund?.currency_exchangeRate || 1;
+
+    setForm((prev) => ({
+      ...prev,
+      fund_id: fundId,
+      fund_exchangeRate: rate,
+      // Locked to exact base amount when rate is 1; otherwise default to
+      // base * rate, still editable afterward for foreign-currency funds.
+      collected_amount: rate === 1 ? baseAmount : baseAmount * rate,
+      currency_code: fund?.currency_code || "",
+      currency_symbol: fund?.currency_symbol || "",
+    }));
+  };
+
+  // The rate actually realized by what was collected — may diverge from
+  // the fund's nominal rate if collected_amount was hand-adjusted.
+  const effectiveRate = useMemo(() => {
+    if (!baseAmount) return form.fund_exchangeRate;
+    return Number(form.collected_amount || 0) / baseAmount;
+  }, [form.collected_amount, baseAmount, form.fund_exchangeRate]);
 
   const submit = async () => {
     if (!form.fund_id) {
@@ -117,52 +144,60 @@ export default function InvoicePaymentModal({
       return;
     }
 
-    setLoading(true);
-    setMessage("");
-
-    let paymentType =
+    const paymentType =
       isPurchase || isExpense
         ? "expense"
         : isSales
           ? "income"
           : form.partner_transaction_type;
-    let partyType =
+    const partyType =
       isPurchase || isExpense ? "supplier" : isSales ? "customer" : "partner";
+
+    const paymentData = {
+      type: paymentType,
+      party_type: partyType,
+      party_id: party,
+      fund_id: form.fund_id,
+      amount: baseAmount, // full invoice/order amount, base currency
+      exchange_rate: form.fund_exchangeRate, // fund's nominal/reference rate
+      collected_amount: Number(form.collected_amount || 0), // what was actually collected
+      effective_rate: effectiveRate, // derived: collected_amount / amount
+      currency_code: form.currency_code,
+      currency_symbol: form.currency_symbol,
+      note: form.note,
+      mode,
+    };
+
+    if (isCollectorMode) {
+      onSubmit?.(paymentData);
+      onClose();
+      return;
+    }
+
+    setLoading(true);
+    setMessage("");
 
     try {
       const res = await api.createPayment({
-        type: paymentType,
-        party_type: partyType,
-        party_id: party,
-        fund_id: form.fund_id,
-        amount: invoice ? Number(invoice.net_total) : Number(form.amount),
-        note: form.note,
-        invoiceId: invoice?.id || null,
-        paymentInfundCurrency,
-        exchange_rate: form.fund_exchangeRate,
-        currency_code: form.currency_code,
-        mode,
+        ...paymentData,
+        invoiceId: invoice.id,
       });
-
       if (!res.success) throw new Error(res.message);
 
       setMessage(t("screens.payments.saved"));
-
-      setTimeout(() => {
-        onClose();
-      }, 700);
+      setTimeout(() => onClose(), 700);
     } catch (err) {
       setMessage(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isCollectorMode && refetchList) {
       refetchList();
     }
-  }, [loading, isOpen, refetchList]);
+  }, [loading, isOpen, isCollectorMode, refetchList]);
 
   if (!isOpen) return null;
 
@@ -183,7 +218,6 @@ export default function InvoicePaymentModal({
             <div className={`p-2 rounded-2xl ${getHeaderStyle()}`}>
               {isPartner ? <Users size={20} /> : <Receipt size={20} />}
             </div>
-
             <div>
               <h2 className="font-semibold text-gray-800">
                 {isPurchase && t("screens.payments.purchasePayment")}
@@ -201,7 +235,6 @@ export default function InvoicePaymentModal({
               )}
             </div>
           </div>
-
           <button
             onClick={onClose}
             className="p-2 rounded-xl hover:bg-gray-200"
@@ -231,10 +264,9 @@ export default function InvoicePaymentModal({
                 <Users size={18} />
               )}
             </div>
-
             <div>
               <p className="text-sm text-gray-500">
-                {isPurchase || (isExpense && t("ui.supplier"))}
+                {(isPurchase || isExpense) && t("ui.supplier")}
                 {isSales && t("ui.customer")}
                 {isPartner && "الشريك"}
               </p>
@@ -275,29 +307,11 @@ export default function InvoicePaymentModal({
             </div>
           )}
 
+          {/* Total — no "remaining" card, single source: full amount */}
           {invoice && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border p-3">
-                <p className="text-xs text-gray-500">{t("ui.netTotal")}</p>
-                <h3 className="text-lg font-bold">
-                  {money(invoice?.net_total)}
-                </h3>
-              </div>
-
-              <div className="rounded-2xl border p-3">
-                <p className="text-xs text-gray-500">{t("ui.remaining")}</p>
-                <h3 className="text-lg font-bold text-red-600">
-                  {money(invoice?.net_total)}
-                </h3>
-                {form.currency_symbol && (
-                  <h3 className="text-sm font-semibold text-gray-600">
-                    {formatMoney(
-                      invoice?.net_total * form.fund_exchangeRate,
-                      form.currency_symbol,
-                    )}
-                  </h3>
-                )}
-              </div>
+            <div className="rounded-2xl border p-3">
+              <p className="text-xs text-gray-500">{t("ui.netTotal")}</p>
+              <h3 className="text-lg font-bold">{money(invoice?.net_total)}</h3>
             </div>
           )}
 
@@ -306,18 +320,7 @@ export default function InvoicePaymentModal({
             <label className="text-sm text-gray-600">{t("ui.cashFund")}</label>
             <select
               value={form.fund_id}
-              onChange={(e) => {
-                const fundId = Number(e.target.value);
-                const fund = funds.find((f) => f.id === fundId);
-
-                handleChange("fund_id", fundId);
-                handleChange(
-                  "fund_exchangeRate",
-                  fund?.currency_exchangeRate || 1,
-                );
-                handleChange("currency_code", fund?.currency_code || "");
-                handleChange("currency_symbol", fund?.currency_symbol || "");
-              }}
+              onChange={handleFundChange}
               className="w-full h-11 rounded-xl border px-3 mt-1"
             >
               <option value="">{t("ui.selectFund")}</option>
@@ -329,26 +332,32 @@ export default function InvoicePaymentModal({
             </select>
           </div>
 
-          {/* Amount Input */}
+          {/* Collected amount — editable, defaults to base * nominal rate */}
           <div>
-            <label className="text-sm text-gray-600">{t("ui.amount")}</label>
+            <label className="text-sm text-gray-600">
+              {t("ui.collectedAmount") /* "Amount Collected" */}
+            </label>
             <div className="relative mt-1">
               <input
                 type="number"
-                value={
-                  invoice
-                    ? invoice?.net_total * form.fund_exchangeRate
-                    : form.amount
+                value={form.collected_amount}
+                onChange={(e) =>
+                  handleChange("collected_amount", e.target.value)
                 }
-                onChange={(e) => handleChange("amount", e.target.value)}
-                className="w-full h-11 rounded-xl border px-3 pr-10"
-                disabled={invoice} // معطل فقط إذا كان الدفع مرتبطاً بفاتورة محددة
+                className="w-full h-11 rounded-xl border px-3 pr-10 disabled:bg-slate-100"
+                disabled={!form.fund_id || form.fund_exchangeRate === 1}
               />
               <Wallet
                 className="absolute right-3 top-3 text-gray-400"
                 size={18}
               />
             </div>
+            {form.fund_id && (
+              <p className="mt-1 text-xs text-gray-500">
+                {t("ui.fundRate")}: {form.fund_exchangeRate} ·{" "}
+                {t("ui.effectiveRate")}: {effectiveRate.toFixed(4)}
+              </p>
+            )}
           </div>
 
           {/* Note */}
@@ -387,7 +396,12 @@ export default function InvoicePaymentModal({
             }`}
           >
             <Save size={18} />
-            {loading ? t("common.saving") : t("screens.payments.savePayment")}
+            {loading
+              ? t("common.saving")
+              : confirmLabel ||
+                (isCollectorMode
+                  ? t("screens.payments.confirmPayment")
+                  : t("screens.payments.savePayment"))}
           </button>
         </div>
       </div>

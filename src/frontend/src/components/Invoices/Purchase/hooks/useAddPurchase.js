@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 
 const emptyItem = {
@@ -31,8 +30,7 @@ export default function useAddPurchase() {
   const [saving, setSaving] = useState(false);
   const [taxes, setTaxes] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [status, setStatus] = useState("unpaid");
-  const [funds, setFunds] = useState([]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiNotAvailable"));
@@ -47,8 +45,6 @@ export default function useAddPurchase() {
       setTaxes(taxResult || []);
       const suppliersResult = await api.getSuppliers();
       setSuppliers(suppliersResult || []);
-      const fundResult = await api.getFunds();
-      setFunds(fundResult || []);
       setError("");
     } catch (err) {
       setError(err?.message || t("errors.loadError"));
@@ -56,9 +52,11 @@ export default function useAddPurchase() {
       setLoading(false);
     }
   }, [api]);
+
   useEffect(() => {
     refetch();
   }, [refetch]);
+
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem]);
   };
@@ -70,7 +68,6 @@ export default function useAddPurchase() {
   const updateItem = (index, key, value) => {
     setItems((prev) => {
       const copy = [...prev];
-
       let item = { ...copy[index] };
 
       item[key] = value;
@@ -99,6 +96,7 @@ export default function useAddPurchase() {
     return items.reduce((sum, item) => sum + (item.total || 0), 0);
   }, [items]);
 
+  // Barcode scanning stays exactly as-is — unrelated to payment refactor
   useEffect(() => {
     let barcodeRef = "";
 
@@ -117,13 +115,12 @@ export default function useAddPurchase() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {
               const updated = [...prev];
               const item = updated[existingIndex];
-
               const newQuantity = Number(item.quantity) + 1;
 
               updated[existingIndex] = {
@@ -180,15 +177,6 @@ export default function useAddPurchase() {
     };
   }, [api]);
 
-  const netTotal = useMemo(() => {
-    const discount = Number(invoice.discount || 0);
-    const taxRate = Number(invoice.tax_rate || 0);
-    const taxableAmount = Math.max(0, subtotal - discount);
-    const taxValue = taxableAmount * (taxRate / 100);
-
-    return Math.max(0, taxableAmount + taxValue);
-  }, [subtotal, invoice]);
-
   const taxableAmount = useMemo(() => {
     return Math.max(0, subtotal - Number(invoice.discount || 0));
   }, [subtotal, invoice.discount]);
@@ -197,73 +185,65 @@ export default function useAddPurchase() {
     return taxableAmount * (Number(invoice.tax_rate || 0) / 100);
   }, [taxableAmount, invoice.tax_rate]);
 
-  useEffect(() => {
-    if (status === "paid") {
-      setInvoice((p) => ({
-        ...p,
-        paid_amount: netTotal,
-      }));
-    }
-  }, [netTotal]);
+  const netTotal = useMemo(() => {
+    return Math.max(0, taxableAmount + taxValue);
+  }, [taxableAmount, taxValue]);
 
-  const paymentInfundCurrency = useMemo(() => {
-    const payment = netTotal * (invoice.exchange_rate || 1);
-    return payment;
-  }, [netTotal, invoice]);
-
-  const submit = useCallback(async () => {
-    if (status === "paid" && !invoice.fund_id) {
-      toast.error(t("errors.selectFund"));
-      return false;
-    }
-    if (!api) {
-      setError(t("errors.apiNotAvailable"));
-      return;
-    }
-
-    if (!invoice.supplier_id) {
-      setError(t("errors.supplierRequired"));
-      return;
-    }
-
-    if (items.length === 0) {
-      setError(t("errors.addOneItem"));
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError("");
-
-      const payload = {
-        ...invoice,
-        subtotal,
-        net_total: netTotal,
-        items,
-        status,
-        paymentInfundCurrency,
-        taxValue,
-      };
-
-      const res = await api.createPurchaseInvoice(payload);
-
-      if (!res?.success) {
-        console.error(res);
-
-        throw new Error(t("errors.createInvoiceFailed"));
+  // submit now optionally takes paymentData collected by InvoicePaymentModal
+  // in collector mode. If present, invoice is created as paid and the
+  // backend's centralized payment service handles the fund transaction.
+  // If absent, invoice is created unpaid — no payment side effects at all.
+  const submit = useCallback(
+    async (paymentData = null) => {
+      if (!api) {
+        setError(t("errors.apiNotAvailable"));
+        return;
       }
 
-      setInvoice(emptyInvoice);
-      setItems([emptyItem]);
+      if (!invoice.supplier_id) {
+        setError(t("errors.supplierRequired"));
+        return;
+      }
 
-      navigat("/purchase");
-      return res;
-    } catch (err) {
-      setError(err.message || t("errors.createInvoiceFailed"));
-    } finally {
-      setSaving(false);
-    }
-  }, [api, invoice, items, subtotal, netTotal]);
+      if (items.length === 0) {
+        setError(t("errors.addOneItem"));
+        return;
+      }
+
+      try {
+        setSaving(true);
+        setError("");
+
+        const payload = {
+          ...invoice,
+          subtotal,
+          net_total: netTotal,
+          taxValue,
+          items,
+          status: paymentData ? "paid" : "unpaid",
+          payment: paymentData, // null => backend skips payment creation entirely
+        };
+        console.log(payload);
+        // const res = await api.createPurchaseInvoice(payload);
+
+        if (!res?.success) {
+          console.error(res);
+          throw new Error(t("errors.createInvoiceFailed"));
+        }
+
+        setInvoice(emptyInvoice);
+        setItems([emptyItem]);
+
+        navigat("/purchase");
+        return res;
+      } catch (err) {
+        setError(err.message || t("errors.createInvoiceFailed"));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [api, invoice, items, subtotal, netTotal, taxValue]
+  );
 
   const reset = () => {
     setInvoice(emptyInvoice);
@@ -290,8 +270,5 @@ export default function useAddPurchase() {
     loading,
     saving,
     error,
-    funds,
-    status,
-    setStatus,
   };
 }
