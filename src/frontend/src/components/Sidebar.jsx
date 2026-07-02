@@ -42,14 +42,6 @@ export default function Sidebar() {
       path: "/",
     },
     {
-      title: "navigation.purchase",
-      icon: <CreditCard size={18} />,
-      children: [
-        { title: "navigation.purchase", path: "/purchase" },
-        { title: "navigation.suppliers", path: "/supplier" },
-      ],
-    },
-    {
       title: "navigation.sales",
       icon: <ShoppingCart size={18} />,
       children: [
@@ -58,14 +50,12 @@ export default function Sidebar() {
       ],
     },
     {
-      title: "navigation.funds",
-      icon: <Landmark size={18} />,
-      path: "/funds",
-    },
-    {
-      title: "navigation.partners",
-      icon: <Handshake size={18} />,
-      path: "/partners",
+      title: "navigation.purchase",
+      icon: <CreditCard size={18} />,
+      children: [
+        { title: "navigation.purchase", path: "/purchase" },
+        { title: "navigation.suppliers", path: "/supplier" },
+      ],
     },
     {
       title: "navigation.expense",
@@ -76,9 +66,19 @@ export default function Sidebar() {
       ],
     },
     {
+      title: "navigation.funds",
+      icon: <Landmark size={18} />,
+      path: "/funds",
+    },
+    {
       title: "navigation.products",
       icon: <Package size={18} />,
       path: "/products",
+    },
+    {
+      title: "navigation.partners",
+      icon: <Handshake size={18} />,
+      path: "/partners",
     },
     {
       title: "navigation.settings",
@@ -87,7 +87,7 @@ export default function Sidebar() {
         { title: "navigation.units", path: "/unit" },
         { title: "navigation.currency", path: "/currency" },
         { title: "navigation.taxes", path: "/tax" },
-        { title: "navigation.companySettings", path: "/company" },
+        { title: "navigation.companySettings", path: "/company-settings" },
       ],
     },
   ];

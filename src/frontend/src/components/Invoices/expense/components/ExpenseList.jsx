@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import useExpenseList from "../hooks/useExpenseList";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 
 const ExpenseList = () => {
   const { t } = useTranslation();
@@ -201,18 +202,33 @@ const ExpenseList = () => {
                             <Eye size={16} />
                           </button>
 
-                          <button
-                            onClick={() => navigate(`/edit-expense/${exp.id}`)}
-                          >
-                            <Edit2 size={16} />
-                          </button>
-
-                          <button
-                            onClick={() => setDeleteExpense(exp)}
-                            className="text-red-500"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          {exp.status !== "paid" && (
+                            <>
+                              {" "}
+                              <button
+                                onClick={() =>
+                                  navigate(`/edit-expense/${exp.id}`)
+                                }
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelecteInvoice(exp);
+                                  setOpenPaymentModel(true);
+                                }}
+                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              >
+                                <HandCoins size={16} />
+                              </button>
+                              <button
+                                onClick={() => setDeleteExpense(exp)}
+                                className="text-red-500"
+                              >
+                                <Trash2 size={16} />
+                              </button>{" "}
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -224,6 +240,15 @@ const ExpenseList = () => {
         </section>
       </div>
 
+      <AddPayment
+        isOpen={openPaymentModel}
+        onClose={() => setOpenPaymentModel(false)}
+        invoice={selecteInvoice}
+        party={selecteInvoice?.supplier_id}
+        partyName={selecteInvoice?.supplier_name}
+        mode="expense"
+        refetchList={refetch}
+      />
       {/* DELETE */}
       <DeleteModal
         open={Boolean(deleteExpense)}

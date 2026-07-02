@@ -1,5 +1,9 @@
 const { ipcMain, BrowserWindow } = require("electron");
 import db from "../db";
+import createPayment from "../utils/createPayment";
+import createPartyHistory from "../utils/createPaymentHistory";
+import createInvoiceHistory from "../utils/createPaymentHistory";
+import createProductMovement from "../utils/createPorductMovment";
 
 const receiptLabels = {
   en: {
@@ -104,6 +108,16 @@ export default function registerSalesInvoiceIPC() {
       insertItem.run(invoiceId, item.product_id, quantity, price, total);
 
       updateStock.run(quantity, item.product_id);
+
+      createProductMovement(db, {
+        product_id: item.product_id,
+        reference_id: invoiceId,
+        reference_type: "sales_invoice",
+        action: "create",
+        type: "out",
+        quantity,
+        outPrice: price,
+      });
     }
     const updateCustomer = db.prepare(`
         UPDATE customers
@@ -120,33 +134,30 @@ export default function registerSalesInvoiceIPC() {
       data.customer_id,
     );
 
+    createPartyHistory(db, {
+      party_type: "customer",
+      party_id: data.customer_id,
+      record_type: "invoice",
+      invoice_id: invoiceId,
+      invoice_type: "sales",
+      amount: data.net_total,
+      note: `Sales Invoice #${invoiceId}`,
+    });
     if (data.status === "paid") {
-      const insertPayment = db.prepare(`
-        INSERT INTO payments
-        (type, party_type, party_id, fund_id, amount, note,
-         currency_code, exchange_rate, amount_fund_currency)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-     `);
-
-      const updateFund = db.prepare(`
-       UPDATE funds
-       SET balance = balance + ?
-       WHERE id = ?
-     `);
-
-      updateFund.run(data.paymentInfundCurrency, data.fund_id);
-
-      insertPayment.run(
-        "income",
-        "customer",
-        data.customer_id || null,
-        data.fund_id,
-        data.paid_amount,
-        `Payment for Sales Invoice #${invoiceId}`,
-        data.currency_code,
-        data.exchange_rate,
-        data.paymentInfundCurrency,
-      );
+      const paymentId = createPayment(db, {
+        type: "income",
+        party_type: "customer",
+        party_id: data.customer_id,
+        fund_id: data.fund_id,
+        amount: data.paid_amount,
+        amount_fund_currency: data.paymentInfundCurrency,
+        currency_code: data.currency_code,
+        exchange_rate: data.exchange_rate,
+        invoice_id: invoiceId,
+        invoice_type: "sales",
+        note: `Payment for Sales Invoice #${invoiceId}`,
+        fundOperation: "add",
+      });
     }
 
     return { success: true, invoiceId };
@@ -238,6 +249,16 @@ export default function registerSalesInvoiceIPC() {
 
       for (const item of oldItems) {
         reverseStock.run(item.quantity || 0, item.product_id);
+
+        createProductMovement(db, {
+          product_id: item.product_id,
+          reference_id: oldInvoice.id,
+          reference_type: "sales_invoice",
+          action: "update",
+          type: "in",
+          quantity: item.quantity,
+          enterPrice: item.price,
+        });
       }
 
       db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
@@ -293,6 +314,16 @@ export default function registerSalesInvoiceIPC() {
         insertItem.run(data.id, item.product_id, quantity, price, total);
 
         addStock.run(quantity, item.product_id);
+
+        createProductMovement(db, {
+          product_id: item.product_id,
+          reference_id: data.id,
+          reference_type: "sales_invoice",
+          action: "update",
+          type: "out",
+          quantity,
+          outPrice: item.price,
+        });
       }
       const newPaid =
         data.status === "paid" ? Number(data.paid_amount || 0) : 0;
@@ -306,6 +337,16 @@ export default function registerSalesInvoiceIPC() {
       `,
         )
         .run(Number(data.net_total || 0), newPaid, data.customer_id);
+
+      createInvoiceHistory(db, {
+        party_type: "customer",
+        party_id: data.customer_id,
+        invoice_id: data.id,
+        invoice_type: "sales",
+        history_type: "invoice",
+        amount: data.net_total,
+        note: `Sales Invoice #${data.id}`,
+      });
     });
 
     try {

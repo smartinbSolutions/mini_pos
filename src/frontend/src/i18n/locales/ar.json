@@ -106,7 +106,8 @@
     "paidStatus": "مدفوعة",
     "unpaidStatus": "غير مدفوعة",
     "partialStatus": "جزئية",
-    "expenseCategory": "تصنيف المصاريف"
+    "expenseCategory": "تصنيف المصاريف",
+    "totalWithOutDiscont": "الإجمالي بدون خصم"
   },
   "screens": {
     "units": {

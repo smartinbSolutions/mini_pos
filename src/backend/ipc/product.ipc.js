@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 import db from "../db";
+import createProductMovement from "../utils/createPorductMovment";
 
 export default function registerProductIPC() {
   ipcMain.handle("get-products", () => {
@@ -49,7 +50,15 @@ export default function registerProductIPC() {
         data.unit_id,
         data.logo,
       );
-
+    createProductMovement(db, {
+      product_id: result.lastInsertRowid,
+      reference_id: result.lastInsertRowid,
+      reference_type: "products",
+      action: "create",
+      type: "in",
+      quantity: data.quantity,
+      enterPrice: data.costPrice,
+    });
     return { success: true, id: result.lastInsertRowid };
   });
 
@@ -74,6 +83,15 @@ export default function registerProductIPC() {
       data.id,
     );
 
+    createProductMovement(db, {
+      product_id: data.id,
+      reference_id: data.id,
+      reference_type: "products",
+      action: "update",
+      type: data.quantity > data.oldQuantity ? "in" : "out",
+      quantity: data.quantity,
+      enterPrice: data.costPrice,
+    });
     return { success: true };
   });
 
@@ -81,6 +99,12 @@ export default function registerProductIPC() {
     db.prepare(
       `
       DELETE FROM product_barcodes WHERE product_id = ?
+    `,
+    ).run(id);
+
+    db.prepare(
+      `
+      DELETE FROM product_movements WHERE product_id = ?
     `,
     ).run(id);
 

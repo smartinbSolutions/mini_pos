@@ -106,7 +106,8 @@
     "paidStatus": "ÖDENDİ",
     "unpaidStatus": "ÖDENMEDİ",
     "partialStatus": "KISMİ",
-    "expenseCategory": "Gider Kategorisi"
+    "expenseCategory": "Gider Kategorisi",
+    "totalWithOutDiscont": "Toplam (İndirim Hariç)"
   },
   "screens": {
     "units": {

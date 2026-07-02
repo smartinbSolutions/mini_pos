@@ -107,8 +107,6 @@ const useUpdateExpense = () => {
     });
   };
 
-  console.log(items);
-
   const subtotal = items.reduce((s, i) => s + (i.price || 0), 0);
 
   const netTotal = useMemo(() => Math.max(0, subtotal), [subtotal]);

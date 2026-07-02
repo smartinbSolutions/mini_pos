@@ -23,6 +23,7 @@ const emptyForm = {
   unit_id: "",
   logo: "",
   barcodes: [{ barcode: "" }],
+  oldQuantity: 0,
 };
 
 export default function ProductFormModal({
@@ -52,6 +53,7 @@ export default function ProductFormModal({
         unit_id: product.unit_id ? Number(product.unit_id) : "",
         logo: product.logo || "",
         barcodes: barcodes?.length > 0 ? barcodes : [{ barcode: "" }],
+        oldQuantity: Number(product.quantity ?? 0),
       });
     } else {
       setForm(emptyForm);
@@ -137,6 +139,7 @@ export default function ProductFormModal({
       price: Number(form.price || 0),
       unit_id: form.unit_id ? Number(form.unit_id) : null,
       barcodes: form.barcodes.filter((item) => item.barcode.trim()),
+      oldQuantity: form.oldQuantity || 0,
     });
   };
 

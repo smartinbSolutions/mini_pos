@@ -25,6 +25,7 @@ const productPayload = (product) => ({
   quantity: Number(product.quantity || 0),
   unit_id: product.unit_id ? Number(product.unit_id) : null,
   logo: product.logo || "",
+  oldQuantity: product.oldQuantity || 0,
 });
 
 export default function useProductCatalog() {
@@ -248,9 +249,7 @@ export default function useProductCatalog() {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete product:", err);
-      setActionError(
-        t("errors.deleteHasData", { field: t("ui.product") }),
-      );
+      setActionError(t("errors.deleteHasData", { field: t("ui.product") }));
     }
   };
 

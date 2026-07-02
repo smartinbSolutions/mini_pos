@@ -108,7 +108,8 @@
     "partialStatus": "PARTIAL",
     "expenseCategory": "Expense Category",
     "partner": "Partner",
-    "partners": "Partners"
+    "partners": "Partners",
+    "totalWithOutDiscont": "total WithOut Discount"
   },
   "screens": {
     "units": {
@@ -342,9 +343,11 @@
     },
     "payments": {
       "purchasePayment": "Purchase Payment",
+      "expensePayment": "Expense Payment",
       "salesPayment": "Sales Payment",
       "paymentForPurchase": "Payment for Purchase Invoice #{{id}}",
       "paymentForSales": "Payment for Sales Invoice #{{id}}",
+      "paymentForExpense": "Payment for Expense Invoice #{{id}}",
       "saved": "Payment saved successfully",
       "savePayment": "Save Payment"
     },

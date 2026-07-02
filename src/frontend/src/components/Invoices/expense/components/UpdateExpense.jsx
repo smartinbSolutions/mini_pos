@@ -236,38 +236,6 @@ export default function UpdateExpense() {
                   </span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPaymentChoice("unpaid");
-                    setInvoice((p) => ({ ...p, paid_amount: 0 }));
-                    setStatus("unpaid");
-                  }}
-                  className={`flex-1 rounded-2xl border py-2 text-sm font-bold transition ${
-                    paymentChoice === "unpaid"
-                      ? "border-red-200 bg-red-50 text-red-600"
-                      : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff]"
-                  }`}
-                >
-                  {t("screens.invoices.noPaymentNow")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPaymentChoice("paid");
-                    setInvoice((p) => ({ ...p, paid_amount: total }));
-                    setStatus("paid");
-                  }}
-                  className={`flex-1 rounded-2xl border py-2 text-sm font-bold transition ${
-                    paymentChoice === "paid"
-                      ? "border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-600/20"
-                      : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff]"
-                  }`}
-                >
-                  {t("screens.invoices.payInFull")}
-                </button>
-              </div>
 
               {paid > 0 && (
                 <SearchableSelect

@@ -34,11 +34,11 @@ CREATE TABLE IF NOT EXISTS products (
 
 db.prepare(
   `
-CREATE TABLE IF NOT EXISTS productMovement (
+CREATE TABLE IF NOT EXISTS product_movements (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   product_id INTEGER,
-  reference INTEGER,
-  referenceType TEXT -- purchase / sale / expense,
+  reference_id INTEGER,
+  reference_type TEXT, -- purchase / sale / expense,
   type TEXT, -- in / out,
   action TEXT NOT NULL,
   enterPrice REAL DEFAULT 0,
@@ -271,9 +271,28 @@ CREATE TABLE IF NOT EXISTS payments (
   currency_code TEXT, -- USD / TRY / EUR
   exchange_rate REAL, -- Exchange rate at time of payment
   amount_fund_currency REAL, 
-  note TEXT,
+  note TEXT,invoice_id INTEGER,
+  invoice_type TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id)
+)
+`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS party_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  party_type TEXT,     
+  party_id INTEGER,
+  record_type TEXT,       
+  invoice_id INTEGER,
+  invoice_type TEXT,      
+  payment_id INTEGER,
+  movement_type TEXT,   
+  amount REAL,
+  note TEXT,
+  createdAt TEXT DEFAULT (datetime('now'))
 )
 `,
 ).run();

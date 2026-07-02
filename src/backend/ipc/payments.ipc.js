@@ -58,15 +58,23 @@ export default function registerPaymentIPC() {
           WHERE id = ?
           `,
           ).run(amount, data.party_id);
-
-          db.prepare(
-            `
+          if (data.mode === "expense") {
+            db.prepare(
+              `
+          UPDATE expense
+          SET status = ?
+          WHERE id = ?
+          `,
+            ).run("paid", data.invoiceId);
+          } else {
+            db.prepare(
+              `
           UPDATE purchase_invoices
           SET status = ?
           WHERE id = ?
           `,
-          ).run("paid", data.invoiceId);
-
+            ).run("paid", data.invoiceId);
+          }
           db.prepare(
             `
           UPDATE funds
