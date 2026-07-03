@@ -20,7 +20,7 @@ import SetupPage from "./components/SetupPage/components/SetupPage";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import CompanySettings from "./components/CompanySettings/components/CompanySettings";
-import FundMovementsPage from "./components/Cash/Fund/components/FundPayment";
+import FundMovementsPage from "./components/Cash/Fund/components/FundMovementsPage";
 import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
 import ActivationPage from "./renderer/ActivationPage";
 import SalesInvoiceView from "./components/Invoices/Sales/components/SalesInvoiceView";

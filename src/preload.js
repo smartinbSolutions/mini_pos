@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld("api", {
   /* ================= FUND ================= */
   getFunds: () => ipcRenderer.invoke("get-funds"),
   getFund: (id) => ipcRenderer.invoke("get-fund", id),
+  getFundHistory: (params) => ipcRenderer.invoke("get-fund-history", params),
   createFund: (data) => ipcRenderer.invoke("create-fund", data),
   updateFund: (data) => ipcRenderer.invoke("update-fund", data),
   deleteFund: (id) => ipcRenderer.invoke("delete-fund", id),

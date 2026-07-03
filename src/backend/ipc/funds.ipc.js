@@ -10,7 +10,7 @@ export default function registerFundIPC() {
         `
       INSERT INTO funds (name, currency_id, balance)
       VALUES (?, ?, ?)
-    `,
+    `
       )
       .run(data.name, data.currency_id, data.paymentInfundCurrency || 0);
 
@@ -21,7 +21,7 @@ export default function registerFundIPC() {
         (type, party_type, party_id, fund_id, amount, note,
          currency_code, exchange_rate, amount_fund_currency)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
+      `
       ).run(
         data.balance > 0 ? "income" : "expense",
         "other",
@@ -31,7 +31,7 @@ export default function registerFundIPC() {
         "Open Balance",
         data.currency_code,
         data.exchange_rate,
-        data.paymentInfundCurrency,
+        data.paymentInfundCurrency
       );
     }
 
@@ -53,7 +53,7 @@ export default function registerFundIPC() {
         c.exchangeRate as currency_exchangeRate
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
-    `,
+    `
       )
       .all();
 
@@ -73,12 +73,40 @@ export default function registerFundIPC() {
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE f.id = ?
-    `,
+    `
       )
       .get(id);
 
     return fund;
   });
+
+  ipcMain.handle(
+    "get-fund-history",
+    (event, { fundId, limit = 50, offset = 0 }) => {
+      return db
+        .prepare(
+          `
+        SELECT
+          h.*,
+          SUM(
+            CASE
+              WHEN h.movement_type = 'in' THEN h.amount
+              WHEN h.movement_type = 'out' THEN -h.amount
+              ELSE 0
+            END
+          ) OVER (
+            PARTITION BY h.fund_id
+            ORDER BY h.id
+          ) AS running_balance
+        FROM fund_history h
+        WHERE h.fund_id = ?
+        ORDER BY h.id DESC
+        LIMIT ? OFFSET ?
+        `
+        )
+        .all(fundId, limit, offset);
+    }
+  );
 
   ipcMain.handle("update-fund", (event, data) => {
     if (!data.name || !data.currency_id) {
@@ -89,7 +117,7 @@ export default function registerFundIPC() {
       UPDATE funds
       SET name = ?
       WHERE id = ?
-    `,
+    `
     ).run(data.name, data.id);
 
     return { success: true };
@@ -99,7 +127,7 @@ export default function registerFundIPC() {
     db.prepare(
       `
       DELETE FROM funds WHERE id = ?
-    `,
+    `
     ).run(id);
 
     return { success: true };
