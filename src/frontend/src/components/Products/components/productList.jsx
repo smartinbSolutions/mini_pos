@@ -1,16 +1,17 @@
 import {
   Barcode,
-  Boxes,
   Edit2,
+  History,
   Package,
   PackagePlus,
   RefreshCw,
   Search,
   Trash2,
-  TrendingUp,
 } from "lucide-react";
 import ProductFormModal from "./ProductFormModal";
+import ProductMovementsModal from "./ProductMovementsModal";
 import useProductCatalog from "../hooks/useProductCatalog";
+import useProductMovements from "../hooks/useProductMovements";
 import DeleteModal from "../../../Global/DeleteModel";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { formatNumber } from "../../../Global/FormatNumber";
@@ -20,6 +21,7 @@ import { useTranslation } from "react-i18next";
 export default function ProductList() {
   const { t } = useTranslation();
   const catalog = useProductCatalog();
+  const movementsHook = useProductMovements();
   const { money } = usePrimaryCurrency();
   const {
     products,
@@ -49,6 +51,15 @@ export default function ProductList() {
     handleLogo,
   } = catalog;
 
+  const {
+    movements,
+    loading: movementsLoading,
+    error: movementsError,
+    activeMovementsProduct,
+    openMovements,
+    closeMovements,
+  } = movementsHook;
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
@@ -59,16 +70,12 @@ export default function ProductList() {
 
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0,
+    0
   );
   const totalValue = products.reduce(
     (total, product) =>
       total + Number(product.quantity || 0) * Number(product.price || 0),
-    0,
-  );
-  const barcodeCount = Object.values(barcodesByProduct).reduce(
-    (total, productBarcodes) => total + productBarcodes.length,
-    0,
+    0
   );
 
   return (
@@ -99,7 +106,7 @@ export default function ProductList() {
                 </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
-                <Boxes size={20} className="mb-4 text-[#4663ff]" />
+                <Barcode size={20} className="mb-4 text-[#4663ff]" />
                 <div className="text-2xl font-black text-slate-950">
                   {formatNumber(totalQuantity, 2)}
                 </div>
@@ -108,7 +115,7 @@ export default function ProductList() {
                 </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
-                <TrendingUp size={20} className="mb-4 text-[#4663ff]" />
+                <Package size={20} className="mb-4 text-[#4663ff]" />
                 <div className="text-2xl font-black text-slate-950">
                   {money(totalValue)}
                 </div>
@@ -160,155 +167,129 @@ export default function ProductList() {
           </div>
         )}
 
-        <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          {filteredProducts.map((product) => {
-            const productBarcodes = barcodesByProduct[product.id] || [];
+        <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)]">
+          {filteredProducts.length === 0 ? (
+            <div className="p-12 text-center">
+              <Package size={42} className="mx-auto text-[#4663ff]" />
+              <h2 className="mt-4 text-xl font-black text-slate-950">
+                {t("screens.products.empty")}
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">
+                {t("screens.products.emptyHint")}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                    <th className="px-5 py-3">{t("ui.product")}</th>
+                    <th className="px-5 py-3">{t("ui.unit")}</th>
+                    <th className="px-5 py-3 text-right">{t("ui.qty")}</th>
+                    <th className="px-5 py-3 text-right">{t("ui.cost")}</th>
+                    <th className="px-5 py-3 text-right">{t("ui.price")}</th>
+                    <th className="px-5 py-3 text-right">{t("ui.barcodes")}</th>
+                    <th className="px-5 py-3 text-right">{t("ui.actions")}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#eef1ff]">
+                  {filteredProducts.map((product) => {
+                    const productBarcodes = barcodesByProduct[product.id] || [];
 
-            return (
-              <article
-                key={product.id}
-                className="group overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-[0_12px_40px_rgba(70,99,255,0.10)] transition hover:-translate-y-0.5 hover:border-[#cbd7ff] hover:shadow-[0_18px_54px_rgba(70,99,255,0.16)]"
-              >
-                <div className="relative h-28 bg-[#f8faff]">
-                  {product.logo ? (
-                    <img
-                      src={getAssetUrl(product.logo)}
-                      alt={product.name || t("ui.product")}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full flex-col items-center justify-center text-[#4663ff]">
-                      <Package size={28} />
-                      <span className="mt-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                        {t("ui.noImage")}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="absolute left-3 top-3 rounded-xl bg-white/90 px-2.5 py-1.5 text-[11px] font-black text-[#4663ff] shadow-sm backdrop-blur">
-                    ID {product.id}
-                  </div>
-
-                  <div className="absolute right-3 top-3 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(product)}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 text-slate-600 shadow-sm backdrop-blur transition hover:bg-[#4663ff] hover:text-white"
-                      aria-label={t("screens.products.editAria")}
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOpenDeleteModel(true);
-                        setSelectDeleteProduct(product);
-                      }}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/90 text-red-500 shadow-sm backdrop-blur transition hover:bg-red-50"
-                      aria-label={t("screens.products.deleteAria")}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-3 p-4">
-                  <div>
-                    <h2 className="truncate text-base font-black text-slate-950">
-                      {product.name || t("ui.unnamedProduct")}
-                    </h2>
-                    <p className="mt-0.5 truncate text-xs text-slate-500">
-                      {product.latinName || t("ui.noLatinName")}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-1.5">
-                    <div className="rounded-xl bg-[#f8faff] px-2 py-2">
-                      <div className="text-[10px] font-semibold text-slate-400">
-                        {t("ui.qty")}
-                      </div>
-                      <div className="mt-0.5 truncate text-xs font-black text-slate-950">
-                        {formatNumber(product.quantity || 0, 2)}
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-red-50 px-2 py-2">
-                      <div className="text-[10px] font-semibold text-red-300">
-                        {t("ui.cost")}
-                      </div>
-                      <div className="mt-0.5 truncate text-xs font-black text-red-600">
-                        {money(product.costPrice || 0)}
-                      </div>
-                    </div>
-                    <div className="rounded-xl bg-emerald-50 px-2 py-2">
-                      <div className="text-[10px] font-semibold text-emerald-300">
-                        {t("ui.price")}
-                      </div>
-                      <div className="mt-0.5 truncate text-xs font-black text-emerald-700">
-                        {money(product.price || 0)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 rounded-xl border border-[#e5ebff] bg-white px-2.5 py-2">
-                    <div className="min-w-0 flex items-center gap-1.5 text-xs text-slate-600">
-                      <Boxes size={14} className="shrink-0 text-[#4663ff]" />
-                      {product.unit_name ? (
-                        <span className="truncate font-bold">
-                          {product.unit_name}
-                          {product.unit_code ? ` (${product.unit_code})` : ""}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400">{t("ui.noUnit")}</span>
-                      )}
-                    </div>
-                    <div className="flex shrink-0 items-center gap-1 text-[11px] font-bold text-slate-400">
-                      <Barcode size={13} />
-                      {productBarcodes.length}
-                    </div>
-                  </div>
-
-                  <div className="flex min-h-7 flex-wrap gap-1">
-                    {productBarcodes.length ? (
-                      productBarcodes.slice(0, 2).map((barcode) => (
-                        <span
-                          key={barcode.id}
-                          className="max-w-full truncate rounded-full bg-[#eef3ff] px-2 py-1 text-[11px] font-bold text-[#4663ff]"
-                        >
-                          {barcode.barcode}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-xs text-slate-400">{t("ui.noBarcode")}</span>
-                    )}
-                    {productBarcodes.length > 2 && (
-                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-500">
-                        +{productBarcodes.length - 2}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+                    return (
+                      <tr
+                        key={product.id}
+                        className="transition hover:bg-[#f8faff]"
+                      >
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f8faff] text-[#4663ff]">
+                              {product.logo ? (
+                                <img
+                                  src={getAssetUrl(product.logo)}
+                                  alt={product.name || t("ui.product")}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <Package size={18} />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="truncate font-bold text-slate-950">
+                                {product.name || t("ui.unnamedProduct")}
+                              </div>
+                              <div className="truncate text-xs text-slate-500">
+                                {product.latinName || t("ui.noLatinName")}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-slate-600">
+                          {product.unit_name ? (
+                            <span className="font-semibold">
+                              {product.unit_name}
+                              {product.unit_code
+                                ? ` (${product.unit_code})`
+                                : ""}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">
+                              {t("ui.noUnit")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-right font-bold tabular-nums text-slate-950">
+                          {formatNumber(product.quantity || 0, 2)}
+                        </td>
+                        <td className="px-5 py-3 text-right font-bold tabular-nums text-red-600">
+                          {money(product.costPrice || 0)}
+                        </td>
+                        <td className="px-5 py-3 text-right font-bold tabular-nums text-emerald-600">
+                          {money(product.price || 0)}
+                        </td>
+                        <td className="px-5 py-3 text-right text-slate-500">
+                          {productBarcodes.length}
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => openMovements(product)}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              aria-label={t("screens.products.movementsAria")}
+                            >
+                              <History size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(product)}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              aria-label={t("screens.products.editAria")}
+                            >
+                              <Edit2 size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOpenDeleteModel(true);
+                                setSelectDeleteProduct(product);
+                              }}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-red-500 transition hover:bg-red-50"
+                              aria-label={t("screens.products.deleteAria")}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
-
-        {filteredProducts.length === 0 && (
-          <div className="rounded-[28px] border border-white/80 bg-white/80 p-12 text-center shadow-[0_24px_80px_rgba(70,99,255,0.12)]">
-            <Package size={42} className="mx-auto text-[#4663ff]" />
-            <h2 className="mt-4 text-xl font-black text-slate-950">
-              {t("screens.products.empty")}
-            </h2>
-            <p className="mt-2 text-sm text-slate-500">
-              {t("screens.products.emptyHint")}
-            </p>
-          </div>
-        )}
       </main>
-
-      {/* <div className="fixed bottom-6 right-6 hidden items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-bold text-slate-600 shadow-lg backdrop-blur lg:flex">
-        <Barcode size={16} className="text-[#4663ff]" />
-        {barcodeCount} barcodes tracked
-      </div> */}
 
       {isFormOpen && (
         <ProductFormModal
@@ -325,6 +306,14 @@ export default function ProductList() {
           handleLogo={handleLogo}
         />
       )}
+
+      <ProductMovementsModal
+        product={activeMovementsProduct}
+        movements={movements}
+        loading={movementsLoading}
+        error={movementsError}
+        onClose={closeMovements}
+      />
 
       <DeleteModal
         open={openDeleteModel}

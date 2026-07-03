@@ -221,9 +221,9 @@ export default function useAddPurchase() {
           taxValue,
           items,
           status: paymentData ? "paid" : "unpaid",
-          payment: paymentData, // null => backend skips payment creation entirely
+          payment: paymentData,
         };
-        console.log(payload);
+
         const res = await api.createPurchaseInvoice(payload);
 
         if (!res?.success) {

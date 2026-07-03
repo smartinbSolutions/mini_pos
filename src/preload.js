@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld("api", {
   /* ================= PRODUCT BARCODE ================= */
   getProductBarcodes: () => ipcRenderer.invoke("get-product-barcodes"),
   getProductBarcode: (id) => ipcRenderer.invoke("get-product-barcode", id),
+  getProductMovements: (id) => ipcRenderer.invoke("get-product-movements", id),
   createProductBarcode: (data) =>
     ipcRenderer.invoke("create-product-barcode", data),
   updateProductBarcode: (data) =>
