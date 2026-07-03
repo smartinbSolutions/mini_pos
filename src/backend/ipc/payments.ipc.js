@@ -1,5 +1,9 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import applyCustomerPayment from "../services/payment/party/applyCustomerPayment.service";
+import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.service";
+import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
+import createFundHistory from "../utils/createFundHistory";
 
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
@@ -33,10 +37,22 @@ export default function registerPaymentIPC() {
         const result = db
           .prepare(
             `
-          INSERT INTO payments 
-          (type, party_type, party_id, fund_id, amount, note, currency_code, exchange_rate, amount_fund_currency)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
+          INSERT INTO payments
+          (
+            type,
+            party_type,
+            party_id,
+            fund_id,
+            amount,
+            note,
+            currency_code,
+            exchange_rate,
+            amount_fund_currency,
+            invoice_id,
+            invoice_type
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
           )
           .run(
             data.type,
@@ -47,114 +63,79 @@ export default function registerPaymentIPC() {
             data.note || null,
             data.currency_code,
             data.exchange_rate,
-            data.paymentInfundCurrency,
+            data.collected_amount,
+            data.invoiceId || null,
+            data.mode || null,
           );
 
+        const paymentId = result.lastInsertRowid;
+
         if (data.party_type === "supplier") {
-          db.prepare(
-            `
-          UPDATE suppliers
-          SET total_paid = COALESCE(total_paid, 0) + ?
-          WHERE id = ?
-          `,
-          ).run(amount, data.party_id);
-          if (data.mode === "expense") {
-            db.prepare(
-              `
-          UPDATE expense
-          SET status = ?
-          WHERE id = ?
-          `,
-            ).run("paid", data.invoiceId);
-          } else {
-            db.prepare(
-              `
-          UPDATE purchase_invoices
-          SET status = ?
-          WHERE id = ?
-          `,
-            ).run("paid", data.invoiceId);
-          }
-          db.prepare(
-            `
-          UPDATE funds
-          SET balance = COALESCE(balance, 0) - ?
-          WHERE id = ?
-          `,
-          ).run(data.paymentInfundCurrency, data.fund_id);
+          applySupplierPayment(db, {
+            party_id: data.party_id,
+            invoiceId: data.invoiceId,
+            paymentId,
+            fund_id: data.fund_id,
+            amount,
+            mode: data.mode,
+            note: data.note,
+          });
         }
 
         if (data.party_type === "customer") {
-          db.prepare(
-            `
-          UPDATE customers
-          SET total_paid = COALESCE(total_paid, 0) + ?
-          WHERE id = ?
-          `,
-          ).run(amount, data.party_id);
-
-          db.prepare(
-            `
-          UPDATE sales_invoices
-          SET status = ?
-          WHERE id = ?
-          `,
-          ).run("paid", data.invoiceId);
-
-          db.prepare(
-            `
-          UPDATE funds
-          SET balance = COALESCE(balance, 0) + ?
-          WHERE id = ?
-          `,
-          ).run(data.paymentInfundCurrency, data.fund_id);
+          applyCustomerPayment(db, {
+            party_id: data.party_id,
+            invoiceId: data.invoiceId,
+            paymentId,
+            fund_id: data.fund_id,
+            amount,
+            mode: data.mode,
+            note: data.note,
+          });
         }
+
         if (data.party_type === "partner") {
-          const partnerAmount = data.type === "income" ? amount : -amount;
-          db.prepare(
-            `
-          UPDATE partners
-          SET total_paid = COALESCE(total_paid, 0) + ?
-          WHERE id = ?
-          `,
-          ).run(partnerAmount, data.party_id);
-          const fundAmount =
-            data.type === "income"
-              ? data.paymentInfundCurrency
-              : -data.paymentInfundCurrency;
-
-          db.prepare(
-            `
-          UPDATE funds
-          SET balance = COALESCE(balance, 0) + ?
-          WHERE id = ?
-          `,
-          ).run(fundAmount, data.fund_id);
+          applyPartnerPayment(db, {
+            party_id: data.party_id,
+            amount,
+            type: data.type,
+          });
         }
+
+        createFundHistory(db, {
+          fund_id: data.fund_id,
+          record_type: "payment",
+          payment_id: paymentId,
+          invoice_id: data.invoiceId ?? null,
+          invoice_type: data.mode ?? null,
+          movement_type: data.type === "income" ? "in" : "out",
+          amount: data.collected_amount,
+          note: data.note || "",
+        });
+        const fundAmount =
+          data.type === "income"
+            ? Number(data.collected_amount)
+            : -Number(data.collected_amount);
+
+        db.prepare(
+          `
+        UPDATE funds
+        SET balance = COALESCE(balance,0) + ?
+        WHERE id = ?
+      `,
+        ).run(fundAmount, data.fund_id);
 
         if (data.party_type === "other") {
-          const fundAmount =
-            data.type === "income"
-              ? data.paymentInfundCurrency
-              : -data.paymentInfundCurrency;
-
-          db.prepare(
-            `
-          UPDATE funds
-          SET balance = COALESCE(balance, 0) + ?
-          WHERE id = ?
-          `,
-          ).run(fundAmount, data.fund_id);
         }
 
-        return result.lastInsertRowid;
+        return paymentId;
       });
 
-      const id = transaction();
+      const paymentId = transaction();
 
       return {
         success: true,
-        id,
+        id: paymentId,
         status: 200,
       };
     } catch (error) {
@@ -162,7 +143,7 @@ export default function registerPaymentIPC() {
 
       return {
         success: false,
-        message: "FAILED TO CREATE PAYMENT",
+        message: error.message || "FAILED TO CREATE PAYMENT",
         status: 500,
       };
     }

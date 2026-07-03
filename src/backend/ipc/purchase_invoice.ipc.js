@@ -402,12 +402,21 @@ export default function registerPurchaseInvoicesIPC() {
         .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
         .all(id);
 
+      const invoice = db
+        .prepare(`SELECT * FROM purchase_invoices WHERE id = ?`)
+        .get(id);
       const reverseStock = db.prepare(`
       UPDATE products
       SET quantity = quantity - ?
       WHERE id = ?
     `);
-
+      db.prepare(
+        `
+      UPDATE suppliers
+      SET total = total - ?
+      WHERE id = ?
+    `,
+      ).run(Number(invoice.net_total || 0), invoice.supplier_id);
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
 
@@ -425,7 +434,7 @@ export default function registerPurchaseInvoicesIPC() {
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
         id,
       );
-
+      db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);
     });
 
