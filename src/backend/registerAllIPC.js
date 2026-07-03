@@ -16,6 +16,7 @@ import registerSerialIPC from "./ipc/serial.ipc";
 import registerPartnersIPC from "./ipc/partners.ipc";
 import registerExpenseIPC from "./ipc/expense.ipc";
 import registerExpenceCategoryIPC from "./ipc/expence_category.ipc";
+import registerPartyHistoryIPC from "./ipc/party_history.ipc";
 
 export default function registerAllIPC() {
   registerCompanySettingIPC();
@@ -36,4 +37,5 @@ export default function registerAllIPC() {
   registerPartnersIPC();
   registerExpenseIPC();
   registerExpenceCategoryIPC();
+  registerPartyHistoryIPC();
 }

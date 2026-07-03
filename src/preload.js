@@ -38,6 +38,10 @@ contextBridge.exposeInMainWorld("api", {
   createPayment: (data) => ipcRenderer.invoke("create-payment", data),
   updatePayment: (data) => ipcRenderer.invoke("update-payment", data),
   deletePayment: (id) => ipcRenderer.invoke("delete-payment", id),
+  /* ================= PAYMENTS ================= */
+  /* ================= PARTY HISTORY ================= */
+  getPartyHistoryLedger: (params) =>
+    ipcRenderer.invoke("get-party-history-ledger", params),
 
   /* ================= PRODUCT BARCODE ================= */
   getProductBarcodes: () => ipcRenderer.invoke("get-product-barcodes"),

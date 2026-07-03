@@ -26,9 +26,6 @@ export default function registerPurchaseInvoicesIPC() {
           throw new Error("INVALID TOTALS");
         }
 
-        // Payment is now a single nested object collected by InvoicePaymentModal
-        // in collector mode. Presence of data.payment is what determines paid
-        // status — never trust a client-sent data.status flag on its own.
         const payment = data.payment || null;
         const isPaid = !!payment;
 
@@ -129,7 +126,6 @@ export default function registerPurchaseInvoicesIPC() {
         );
 
         let insertPaymentId = null;
-        console.log(data);
 
         if (isPaid) {
           insertPaymentId = createPayment(db, {
