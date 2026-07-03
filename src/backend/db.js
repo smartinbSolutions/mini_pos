@@ -307,7 +307,7 @@ CREATE TABLE IF NOT EXISTS party_history (
 ).run();
 db.prepare(
   `
-  CREATE TABLE fund_history (
+  CREATE TABLE IF NOT EXISTS fund_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fund_id INTEGER,
     record_type TEXT,     
