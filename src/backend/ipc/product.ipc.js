@@ -82,16 +82,17 @@ export default function registerProductIPC() {
       data.logo,
       data.id,
     );
-
-    createProductMovement(db, {
-      product_id: data.id,
-      reference_id: data.id,
-      reference_type: "products",
-      action: "update",
-      type: data.quantity > data.oldQuantity ? "in" : "out",
-      quantity: data.quantity,
-      enterPrice: data.costPrice,
-    });
+    if (data.quantity !== data.oldQuantity) {
+      createProductMovement(db, {
+        product_id: data.id,
+        reference_id: data.id,
+        reference_type: "products",
+        action: "update",
+        type: data.quantity > data.oldQuantity ? "in" : "out",
+        quantity: data.quantity,
+        enterPrice: data.costPrice,
+      });
+    }
     return { success: true };
   });
 
