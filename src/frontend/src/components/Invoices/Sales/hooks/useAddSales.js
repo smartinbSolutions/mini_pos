@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 
 const emptyItem = {
@@ -27,30 +26,39 @@ export default function useAddSales() {
   const [products, setProducts] = useState([]);
   const [taxes, setTaxes] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [status, setStatus] = useState("unpaid");
-  const [funds, setFunds] = useState([]);
 
   const refetch = useCallback(async () => {
+    if (!api) {
+      setError(t("errors.apiNotAvailable"));
+      return;
+    }
+
     try {
-      const res = await api.getProducts();
-      const taxRes = await api.getTaxes();
-      const custRes = await api.getCustomers();
-      const fundResult = await api.getFunds();
+      setLoading(true);
+
+      const [res, taxRes, custRes] = await Promise.all([
+        api.getProducts(),
+        api.getTaxes(),
+        api.getCustomers(),
+      ]);
 
       setProducts(res || []);
       setTaxes(taxRes || []);
       setCustomers(custRes || []);
-      setFunds(fundResult || []);
+      setError("");
     } catch (err) {
-      setError(t("errors.loadError"));
+      setError(err?.message || t("errors.loadError"));
+    } finally {
+      setLoading(false);
     }
-  }, [api]);
+  }, [api, t]);
 
   useEffect(() => {
     refetch();
-  }, []);
+  }, [refetch]);
 
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem]);
@@ -84,6 +92,7 @@ export default function useAddSales() {
     });
   };
 
+  // Barcode scanning — unrelated to payment refactor, unchanged
   useEffect(() => {
     let barcode = "";
 
@@ -102,13 +111,12 @@ export default function useAddSales() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {
               const updated = [...prev];
               const item = updated[existingIndex];
-
               const newQuantity = Number(item.quantity) + 1;
 
               updated[existingIndex] = {
@@ -149,17 +157,8 @@ export default function useAddSales() {
   }, [api]);
 
   const subtotal = useMemo(() => {
-    return items.reduce((sum, i) => sum + i.total, 0);
+    return items.reduce((sum, i) => sum + (i.total || 0), 0);
   }, [items]);
-
-  const netTotal = useMemo(() => {
-    const discount = Number(invoice.discount || 0);
-    const taxRate = Number(invoice.tax_rate || 0);
-    const taxableAmount = Math.max(0, subtotal - discount);
-    const taxValue = (taxableAmount * taxRate) / 100;
-
-    return Math.max(0, taxableAmount + taxValue);
-  }, [subtotal, invoice]);
 
   const taxableAmount = useMemo(() => {
     return Math.max(0, subtotal - Number(invoice.discount || 0));
@@ -168,53 +167,71 @@ export default function useAddSales() {
   const taxValue = useMemo(() => {
     return (taxableAmount * Number(invoice.tax_rate || 0)) / 100;
   }, [taxableAmount, invoice.tax_rate]);
-  useEffect(() => {
-    if (status === "paid") {
-      setInvoice((p) => ({
-        ...p,
-        paid_amount: netTotal,
-      }));
-    }
-  }, [netTotal]);
-  const paymentInfundCurrency = useMemo(() => {
-    const payment = netTotal * (invoice.exchange_rate || 1);
-    return payment;
-  }, [netTotal, invoice]);
 
-  const submit = async () => {
-    if (status === "paid" && !invoice.fund_id) {
-      toast.error(t("errors.selectFund"));
-      return false;
-    }
-    if (!items.length) {
-      setError(t("errors.addOneItem"));
-      return false;
-    }
-    try {
-      setSaving(true);
+  const netTotal = useMemo(() => {
+    return Math.max(0, taxableAmount + taxValue);
+  }, [taxableAmount, taxValue]);
 
-      const payload = {
-        ...invoice,
-        subtotal,
-        net_total: netTotal,
-        items,
-        status,
-        paymentInfundCurrency: status === "paid" ? paymentInfundCurrency : 0,
-        taxValue,
-      };
+  // submit optionally takes paymentData collected by InvoicePaymentModal in
+  // collector mode. No fund/status/paid_amount state lives in this hook
+  // anymore — the modal collects it, the backend's centralized payment
+  // service applies it.
+  const submit = useCallback(
+    async (paymentData = null) => {
+      if (!api) {
+        setError(t("errors.apiNotAvailable"));
+        return;
+      }
 
-      const res = await api.createSalesInvoice(payload);
+      if (!invoice.customer_id) {
+        setError(t("errors.customerRequired"));
+        return;
+      }
 
-      if (!res.success) throw new Error();
+      if (!items.length) {
+        setError(t("errors.addOneItem"));
+        return;
+      }
 
-      navigate("/sales");
-    } catch (e) {
-      console.log(e);
+      try {
+        setSaving(true);
+        setError("");
 
-      setError(t("errors.saveError"));
-    } finally {
-      setSaving(false);
-    }
+        const payload = {
+          ...invoice,
+          subtotal,
+          net_total: netTotal,
+          taxValue,
+          items,
+          status: paymentData ? "paid" : "unpaid",
+          payment: paymentData,
+        };
+        console.log(payload);
+
+        const res = await api.createSalesInvoice(payload);
+
+        if (!res?.success) {
+          throw new Error(t("errors.createInvoiceFailed"));
+        }
+
+        setInvoice(emptyInvoice);
+        setItems([emptyItem]);
+
+        navigate("/sales");
+        return res;
+      } catch (err) {
+        setError(err?.message || t("errors.saveError"));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t]
+  );
+
+  const reset = () => {
+    setInvoice(emptyInvoice);
+    setItems([emptyItem]);
+    setError("");
   };
 
   return {
@@ -223,20 +240,19 @@ export default function useAddSales() {
     items,
     products,
     customers,
+    taxes,
     addItem,
     removeItem,
     updateItem,
     submit,
+    reset,
     subtotal,
     taxableAmount,
     taxValue,
     netTotal,
+    loading,
     saving,
     error,
     navigate,
-    taxes,
-    funds,
-    status,
-    setStatus,
   };
 }

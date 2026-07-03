@@ -224,7 +224,7 @@ export default function useAddPurchase() {
           payment: paymentData, // null => backend skips payment creation entirely
         };
         console.log(payload);
-        // const res = await api.createPurchaseInvoice(payload);
+        const res = await api.createPurchaseInvoice(payload);
 
         if (!res?.success) {
           console.error(res);

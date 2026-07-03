@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 
 const emptyItem = {
   category_id: "",
-  name: "test",
+  name: "",
   price: 0,
   total: 0,
 };
@@ -13,9 +12,6 @@ const emptyItem = {
 const emptyInvoice = {
   supplier_id: "",
   date: new Date().toISOString().slice(0, 10),
-  fund_id: "",
-  exchange_rate: 1,
-  paid_amount: 0,
 };
 
 const useAddExpense = () => {
@@ -28,9 +24,6 @@ const useAddExpense = () => {
 
   const [category, setCategory] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [funds, setFunds] = useState([]);
-
-  const [status, setStatus] = useState("unpaid");
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -45,15 +38,13 @@ const useAddExpense = () => {
     try {
       setLoading(true);
 
-      const [categoryRes, suppliersRes, fundsRes] = await Promise.all([
+      const [categoryRes, suppliersRes] = await Promise.all([
         api.getExpensesCategory(),
         api.getSuppliers(),
-        api.getFunds(),
       ]);
 
       setCategory(categoryRes || []);
       setSuppliers(suppliersRes || []);
-      setFunds(fundsRes || []);
 
       setError("");
     } catch (err) {
@@ -83,7 +74,6 @@ const useAddExpense = () => {
       item[key] = value;
 
       const price = Number(item.price || 0);
-
       item.total = price;
 
       copy[index] = item;
@@ -100,86 +90,64 @@ const useAddExpense = () => {
     return Math.max(0, subtotal);
   }, [subtotal]);
 
-  const paymentInfundCurrency = useMemo(() => {
-    return netTotal * (invoice.exchange_rate || 1);
-  }, [netTotal, invoice.exchange_rate]);
-
-  useEffect(() => {
-    if (status === "paid") {
-      setInvoice((prev) => ({
-        ...prev,
-        paid_amount: netTotal,
-      }));
-    }
-  }, [status, netTotal]);
-
-  const submit = useCallback(async () => {
-    if (!api) {
-      setError(t("errors.apiNotAvailable"));
-      return;
-    }
-
-    if (!invoice.supplier_id) {
-      setError(t("errors.supplierRequired"));
-      return;
-    }
-
-    if (!items.length) {
-      setError(t("errors.addOneItem"));
-      return;
-    }
-
-    if (status === "paid" && !invoice.fund_id) {
-      toast.error(t("errors.selectFund"));
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setError("");
-
-      const payload = {
-        ...invoice,
-        subtotal,
-        net_total: netTotal,
-        items,
-        status,
-        paymentInfundCurrency,
-      };
-      const res = await api.createExpense(payload);
-
-      if (!res?.success) {
-        throw new Error(t("errors.createInvoiceFailed"));
+  // submit optionally takes paymentData collected by InvoicePaymentModal in
+  // collector mode. No fund/status/paid_amount state lives in this hook
+  // anymore — the modal collects it, the backend's centralized payment
+  // service applies it.
+  const submit = useCallback(
+    async (paymentData = null) => {
+      if (!api) {
+        setError(t("errors.apiNotAvailable"));
+        return;
       }
 
-      setInvoice(emptyInvoice);
-      setItems([emptyItem]);
-      setStatus("unpaid");
+      if (!invoice.supplier_id) {
+        setError(t("errors.supplierRequired"));
+        return;
+      }
 
-      navigate("/expense");
+      if (!items.length) {
+        setError(t("errors.addOneItem"));
+        return;
+      }
 
-      return res;
-    } catch (err) {
-      setError(err?.message || t("errors.createInvoiceFailed"));
-    } finally {
-      setSaving(false);
-    }
-  }, [
-    api,
-    invoice,
-    items,
-    subtotal,
-    netTotal,
-    status,
-    paymentInfundCurrency,
-    navigate,
-    t,
-  ]);
+      try {
+        setSaving(true);
+        setError("");
+
+        const payload = {
+          ...invoice,
+          subtotal,
+          net_total: netTotal,
+          items,
+          status: paymentData ? "paid" : "unpaid",
+          payment: paymentData,
+        };
+        console.log("payload", payload);
+        const res = await api.createExpense(payload);
+
+        if (!res?.success) {
+          throw new Error(t("errors.createInvoiceFailed"));
+        }
+
+        setInvoice(emptyInvoice);
+        setItems([emptyItem]);
+
+        navigate("/expense");
+
+        return res;
+      } catch (err) {
+        setError(err?.message || t("errors.createInvoiceFailed"));
+      } finally {
+        setSaving(false);
+      }
+    },
+    [api, invoice, items, subtotal, netTotal, navigate, t]
+  );
 
   const reset = () => {
     setInvoice(emptyInvoice);
     setItems([emptyItem]);
-    setStatus("unpaid");
     setError("");
   };
 
@@ -190,11 +158,7 @@ const useAddExpense = () => {
     setItems,
 
     suppliers,
-    funds,
     category,
-
-    status,
-    setStatus,
 
     loading,
     saving,
@@ -203,6 +167,9 @@ const useAddExpense = () => {
     addItem,
     removeItem,
     updateItem,
+
+    subtotal,
+    netTotal,
 
     submit,
     reset,

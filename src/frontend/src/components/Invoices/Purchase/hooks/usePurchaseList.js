@@ -41,12 +41,14 @@ const usePurchaseList = () => {
       await api.deletePurchaseInvoice(id);
       setPurchaseInvoices((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
-      setError(err?.message || t("errors.deleteFailed", { field: t("ui.invoice") }));
+      setError(
+        err?.message || t("errors.deleteFailed", { field: t("ui.invoice") })
+      );
     } finally {
       setSaving(false);
     }
   };
-
+  console.log(purchaseInvoices);
   return {
     purchaseInvoices,
     loading,
