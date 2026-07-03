@@ -143,19 +143,22 @@ export default function registerSalesInvoiceIPC() {
       amount: data.net_total,
       note: `Sales Invoice #${invoiceId}`,
     });
+    console.log(data);
+
     if (data.status === "paid") {
       const paymentId = createPayment(db, {
-        type: "income",
-        party_type: "customer",
-        party_id: data.customer_id,
-        fund_id: data.fund_id,
-        amount: data.paid_amount,
-        amount_fund_currency: data.paymentInfundCurrency,
-        currency_code: data.currency_code,
-        exchange_rate: data.exchange_rate,
+        type: data.payment.type,
+        party_type: data.payment.party_type,
+        party_id: data.payment.party_id,
+        fund_id: data.payment.fund_id,
+        amount: data.payment.amount,
+        amount_fund_currency: data.payment.collected_amount,
+        currency_code: data.payment.currency_code,
+        exchange_rate: data.payment.exchange_rate,
+        effective_rate: data.payment.effective_rate,
         invoice_id: invoiceId,
-        invoice_type: "sales",
-        note: `Payment for Sales Invoice #${invoiceId}`,
+        invoice_type: data.payment.mode,
+        note: `${data.payment.note} #${invoiceId}`,
         fundOperation: "add",
       });
     }

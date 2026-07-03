@@ -270,8 +270,10 @@ CREATE TABLE IF NOT EXISTS payments (
   amount REAL, -- 
   currency_code TEXT, -- USD / TRY / EUR
   exchange_rate REAL, -- Exchange rate at time of payment
+  effective_rate REAL, -- Effective rate at time of payment
   amount_fund_currency REAL, 
-  note TEXT,invoice_id INTEGER,
+  note TEXT,
+  invoice_id INTEGER,
   invoice_type TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id)

@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import createPayment from "../utils/createPayment";
 
 export default function registerExpenseIPC() {
   ipcMain.handle("create-expense", (event, data) => {
@@ -77,46 +78,21 @@ export default function registerExpenseIPC() {
         // );
 
         if (data.status === "paid") {
-          if (paidAmount <= 0) {
-            throw new Error("PAID INVOICE MUST HAVE PAID AMOUNT");
-          }
-
-          if (data.fund_id) {
-            const fundCheck = db
-              .prepare(`SELECT balance FROM funds WHERE id = ?`)
-              .get(data.fund_id);
-
-            if (!fundCheck) throw new Error("FUND NOT FOUND");
-
-            db.prepare(
-              `
-            UPDATE funds
-            SET balance = balance - ?
-            WHERE id = ?
-          `,
-            ).run(paidAmount, data.fund_id);
-          }
-
-          insertPaymentId = db
-            .prepare(
-              `
-          INSERT INTO payments
-          (type, party_type, party_id, fund_id, amount, note,
-         currency_code, exchange_rate, amount_fund_currency)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-            )
-            .run(
-              "expense",
-              "supplier",
-              data.supplier_id,
-              data.fund_id || null,
-              data.paid_amount,
-              `Payment for Purchase Invoice #${invoiceId}`,
-              data.currency_code,
-              data.exchange_rate,
-              data.paymentInfundCurrency,
-            ).lastInsertRowid;
+          const paymentId = createPayment(db, {
+            type: data.payment.type,
+            party_type: data.payment.party_type,
+            party_id: data.payment.party_id,
+            fund_id: data.payment.fund_id,
+            amount: data.payment.amount,
+            amount_fund_currency: data.payment.collected_amount,
+            currency_code: data.payment.currency_code,
+            exchange_rate: data.payment.exchange_rate,
+            effective_rate: data.payment.effective_rate,
+            invoice_id: invoiceId,
+            invoice_type: data.payment.mode,
+            note: `${data.payment.note} #${invoiceId}`,
+            fundOperation: "subtract",
+          });
         }
 
         return {
