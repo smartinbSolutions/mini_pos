@@ -152,6 +152,8 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   tax_id INTEGER,
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
+  paid_amount REAL DEFAULT 0, 
+  remaining_amount REAL DEFAULT 0,
   status TEXT DEFAULT unpaid,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (customer_id) REFERENCES customers(id),
@@ -187,7 +189,9 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
   discount REAL DEFAULT 0,
   tax REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
-  net_total REAL DEFAULT 0,
+  net_total REAL DEFAULT 0, 
+  paid_amount REAL DEFAULT 0, 
+  remaining_amount REAL DEFAULT 0,
   status TEXT DEFAULT unpaid,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (supplier_id)
@@ -208,6 +212,8 @@ CREATE TABLE IF NOT EXISTS expense (
   subtotal REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
   status TEXT DEFAULT unpaid,
+  paid_amount REAL DEFAULT 0, 
+  remaining_amount REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `,
@@ -289,6 +295,7 @@ CREATE TABLE IF NOT EXISTS party_history (
   party_id INTEGER,
   record_type TEXT,       
   invoice_id INTEGER,
+  fund_id INTEGER,
   invoice_type TEXT,      
   payment_id INTEGER,
   movement_type TEXT,   

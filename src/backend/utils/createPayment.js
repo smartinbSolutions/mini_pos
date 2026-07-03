@@ -70,6 +70,7 @@ export default function createPayment(db, data) {
     amount: data.amount,
     note: data.note,
     payment_id: result.lastInsertRowid,
+    fund_id: data.fund_id,
   });
 
   return result.lastInsertRowid;
