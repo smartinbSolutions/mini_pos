@@ -48,7 +48,7 @@ const usePurchaseList = () => {
       setSaving(false);
     }
   };
-  console.log(purchaseInvoices);
+
   return {
     purchaseInvoices,
     loading,

@@ -36,5 +36,5 @@ export const formatMoney = (value, currency, options = {}) => {
       })
     : "0.00";
 
-  return symbol ? `${symbol}${formatted}${suffix}` : `${formatted}${suffix}`;
+  return symbol ? `${formatted}${suffix} ${symbol}` : `${formatted}${suffix}`;
 };

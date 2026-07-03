@@ -176,7 +176,8 @@ export default function InvoicePaymentModal({
 
     setLoading(true);
     setMessage("");
-
+    console.log(paymentData);
+    console.log(invoice.id);
     try {
       const res = await api.createPayment({
         ...paymentData,

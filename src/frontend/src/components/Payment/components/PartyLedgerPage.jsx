@@ -1,15 +1,15 @@
 import React, { useMemo } from "react";
-import { useParams } from "react-router-dom";
-import { ArrowDownLeft, ArrowUpRight, Wallet, RefreshCcw } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 
 import usePartyLedger from "../hooks/useGetPartyPayments";
-import { formatMoney, formatNumber } from "../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 
 const PartyLedgerPage = () => {
   const { t } = useTranslation();
   const { id, type } = useParams();
+  const navigate = useNavigate();
 
   const { data = [], loading, party } = usePartyLedger(id, type);
   const { money } = usePrimaryCurrency();
@@ -20,29 +20,31 @@ const PartyLedgerPage = () => {
   const partyName = party?.name || `${typeLabel} #${id}`;
 
   const pageTotals = useMemo(() => {
-    let inTotal = 0;
-    let outTotal = 0;
+    let invoicedTotal = 0;
+    let paidTotal = 0;
 
     for (const p of data) {
-      if (p.type === "income") {
-        inTotal += Number(p.amount || 0);
-      } else {
-        outTotal += Number(p.amount || 0);
+      if (p.record_type === "payment") {
+        paidTotal += Number(p.amount || 0);
+      } else if (p.record_type === "invoice") {
+        invoicedTotal += Number(p.amount || 0);
       }
     }
 
-    return { inTotal, outTotal };
+    return { invoicedTotal, paidTotal };
   }, [data]);
+
+  const goToInvoice = (record) => {
+    if (!record.invoice_id || !record.invoice_type) return;
+    navigate(`/view-${record.invoice_type}/${record.invoice_id}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* HEADER */}
       <div className="bg-white p-5 rounded-3xl border shadow-sm mb-5 flex flex-col lg:flex-row justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            {partyName}
-          </h1>
-
+          <h1 className="text-2xl font-bold text-gray-800">{partyName}</h1>
           <p className="text-sm text-gray-500 mt-1">
             {t("screens.ledger.partyId", { type: typeLabel, id })}
           </p>
@@ -53,7 +55,6 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-blue-600 font-medium">
               {t("screens.ledger.partyTotal")}
             </div>
-
             <div className="text-lg font-bold text-blue-700">
               {money(partyTotal)}
             </div>
@@ -63,33 +64,35 @@ const PartyLedgerPage = () => {
             <div className="text-xs text-green-600 font-medium">
               {t("screens.ledger.totalPaid")}
             </div>
-
             <div className="text-lg font-bold text-green-700">
               {money(partyPaid)}
             </div>
           </div>
 
           <div className="bg-gray-100 border rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-gray-500 font-medium">{t("ui.balance")}</div>
-
+            <div className="text-xs text-gray-500 font-medium">
+              {t("ui.balance")}
+            </div>
             <div className="text-lg font-bold text-gray-800">
               {money(partyBalance)}
             </div>
           </div>
 
           <div className="bg-white border rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-gray-500 font-medium">{t("screens.ledger.pageIn")}</div>
-
+            <div className="text-xs text-gray-500 font-medium">
+              {t("screens.ledger.pageInvoiced")}
+            </div>
             <div className="text-lg font-bold text-gray-800">
-              {money(pageTotals.inTotal)}
+              {money(pageTotals.invoicedTotal)}
             </div>
           </div>
 
           <div className="bg-white border rounded-2xl px-4 py-3 min-w-[140px]">
-            <div className="text-xs text-gray-500 font-medium">{t("screens.ledger.pageOut")}</div>
-
+            <div className="text-xs text-gray-500 font-medium">
+              {t("screens.ledger.pagePaid")}
+            </div>
             <div className="text-lg font-bold text-gray-800">
-              {money(pageTotals.outTotal)}
+              {money(pageTotals.paidTotal)}
             </div>
           </div>
         </div>
@@ -100,29 +103,35 @@ const PartyLedgerPage = () => {
         {loading ? (
           <div className="p-6 text-gray-400">{t("common.loading")}</div>
         ) : data.length === 0 ? (
-          <div className="p-6 text-gray-400">{t("screens.ledger.noMovements")}</div>
+          <div className="p-6 text-gray-400">
+            {t("screens.ledger.noMovements")}
+          </div>
         ) : (
           data.map((p) => {
-            const isIn = p.type === "income";
+            const isPayment = p.record_type === "payment";
+            const hasInvoiceLink = Boolean(p.invoice_id && p.invoice_type);
 
             return (
               <div
-                key={p.id}
-                className="p-5 flex justify-between items-center border-b last:border-b-0 hover:bg-gray-50 transition"
+                key={`${p.record_type}-${p.id}`}
+                onClick={hasInvoiceLink ? () => goToInvoice(p) : undefined}
+                className={`p-5 flex justify-between items-center border-b last:border-b-0 hover:bg-gray-50 transition ${
+                  hasInvoiceLink ? "cursor-pointer" : ""
+                }`}
               >
                 {/* LEFT */}
                 <div className="flex items-center gap-4">
                   <div
                     className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-                      isIn
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-600"
+                      isPayment
+                        ? "bg-red-100 text-red-600"
+                        : "bg-green-100 text-green-700"
                     }`}
                   >
-                    {isIn ? (
-                      <ArrowDownLeft size={20} />
-                    ) : (
+                    {isPayment ? (
                       <ArrowUpRight size={20} />
+                    ) : (
+                      <ArrowDownLeft size={20} />
                     )}
                   </div>
 
@@ -131,13 +140,13 @@ const PartyLedgerPage = () => {
                       {p.note || t("screens.ledger.transaction")}
                     </div>
 
-                    <div className="text-sm text-gray-400 mt-1">
-                      {p.fund_name || "-"}
-                    </div>
-
-                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                      <RefreshCcw size={12} />
-                      {t("screens.ledger.rate", { rate: formatNumber(p.exchange_rate) })}
+                    <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                      <span className="uppercase tracking-wide font-bold">
+                        {isPayment
+                          ? t("screens.ledger.payment")
+                          : t("screens.ledger.invoice")}
+                      </span>
+                      {p.invoice_type && <span>· {p.invoice_type}</span>}
                     </div>
                   </div>
                 </div>
@@ -146,21 +155,18 @@ const PartyLedgerPage = () => {
                 <div className="text-right">
                   <div
                     className={`font-bold text-lg ${
-                      isIn ? "text-green-600" : "text-red-500"
+                      isPayment ? "text-red-500" : "text-green-600"
                     }`}
                   >
-                    {isIn ? "+" : "-"}
-
-                    {formatMoney(p.amount_fund_currency, p)}
-                  </div>
-
-                  <div className="text-sm text-gray-500 mt-1">
+                    {isPayment ? "-" : "+"}
                     {money(p.amount)}
                   </div>
 
                   <div className="text-xs text-gray-400 flex items-center gap-1 justify-end mt-2">
                     <Wallet size={12} />
-                    {t("screens.ledger.balance", { balance: money(p.running_balance) })}
+                    {t("screens.ledger.balance", {
+                      balance: money(p.running_balance),
+                    })}
                   </div>
                 </div>
               </div>
