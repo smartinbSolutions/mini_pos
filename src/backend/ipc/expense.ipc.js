@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 
 export default function registerExpenseIPC() {
@@ -13,10 +14,12 @@ export default function registerExpenseIPC() {
         ) {
           throw new Error("ERROR ENTER DATA");
         }
-
+        const payment = data.payment || null;
+        const isPaid = !!payment;
         const subtotal = Number(data.subtotal || 0);
         const netTotal = Number(data.net_total || 0);
-        const paidAmount = Number(data.paymentInfundCurrency || 0);
+        const paidAmount = isPaid ? Number(payment.amount) : 0;
+        const remainingAmount = netTotal - paidAmount;
 
         if (subtotal <= 0 || netTotal <= 0) {
           throw new Error("INVALID TOTALS");
@@ -27,12 +30,19 @@ export default function registerExpenseIPC() {
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
 
+        const status =
+          paidAmount <= 0
+            ? "unpaid"
+            : remainingAmount <= 0
+              ? "paid"
+              : "partial";
         const invoiceResult = db
           .prepare(
             `
         INSERT INTO expense
-        (supplier_id, date, subtotal, net_total, status)
-        VALUES (?, ?, ?, ?, ? )
+        (supplier_id, date, subtotal, net_total, status,  paid_amount,
+        remaining_amount,)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
           )
           .run(
@@ -40,7 +50,9 @@ export default function registerExpenseIPC() {
             fullDateTime,
             subtotal,
             netTotal,
-            data.status || "unpaid",
+            paidAmount,
+            remainingAmount,
+            status,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -77,7 +89,7 @@ export default function registerExpenseIPC() {
         //   data.supplier_id,
         // );
 
-        if (data.status === "paid") {
+        if (paidAmount > 0) {
           const paymentId = createPayment(db, {
             type: data.payment.type,
             party_type: data.payment.party_type,
@@ -92,6 +104,17 @@ export default function registerExpenseIPC() {
             invoice_type: data.payment.mode,
             note: `${data.payment.note} #${invoiceId}`,
             fundOperation: "subtract",
+          });
+
+          createFundHistory(db, {
+            fund_id: data.payment.fund_id,
+            record_type: "payment",
+            payment_id: insertPaymentId,
+            invoice_id: invoiceId,
+            invoice_type: "expense",
+            movement_type: "out",
+            amount: data.payment.collected_amount,
+            note: `${data.payment.note} #${invoiceId}`,
           });
         }
 

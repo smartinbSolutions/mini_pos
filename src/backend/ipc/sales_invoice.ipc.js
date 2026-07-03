@@ -1,5 +1,6 @@
 const { ipcMain, BrowserWindow } = require("electron");
 import db from "../db";
+import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createInvoiceHistory from "../utils/createPaymentHistory";
@@ -68,13 +69,33 @@ export default function registerSalesInvoiceIPC() {
     const now = new Date();
     const time = now.toTimeString().slice(0, 8);
     const fullDateTime = `${dateOnly} ${time}`;
+    const payment = data.payment || null;
+    const isPaid = !!payment;
+
+    const paidAmount = isPaid ? Number(payment.amount) : 0;
+    const remainingAmount = data.net_total - paidAmount;
+    console.log(paidAmount);
+
+    const status =
+      paidAmount <= 0 ? "unpaid" : remainingAmount <= 0 ? "paid" : "partial";
 
     const invoiceResult = db
       .prepare(
         `
       INSERT INTO sales_invoices
-      (customer_id, date, subtotal, discount, tax_id, net_total, status, taxValue)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (
+      customer_id, 
+      date,
+      subtotal,
+      discount,
+      tax_id,
+      net_total,
+      status,
+      taxValue,
+      paid_amount,
+      remaining_amount 
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
       )
       .run(
@@ -86,6 +107,8 @@ export default function registerSalesInvoiceIPC() {
         data.net_total || 0,
         data.status || "unpaid",
         data.taxValue,
+        paidAmount,
+        remainingAmount,
       );
 
     const invoiceId = invoiceResult.lastInsertRowid;
@@ -143,7 +166,6 @@ export default function registerSalesInvoiceIPC() {
       amount: data.net_total,
       note: `Sales Invoice #${invoiceId}`,
     });
-    console.log(data);
 
     if (data.status === "paid") {
       const paymentId = createPayment(db, {
@@ -160,6 +182,16 @@ export default function registerSalesInvoiceIPC() {
         invoice_type: data.payment.mode,
         note: `${data.payment.note} #${invoiceId}`,
         fundOperation: "add",
+      });
+      createFundHistory(db, {
+        fund_id: payment.fund_id,
+        record_type: "payment",
+        payment_id,
+        invoice_id,
+        invoice_type: "sales",
+        movement_type: "in",
+        amount: payment.amount_fund_currency,
+        note: `Payment for Sales Invoice #${invoiceId}`,
       });
     }
 

@@ -305,6 +305,22 @@ CREATE TABLE IF NOT EXISTS party_history (
 )
 `,
 ).run();
+db.prepare(
+  `
+  CREATE TABLE fund_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fund_id INTEGER,
+    record_type TEXT,     
+    payment_id INTEGER,
+    invoice_id INTEGER,
+    invoice_type TEXT,
+    movement_type TEXT,   
+    amount REAL,
+    note TEXT,
+    createdAt TEXT DEFAULT (datetime('now'))
+);
+`,
+).run();
 
 db.prepare(
   `

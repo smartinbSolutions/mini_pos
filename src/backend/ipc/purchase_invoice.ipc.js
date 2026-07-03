@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
@@ -42,14 +43,33 @@ export default function registerPurchaseInvoicesIPC() {
         const now = new Date();
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
+        const paidAmount = isPaid ? Number(payment.amount) : 0;
+        const remainingAmount = netTotal - paidAmount;
 
+        const status =
+          paidAmount <= 0
+            ? "unpaid"
+            : remainingAmount <= 0
+              ? "paid"
+              : "partial";
         const invoiceResult = db
           .prepare(
             `
-        INSERT INTO purchase_invoices
-        (supplier_id, date, subtotal, discount, tax, net_total, status, taxValue)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `,
+  INSERT INTO purchase_invoices
+  (
+    supplier_id,
+    date,
+    subtotal,
+    discount,
+    tax,
+    net_total,
+    status,
+    taxValue,
+    paid_amount,
+    remaining_amount
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`,
           )
           .run(
             data.supplier_id,
@@ -58,8 +78,10 @@ export default function registerPurchaseInvoicesIPC() {
             discount,
             tax,
             netTotal,
-            isPaid ? "paid" : "unpaid",
+            status,
             data.taxValue,
+            paidAmount,
+            remainingAmount,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -142,6 +164,16 @@ export default function registerPurchaseInvoicesIPC() {
             invoice_type: data.payment.mode,
             note: `${data.payment.note} #${invoiceId}`,
             fundOperation: "subtract",
+          });
+          createFundHistory(db, {
+            fund_id: data.payment.fund_id,
+            record_type: "payment",
+            payment_id: insertPaymentId,
+            invoice_id: invoiceId,
+            invoice_type: "purchase",
+            movement_type: "out",
+            amount: data.payment.collected_amount,
+            note: `Payment for Purchase Invoice #${invoiceId}`,
           });
         }
 
