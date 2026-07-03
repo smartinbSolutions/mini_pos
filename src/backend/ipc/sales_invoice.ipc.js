@@ -186,8 +186,8 @@ export default function registerSalesInvoiceIPC() {
       createFundHistory(db, {
         fund_id: payment.fund_id,
         record_type: "payment",
-        payment_id,
-        invoice_id,
+        payment_id: paymentId,
+        invoice_id: invoiceId,
         invoice_type: "sales",
         movement_type: "in",
         amount: payment.amount_fund_currency,
@@ -410,19 +410,14 @@ export default function registerSalesInvoiceIPC() {
         .get(id);
       const updateCustomer = db.prepare(`
         UPDATE customers
-        SET total = total - ?,
-            total_paid = total_paid - ?
+        SET total = total - ?
         WHERE id = ?
       `);
 
       const customerPaid =
         invoice.status === "paid" ? Number(invoice.net_total || 0) : 0;
 
-      updateCustomer.run(
-        Number(invoice.net_total || 0),
-        customerPaid,
-        invoice.customer_id,
-      );
+      updateCustomer.run(Number(invoice.net_total || 0), invoice.customer_id);
 
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -431,6 +426,14 @@ export default function registerSalesInvoiceIPC() {
       db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
         id,
       );
+      db.prepare(
+        `
+  DELETE FROM party_history
+  WHERE invoice_id = ?
+    AND invoice_type = 'sales'
+    AND record_type = 'invoice'
+`,
+      ).run(id);
 
       db.prepare(`DELETE FROM sales_invoices WHERE id = ?`).run(id);
     });

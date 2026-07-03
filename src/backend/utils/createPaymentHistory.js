@@ -10,7 +10,11 @@ export default function createPartyHistory(db, data) {
       movement_type,
       fund_id,
       amount,
-      note
+      note,
+      currency_code,
+      exchange_rate,
+      effective_rate,
+      amount_fund_currency
     )
     VALUES (
       @party_type,
@@ -22,7 +26,11 @@ export default function createPartyHistory(db, data) {
       @movement_type,
       @fund_id,
       @amount,
-      @note
+      @note,
+      @currency_code,
+      @exchange_rate,
+      @effective_rate,
+      @amount_fund_currency
     )
   `);
 
@@ -37,5 +45,9 @@ export default function createPartyHistory(db, data) {
     fund_id: data.fund_id ?? null,
     amount: Number(data.amount || 0),
     note: data.note ?? "",
+    currency_code: data.currency_code ?? "",
+    exchange_rate: Number(data.exchange_rate || 0),
+    effective_rate: Number(data.effective_rate || 0),
+    amount_fund_currency: Number(data.amount_fund_currency || 0),
   });
 }

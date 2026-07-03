@@ -132,8 +132,6 @@ export default function registerPurchaseInvoicesIPC() {
           note: `Purchase Invoice #${invoiceId}`,
         });
 
-        // Supplier balance always grows by the invoice total. total_paid only
-        // grows by the base-currency payment.amount when actually paid.
         const updateSupplier = db.prepare(`
           UPDATE suppliers
           SET total = total + ?,
@@ -434,7 +432,14 @@ export default function registerPurchaseInvoicesIPC() {
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
         id,
       );
-      db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
+      db.prepare(
+        `
+  DELETE FROM party_history
+  WHERE invoice_id = ?
+    AND invoice_type = 'purchase'
+    AND record_type = 'invoice'
+`,
+      ).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);
     });
 

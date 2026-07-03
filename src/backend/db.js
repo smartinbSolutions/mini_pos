@@ -301,6 +301,10 @@ CREATE TABLE IF NOT EXISTS party_history (
   movement_type TEXT,   
   amount REAL,
   note TEXT,
+  currency_code TEXT, -- USD / TRY / EUR
+  exchange_rate REAL, -- Exchange rate at time of payment
+  effective_rate REAL, -- Effective rate at time of payment
+  amount_fund_currency REAL, 
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `,

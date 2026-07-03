@@ -2,6 +2,7 @@ const { ipcMain } = require("electron");
 import db from "../db";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
+import createPartyHistory from "../utils/createPaymentHistory";
 
 export default function registerExpenseIPC() {
   ipcMain.handle("create-expense", (event, data) => {
@@ -14,6 +15,7 @@ export default function registerExpenseIPC() {
         ) {
           throw new Error("ERROR ENTER DATA");
         }
+
         const payment = data.payment || null;
         const isPaid = !!payment;
         const subtotal = Number(data.subtotal || 0);
@@ -29,7 +31,6 @@ export default function registerExpenseIPC() {
         const now = new Date();
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
-
         const status =
           paidAmount <= 0
             ? "unpaid"
@@ -41,7 +42,7 @@ export default function registerExpenseIPC() {
             `
         INSERT INTO expense
         (supplier_id, date, subtotal, net_total, status,  paid_amount,
-        remaining_amount,)
+        remaining_amount)
        VALUES (?, ?, ?, ?, ?, ?, ?)
       `,
           )
@@ -62,7 +63,27 @@ export default function registerExpenseIPC() {
         (expense_id, category_id, price)
         VALUES (?, ?, ?)
       `);
+        const updateSupplier = db.prepare(`
+          UPDATE suppliers
+          SET total = total + ?,
+              total_paid = total_paid + ?
+          WHERE id = ?
+        `);
 
+        updateSupplier.run(
+          netTotal,
+          isPaid ? Number(payment.amount) : 0,
+          data.supplier_id,
+        );
+        createPartyHistory(db, {
+          party_type: "supplier",
+          party_id: data.supplier_id,
+          invoice_id: invoiceId,
+          invoice_type: "expense",
+          record_type: "invoice",
+          amount: netTotal,
+          note: data.note || `Expense Invoice #${invoiceId}`,
+        });
         for (const item of data.items) {
           const price = Number(item.price || 0);
 
@@ -73,21 +94,6 @@ export default function registerExpenseIPC() {
           insertItem.run(invoiceId, item.category_id, price);
         }
         let insertPaymentId = null;
-
-        const updateSupplier = db.prepare(`
-  UPDATE suppliers
-  SET total = total + ?,
-      total_paid = total_paid + ?
-  WHERE id = ?
-`);
-
-        const supplierPaid = data.status === "paid" ? paidAmount : 0;
-
-        // updateSupplier.run(
-        //   Number(netTotal || 0),
-        //   Number(data.paid_amount || 0),
-        //   data.supplier_id,
-        // );
 
         if (paidAmount > 0) {
           const paymentId = createPayment(db, {
@@ -283,8 +289,15 @@ export default function registerExpenseIPC() {
         .prepare(`SELECT * FROM expense_items WHERE expense_id = ?`)
         .all(id);
 
-      db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(id);
-
+      db.prepare(`DELETE  FROM expense_items WHERE expense_id = ?`).run(id);
+      db.prepare(
+        `
+  DELETE FROM party_history
+  WHERE invoice_id = ?
+    AND invoice_type = 'expense'
+    AND record_type = 'invoice'
+`,
+      ).run(id);
       db.prepare(`DELETE FROM expense WHERE id = ?`).run(id);
     });
 

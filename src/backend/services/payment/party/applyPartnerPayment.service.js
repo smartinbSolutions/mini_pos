@@ -21,5 +21,9 @@ export default function applyPartnerPayment(db, data) {
     movement_type: data.type === "income" ? "credit" : "debit",
     amount: Math.abs(data.amount),
     note: data.note || "",
+    currency_code: data.currency_code ?? "",
+    exchange_rate: Number(data.exchange_rate || 0),
+    effective_rate: Number(data.effective_rate || 0),
+    amount_fund_currency: Number(data.amount_fund_currency || 0),
   });
 }

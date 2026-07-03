@@ -71,6 +71,10 @@ export default function createPayment(db, data) {
     note: data.note,
     payment_id: result.lastInsertRowid,
     fund_id: data.fund_id,
+    currency_code: data.currency_code ?? "",
+    exchange_rate: Number(data.exchange_rate || 0),
+    effective_rate: Number(data.effective_rate || 0),
+    amount_fund_currency: Number(data.amount_fund_currency || 0),
   });
 
   return result.lastInsertRowid;

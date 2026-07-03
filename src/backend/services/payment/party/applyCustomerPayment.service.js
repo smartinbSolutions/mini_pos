@@ -32,5 +32,9 @@ export default function applyCustomerPayment(db, data) {
     fund_id: data.fund_id,
     amount: data.amount,
     note: data.note,
+    currency_code: data.currency_code ?? "",
+    exchange_rate: Number(data.exchange_rate || 0),
+    effective_rate: Number(data.effective_rate || 0),
+    amount_fund_currency: Number(data.amount_fund_currency || 0),
   });
 }
