@@ -36,6 +36,7 @@ export default function UpdateExpense() {
     submit,
     reset,
     refetch,
+    status
   } = useUpdateExpense();
 
   const [paymentChoice, setPaymentChoice] = useState(null);

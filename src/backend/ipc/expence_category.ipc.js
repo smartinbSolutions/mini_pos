@@ -14,11 +14,11 @@ export default function registerExpenceCategoryIPC() {
       .prepare(
         `
       INSERT INTO expence_category 
-      (name)
-      VALUES (?)
+      (name,latinName)
+      VALUES (?, ?)
       `,
       )
-      .run(data.name);
+      .run(data.name, data.latinName);
 
     return {
       success: true,
@@ -61,10 +61,10 @@ export default function registerExpenceCategoryIPC() {
     db.prepare(
       `
       UPDATE expence_category
-      SET name = ?
+      SET name = ?, latinName = ?
       WHERE id = ?
       `,
-    ).run(data.name, data.id);
+    ).run(data.name, data.latinName, data.id);
 
     return {
       success: true,

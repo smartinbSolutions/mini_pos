@@ -224,6 +224,7 @@ db.prepare(
 CREATE TABLE IF NOT EXISTS expence_category (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
+  latinName TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `,

@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import { seedData } from "../utils/data";
 
 const toAppFileUrl = (filePath) =>
   `app-file://local/${encodeURIComponent(filePath)}`;
@@ -57,7 +58,7 @@ export default function registerCompanySettingsIPC() {
         data.language,
         data.timezone,
       );
-
+    seedData(db);
     return { success: true, id: result.lastInsertRowid };
   });
 
