@@ -107,7 +107,9 @@
     "unpaidStatus": "غير مدفوعة",
     "partialStatus": "جزئية",
     "expenseCategory": "تصنيف المصاريف",
-    "totalWithOutDiscont": "الإجمالي بدون خصم"
+    "totalWithOutDiscont": "الإجمالي بدون خصم",
+    "totalPaymentsCount": "عدد الدفعات",
+    "totalAmount": "المبلغ الإجمالي"
   },
   "screens": {
     "units": {
@@ -343,7 +345,12 @@
       "paymentForPurchase": "دفعة لفاتورة الشراء #{{id}}",
       "paymentForSales": "دفعة لفاتورة المبيعات #{{id}}",
       "saved": "تم حفظ الدفعة بنجاح",
-      "savePayment": "حفظ الدفعة"
+      "savePayment": "حفظ الدفعة",
+      "subtitle": "إدارة ومتابعة كافة الدفعات المالية الواردة والصادرة",
+      "title": "سندات القبض والدفع",
+      "party": "نوع الجهة",
+      "paymentNo": "رقم الدفعة.",
+      "empty": "لا توجد دفعات مسجلة"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
@@ -444,7 +451,9 @@
   },
   "deleteModal": {
     "title": "حذف العنصر",
-    "message": "هل أنت متأكد أنك تريد حذف هذا العنصر؟"
+    "message": "هل أنت متأكد أنك تريد حذف هذا العنصر؟",
+    "paymentMessage": "حذف السند",
+    "paymentTitle": "هل أنت متأكد من رغبتك في حذف هذا السند المالي؟ لا يمكن التراجع عن هذه العملية."
   },
   "errors": {
     "rendererTitle": "خطأ في واجهة العرض",

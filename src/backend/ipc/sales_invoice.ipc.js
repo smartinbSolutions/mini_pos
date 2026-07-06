@@ -74,7 +74,6 @@ export default function registerSalesInvoiceIPC() {
 
     const paidAmount = isPaid ? Number(payment.amount) : 0;
     const remainingAmount = data.net_total - paidAmount;
-    console.log(paidAmount);
 
     const status =
       paidAmount <= 0 ? "unpaid" : remainingAmount <= 0 ? "paid" : "partial";
@@ -148,8 +147,9 @@ export default function registerSalesInvoiceIPC() {
             total_paid = total_paid + ?
         WHERE id = ?
       `);
+
     const customerPaid =
-      data.status === "paid" ? Number(data.paid_amount || 0) : 0;
+      data.status === "paid" ? Number(data?.payment?.collected_amount || 0) : 0;
 
     updateCustomer.run(
       Number(data.net_total || 0),

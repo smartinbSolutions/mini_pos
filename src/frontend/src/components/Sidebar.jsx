@@ -68,7 +68,16 @@ export default function Sidebar() {
     {
       title: "navigation.funds",
       icon: <Landmark size={18} />,
-      path: "/funds",
+      children: [
+        {
+          title: "navigation.funds",
+          path: "/funds",
+        },
+        {
+          title: "navigation.payment",
+          path: "/payments",
+        },
+      ],
     },
     {
       title: "navigation.products",

@@ -1,5 +1,8 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import reverseExpensePayment from "../services/payment/invoice/reverseExpensePayment.service";
+import reversePurchasePayment from "../services/payment/invoice/reversePurchasePayment.service";
+import reverseSalesPayment from "../services/payment/invoice/reverseSalesPayment.service";
 import applyCustomerPayment from "../services/payment/party/applyCustomerPayment.service";
 import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.service";
 import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
@@ -43,15 +46,17 @@ export default function registerPaymentIPC() {
             party_type,
             party_id,
             fund_id,
+            date,
             amount,
             note,
             currency_code,
             exchange_rate,
+            effective_rate,
             amount_fund_currency,
             invoice_id,
             invoice_type
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
           )
           .run(
@@ -59,10 +64,12 @@ export default function registerPaymentIPC() {
             data.party_type,
             data.party_id,
             data.fund_id,
+            data.date || new Date().toISOString(),
             amount,
             data.note || null,
             data.currency_code,
             data.exchange_rate,
+            data.effective_rate,
             data.collected_amount,
             data.invoiceId || null,
             data.mode || null,
@@ -79,6 +86,11 @@ export default function registerPaymentIPC() {
             amount,
             mode: data.mode,
             note: data.note,
+            currency_code: data.currency_code,
+            exchange_rate: data.exchange_rate,
+            effective_rate: data.effective_rate,
+            collected_amount: data.collected_amount,
+            date: data.date || new Date().toISOString(),
           });
         }
 
@@ -91,14 +103,30 @@ export default function registerPaymentIPC() {
             amount,
             mode: data.mode,
             note: data.note,
+            effective_rate: data.effective_rate,
+            currency_code: data.currency_code,
+            exchange_rate: data.exchange_rate,
+            effective_rate: data.effective_rate,
+            collected_amount: data.collected_amount,
+            date: data.date || new Date().toISOString(),
           });
         }
 
         if (data.party_type === "partner") {
           applyPartnerPayment(db, {
             party_id: data.party_id,
+            invoiceId: data.invoiceId,
+            paymentId,
+            fund_id: data.fund_id,
             amount,
-            type: data.type,
+            mode: data.mode,
+            note: data.note,
+            effective_rate: data.effective_rate,
+            currency_code: data.currency_code,
+            exchange_rate: data.exchange_rate,
+            effective_rate: data.effective_rate,
+            collected_amount: data.collected_amount,
+            date: data.date || new Date().toISOString(),
           });
         }
 
@@ -111,6 +139,7 @@ export default function registerPaymentIPC() {
           movement_type: data.type === "income" ? "in" : "out",
           amount: data.collected_amount,
           note: data.note || "",
+          date: data.date || new Date().toISOString(),
         });
         const fundAmount =
           data.type === "income"
@@ -153,16 +182,20 @@ export default function registerPaymentIPC() {
     return db
       .prepare(
         `
-      SELECT 
-        p.*,
-        f.name AS fund_name,
-        c.code AS fund_currency_code,
-        c.symbol AS fund_currency_symbol
-      FROM payments p
-      LEFT JOIN funds f ON f.id = p.fund_id
-      LEFT JOIN currencies c ON c.id = f.currency_id
-      ORDER BY p.id DESC
-    `,
+    SELECT 
+      p.*,
+      f.name AS fund_name,
+      c.code AS fund_currency_code,
+      c.symbol AS fund_currency_symbol,
+      COALESCE(cust.name, supp.name) AS party_name
+    FROM payments p
+    LEFT JOIN funds f ON f.id = p.fund_id
+    LEFT JOIN currencies c ON c.id = f.currency_id
+    LEFT JOIN customers cust ON cust.id = p.party_id AND p.party_type = 'customer'
+    LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
+    
+    ORDER BY p.id DESC
+  `,
       )
       .all();
   });
@@ -309,8 +342,94 @@ export default function registerPaymentIPC() {
   });
 
   ipcMain.handle("delete-payment", (event, id) => {
-    db.prepare(`DELETE FROM payments WHERE id = ?`).run(id);
+    const transaction = db.transaction(() => {
+      const payment = db
+        .prepare(
+          `
+        SELECT *
+        FROM payments
+        WHERE id = ?
+      `,
+        )
+        .get(id);
 
-    return { success: true };
+      if (!payment) {
+        throw new Error("PAYMENT_NOT_FOUND");
+      }
+
+      const history = db
+        .prepare(
+          `
+        SELECT *
+        FROM party_history
+        WHERE payment_id = ?
+          AND record_type = 'payment'
+      `,
+        )
+        .all(id);
+
+      if (history.length === 0) {
+        throw new Error("PAYMENT_HISTORY_NOT_FOUND");
+      }
+
+      for (const item of history) {
+        const paymentData = {
+          ...payment,
+          ...item,
+        };
+
+        if (item.invoice_type === "purchase") {
+          reversePurchasePayment(db, paymentData);
+        }
+
+        if (item.invoice_type === "expense") {
+          reverseExpensePayment(db, paymentData);
+        }
+
+        if (item.invoice_type === "sales") {
+          reverseSalesPayment(db, paymentData);
+        }
+      }
+
+      if (payment.party_type === "partner") {
+        reversePartnerPayment(db, payment);
+      }
+
+      db.prepare(
+        `
+      DELETE FROM party_history
+      WHERE payment_id = ?
+    `,
+      ).run(id);
+
+      db.prepare(
+        `
+      DELETE FROM fund_history
+      WHERE payment_id = ?
+    `,
+      ).run(id);
+
+      db.prepare(
+        `
+      DELETE FROM payments
+      WHERE id = ?
+    `,
+      ).run(id);
+    });
+
+    try {
+      transaction();
+
+      return {
+        success: true,
+      };
+    } catch (err) {
+      console.error(err);
+
+      return {
+        success: false,
+        error: err.message,
+      };
+    }
   });
 }

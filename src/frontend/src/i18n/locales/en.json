@@ -109,7 +109,9 @@
     "expenseCategory": "Expense Category",
     "partner": "Partner",
     "partners": "Partners",
-    "totalWithOutDiscont": "total WithOut Discount"
+    "totalWithOutDiscont": "total WithOut Discount",
+    "totalPaymentsCount": "Number of payments",
+    "totalAmount": "Total amount"
   },
   "screens": {
     "units": {
@@ -349,7 +351,12 @@
       "paymentForSales": "Payment for Sales Invoice #{{id}}",
       "paymentForExpense": "Payment for Expense Invoice #{{id}}",
       "saved": "Payment saved successfully",
-      "savePayment": "Save Payment"
+      "savePayment": "Save Payment",
+      "subtitle": "Managing and tracking all incoming and outgoing payments",
+      "title": "Cash Receipts and Disbursements",
+      "party": "Party Type",
+      "paymentNo": "Payment No.",
+      "empty": "No payments recorded"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",
@@ -449,7 +456,9 @@
   },
   "deleteModal": {
     "title": "Delete Item",
-    "message": "Are you sure you want to delete this item?"
+    "message": "Are you sure you want to delete this item?",
+    "paymentMessage": "Delete Voucher",
+    "paymentTitle": "Are you sure you want to delete this financial voucher? This action cannot be undone."
   },
   "errors": {
     "rendererTitle": "Renderer error",

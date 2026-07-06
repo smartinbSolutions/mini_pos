@@ -107,7 +107,9 @@
     "unpaidStatus": "ÖDENMEDİ",
     "partialStatus": "KISMİ",
     "expenseCategory": "Gider Kategorisi",
-    "totalWithOutDiscont": "Toplam (İndirim Hariç)"
+    "totalWithOutDiscont": "Toplam (İndirim Hariç)",
+    "totalPaymentsCount": "Ödeme sayısı",
+    "totalAmount": "Toplam tutar"
   },
   "screens": {
     "units": {
@@ -343,7 +345,12 @@
       "paymentForPurchase": "Satın Alma Faturası #{{id}} için ödeme",
       "paymentForSales": "Satış Faturası #{{id}} için ödeme",
       "saved": "Ödeme başarıyla kaydedildi",
-      "savePayment": "Ödemeyi Kaydet"
+      "savePayment": "Ödemeyi Kaydet",
+      "subtitle": "Gelen ve giden tüm ödemelerin yönetimi ve takibi.",
+      "title": "Tahsilat ve Tediye Makbuzları",
+      "party": "Cari Tipi",
+      "paymentNo": "Ödeme No.",
+      "empty": "Kayıtlı ödeme bulunamadı"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
@@ -442,7 +449,9 @@
   },
   "deleteModal": {
     "title": "Öğeyi Sil",
-    "message": "Bu öğeyi silmek istediğinizden emin misiniz?"
+    "message": "Bu öğeyi silmek istediğinizden emin misiniz?",
+    "paymentMessage": "Makbuzu Sil",
+    "paymentTitle": "Bu makbuzu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
   },
   "errors": {
     "rendererTitle": "Renderer hatası",
