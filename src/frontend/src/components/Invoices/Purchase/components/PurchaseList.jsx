@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import InvoicePaymentModal from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
+import Pagination from "../../../../Global/Pagination";
 
 const StatusBadge = ({ status, t }) => {
   const isPaid = status === "paid";
@@ -37,9 +38,18 @@ const PurchaseList = () => {
   const {
     purchaseInvoices,
     loading,
+    saving,
     error,
     refetch,
     deletePurchase,
+
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,
@@ -256,6 +266,17 @@ const PurchaseList = () => {
               </tbody>
             </table>
           </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
         </section>
       </div>
 

@@ -10,6 +10,11 @@ const useSalesList = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
 
@@ -21,15 +26,18 @@ const useSalesList = () => {
 
     try {
       setLoading(true);
-      const res = await api.getSalesInvoices();
-      setSalesInvoices(res || []);
+      const res = await api.getSalesInvoices({ page, limit });
+
+      setSalesInvoices(res?.data || []);
+      setTotal(res?.total || 0);
+      setTotalPages(res?.totalPages || 1);
       setError("");
     } catch (err) {
       setError(err?.message || t("errors.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit, t]);
 
   useEffect(() => {
     refetch();
@@ -39,14 +47,16 @@ const useSalesList = () => {
     try {
       setSaving(true);
       await api.deleteSalesInvoice(id);
-      setSalesInvoices((prev) => prev.filter((item) => item.id !== id));
+      await refetch();
     } catch (err) {
-      setError(err?.message || t("errors.deleteFailed", { field: t("ui.invoice") }));
+      setError(
+        err?.message || t("errors.deleteFailed", { field: t("ui.invoice") })
+      );
     } finally {
       setSaving(false);
     }
   };
-
+  console.log(salesInvoices);
   return {
     salesInvoices,
     loading,
@@ -54,6 +64,14 @@ const useSalesList = () => {
     error,
     refetch,
     deleteSales,
+
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,

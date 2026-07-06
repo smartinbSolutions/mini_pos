@@ -10,6 +10,11 @@ const usePurchaseList = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
 
@@ -21,15 +26,18 @@ const usePurchaseList = () => {
 
     try {
       setLoading(true);
-      const res = await api.getPurchaseInvoices();
-      setPurchaseInvoices(res || []);
+      const res = await api.getPurchaseInvoices({ page, limit });
+
+      setPurchaseInvoices(res?.data || []);
+      setTotal(res?.total || 0);
+      setTotalPages(res?.totalPages || 1);
       setError("");
     } catch (err) {
       setError(err?.message || t("errors.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit, t]);
 
   useEffect(() => {
     refetch();
@@ -39,7 +47,7 @@ const usePurchaseList = () => {
     try {
       setSaving(true);
       await api.deletePurchaseInvoice(id);
-      setPurchaseInvoices((prev) => prev.filter((item) => item.id !== id));
+      await refetch();
     } catch (err) {
       setError(
         err?.message || t("errors.deleteFailed", { field: t("ui.invoice") })
@@ -56,6 +64,14 @@ const usePurchaseList = () => {
     error,
     refetch,
     deletePurchase,
+
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,

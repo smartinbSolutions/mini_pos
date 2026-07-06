@@ -138,20 +138,35 @@ export default function registerExpenseIPC() {
   });
 
   // GET ALL
-  ipcMain.handle("get-expenses", () => {
-    return db
+  ipcMain.handle("get-expenses", (event, params = {}) => {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const rows = db
       .prepare(
         `
-      SELECT 
-        expense.*,
-        suppliers.name AS supplier_name,
-        suppliers.phone AS supplier_phone
-      FROM expense
-      LEFT JOIN suppliers ON suppliers.id = expense.supplier_id
-      ORDER BY expense.id DESC
-    `
+        SELECT 
+          expense.*,
+          suppliers.name AS supplier_name,
+          suppliers.phone AS supplier_phone
+        FROM expense
+        LEFT JOIN suppliers ON suppliers.id = expense.supplier_id
+        ORDER BY expense.id DESC
+        LIMIT ? OFFSET ?
+      `
       )
-      .all();
+      .all(limit, offset);
+
+    const { total } = db.prepare(`SELECT COUNT(*) AS total FROM expense`).get();
+
+    return {
+      data: rows,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
   });
 
   // GET ONE
@@ -420,23 +435,6 @@ export default function registerExpenseIPC() {
             note: `${payment.note} #${data.id}`,
             fundOperation: "subtract",
           });
-
-          // Only touch supplier ledger / party history if there IS a supplier
-          if (newSupplierId) {
-            db.prepare(
-              `UPDATE suppliers SET total_paid = total_paid + ? WHERE id = ?`
-            ).run(paidAmount, newSupplierId);
-
-            createPartyHistory(db, {
-              party_type: "supplier",
-              party_id: newSupplierId,
-              invoice_id: data.id,
-              invoice_type: "expense",
-              record_type: "payment",
-              amount: paidAmount,
-              note: `${payment.note} #${data.id}`,
-            });
-          }
 
           createFundHistory(db, {
             fund_id: payment.fund_id,

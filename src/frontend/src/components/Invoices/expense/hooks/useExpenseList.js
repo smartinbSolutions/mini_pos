@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
 const useExpenseList = () => {
   const { t } = useTranslation();
   const api = window.api;
@@ -8,6 +9,11 @@ const useExpenseList = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
@@ -20,31 +26,30 @@ const useExpenseList = () => {
 
     try {
       setLoading(true);
-      const res = await api.getExpenses();
-      setExpenses(res || []);
+      const res = await api.getExpenses({ page, limit });
+
+      setExpenses(res?.data || []);
+      setTotal(res?.total || 0);
+      setTotalPages(res?.totalPages || 1);
       setError("");
     } catch (err) {
       setError(err?.message || t("errors.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit, t]);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
 
-  const deletePurchase = async (id) => {
+  const handleDelete = async (id) => {
     try {
-      setSaving(true);
-      await api.deletePurchaseInvoice(id);
-      setExpenses((prev) => prev.filter((item) => item.id !== id));
+      setActionError("");
+      await window.api.deleteExpense(id);
+      await refetch();
     } catch (err) {
-      setError(
-        err?.message || t("errors.deleteFailed", { field: t("ui.invoice") }),
-      );
-    } finally {
-      setSaving(false);
+      setActionError(t("screens.expenses.deleteFailed"));
     }
   };
 
@@ -54,7 +59,15 @@ const useExpenseList = () => {
     saving,
     error,
     refetch,
-    deletePurchase,
+    handleDelete,
+
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,

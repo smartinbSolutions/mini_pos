@@ -197,8 +197,12 @@ export default function registerPurchaseInvoicesIPC() {
   });
 
   // GET ALL
-  ipcMain.handle("get-purchase-invoices", () => {
-    return db
+  ipcMain.handle("get-purchase-invoices", (event, params = {}) => {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const invoices = db
       .prepare(
         `
       SELECT 
@@ -208,11 +212,23 @@ export default function registerPurchaseInvoicesIPC() {
       FROM purchase_invoices
       LEFT JOIN suppliers ON suppliers.id = purchase_invoices.supplier_id
       ORDER BY purchase_invoices.id DESC
+      LIMIT ? OFFSET ?
     `
       )
-      .all();
-  });
+      .all(limit, offset);
 
+    const { total } = db
+      .prepare(`SELECT COUNT(*) AS total FROM purchase_invoices`)
+      .get();
+
+    return {
+      data: invoices,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
+  });
   // GET ONE
   ipcMain.handle("get-purchase-invoice", (event, id) => {
     const invoice = db

@@ -10,6 +10,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
+import PaymentHistoryList from "../../../../Global/PaymentHistoryList";
 
 const StatusBadge = ({ status, t }) => {
   const config = {
@@ -167,67 +168,7 @@ const ExpenseView = () => {
               </table>
             </section>
 
-            {hasPayments && (
-              <section className="overflow-hidden rounded-[28px] bg-white shadow">
-                <div className="flex items-center gap-3 border-b p-5">
-                  <Wallet2 className="text-[#4663ff]" size={18} />
-                  <h2 className="text-lg font">
-                    {t("ui.paymentHistory") || "Payment History"}
-                  </h2>
-                  <span className="rounded-full bg-[#eef3ff] px-2 py-0.5 text-xs font-bold text-[#4663ff]">
-                    {expense.payments.length}
-                  </span>
-                </div>
-
-                <table className="w-full text-sm">
-                  <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
-                    <tr>
-                      <th className="p-4 text-left">{t("ui.date")}</th>
-                      <th className="p-4 text-left">{t("ui.fund")}</th>
-                      <th className="p-4 text-right">{t("ui.amount")}</th>
-                      <th className="p-4 text-right">
-                        {t("ui.fundCurrency") || "In Fund Currency"}
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-[#e5ebff]">
-                    {expense.payments.map((p) => {
-                      const { dateLabel: pDate, fullLabel: pFull } =
-                        splitDateTime(p.createdAt);
-
-                      return (
-                        <tr key={p.id} className="hover:bg-[#f8faff]">
-                          <td className="p-4 text-slate-500">
-                            <span className="group relative inline-flex cursor-help items-center gap-1.5">
-                              {pDate}
-                              <Clock
-                                size={12}
-                                className="text-slate-300 group-hover:text-[#4663ff]"
-                              />
-                              <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1.5 whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                                {pFull}
-                              </span>
-                            </span>
-                          </td>
-                          <td className="p-4 font-bold text-slate-700">
-                            {p.fund_name || "-"}
-                          </td>
-                          <td className="p-4 text-right font text-emerald-700">
-                            {money(p.amount)}
-                          </td>
-                          <td className="p-4 text-right text-slate-500">
-                            {p.amount_fund_currency
-                              ? `${p.currency_code || ""} ${p.amount_fund_currency}`.trim()
-                              : "-"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </section>
-            )}
+            {hasPayments && <PaymentHistoryList payments={expense.payments} />}
           </main>
 
           <aside className="space-y-4">

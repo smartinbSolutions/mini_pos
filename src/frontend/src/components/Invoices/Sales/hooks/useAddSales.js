@@ -12,6 +12,8 @@ const emptyItem = {
 
 const emptyInvoice = {
   customer_id: "",
+  invoice_name: "",
+  description: "",
   date: new Date().toISOString().slice(0, 10),
   discount: 0,
 };
@@ -203,15 +205,13 @@ export default function useAddSales() {
           net_total: netTotal,
           taxValue,
           items,
-          status: paymentData ? "paid" : "unpaid",
           payment: paymentData,
         };
         console.log(payload);
-
         const res = await api.createSalesInvoice(payload);
 
         if (!res?.success) {
-          throw new Error(t("errors.createInvoiceFailed"));
+          throw new Error(res?.error || t("errors.createInvoiceFailed"));
         }
 
         setInvoice(emptyInvoice);
@@ -221,6 +221,7 @@ export default function useAddSales() {
         return res;
       } catch (err) {
         setError(err?.message || t("errors.saveError"));
+        return { success: false, error: err?.message };
       } finally {
         setSaving(false);
       }

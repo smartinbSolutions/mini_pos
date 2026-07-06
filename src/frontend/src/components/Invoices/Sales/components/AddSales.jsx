@@ -32,6 +32,7 @@ export default function AddSales() {
     removeItem,
     updateItem,
     submit,
+    reset,
     subtotal,
     taxableAmount,
     taxValue,
@@ -40,7 +41,6 @@ export default function AddSales() {
     saving,
     error,
     navigate,
-    reset,
   } = useAddSales();
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
@@ -137,7 +137,7 @@ export default function AddSales() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <main className="space-y-6">
-            {/* Customer + date */}
+            {/* Customer + date + name + description */}
             <section className={panelClass}>
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
@@ -166,6 +166,27 @@ export default function AddSales() {
                   }
                 />
               </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder={t("ui.invoiceName") || "Invoice name"}
+                  value={invoice.invoice_name || ""}
+                  onChange={(e) =>
+                    setInvoice((p) => ({ ...p, invoice_name: e.target.value }))
+                  }
+                />
+              </div>
+
+              <textarea
+                className={`${inputClass} mt-3 h-24 resize-none py-3`}
+                placeholder={t("ui.description") || "Description (optional)"}
+                value={invoice.description || ""}
+                onChange={(e) =>
+                  setInvoice((p) => ({ ...p, description: e.target.value }))
+                }
+              />
             </section>
 
             {/* Items */}

@@ -48,7 +48,7 @@ export default function AddPurchase() {
   const { money } = usePrimaryCurrency();
 
   const supplierName =
-    suppliers.find((s) => s.id === invoice.supplier_id)?.name || "";
+    suppliers?.data?.find((s) => s.id === invoice.supplier_id)?.name || "";
 
   const hasUsableItems = items.some((i) => i.product_id);
   const canSave = !!invoice.supplier_id && hasUsableItems && !saving;

@@ -5,8 +5,8 @@ import {
   BanknoteArrowDown,
   Eye,
   Wallet2,
-  // LucidePencilSparkles,
   Trash2,
+  LucidePencilSparkles,
   Info,
   Clock,
 } from "lucide-react";
@@ -17,6 +17,7 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import useExpenseList from "../hooks/useExpenseList";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
+import Pagination from "../../../../Global/Pagination";
 
 const StatusBadge = ({ status, t }) => {
   const config = {
@@ -68,7 +69,15 @@ const ExpenseList = () => {
     saving,
     error,
     refetch,
-    deletePurchase,
+    handleDelete,
+
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,
@@ -103,20 +112,10 @@ const ExpenseList = () => {
 
   const totalNet = expenses.reduce(
     (sum, inv) => sum + Number(inv?.net_total || 0),
-    0,
+    0
   );
 
   const unpaidCount = expenses.filter((inv) => inv.status !== "paid").length;
-
-  const handleDelete = async (id) => {
-    try {
-      setActionError("");
-      await window.api.deleteExpense(id);
-      await refetch();
-    } catch (err) {
-      setActionError(t("screens.expenses.deleteFailed"));
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
@@ -144,7 +143,7 @@ const ExpenseList = () => {
           onSearchChange={setSearch}
           searchPlaceholder={t("screens.invoices.search")}
           onRefresh={refetch}
-          addLabel={t("screens.invoices.addInvoice")}
+          addLabel={t("screens.invoices.addExpense")}
           addIcon={BanknoteArrowDown}
           onAdd={() => navigate("/add-expense")}
         />
@@ -265,7 +264,7 @@ const ExpenseList = () => {
                                   className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                   title={t("common.edit")}
                                 >
-                                  {/* <LucidePencilSparkles size={16} /> */}
+                                  <LucidePencilSparkles size={16} />
                                 </button>
                                 <button
                                   onClick={() => {
@@ -295,6 +294,17 @@ const ExpenseList = () => {
               </tbody>
             </table>
           </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
         </section>
       </div>
 

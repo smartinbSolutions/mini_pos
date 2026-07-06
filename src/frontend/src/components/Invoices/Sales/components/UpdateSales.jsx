@@ -1,10 +1,22 @@
 import React, { useState } from "react";
-import { ArrowLeft, Plus, Trash2, Save, Receipt } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Save,
+  Receipt,
+  HandCoins,
+  AlertCircle,
+  Lock,
+} from "lucide-react";
+import { toast } from "react-toastify";
 import useUpdateSales from "../hooks/useUpdateSales";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
+import InvoicePaymentModal from "../../../Cash/Payment/components/AddPayment";
+import { ToastContainer } from "react-toastify";
 
 export default function UpdateSales() {
   const { t } = useTranslation();
@@ -18,22 +30,62 @@ export default function UpdateSales() {
     loading,
     saving,
     error,
+
     addItem,
     removeItem,
     updateItem,
     submit,
+
     subtotal,
     taxableAmount,
     taxValue,
     netTotal,
+
+    status,
   } = useUpdateSales();
+
   const { money } = usePrimaryCurrency();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+
+  const customerName =
+    customers.find((c) => c.id === invoice?.customer_id)?.name || "";
+
+  const isLocked = status === "paid" || status === "partial";
+  const hasUsableItems = items.some((i) => i.product_id);
+  const canSave =
+    !!invoice?.customer_id && hasUsableItems && !saving && !isLocked;
 
   const inputClass =
-    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100";
   const panelClass =
     "rounded-[28px] border border-white/80 bg-white/85 p-5 shadow-[0_18px_60px_rgba(70,99,255,0.10)]";
+
+  const handleSaveUnpaid = async () => {
+    if (!canSave) return;
+    const res = await submit();
+    if (res?.success) {
+      toast.success(t("screens.invoices.savedUnpaid") || "Invoice updated");
+    }
+  };
+
+  const handleOpenPayModal = () => {
+    if (!hasUsableItems) {
+      toast.error(t("errors.addOneItem"));
+      return;
+    }
+    setPaymentModalOpen(true);
+  };
+
+  const handlePaymentCollected = async (paymentData) => {
+    const res = await submit(paymentData);
+    if (res?.success) {
+      toast.success(
+        t("screens.invoices.savedPaid") || "Invoice updated & paid"
+      );
+      setPaymentModalOpen(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -64,19 +116,43 @@ export default function UpdateSales() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-          >
-            <ArrowLeft size={16} />
-            {t("common.back")}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-xl px-3 py-1.5 text-xs font-black ${
+                status === "paid"
+                  ? "bg-green-100 text-green-700"
+                  : status === "partial"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-600"
+              }`}
+            >
+              {status?.toUpperCase()}
+            </span>
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              disabled={saving}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:opacity-50"
+            >
+              <ArrowLeft size={16} />
+              {t("common.back")}
+            </button>
+          </div>
         </section>
 
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {error}
+          </div>
+        )}
+
+        {isLocked && (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+            <Lock size={18} className="mt-0.5 shrink-0" />
+            <span>
+              {t("screens.invoices.lockedAfterPayment") ||
+                "This invoice has a payment recorded and can no longer be edited."}
+            </span>
           </div>
         )}
 
@@ -91,22 +167,49 @@ export default function UpdateSales() {
                   onChange={(customer) =>
                     setInvoice({ ...invoice, customer_id: customer.id })
                   }
+                  disabled={isLocked}
                 />
                 <input
                   type="date"
                   className={inputClass}
                   value={invoice.date}
+                  disabled={isLocked}
                   onChange={(e) =>
                     setInvoice({ ...invoice, date: e.target.value })
                   }
                 />
               </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder={t("ui.invoiceName") || "Invoice name"}
+                  value={invoice.invoice_name || ""}
+                  disabled={isLocked}
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, invoice_name: e.target.value })
+                  }
+                />
+              </div>
+
+              <textarea
+                className={`${inputClass} mt-3 h-24 resize-none py-3`}
+                placeholder={t("ui.description") || "Description (optional)"}
+                value={invoice.description || ""}
+                disabled={isLocked}
+                onChange={(e) =>
+                  setInvoice({ ...invoice, description: e.target.value })
+                }
+              />
             </section>
 
             <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
               <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-950">{t("ui.items")}</h2>
+                  <h2 className="text-lg font-black text-slate-950">
+                    {t("ui.items")}
+                  </h2>
                   <p className="text-sm text-slate-500">
                     {t("screens.invoices.productsOnInvoice")}
                   </p>
@@ -114,7 +217,8 @@ export default function UpdateSales() {
                 <button
                   type="button"
                   onClick={addItem}
-                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20"
+                  disabled={isLocked}
+                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus size={16} />
                   {t("screens.invoices.addItem")}
@@ -144,6 +248,7 @@ export default function UpdateSales() {
                             onChange={(e) =>
                               updateItem(index, "product_id", e.id)
                             }
+                            disabled={isLocked}
                           />
                         </td>
                         <td className="p-2">
@@ -151,6 +256,7 @@ export default function UpdateSales() {
                             type="number"
                             className={`${inputClass} mx-auto w-24 text-center`}
                             value={item.quantity}
+                            disabled={isLocked}
                             onChange={(e) =>
                               updateItem(index, "quantity", e.target.value)
                             }
@@ -161,6 +267,7 @@ export default function UpdateSales() {
                             type="number"
                             className={`${inputClass} mx-auto w-28 text-center`}
                             value={item.price}
+                            disabled={isLocked}
                             onChange={(e) =>
                               updateItem(index, "price", e.target.value)
                             }
@@ -173,7 +280,8 @@ export default function UpdateSales() {
                           <button
                             type="button"
                             onClick={() => setDeleteItemIndex(index)}
-                            className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                            disabled={items.length === 1 || isLocked}
+                            className="rounded-xl p-2 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -200,6 +308,7 @@ export default function UpdateSales() {
                   min="0"
                   className={`${inputClass} w-36`}
                   value={invoice.discount || ""}
+                  disabled={isLocked}
                   onChange={(e) =>
                     setInvoice({
                       ...invoice,
@@ -214,9 +323,10 @@ export default function UpdateSales() {
                 <select
                   className={`${inputClass} w-36`}
                   value={invoice.tax_id}
+                  disabled={isLocked}
                   onChange={(e) => {
                     const selected = taxes.find(
-                      (t) => t.id === Number(e.target.value),
+                      (tax) => tax.id === Number(e.target.value)
                     );
 
                     setInvoice({
@@ -227,9 +337,9 @@ export default function UpdateSales() {
                   }}
                 >
                   <option value="">{t("ui.selectTax")}</option>
-                  {taxes.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name} ({t.rate}%)
+                  {taxes.map((tax) => (
+                    <option key={tax.id} value={tax.id}>
+                      {tax.name} ({tax.rate}%)
                     </option>
                   ))}
                 </select>
@@ -254,18 +364,53 @@ export default function UpdateSales() {
               </div>
             </section>
 
-            <button
-              type="button"
-              onClick={submit}
-              disabled={saving}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 hover:bg-[#3854e8] disabled:opacity-60"
-            >
-              <Save size={16} />
-              {saving ? t("common.saving") : t("screens.invoices.saveInvoice")}
-            </button>
+            {!isLocked && (
+              <section className={`${panelClass} space-y-3`}>
+                <div>
+                  <h3 className="font-black">{t("ui.payment")}</h3>
+                  <p className="text-xs text-slate-500">
+                    {t("screens.invoices.paymentHelper") ||
+                      "Save your edits and settle later, or pay right away."}
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveUnpaid}
+                    disabled={!canSave}
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white py-3 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Save size={16} />
+                    {saving
+                      ? t("common.saving")
+                      : t("screens.invoices.saveInvoice")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenPayModal}
+                    disabled={!canSave}
+                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <HandCoins size={16} />
+                    {t("screens.invoices.saveAndPay") || "Save & Pay"}
+                  </button>
+                </div>
+
+                {!canSave && !saving && (
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
+                    <AlertCircle size={12} />
+                    {!invoice?.customer_id
+                      ? t("errors.customerRequired")
+                      : t("errors.addOneItem")}
+                  </p>
+                )}
+              </section>
+            )}
           </aside>
         </div>
       </div>
+
       <DeleteModal
         open={deleteItemIndex !== null}
         onClose={() => setDeleteItemIndex(null)}
@@ -276,6 +421,20 @@ export default function UpdateSales() {
         title={t("deleteModal.title")}
         message={t("deleteModal.message")}
       />
+
+      <InvoicePaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        invoice={null}
+        totalAmount={netTotal}
+        party={invoice?.customer_id}
+        partyName={customerName}
+        mode="sales"
+        onSubmit={handlePaymentCollected}
+        confirmLabel={t("screens.invoices.saveInvoice")}
+      />
+
+      <ToastContainer />
     </div>
   );
 }

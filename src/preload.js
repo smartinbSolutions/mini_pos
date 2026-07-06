@@ -78,7 +78,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("delete-purchase-invoice-item", id),
 
   /* ================= PURCHASE INVOICE ================= */
-  getPurchaseInvoices: () => ipcRenderer.invoke("get-purchase-invoices"),
+  getPurchaseInvoices: (params) =>
+    ipcRenderer.invoke("get-purchase-invoices", params),
   getPurchaseInvoiceById: (id) =>
     ipcRenderer.invoke("get-purchase-invoice", id),
   createPurchaseInvoice: (data) =>
@@ -128,7 +129,7 @@ contextBridge.exposeInMainWorld("api", {
   },
 
   /* ================= SUPPLIERS ================= */
-  getSuppliers: () => ipcRenderer.invoke("get-suppliers"),
+  getSuppliers: (params) => ipcRenderer.invoke("get-suppliers", params),
   getSupplier: (id) => ipcRenderer.invoke("get-supplier", id),
   createSupplier: (data) => ipcRenderer.invoke("create-supplier", data),
   updateSupplier: (data) => ipcRenderer.invoke("update-supplier", data),
@@ -156,7 +157,7 @@ contextBridge.exposeInMainWorld("api", {
   deletePartner: (id) => ipcRenderer.invoke("delete-partner", id),
 
   /* ================= EXPENSES ================= */
-  getExpenses: () => ipcRenderer.invoke("get-expenses"),
+  getExpenses: (params) => ipcRenderer.invoke("get-expenses", params),
   getExpense: (id) => ipcRenderer.invoke("get-expense", id),
   createExpense: (data) => ipcRenderer.invoke("create-expense", data),
   updateExpense: (data) => ipcRenderer.invoke("update-expense", data),

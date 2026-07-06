@@ -30,7 +30,7 @@ export default function useUpdateSales() {
     try {
       setLoading(true);
 
-      const [inv, prods, sups, tax] = await Promise.all([
+      const [inv, prods, custs, tax] = await Promise.all([
         api.getSalesInvoiceById(id),
         api.getProducts(),
         api.getCustomers(),
@@ -40,7 +40,7 @@ export default function useUpdateSales() {
       setInvoice(inv);
       setItems(inv.items || []);
       setProducts(prods || []);
-      setCustomers(sups || []);
+      setCustomers(custs || []);
       setTaxes(tax || []);
     } catch (err) {
       setError(err.message);
@@ -102,7 +102,7 @@ export default function useUpdateSales() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {
@@ -152,15 +152,6 @@ export default function useUpdateSales() {
     return items.reduce((s, i) => s + (i.total || 0), 0);
   }, [items]);
 
-  const netTotal = useMemo(() => {
-    const discount = Number(invoice?.discount || 0);
-    const taxRate = Number(invoice?.tax_rate || 0);
-    const taxableAmount = Math.max(0, subtotal - discount);
-    const taxValue = (taxableAmount * taxRate) / 100;
-
-    return Math.max(0, taxableAmount + taxValue);
-  }, [subtotal, invoice]);
-
   const taxableAmount = useMemo(() => {
     return Math.max(0, subtotal - Number(invoice?.discount || 0));
   }, [subtotal, invoice?.discount]);
@@ -169,24 +160,56 @@ export default function useUpdateSales() {
     return (taxableAmount * Number(invoice?.tax_rate || 0)) / 100;
   }, [taxableAmount, invoice?.tax_rate]);
 
-  const submit = async () => {
-    try {
-      setSaving(true);
+  const netTotal = useMemo(() => {
+    return Math.max(0, taxableAmount + taxValue);
+  }, [taxableAmount, taxValue]);
 
-      await api.updateSalesInvoice({
-        ...invoice,
-        items,
-        subtotal,
-        net_total: netTotal,
-        taxValue,
-      });
-      navigate("/sales");
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+  // submit optionally takes paymentData collected by InvoicePaymentModal in
+  // collector mode — matches useUpdateExpense. update-sales-invoice bundles
+  // the edit + payment into one transaction on the backend.
+  const submit = useCallback(
+    async (paymentData = null) => {
+      if (!api) {
+        setError(t("errors.apiNotAvailable"));
+        return;
+      }
+
+      if (!items.some((i) => i.product_id)) {
+        setError(t("errors.addOneItem"));
+        return;
+      }
+
+      try {
+        setSaving(true);
+        setError("");
+
+        const payload = {
+          ...invoice,
+          id,
+          items,
+          subtotal,
+          net_total: netTotal,
+          taxValue,
+          payment: paymentData,
+        };
+
+        const res = await api.updateSalesInvoice(payload);
+
+        if (!res?.success) {
+          throw new Error(res?.error || t("errors.updateFailed"));
+        }
+
+        navigate("/sales");
+        return res;
+      } catch (err) {
+        setError(err?.message || t("errors.updateFailed"));
+        return { success: false, error: err?.message };
+      } finally {
+        setSaving(false);
+      }
+    },
+    [api, id, invoice, items, subtotal, netTotal, taxValue, navigate, t]
+  );
 
   return {
     invoice,
@@ -208,5 +231,7 @@ export default function useUpdateSales() {
     taxableAmount,
     taxValue,
     netTotal,
+
+    status: invoice?.status,
   };
 }
