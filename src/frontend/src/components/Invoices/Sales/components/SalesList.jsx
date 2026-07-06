@@ -15,6 +15,7 @@ import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
+import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 
 const SalesList = () => {
   const { t } = useTranslation();
@@ -65,89 +66,46 @@ const SalesList = () => {
 
   const totalNet = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0,
+    0
   );
   const unpaidCount = salesInvoices.filter(
-    (inv) => inv.status !== "paid",
+    (inv) => inv.status !== "paid"
   ).length;
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
-          <div className="grid gap-6 p-7 lg:grid-cols-[1fr_360px]">
-            <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
-                {t("ui.sales")}
-              </p>
-              <h1 className="text-4xl font-black leading-tight text-slate-950">
-                {t("screens.invoices.salesTitle")}
-              </h1>
-              <p className="mt-3 text-sm leading-6 text-slate-500">
-                {t("screens.invoices.salesSubtitle")}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
-                <Receipt size={20} className="mb-4 text-[#4663ff]" />
-                <div className="text-2xl font-black">
-                  {salesInvoices.length}
-                </div>
-                <div className="text-xs font-semibold text-slate-500">
-                  {t("ui.invoices")}
-                </div>
-              </div>
-              <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
-                <HandCoins size={20} className="mb-4 text-[#4663ff]" />
-                <div className="text-2xl font-black">{unpaidCount}</div>
-                <div className="text-xs font-semibold text-slate-500">
-                  {t("ui.open")}
-                </div>
-              </div>
-              <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
-                <div className="mb-4 text-sm font-black text-[#4663ff]">
-                  NET
-                </div>
-                <div className="text-2xl font-black">{money(totalNet)}</div>
-                <div className="text-xs font-semibold text-slate-500">
-                  {t("ui.total")}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3 border-t border-[#e5ebff] bg-white/60 p-5 lg:flex-row lg:items-center">
-            <div className="relative flex-1">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-12 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 pl-11 pr-4 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10"
-                placeholder={t("screens.invoices.search")}
-              />
-            </div>
-
-            <button
-              onClick={refetch}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-            >
-              <RefreshCw size={16} />
-              {t("common.refresh")}
-            </button>
-
-            <button
-              onClick={() => navigate("/add-sales")}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
-            >
-              <PackagePlus size={16} />
-              {t("screens.invoices.addInvoice")}
-            </button>
-          </div>
-        </section>
+        <InvoiceListHeader
+          badgeLabel={t("ui.sales")}
+          title={t("screens.invoices.salesTitle")}
+          subtitle={t("screens.invoices.salesSubtitle")}
+          stats={[
+            {
+              icon: Receipt,
+              value: salesInvoices.length,
+              label: t("ui.invoices"),
+            },
+            {
+              icon: HandCoins,
+              value: unpaidCount,
+              label: t("ui.open"),
+              variant: "amber",
+            },
+            {
+              eyebrow: "NET",
+              value: money(totalNet),
+              label: t("ui.total"),
+              variant: "brand",
+            },
+          ]}
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder={t("screens.invoices.search")}
+          onRefresh={refetch}
+          addLabel={t("screens.invoices.addInvoice")}
+          addIcon={PackagePlus}
+          onAdd={() => navigate("/add-sales")}
+        />
 
         {(error || actionError) && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">

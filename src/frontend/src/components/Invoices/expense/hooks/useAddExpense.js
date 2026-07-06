@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
+const NO_SUPPLIER = "none";
+
 const emptyItem = {
   category_id: "",
   name: "",
@@ -10,7 +12,7 @@ const emptyItem = {
 };
 
 const emptyInvoice = {
-  supplier_id: "",
+  supplier_id: NO_SUPPLIER,
   date: new Date().toISOString().slice(0, 10),
 };
 
@@ -58,6 +60,14 @@ const useAddExpense = () => {
     refetch();
   }, [refetch]);
 
+  const supplierOptions = useMemo(
+    () => [
+      { id: NO_SUPPLIER, name: t("ui.noSupplier") || "No supplier" },
+      ...suppliers,
+    ],
+    [suppliers, t]
+  );
+
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem]);
   };
@@ -101,11 +111,6 @@ const useAddExpense = () => {
         return;
       }
 
-      if (!invoice.supplier_id) {
-        setError(t("errors.supplierRequired"));
-        return;
-      }
-
       if (!items.length) {
         setError(t("errors.addOneItem"));
         return;
@@ -117,17 +122,18 @@ const useAddExpense = () => {
 
         const payload = {
           ...invoice,
+          supplier_id:
+            invoice.supplier_id === NO_SUPPLIER ? null : invoice.supplier_id,
           subtotal,
           net_total: netTotal,
           items,
-          status: paymentData ? "paid" : "unpaid",
           payment: paymentData,
         };
-        console.log("payload", payload);
+
         const res = await api.createExpense(payload);
 
         if (!res?.success) {
-          throw new Error(t("errors.createInvoiceFailed"));
+          throw new Error(res?.error || t("errors.createInvoiceFailed"));
         }
 
         setInvoice(emptyInvoice);
@@ -138,6 +144,7 @@ const useAddExpense = () => {
         return res;
       } catch (err) {
         setError(err?.message || t("errors.createInvoiceFailed"));
+        return { success: false, error: err?.message };
       } finally {
         setSaving(false);
       }
@@ -157,7 +164,7 @@ const useAddExpense = () => {
     items,
     setItems,
 
-    suppliers,
+    supplierOptions,
     category,
 
     loading,

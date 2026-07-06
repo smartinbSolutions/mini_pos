@@ -73,7 +73,7 @@ function loadRendererRoute(window, routePath) {
 
   window.loadFile(
     path.join(__dirname, `../renderer/${rendererName}/index.html`),
-    { hash: routePath },
+    { hash: routePath }
   );
 }
 
@@ -92,9 +92,9 @@ function createWindow(routePath = "/") {
 
   loadRendererRoute(mainWindow, routePath);
 
-  // if (!app.isPackaged && process.env.DISABLE_DEVTOOLS !== "true") {
-  //   mainWindow.webContents.openDevTools();
-  // }
+  if (!app.isPackaged && process.env.DISABLE_DEVTOOLS !== "true") {
+    mainWindow.webContents.openDevTools();
+  }
 }
 
 function registerLicenseIPC() {
@@ -139,7 +139,7 @@ app.whenReady().then(async () => {
         return;
       }
       callback(portList[0].portId);
-    },
+    }
   );
 
   const licenseStatus = await verifyLicenseFile();

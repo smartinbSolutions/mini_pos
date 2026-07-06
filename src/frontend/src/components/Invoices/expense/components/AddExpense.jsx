@@ -26,7 +26,7 @@ export default function AddExpense() {
     invoice,
     setInvoice,
     items,
-    suppliers,
+    supplierOptions,
     category,
     addItem,
     removeItem,
@@ -45,10 +45,10 @@ export default function AddExpense() {
   const { money } = usePrimaryCurrency();
 
   const supplierName =
-    suppliers.find((s) => s.id === invoice.supplier_id)?.name || "";
+    supplierOptions.find((s) => s.id === invoice.supplier_id)?.name || "";
 
   const hasUsableItems = items.some((i) => i.category_id);
-  const canSave = !!invoice.supplier_id && hasUsableItems && !saving;
+  const canSave = hasUsableItems && !saving;
 
   const inputClass =
     "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100";
@@ -65,10 +65,6 @@ export default function AddExpense() {
   };
 
   const handleOpenPayModal = () => {
-    if (!invoice.supplier_id) {
-      toast.error(t("errors.supplierRequired"));
-      return;
-    }
     if (!hasUsableItems) {
       toast.error(t("errors.addOneItem"));
       return;
@@ -137,18 +133,35 @@ export default function AddExpense() {
           <main className="space-y-6">
             {/* Supplier */}
             <section className={panelClass}>
-              <SearchableSelect
-                placeholder={t("ui.selectSupplier")}
-                options={suppliers}
-                selectedValue={invoice.supplier_id}
-                onChange={(e) => setInvoice({ ...invoice, supplier_id: e.id })}
+              <div className="grid gap-4 md:grid-cols-2">
+                <SearchableSelect
+                  placeholder={t("ui.selectSupplier")}
+                  options={supplierOptions}
+                  selectedValue={invoice.supplier_id}
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, supplier_id: e.id })
+                  }
+                />
+
+                <input
+                  type="text"
+                  className={inputClass}
+                  placeholder={t("ui.expenseName") || "Expense name"}
+                  value={invoice.invoice_name || ""}
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, invoice_name: e.target.value })
+                  }
+                />
+              </div>
+
+              <textarea
+                className={`${inputClass} mt-4 h-24 resize-none py-3`}
+                placeholder={t("ui.description") || "Description (optional)"}
+                value={invoice.description || ""}
+                onChange={(e) =>
+                  setInvoice({ ...invoice, description: e.target.value })
+                }
               />
-              {!invoice.supplier_id && (
-                <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600">
-                  <AlertCircle size={12} />
-                  {t("errors.supplierRequired")}
-                </p>
-              )}
             </section>
 
             {/* Items */}

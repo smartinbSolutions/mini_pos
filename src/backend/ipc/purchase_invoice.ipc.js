@@ -69,7 +69,7 @@ export default function registerPurchaseInvoicesIPC() {
     remaining_amount
   )
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`,
+`
           )
           .run(
             data.supplier_id,
@@ -81,7 +81,7 @@ export default function registerPurchaseInvoicesIPC() {
             status,
             data.taxValue,
             paidAmount,
-            remainingAmount,
+            remainingAmount
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -132,6 +132,8 @@ export default function registerPurchaseInvoicesIPC() {
           note: `Purchase Invoice #${invoiceId}`,
         });
 
+        // Supplier balance always grows by the invoice total. total_paid only
+        // grows by the base-currency payment.amount when actually paid.
         const updateSupplier = db.prepare(`
           UPDATE suppliers
           SET total = total + ?,
@@ -142,7 +144,7 @@ export default function registerPurchaseInvoicesIPC() {
         updateSupplier.run(
           netTotal,
           isPaid ? Number(payment.amount) : 0,
-          data.supplier_id,
+          data.supplier_id
         );
 
         let insertPaymentId = null;
@@ -206,7 +208,7 @@ export default function registerPurchaseInvoicesIPC() {
       FROM purchase_invoices
       LEFT JOIN suppliers ON suppliers.id = purchase_invoices.supplier_id
       ORDER BY purchase_invoices.id DESC
-    `,
+    `
       )
       .all();
   });
@@ -224,7 +226,7 @@ export default function registerPurchaseInvoicesIPC() {
       LEFT JOIN suppliers s ON s.id = pi.supplier_id
       LEFT JOIN taxes t ON t.id = pi.tax
       WHERE pi.id = ?
-    `,
+    `
       )
       .get(id);
 
@@ -239,7 +241,7 @@ export default function registerPurchaseInvoicesIPC() {
       FROM purchase_invoice_items pii
       LEFT JOIN products p ON p.id = pii.product_id
       WHERE pii.invoice_id = ?
-    `,
+    `
       )
       .all(id);
 
@@ -258,65 +260,139 @@ export default function registerPurchaseInvoicesIPC() {
     ) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
+
+    const oldInvoice = db
+      .prepare(`SELECT * FROM purchase_invoices WHERE id = ?`)
+      .get(data.id);
+
+    if (!oldInvoice) {
+      return { success: false, error: "Invoice not found" };
+    }
+
+    const existingPayment = db
+      .prepare(
+        `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'purchase'`
+      )
+      .get(data.id);
+
+    if (existingPayment) {
+      return {
+        success: false,
+        error: "Paid invoices cannot be edited",
+      };
+    }
+
     const transaction = db.transaction(() => {
       const oldItems = db
         .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
         .all(data.id);
-      const oldInvoice = db
-        .prepare(`SELECT * FROM purchase_invoices WHERE id = ?`)
-        .get(data.id);
-      const reverseStock = db.prepare(`
-      UPDATE products
-      SET quantity = quantity - ?
-      WHERE id = ?
-    `);
-      const oldPaid =
-        oldInvoice.status === "paid" ? Number(oldInvoice.net_total || 0) : 0;
 
-      db.prepare(
-        `
-      UPDATE suppliers
-      SET total = total - ?,
-          total_paid = total_paid - ?
-      WHERE id = ?
-    `,
-      ).run(Number(oldInvoice.net_total || 0), oldPaid, oldInvoice.supplier_id);
-
+      // ---- Aggregate old vs new quantity per product ----
+      const oldByProduct = new Map();
       for (const item of oldItems) {
-        reverseStock.run(item.quantity || 0, item.product_id);
-
-        createProductMovement(db, {
-          product_id: item.product_id,
-          reference_id: oldInvoice.id,
-          reference_type: "purchase_invoice",
-          action: "update",
-          type: "out",
-          quantity: item.quantity,
-          outPrice: item.price,
+        const cur = oldByProduct.get(item.product_id) || {
+          quantity: 0,
+          price: item.price,
+        };
+        oldByProduct.set(item.product_id, {
+          quantity: cur.quantity + Number(item.quantity || 0),
+          price: item.price,
         });
       }
 
+      const newByProduct = new Map();
+      for (const item of data.items) {
+        if (!item.product_id) continue;
+        const cur = newByProduct.get(item.product_id) || {
+          quantity: 0,
+          price: item.price,
+        };
+        newByProduct.set(item.product_id, {
+          quantity: cur.quantity + Number(item.quantity || 0),
+          price: item.price,
+        });
+      }
+
+      const adjustStock = db.prepare(
+        `UPDATE products SET quantity = quantity + ? WHERE id = ?`
+      );
+      const updateMovement = db.prepare(`
+        UPDATE product_movements
+        SET quantity = ?, enterPrice = ?, action = 'update'
+        WHERE reference_type = 'purchase_invoice' AND reference_id = ? AND product_id = ?
+      `);
+      const deleteMovement = db.prepare(`
+        DELETE FROM product_movements
+        WHERE reference_type = 'purchase_invoice' AND reference_id = ? AND product_id = ?
+      `);
+
+      // ---- Removed products: reverse stock fully, delete their movement ----
+      for (const [productId, old] of oldByProduct) {
+        if (!newByProduct.has(productId)) {
+          adjustStock.run(-old.quantity, productId);
+          deleteMovement.run(data.id, productId);
+        }
+      }
+
+      // ---- Present in new set: adjust stock by delta, update movement in place ----
+      for (const [productId, next] of newByProduct) {
+        const old = oldByProduct.get(productId);
+        const oldQty = old ? old.quantity : 0;
+        const delta = next.quantity - oldQty;
+
+        if (delta !== 0) {
+          adjustStock.run(delta, productId);
+        }
+
+        if (old) {
+          updateMovement.run(next.quantity, next.price, data.id, productId);
+        } else {
+          createProductMovement(db, {
+            product_id: productId,
+            reference_id: data.id,
+            reference_type: "purchase_invoice",
+            action: "create",
+            type: "in",
+            quantity: next.quantity,
+            enterPrice: next.price,
+          });
+        }
+      }
+
+      // ---- Replace line items ----
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        data.id,
+        data.id
       );
 
+      const insertItem = db.prepare(`
+        INSERT INTO purchase_invoice_items (invoice_id, product_id, quantity, price, total)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+
+      for (const item of data.items) {
+        if (!item.product_id) continue;
+        const quantity = Number(item.quantity || 0);
+        const price = Number(item.price || 0);
+        insertItem.run(
+          data.id,
+          item.product_id,
+          quantity,
+          price,
+          quantity * price
+        );
+      }
+
+      // ---- Update the invoice row ----
       const dateOnly = data.date.slice(0, 10);
-      const now = new Date();
-      const time = now.toTimeString().slice(0, 8);
+      const time = new Date().toTimeString().slice(0, 8);
       const fullDateTime = `${dateOnly} ${time}`;
 
       db.prepare(
         `
-      UPDATE purchase_invoices
-      SET supplier_id = ?,
-          date = ?,
-          subtotal = ?,
-          discount = ?,
-          tax = ?,
-          net_total = ?,
-          taxValue = ?
-      WHERE id = ?
-    `,
+        UPDATE purchase_invoices
+        SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?
+        WHERE id = ?
+      `
       ).run(
         data.supplier_id,
         fullDateTime,
@@ -325,63 +401,29 @@ export default function registerPurchaseInvoicesIPC() {
         data.tax || 0,
         data.net_total || 0,
         data.taxValue || 0,
-        data.id,
+        data.id
       );
 
-      const insertItem = db.prepare(`
-      INSERT INTO purchase_invoice_items
-      (invoice_id, product_id, quantity, price, total)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-      const addStock = db.prepare(`
-      UPDATE products
-      SET quantity = quantity + ?
-      WHERE id = ?
-    `);
-
-      for (const item of data.items) {
-        const quantity = Number(item.quantity || 0);
-        const price = Number(item.price || 0);
-
-        if (!item.product_id) continue;
-
-        const total = quantity * price;
-
-        insertItem.run(data.id, item.product_id, quantity, price, total);
-
-        addStock.run(quantity, item.product_id);
-
-        createProductMovement(db, {
-          product_id: item.product_id,
-          reference_id: data.id,
-          reference_type: "purchase_invoice",
-          action: "update",
-          type: "in",
-          quantity,
-          enterPrice: price,
-        });
-      }
-      const newPaid = data.status === "paid" ? Number(data.net_total || 0) : 0;
+      // ---- Supplier: only `total` moves, never `total_paid` (unpaid by definition here) ----
+      const netDelta =
+        Number(data.net_total || 0) - Number(oldInvoice.net_total || 0);
 
       db.prepare(
         `
         UPDATE suppliers
-        SET total = total + ?,
-            total_paid = total_paid + ?
+        SET total = total + ?
         WHERE id = ?
-      `,
-      ).run(Number(data.net_total || 0), newPaid, data.supplier_id);
+      `
+      ).run(netDelta, data.supplier_id);
 
-      createPartyHistory(db, {
-        party_type: "supplier",
-        party_id: data.supplier_id,
-        record_type: "invoice",
-        invoice_id: data.id,
-        invoice_type: "purchase",
-        amount: data.net_total,
-        note: `Purchase Invoice #${data.id}`,
-      });
+      // ---- Update the invoice ledger row in place ----
+      db.prepare(
+        `
+        UPDATE party_history
+        SET amount = ?, note = ?
+        WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
+      `
+      ).run(data.net_total, `Purchase Invoice #${data.id}`, data.id);
     });
 
     try {
@@ -413,7 +455,7 @@ export default function registerPurchaseInvoicesIPC() {
       UPDATE suppliers
       SET total = total - ?
       WHERE id = ?
-    `,
+    `
       ).run(Number(invoice.net_total || 0), invoice.supplier_id);
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -430,16 +472,9 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        id,
+        id
       );
-      db.prepare(
-        `
-  DELETE FROM party_history
-  WHERE invoice_id = ?
-    AND invoice_type = 'purchase'
-    AND record_type = 'invoice'
-`,
-      ).run(id);
+      db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);
     });
 

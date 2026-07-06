@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 
+const NO_SUPPLIER = "none";
+
 const emptyItem = {
   category_id: "",
   name: "",
@@ -12,11 +14,9 @@ const emptyItem = {
 };
 
 const emptyInvoice = {
-  supplier_id: "",
+  supplier_id: NO_SUPPLIER,
   date: new Date().toISOString().slice(0, 10),
-  fund_id: "",
-  exchange_rate: 1,
-  paid_amount: 0,
+  status: "unpaid",
 };
 
 const useUpdateExpense = () => {
@@ -30,7 +30,6 @@ const useUpdateExpense = () => {
 
   const [category, setCategory] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
-  const [funds, setFunds] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -42,15 +41,13 @@ const useUpdateExpense = () => {
     try {
       setLoading(true);
 
-      const [catRes, supRes, fundRes] = await Promise.all([
+      const [catRes, supRes] = await Promise.all([
         api.getExpensesCategory(),
         api.getSuppliers(),
-        api.getFunds(),
       ]);
 
       setCategory(catRes || []);
       setSuppliers(supRes || []);
-      setFunds(fundRes || []);
     } catch (err) {
       setError(err?.message || t("errors.loadError"));
     } finally {
@@ -68,8 +65,10 @@ const useUpdateExpense = () => {
 
       if (!res) return;
 
-      setInvoice(res);
-
+      setInvoice({
+        ...res,
+        supplier_id: res.supplier_id || NO_SUPPLIER,
+      });
       setItems(res.items || []);
     } catch (err) {
       setError(err?.message || "Failed to load expense");
@@ -77,6 +76,14 @@ const useUpdateExpense = () => {
       setLoading(false);
     }
   }, [api, id]);
+
+  const supplierOptions = useMemo(
+    () => [
+      { id: NO_SUPPLIER, name: t("ui.noSupplier") || "No supplier" },
+      ...suppliers,
+    ],
+    [suppliers, t]
+  );
 
   useEffect(() => {
     refetch();
@@ -97,9 +104,7 @@ const useUpdateExpense = () => {
       const item = { ...copy[index] };
 
       item[key] = value;
-
       item.price = Number(item.price || 0);
-
       item.total = item.price;
 
       copy[index] = item;
@@ -108,71 +113,49 @@ const useUpdateExpense = () => {
   };
 
   const subtotal = items.reduce((s, i) => s + (i.price || 0), 0);
-
   const netTotal = useMemo(() => Math.max(0, subtotal), [subtotal]);
 
-  const paymentInfundCurrency = useMemo(() => {
-    return netTotal * (invoice.exchange_rate || 1);
-  }, [netTotal, invoice.exchange_rate]);
+  const submit = useCallback(
+    async (paymentData) => {
+      if (!api) return setError(t("errors.apiNotAvailable"));
 
-  useEffect(() => {
-    setInvoice((prev) => ({
-      ...prev,
-      paid_amount: netTotal,
-    }));
-  }, [netTotal]);
-
-  const submit = useCallback(async () => {
-    if (!api) return setError(t("errors.apiNotAvailable"));
-
-    if (!invoice.supplier_id) return setError(t("errors.supplierRequired"));
-
-    if (!items.length) return setError(t("errors.addOneItem"));
-
-    try {
-      setSaving(true);
-      setError("");
-
-      const payload = {
-        ...invoice,
-        subtotal,
-        net_total: netTotal,
-        items,
-        paymentInfundCurrency,
-      };
-
-      const res = await api.updateExpense({
-        ...invoice,
-        subtotal,
-        net_total: netTotal,
-        items,
-        paymentInfundCurrency,
-      });
-
-      if (!res?.success) {
-        throw new Error(t("errors.updateFailed"));
+      if (!items.some((i) => i.category_id)) {
+        return setError(t("errors.addOneItem"));
       }
 
-      toast.success("Expense updated successfully");
+      try {
+        setSaving(true);
+        setError("");
 
-      navigate("/expense");
-      return res;
-    } catch (err) {
-      setError(err?.message || t("errors.updateFailed"));
-    } finally {
-      setSaving(false);
-    }
-  }, [
-    api,
-    id,
-    invoice,
-    items,
-    subtotal,
-    netTotal,
-    paymentInfundCurrency,
-    navigate,
-    t,
-  ]);
+        const payload = {
+          ...invoice,
+          id,
+          supplier_id:
+            invoice.supplier_id === NO_SUPPLIER ? null : invoice.supplier_id,
+          subtotal,
+          net_total: netTotal,
+          items,
+          payment: paymentData || null,
+        };
+
+        const res = await api.updateExpense(payload);
+
+        if (!res?.success) {
+          throw new Error(res?.error || t("errors.updateFailed"));
+        }
+
+        toast.success("Expense updated successfully");
+        navigate("/expense");
+        return res;
+      } catch (err) {
+        setError(err?.message || t("errors.updateFailed"));
+        return { success: false, error: err?.message };
+      } finally {
+        setSaving(false);
+      }
+    },
+    [api, id, invoice, items, subtotal, netTotal, navigate, t]
+  );
 
   const reset = () => {
     setInvoice(emptyInvoice);
@@ -188,8 +171,7 @@ const useUpdateExpense = () => {
     setItems,
 
     category,
-    suppliers,
-    funds,
+    supplierOptions,
 
     loading,
     saving,
@@ -205,6 +187,8 @@ const useUpdateExpense = () => {
     submit,
     reset,
     refetch,
+
+    status: invoice.status,
   };
 };
 
