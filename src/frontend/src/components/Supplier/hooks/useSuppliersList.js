@@ -18,6 +18,12 @@ const useSuppliersList = () => {
   const [editing, setEditing] = useState(emptySupplier);
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteSupplier, setSelecteSupplier] = useState(null);
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const api = window.api;
 
   const normalizeSupplier = (sup) => ({
@@ -44,19 +50,21 @@ const useSuppliersList = () => {
     try {
       setLoading(true);
 
-      let suppliersResult = await api.getSuppliers();
+      const res = await api.getSuppliers({ page, limit });
 
-      setSuppliers(suppliersResult || []);
+      setSuppliers(res?.data || []);
+      setTotal(res?.total || 0);
+      setTotalPages(res?.totalPages || 1);
     } catch (err) {
-      console.error("Failed to load product catalog:", err);
+      console.error("Failed to load supplier list:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.supplier") }),
+        err?.message || t("errors.createFailed", { field: t("ui.supplier") })
       );
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit, t]);
 
   useEffect(() => {
     refetch();
@@ -96,7 +104,6 @@ const useSuppliersList = () => {
     setSaving(true);
     try {
       await api.deleteSupplier(sup.id);
-
       await refetch();
     } finally {
       setSaving(false);
@@ -128,9 +135,6 @@ const useSuppliersList = () => {
   };
 
   const handleDeleteSupplier = async (sup) => {
-    // const confirmed = window.confirm(`Delete Supplier "${sup.name}"?`);
-    // if (!confirmed) return;
-
     try {
       await deleteSupplier(sup);
       setActionError("");
@@ -194,6 +198,13 @@ const useSuppliersList = () => {
     selecteSupplier,
     setSelecteSupplier,
     refetch,
+
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   };
 };
 
