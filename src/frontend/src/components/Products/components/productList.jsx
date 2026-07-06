@@ -70,12 +70,12 @@ export default function ProductList() {
 
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0
+    0,
   );
   const totalValue = products.reduce(
     (total, product) =>
       total + Number(product.quantity || 0) * Number(product.price || 0),
-    0
+    0,
   );
 
   return (
@@ -189,7 +189,9 @@ export default function ProductList() {
                     <th className="px-5 py-3 text-right">{t("ui.cost")}</th>
                     <th className="px-5 py-3 text-right">{t("ui.price")}</th>
                     <th className="px-5 py-3 text-right">{t("ui.barcodes")}</th>
-                    <th className="px-5 py-3 text-right">{t("ui.actions")}</th>
+                    <th className="px-5 py-3 text-right">
+                      {t("common.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eef1ff]">

@@ -16,7 +16,7 @@ const FundMovementsPage = () => {
   const { id } = useParams();
 
   const { history, fund, loading } = useFundHistory(id);
-  console.log(history);
+
   const fundCurrency = fund || {};
 
   const finalBalance = history[0]?.running_balance || 0;

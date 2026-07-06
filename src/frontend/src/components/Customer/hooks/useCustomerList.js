@@ -15,6 +15,8 @@ const useCustomerList = () => {
   const [draft, setDraft] = useState(emptyCustomer);
   const [editingId, setEditingId] = useState(null);
   const [editing, setEditing] = useState(emptyCustomer);
+  const [openPaymentModel, setOpenPaymentModel] = useState(false);
+  const [selecteCustomer, setSelecteCustomer] = useState(null);
 
   const api = window.api;
 
@@ -48,7 +50,9 @@ const useCustomerList = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || t("errors.createFailed", { field: t("ui.customer") }));
+      setError(
+        err?.message || t("errors.createFailed", { field: t("ui.customer") }),
+      );
     } finally {
       setLoading(false);
     }
@@ -106,7 +110,9 @@ const useCustomerList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Customer:", err);
-      setActionError(err?.message || t("errors.createFailed", { field: t("ui.customer") }));
+      setActionError(
+        err?.message || t("errors.createFailed", { field: t("ui.customer") }),
+      );
       return false;
     }
   };
@@ -118,7 +124,9 @@ const useCustomerList = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Customer:", err);
-      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.customer") }));
+      setActionError(
+        err?.message || t("errors.updateFailed", { field: t("ui.customer") }),
+      );
       return false;
     }
   };
@@ -185,6 +193,11 @@ const useCustomerList = () => {
     draft,
     actionError,
     navigate,
+    openPaymentModel,
+    setOpenPaymentModel,
+    selecteCustomer,
+    setSelecteCustomer,
+    refetch,
   };
 };
 

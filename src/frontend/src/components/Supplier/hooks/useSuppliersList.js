@@ -16,7 +16,8 @@ const useSuppliersList = () => {
   const [draft, setDraft] = useState(emptySupplier);
   const [editingId, setEditingId] = useState(null);
   const [editing, setEditing] = useState(emptySupplier);
-
+  const [openPaymentModel, setOpenPaymentModel] = useState(false);
+  const [selecteSupplier, setSelecteSupplier] = useState(null);
   const api = window.api;
 
   const normalizeSupplier = (sup) => ({
@@ -49,7 +50,9 @@ const useSuppliersList = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || t("errors.createFailed", { field: t("ui.supplier") }));
+      setError(
+        err?.message || t("errors.createFailed", { field: t("ui.supplier") }),
+      );
     } finally {
       setLoading(false);
     }
@@ -186,6 +189,11 @@ const useSuppliersList = () => {
     draft,
     actionError,
     navigate,
+    openPaymentModel,
+    setOpenPaymentModel,
+    selecteSupplier,
+    setSelecteSupplier,
+    refetch,
   };
 };
 

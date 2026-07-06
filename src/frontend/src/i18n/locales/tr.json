@@ -109,7 +109,8 @@
     "expenseCategory": "Gider Kategorisi",
     "totalWithOutDiscont": "Toplam (İndirim Hariç)",
     "totalPaymentsCount": "Ödeme sayısı",
-    "totalAmount": "Toplam tutar"
+    "totalAmount": "Toplam tutar",
+    "partners": "Ortaklar"
   },
   "screens": {
     "units": {
@@ -411,7 +412,8 @@
     "expensesCategory": "Gider Kategorisi",
     "expense": "Giderler",
     "partner": "Ortak",
-    "partners": "Ortaklar"
+    "partners": "Ortaklar",
+    "payment": "Ödemeler"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",

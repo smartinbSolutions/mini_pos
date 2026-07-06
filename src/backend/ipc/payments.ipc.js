@@ -20,7 +20,9 @@ export default function registerPaymentIPC() {
       if (
         data.party_type !== "other" &&
         data.party_type !== "partner" &&
-        !data.invoiceId
+        data.party_type !== "customer" &&
+        data.party_type !== "supplier" &&
+        !data.party_id
       ) {
         return { message: "ERROR ENTER INVOICE", status: 400 };
       }
@@ -111,6 +113,7 @@ export default function registerPaymentIPC() {
             date: data.date || new Date().toISOString(),
           });
         }
+        console.log(data);
 
         if (data.party_type === "partner") {
           applyPartnerPayment(db, {
@@ -127,6 +130,7 @@ export default function registerPaymentIPC() {
             effective_rate: data.effective_rate,
             collected_amount: data.collected_amount,
             date: data.date || new Date().toISOString(),
+            type: data.type,
           });
         }
 

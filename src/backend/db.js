@@ -9,8 +9,6 @@ fs.mkdirSync(userDataPath, { recursive: true });
 const dbPath = path.join(userDataPath, "pos.db");
 const db = new Database(dbPath);
 
-console.log("DB path:", dbPath);
-
 db.pragma("foreign_keys = ON");
 
 db.prepare(

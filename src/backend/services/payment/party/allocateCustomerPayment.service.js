@@ -27,17 +27,6 @@ export default function allocateCustomerPayment(db, data) {
 
   const allocations = [];
 
-  const insertAllocation = db.prepare(`
-    INSERT INTO payment_allocations
-    (
-      payment_id,
-      invoice_id,
-      invoice_type,
-      amount
-    )
-    VALUES (?, ?, ?, ?)
-  `);
-
   for (const invoice of invoices) {
     if (remainingAmount <= 0) break;
 
@@ -53,8 +42,6 @@ export default function allocateCustomerPayment(db, data) {
           Number(data.amount)
         : 0;
     updateSalesInvoiceStatus(db, invoice.id, paymentAmount);
-
-    insertAllocation.run(data.paymentId, invoice.id, "sales", paymentAmount);
 
     allocations.push({
       invoiceId: invoice.id,

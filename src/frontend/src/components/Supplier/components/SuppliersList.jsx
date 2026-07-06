@@ -1,9 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { Edit2, Plus, Save, Trash2, X, Search, Eye } from "lucide-react";
+import {
+  Edit2,
+  Plus,
+  Save,
+  Trash2,
+  X,
+  Search,
+  Eye,
+  HandCoins,
+} from "lucide-react";
 import useSuppliersList from "../hooks/useSuppliersList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
+import AddPayment from "../../Cash/Payment/components/AddPayment";
 
 export const SuppliersList = () => {
   const { t } = useTranslation();
@@ -22,6 +32,11 @@ export const SuppliersList = () => {
     draft,
     actionError,
     navigate,
+    openPaymentModel,
+    setOpenPaymentModel,
+    selecteSupplier,
+    setSelecteSupplier,
+    refetch,
   } = useSuppliersList();
   const { money } = usePrimaryCurrency();
 
@@ -40,7 +55,7 @@ export const SuppliersList = () => {
     return suppliers.filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.toLowerCase()),
     );
   }, [suppliers, search]);
 
@@ -211,6 +226,16 @@ export const SuppliersList = () => {
                               <Eye size={15} />
                             </button>
                             <button
+                              onClick={() => {
+                                setSelecteSupplier(supplier);
+                                setOpenPaymentModel(true);
+                              }}
+                              className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                            >
+                              <HandCoins size={16} />
+                            </button>
+
+                            <button
                               onClick={() => startEdit(supplier)}
                               className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                             >
@@ -280,6 +305,16 @@ export const SuppliersList = () => {
           </form>
         </div>
       </div>
+
+      <AddPayment
+        isOpen={openPaymentModel}
+        onClose={() => setOpenPaymentModel(false)}
+        invoice={null}
+        party={selecteSupplier?.id}
+        partyName={selecteSupplier?.name}
+        mode="supplier"
+        refetchList={refetch}
+      />
 
       <DeleteModal
         open={Boolean(deleteSupplier)}

@@ -29,17 +29,6 @@ export default function allocateSupplierPayment(db, data) {
 
   const allocations = [];
 
-  const insertAllocation = db.prepare(`
-    INSERT INTO payment_allocations
-    (
-      payment_id,
-      invoice_id,
-      invoice_type,
-      amount
-    )
-    VALUES (?, ?, ?, ?)
-  `);
-
   const totalAmount = Number(data.amount);
   const totalFundAmount = Number(data.amount_fund_currency || 0);
 
@@ -56,8 +45,6 @@ export default function allocateSupplierPayment(db, data) {
       totalAmount > 0 ? (paymentAmount * totalFundAmount) / totalAmount : 0;
 
     updatePurchaseInvoiceStatus(db, invoice.id, paymentAmount, data.mode);
-
-    insertAllocation.run(data.paymentId, invoice.id, data.mode, paymentAmount);
 
     allocations.push({
       invoiceId: invoice.id,

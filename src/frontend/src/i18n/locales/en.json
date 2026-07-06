@@ -418,7 +418,8 @@
     "settings": "Settings",
     "expensesCategory": "Expenses Category",
     "expense": "Expenses",
-    "partners": "Partners"
+    "partners": "Partners",
+    "payment": "Payments"
   },
   "dashboard": {
     "loading": "Loading dashboard...",

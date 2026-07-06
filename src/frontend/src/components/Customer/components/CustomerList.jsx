@@ -1,9 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { Eye, Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
+import {
+  Eye,
+  Edit2,
+  Plus,
+  Save,
+  Trash2,
+  X,
+  Search,
+  HandCoins,
+} from "lucide-react";
 import useCustomerList from "../hooks/useCustomerList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
+import AddPayment from "../../Cash/Payment/components/AddPayment";
 
 export const CustomerList = () => {
   const { t } = useTranslation();
@@ -22,6 +32,11 @@ export const CustomerList = () => {
     draft,
     actionError,
     navigate,
+    openPaymentModel,
+    setOpenPaymentModel,
+    selecteCustomer,
+    setSelecteCustomer,
+    refetch,
   } = useCustomerList();
   const { money } = usePrimaryCurrency();
 
@@ -53,7 +68,9 @@ export const CustomerList = () => {
               <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
                 {t("ui.contacts")}
               </p>
-              <h2 className="text-2xl font-black text-slate-950">{t("ui.customers")}</h2>
+              <h2 className="text-2xl font-black text-slate-950">
+                {t("ui.customers")}
+              </h2>
               <p className="text-sm text-slate-500">
                 {t("screens.contacts.customersSubtitle")}
               </p>
@@ -150,6 +167,15 @@ export const CustomerList = () => {
                         <Eye size={14} />
                       </button>
                       <button
+                        onClick={() => {
+                          setSelecteCustomer(customer);
+                          setOpenPaymentModel(true);
+                        }}
+                        className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                      >
+                        <HandCoins size={16} />
+                      </button>
+                      <button
                         onClick={() => startEdit(customer)}
                         className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                       >
@@ -179,7 +205,9 @@ export const CustomerList = () => {
 
                     <div className="mt-3 border-t pt-3 space-y-1 text-xs">
                       <div className="flex justify-between">
-                        <span className="text-gray-500">{t("screens.contacts.sales")}</span>
+                        <span className="text-gray-500">
+                          {t("screens.contacts.sales")}
+                        </span>
                         <span className="font-medium text-gray-800">
                           {money(sales)}
                         </span>
@@ -222,7 +250,9 @@ export const CustomerList = () => {
           <h3 className="mb-1 text-lg font-black text-slate-950">
             {t("screens.contacts.createCustomer")}
           </h3>
-          <p className="mb-5 text-sm text-slate-500">{t("screens.contacts.addCustomerContact")}</p>
+          <p className="mb-5 text-sm text-slate-500">
+            {t("screens.contacts.addCustomerContact")}
+          </p>
 
           {actionError && (
             <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -263,6 +293,16 @@ export const CustomerList = () => {
           </form>
         </div>
       </div>
+
+      <AddPayment
+        isOpen={openPaymentModel}
+        onClose={() => setOpenPaymentModel(false)}
+        invoice={null}
+        party={selecteCustomer?.id}
+        partyName={selecteCustomer?.name}
+        mode="customer"
+        refetchList={refetch}
+      />
 
       <DeleteModal
         open={Boolean(deleteCustomer)}
