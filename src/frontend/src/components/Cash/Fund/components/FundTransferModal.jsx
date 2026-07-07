@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { X, Save, ArrowRightLeft, Wallet, DollarSign } from "lucide-react";
-import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { X, Save, ArrowRightLeft, ArrowRight } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import useTransferFundtoFund from "../hooks/useTransferFundtoFund";
 
@@ -11,10 +9,14 @@ export default function FundTransferModal({ isOpen, onClose, refetchList }) {
     setForm,
     sourceFund,
     targetFund,
-    receiveAmount,
+    nominalRate,
+    isCrossCurrency,
+    effectiveRate,
     loading,
     message,
     handleSourceFundChange,
+    handleAmountChange,
+    handleReceiveAmountChange,
     submit,
     t,
   } = useTransferFundtoFund({ isOpen, refetchList, onClose });
@@ -23,7 +25,7 @@ export default function FundTransferModal({ isOpen, onClose, refetchList }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl border">
+      <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl border">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
           <div className="flex items-center gap-3">
@@ -48,84 +50,123 @@ export default function FundTransferModal({ isOpen, onClose, refetchList }) {
         </div>
 
         <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-          <div>
-            <label className="text-sm font-medium text-gray-600">
-              {t("screens.transfer.source_fund")}
-            </label>
-            <select
-              value={form.from_fund_id}
-              onChange={handleSourceFundChange}
-              className="w-full h-11 rounded-xl border px-3 mt-1 bg-white outline-none focus:border-indigo-500"
-            >
-              <option value="">
-                {t("screens.transfer.select_source_fund")}
-              </option>
-              {funds.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name} ({formatMoney(f.balance, f)})
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Horizontal flow: source column -> arrow -> destination column.
+              Fund select + amount live together in each column so the whole
+              transfer reads left-to-right instead of top-to-bottom. */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+            {/* SOURCE */}
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                {t("screens.transfer.source_fund")}
+              </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-600">
-              {t("screens.transfer.destination_fund")}
-            </label>
-            <select
-              value={form.to_fund_id}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, to_fund_id: e.target.value }))
-              }
-              disabled={!form.from_fund_id}
-              className="w-full h-11 rounded-xl border px-3 mt-1 bg-white outline-none focus:border-indigo-500 disabled:bg-gray-50"
-            >
-              <option value="">
-                {t("screens.transfer.select_destination_fund")}
-              </option>
-              {funds
-                .filter((f) => f.id !== Number(form.from_fund_id))
-                .map((f) => (
+              <select
+                value={form.from_fund_id}
+                onChange={handleSourceFundChange}
+                className="w-full h-10 rounded-xl border px-3 bg-white outline-none focus:border-indigo-500 text-sm"
+              >
+                <option value="">
+                  {t("screens.transfer.select_source_fund")}
+                </option>
+                {funds.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f.name} ({formatMoney(f.balance, f)})
                   </option>
                 ))}
-            </select>
+              </select>
+
+              <div>
+                <label className="text-xs font-medium text-gray-600">
+                  {t("screens.transfer.amount")}{" "}
+                  {sourceFund && `(${sourceFund.currency_code})`}
+                </label>
+                <input
+                  type="number"
+                  value={form.amount}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  className="w-full h-10 rounded-xl border px-3 mt-1 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-gray-100"
+                  placeholder="0.00"
+                  disabled={!form.from_fund_id}
+                />
+              </div>
+            </div>
+
+            {/* ARROW */}
+            <div className="flex h-full items-center justify-center pt-8">
+              <div className="rounded-full bg-indigo-100 text-indigo-600 p-2">
+                <ArrowRight size={18} />
+              </div>
+            </div>
+
+            {/* DESTINATION */}
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+                {t("screens.transfer.destination_fund")}
+              </div>
+
+              <select
+                value={form.to_fund_id}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, to_fund_id: e.target.value }))
+                }
+                disabled={!form.from_fund_id}
+                className="w-full h-10 rounded-xl border px-3 bg-white outline-none focus:border-indigo-500 text-sm disabled:bg-gray-100"
+              >
+                <option value="">
+                  {t("screens.transfer.select_destination_fund")}
+                </option>
+                {funds
+                  .filter((f) => f.id !== Number(form.from_fund_id))
+                  .map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({formatMoney(f.balance, f)})
+                    </option>
+                  ))}
+              </select>
+
+              <div>
+                <label className="text-xs font-medium text-gray-600">
+                  {t("screens.transfer.destination_receives")}{" "}
+                  {targetFund && `(${targetFund.currency_code})`}
+                </label>
+                <input
+                  type="number"
+                  value={form.receive_amount}
+                  onChange={(e) => handleReceiveAmountChange(e.target.value)}
+                  className={`w-full h-10 rounded-xl border px-3 mt-1 focus:ring-2 focus:ring-emerald-500 outline-none text-sm disabled:bg-gray-100 ${
+                    isCrossCurrency ? "bg-white" : "bg-gray-100 text-gray-500"
+                  }`}
+                  placeholder="0.00"
+                  disabled={
+                    !isCrossCurrency || !form.to_fund_id || !form.amount
+                  }
+                />
+              </div>
+            </div>
           </div>
 
-          <hr className="border-dashed my-2" />
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              {t("screens.transfer.amount")} ({sourceFund?.currency_code || ""})
-            </label>
-
-            <input
-              type="number"
-              value={form.amount}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  amount: e.target.value,
-                }))
-              }
-              className="w-full h-11 rounded-xl border px-3 mt-1 focus:ring-2 focus:ring-indigo-500 outline-none"
-              placeholder="0.00"
-              disabled={!form.from_fund_id}
-            />
-          </div>
-
-          {targetFund && Number(form.amount) > 0 && (
-            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-800 text-sm flex justify-between items-center">
-              <span className="font-medium">
-                {t("screens.transfer.destination_receives")}
+          {/* Rate breakdown — only meaningful once both amounts exist and
+              the currencies actually differ. */}
+          {isCrossCurrency && form.amount && form.receive_amount ? (
+            <div className="flex justify-between text-xs text-gray-500 bg-slate-50 p-2.5 rounded-xl border border-dashed">
+              <span>
+                {t("ui.fundRate") || "Fund rate"}:{" "}
+                <strong>{nominalRate.toFixed(4)}</strong>
               </span>
-
-              <span className="font-bold text-base">
-                {receiveAmount.toFixed(2)} {targetFund.currency_code}
+              <span>
+                {t("ui.effectiveRate") || "Effective rate"}:{" "}
+                <strong
+                  className={
+                    effectiveRate !== nominalRate
+                      ? "text-blue-600"
+                      : "text-gray-700"
+                  }
+                >
+                  {effectiveRate.toFixed(4)}
+                </strong>
               </span>
             </div>
-          )}
+          ) : null}
 
           <div>
             <label className="text-sm text-gray-600">

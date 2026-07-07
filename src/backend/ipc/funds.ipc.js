@@ -145,8 +145,6 @@ export default function registerFundIPC() {
       const { from_fund_id, to_fund_id, deduct_amount, receive_amount, note } =
         transferData;
 
-      console.log(transferData);
-
       if (!from_fund_id || !to_fund_id) {
         return {
           success: false,
@@ -190,44 +188,43 @@ export default function registerFundIPC() {
         };
       }
 
-      // if (Number(fromFund.balance) < Number(deduct_amount)) {
-      //   return {
-      //     success: false,
-      //     message: "Insufficient balance.",
-      //   };
-      // }
+      // Server-derived, never trusted from the client — same principle as
+      // status/effective_rate elsewhere: the funds' own rates are authoritative.
+      const nominalRate =
+        Number(toFund.currency_exchangeRate || 1) /
+        Number(fromFund.currency_exchangeRate || 1);
+
+      const effectiveRate = Number(receive_amount) / Number(deduct_amount);
 
       const transaction = db.transaction(() => {
-        db.prepare(
-          `
-        UPDATE funds
-        SET balance = balance - ?
-        WHERE id = ?
-      `
-        ).run(Number(deduct_amount), from_fund_id);
+        const now = new Date().toISOString();
 
-        db.prepare(
-          `
-        UPDATE funds
-        SET balance = balance + ?
-        WHERE id = ?
-      `
-        ).run(Number(receive_amount), to_fund_id);
+        const transferResult = db
+          .prepare(
+            `
+          INSERT INTO fund_transfers
+          (from_fund_id, to_fund_id, deduct_amount, receive_amount, exchange_rate, effective_rate, note, date)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `
+          )
+          .run(
+            from_fund_id,
+            to_fund_id,
+            Number(deduct_amount),
+            Number(receive_amount),
+            nominalRate,
+            effectiveRate,
+            note || null,
+            now
+          );
+
+        const transferId = transferResult.lastInsertRowid;
 
         const insertHistory = db.prepare(`
-        INSERT INTO fund_history
-        (
-          fund_id,
-          record_type,
-          movement_type,
-          amount,
-          note,
-          date
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
-        const now = new Date().toISOString();
+          INSERT INTO fund_history
+          (fund_id, record_type, movement_type, amount, note, date, transfer_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
 
         insertHistory.run(
           from_fund_id,
@@ -235,7 +232,8 @@ export default function registerFundIPC() {
           "out",
           Number(deduct_amount),
           note || `Transferred to ${toFund.name}`,
-          now
+          now,
+          transferId
         );
 
         insertHistory.run(
@@ -244,12 +242,14 @@ export default function registerFundIPC() {
           "in",
           Number(receive_amount),
           note || `Received from ${fromFund.name}`,
-          now
+          now,
+          transferId
         );
 
         return {
           success: true,
           message: "Transfer completed successfully.",
+          transferId,
         };
       });
 
