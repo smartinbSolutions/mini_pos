@@ -34,8 +34,8 @@ export default function UnifiedCheckoutModal({
                 </h2>
                 <p className="mt-1 text-sm text-stone-500">
                   {isMultiMode
-                    ? t("screens.checkout.multiFundHint")
-                    : t("screens.checkout.fundHint")}
+                    ? t("screens.checkout.splitPayment")
+                    : t("screens.checkout.singleFund")}
                 </p>
               </div>
             </div>
@@ -65,7 +65,7 @@ export default function UnifiedCheckoutModal({
                 }`}
               >
                 <LayoutGrid size={18} />
-                <span>{t("screens.pos.splitPayment")}</span>
+                <span>{t("screens.checkout.singleFund")}</span>
               </button>
 
               <button
@@ -78,7 +78,7 @@ export default function UnifiedCheckoutModal({
                 }`}
               >
                 <Layers size={18} />
-                <span>{t("screens.pos.singleFund")}</span>
+                <span>{t("screens.checkout.splitPayment")}</span>
               </button>
             </div>
           </div>

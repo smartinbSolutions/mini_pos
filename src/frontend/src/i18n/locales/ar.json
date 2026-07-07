@@ -312,7 +312,10 @@
       "connectingScale": "جار الاتصال بالميزان...",
       "scaleConnectionFailed": "فشل الاتصال بالميزان",
       "connectedTo": "متصل بـ {{path}}",
-      "listScalePortsFailed": "فشل عرض منافذ الميزان"
+      "listScalePortsFailed": "فشل عرض منافذ الميزان",
+      "changeTotal": "تغيير المجموع",
+      "finalTotal": "المجموع النهائي",
+      "originalTotal": "المجموع الأصلي"
     },
     "checkout": {
       "title": "الدفع",

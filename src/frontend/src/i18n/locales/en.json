@@ -316,7 +316,10 @@
       "connectingScale": "Connecting scale...",
       "scaleConnectionFailed": "Scale connection failed",
       "connectedTo": "Connected to {{path}}",
-      "listScalePortsFailed": "Failed to list scale ports"
+      "listScalePortsFailed": "Failed to list scale ports",
+      "changeTotal": "Change Total",
+      "finalTotal": "Final Total",
+      "originalTotal": "Original Total"
     },
     "checkout": {
       "title": "Checkout",

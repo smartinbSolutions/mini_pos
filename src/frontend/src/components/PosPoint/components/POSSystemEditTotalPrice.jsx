@@ -18,7 +18,7 @@ const POSSystemEditTotalPrice = ({
       <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl shadow-stone-900/20">
         <div className="flex items-center justify-between border-b border-stone-100 pb-3">
           <h3 className="text-base font-black text-stone-950">
-            Change Net Total
+            {t("screens.pos.changeTotal")}
           </h3>
           <button
             type="button"
@@ -31,13 +31,15 @@ const POSSystemEditTotalPrice = ({
 
         <div className="my-5 space-y-4">
           <div className="flex justify-between text-sm bg-stone-50 p-3 rounded-xl">
-            <span className="text-stone-500 font-medium">Original Total:</span>
+            <span className="text-stone-500 font-medium">
+              {t("screens.pos.originalTotal")}:
+            </span>
             <span className="font-black text-stone-950">{money(subtotal)}</span>
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wide text-stone-500 mb-2">
-              Final Total
+              {t("screens.pos.finalTotal")}
             </label>
             <div className="relative">
               <input
@@ -70,7 +72,7 @@ const POSSystemEditTotalPrice = ({
             className="flex-1 h-11 flex items-center justify-center gap-1.5 rounded-xl bg-teal-600 text-sm font-bold text-white hover:bg-teal-700 transition"
           >
             <Check size={16} />
-            save
+            {t("common.save")}
           </button>
         </div>
       </div>

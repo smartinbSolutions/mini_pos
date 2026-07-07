@@ -313,7 +313,10 @@
       "connectingScale": "Teraziye bağlanılıyor...",
       "scaleConnectionFailed": "Terazi bağlantısı başarısız",
       "connectedTo": "{{path}} bağlantısı kuruldu",
-      "listScalePortsFailed": "Terazi portları listelenemedi"
+      "listScalePortsFailed": "Terazi portları listelenemedi",
+      "changeTotal": "Toplamı Değiştir",
+      "finalTotal": "Nihai Toplam",
+      "originalTotal": "Orijinal Toplam"
     },
     "checkout": {
       "title": "Ödeme",

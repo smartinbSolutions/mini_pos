@@ -535,32 +535,53 @@ export default function POSSystem() {
 
           <div className="border-t border-stone-200 p-5 space-y-3">
             {cart.length > 0 && (
-              <div className="flex gap-2">
-                <select
-                  value={discount.type}
-                  onChange={(e) =>
-                    setDiscount((prev) => ({
-                      ...prev,
-                      type: e.target.value,
-                    }))
-                  }
-                  className="h-9 rounded-xl border px-2"
-                >
-                  <option value="amount">$</option>
-                  <option value="percent">%</option>
-                </select>
+              <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-sm font-black text-stone-800">
+                    {t("ui.discount")}
+                  </h3>
 
-                <input
-                  type="number"
-                  value={discount.value}
-                  onChange={(e) =>
-                    setDiscount((prev) => ({
-                      ...prev,
-                      value: e.target.value,
-                    }))
-                  }
-                  className="h-9 w-24 rounded-xl border text-center"
-                />
+                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
+                    {t("ui.optional")}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-[100px_1fr] gap-3">
+                  <select
+                    value={discount.type}
+                    onChange={(e) =>
+                      setDiscount((prev) => ({
+                        ...prev,
+                        type: e.target.value,
+                      }))
+                    }
+                    className="h-11 rounded-xl border border-stone-300 bg-stone-50 px-3 font-semibold outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                  >
+                    <option value="amount">$</option>
+                    <option value="percent">%</option>
+                  </select>
+
+                  <input
+                    type="number"
+                    value={discount.value}
+                    onChange={(e) =>
+                      setDiscount((prev) => ({
+                        ...prev,
+                        value: e.target.value,
+                      }))
+                    }
+                    placeholder="0.00"
+                    className="h-11 rounded-xl border border-stone-300 bg-white px-4 text-center font-bold outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={openTotalModal}
+                  className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-teal-600 font-black text-white shadow-lg shadow-teal-200 transition hover:bg-teal-700 active:scale-[0.99]"
+                >
+                  {t("screens.pos.changeTotal")}
+                </button>
               </div>
             )}
 
