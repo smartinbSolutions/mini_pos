@@ -105,8 +105,6 @@ CREATE TABLE IF NOT EXISTS partners (
   name TEXT,
   phone TEXT,
   address TEXT,
-  total REAL DEFAULT 0,
-  total_paid REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now'))
 )
 `

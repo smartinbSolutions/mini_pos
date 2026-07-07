@@ -1,19 +1,40 @@
 import React, { useMemo, useState } from "react";
-import {
-  Eye,
-  Edit2,
-  Plus,
-  Save,
-  Trash2,
-  X,
-  Search,
-  HandCoins,
-} from "lucide-react";
+import { Eye, Edit2, Trash2, HandCoins } from "lucide-react";
 import useCustomerList from "../hooks/useCustomerList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
 import AddPayment from "../../Cash/Payment/components/AddPayment";
+import ContactListHeader from "../../../Global/Contactlistheader";
+
+const BalanceCell = ({ total, paid, balance, money, t }) => {
+  const isSettled = balance <= 0;
+
+  return (
+    <span className="group relative inline-flex cursor-help items-center justify-end">
+      <span
+        className={`font-black tabular-nums ${
+          isSettled ? "text-emerald-600" : "text-red-500"
+        }`}
+      >
+        {money(balance)}
+      </span>
+
+      <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1.5 w-48 whitespace-normal rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+        <span className="flex justify-between">
+          <span className="text-slate-300">
+            {t("screens.contacts.sales") || "Sales"}
+          </span>
+          <span className="font-bold">{money(total)}</span>
+        </span>
+        <span className="mt-1 flex justify-between">
+          <span className="text-slate-300">{t("ui.paid") || "Paid"}</span>
+          <span className="font-bold text-emerald-300">{money(paid)}</span>
+        </span>
+      </span>
+    </span>
+  );
+};
 
 export const CustomerList = () => {
   const { t } = useTranslation();
@@ -45,252 +66,197 @@ export const CustomerList = () => {
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =
-    "rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur";
+    "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
   const inputClass =
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
-  const primaryButtonClass =
-    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
 
   const filteredCustomer = useMemo(() => {
     return customers.filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
         .toLowerCase()
-        .includes(search.toLowerCase()),
+        .includes(search.toLowerCase())
     );
   }, [customers, search]);
 
   return (
     <div className={pageClass}>
-      <div className="max-w-7xl mx-auto grid xl:grid-cols-[1fr_320px] gap-6">
+      <div className="max-w-7xl mx-auto flex flex-col gap-6">
         <div className={panelClass}>
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
-                {t("ui.contacts")}
-              </p>
-              <h2 className="text-2xl font-black text-slate-950">
-                {t("ui.customers")}
-              </h2>
-              <p className="text-sm text-slate-500">
-                {t("screens.contacts.customersSubtitle")}
-              </p>
-            </div>
+          <ContactListHeader
+            eyebrow={t("ui.contacts")}
+            title={t("ui.customers")}
+            subtitle={t("screens.contacts.customersSubtitle")}
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder={t("screens.contacts.searchCustomer")}
+            createTitle={t("screens.contacts.createCustomer")}
+            createSubtitle={t("screens.contacts.addCustomerContact")}
+            draft={draft}
+            setDraft={setDraft}
+            onSubmit={submitDraft}
+            saving={saving}
+            actionError={actionError}
+            submitLabel={t("screens.contacts.addCustomer")}
+            t={t}
+          />
 
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-2.5 text-slate-400"
-                size={16}
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("screens.contacts.searchCustomer")}
-                className={`${inputClass} pl-9`}
-              />
-            </div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredCustomer.map((customer) => {
-              const sales = customer.total || 0;
-              const paid = customer.total_paid || 0;
-              const balance = sales - paid;
-
-              return editingId === customer.id ? (
-                <form
-                  key={customer.id}
-                  onSubmit={submitEdit}
-                  className="space-y-2 rounded-2xl border border-[#cbd7ff] bg-[#f8faff] p-4"
-                >
-                  <input
-                    required
-                    value={editing.name}
-                    onChange={(e) =>
-                      setEditing({ ...editing, name: e.target.value })
-                    }
-                    className={`w-full ${inputClass}`}
-                    placeholder={t("ui.name")}
-                  />
-
-                  <input
-                    value={editing.phone}
-                    onChange={(e) =>
-                      setEditing({ ...editing, phone: e.target.value })
-                    }
-                    className={`w-full ${inputClass}`}
-                    placeholder={t("ui.phone")}
-                  />
-
-                  <input
-                    value={editing.address}
-                    onChange={(e) =>
-                      setEditing({ ...editing, address: e.target.value })
-                    }
-                    className={`w-full ${inputClass}`}
-                    placeholder={t("ui.address")}
-                  />
-
-                  <div className="flex gap-2 pt-2">
-                    <button className={`flex-1 ${primaryButtonClass}`}>
-                      <Save size={14} />
-                      {t("common.save")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div
-                  key={customer.id}
-                  className={`group rounded-2xl border bg-white p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#4663ff]/10 ${
-                    balance > 0 ? "border-red-200" : "border-[#e5ebff]"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#4663ff] text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20">
-                      {customer.name?.charAt(0)?.toUpperCase() || "S"}
-                    </div>
-
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                      <button
-                        onClick={() =>
-                          navigate(`/payment/customer/${customer.id}`)
-                        }
-                        className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
-                        title={t("screens.funds.viewMovements")}
-                      >
-                        <Eye size={14} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelecteCustomer(customer);
-                          setOpenPaymentModel(true);
-                        }}
-                        className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                      >
-                        <HandCoins size={16} />
-                      </button>
-                      <button
-                        onClick={() => startEdit(customer)}
-                        className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => setDeleteCustomer(customer)}
-                        className="p-2 rounded-lg text-red-500 hover:bg-red-50"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="font-bold text-slate-900">
-                      {customer.name}
-                    </div>
-
-                    <div className="text-xs text-gray-500">
-                      {customer.phone || t("ui.noPhone")}
-                    </div>
-
-                    <div className="text-xs text-gray-400 truncate">
-                      {customer.address || t("ui.noAddress")}
-                    </div>
-
-                    <div className="mt-3 border-t pt-3 space-y-1 text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">
-                          {t("screens.contacts.sales")}
-                        </span>
-                        <span className="font-medium text-gray-800">
-                          {money(sales)}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">{t("ui.paid")}</span>
-                        <span className="font-medium text-green-600">
-                          {money(paid)}
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between border-t pt-1">
-                        <span className="text-gray-600 font-medium">
-                          {t("ui.balance")}
-                        </span>
-                        <span
-                          className={`font-semibold ${
-                            balance > 0 ? "text-red-500" : "text-green-600"
-                          }`}
-                        >
-                          {money(balance)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {filteredCustomer.length === 0 && (
+          {filteredCustomer.length === 0 ? (
             <div className="text-center text-gray-400 text-sm py-10">
               {t("screens.contacts.noCustomers")}
             </div>
-          )}
-        </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-sm">
+                <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-5 py-4">{t("ui.name")}</th>
+                    <th className="px-5 py-4">{t("ui.phone")}</th>
+                    <th className="px-5 py-4">{t("ui.address")}</th>
+                    <th className="px-5 py-4 text-right">{t("ui.balance")}</th>
+                    <th className="px-5 py-4 text-right">
+                      {t("common.actions")}
+                    </th>
+                  </tr>
+                </thead>
 
-        <div className="top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
-          <h3 className="mb-1 text-lg font-black text-slate-950">
-            {t("screens.contacts.createCustomer")}
-          </h3>
-          <p className="mb-5 text-sm text-slate-500">
-            {t("screens.contacts.addCustomerContact")}
-          </p>
+                <tbody className="divide-y divide-[#eef1ff]">
+                  {filteredCustomer.map((customer) => {
+                    const sales = customer.total || 0;
+                    const paid = customer.total_paid || 0;
+                    const balance = customer.balance ?? sales - paid;
 
-          {actionError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {actionError}
+                    if (editingId === customer.id) {
+                      return (
+                        <tr key={customer.id} className="bg-[#f8faff]">
+                          <td className="px-5 py-3" colSpan={5}>
+                            <form
+                              onSubmit={submitEdit}
+                              className="flex flex-wrap items-center gap-2"
+                            >
+                              <input
+                                required
+                                value={editing.name}
+                                onChange={(e) =>
+                                  setEditing({
+                                    ...editing,
+                                    name: e.target.value,
+                                  })
+                                }
+                                className={`${inputClass} flex-1 min-w-[160px]`}
+                                placeholder={t("ui.name")}
+                              />
+                              <input
+                                value={editing.phone}
+                                onChange={(e) =>
+                                  setEditing({
+                                    ...editing,
+                                    phone: e.target.value,
+                                  })
+                                }
+                                className={`${inputClass} flex-1 min-w-[140px]`}
+                                placeholder={t("ui.phone")}
+                              />
+                              <input
+                                value={editing.address}
+                                onChange={(e) =>
+                                  setEditing({
+                                    ...editing,
+                                    address: e.target.value,
+                                  })
+                                }
+                                className={`${inputClass} flex-1 min-w-[160px]`}
+                                placeholder={t("ui.address")}
+                              />
+                              <button className="flex items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 py-2 text-xs font-bold text-white hover:bg-[#3854e8]">
+                                {t("common.save")}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingId(null)}
+                                className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
+                              >
+                                <span>&times;</span>
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      );
+                    }
+
+                    return (
+                      <tr
+                        key={customer.id}
+                        className="transition hover:bg-[#f8faff]"
+                      >
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4663ff] text-xs font-bold text-white shadow-md shadow-[#4663ff]/20">
+                              {customer.name?.charAt(0)?.toUpperCase() || "C"}
+                            </div>
+                            <span className="font-bold text-slate-900">
+                              {customer.name}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-slate-500">
+                          {customer.phone || t("ui.noPhone")}
+                        </td>
+                        <td className="px-5 py-3 max-w-[200px] truncate text-slate-500">
+                          {customer.address || t("ui.noAddress")}
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <BalanceCell
+                            total={sales}
+                            paid={paid}
+                            balance={balance}
+                            money={money}
+                            t={t}
+                          />
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex justify-end gap-1">
+                            <button
+                              onClick={() =>
+                                navigate(`/payment/customer/${customer.id}`)
+                              }
+                              className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              title={t("screens.funds.viewMovements")}
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelecteCustomer(customer);
+                                setOpenPaymentModel(true);
+                              }}
+                              className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              title={t("ui.payment")}
+                            >
+                              <HandCoins size={16} />
+                            </button>
+                            <button
+                              onClick={() => startEdit(customer)}
+                              className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              title={t("common.edit")}
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteCustomer(customer)}
+                              className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
+                              title={t("common.delete")}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
-
-          <form onSubmit={submitDraft} className="space-y-3">
-            <input
-              required
-              value={draft.name}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className={`w-full ${inputClass}`}
-              placeholder={t("ui.name")}
-            />
-
-            <input
-              value={draft.phone}
-              onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
-              className={`w-full ${inputClass}`}
-              placeholder={t("ui.phone")}
-            />
-
-            <input
-              value={draft.address}
-              onChange={(e) => setDraft({ ...draft, address: e.target.value })}
-              className={`w-full ${inputClass}`}
-              placeholder={t("ui.address")}
-            />
-
-            <button
-              disabled={saving}
-              className={`w-full ${primaryButtonClass}`}
-            >
-              <Plus size={15} />
-              {t("screens.contacts.addCustomer")}
-            </button>
-          </form>
         </div>
       </div>
 

@@ -152,7 +152,7 @@ contextBridge.exposeInMainWorld("api", {
   deleteUnit: (id) => ipcRenderer.invoke("delete-unit", id),
 
   /* ================= PARTNERS ================= */
-  getPartners: () => ipcRenderer.invoke("get-partners"),
+  getPartners: (params) => ipcRenderer.invoke("get-partners", params),
   getPartner: (id) => ipcRenderer.invoke("get-partner", id),
   createPartner: (data) => ipcRenderer.invoke("create-partner", data),
   updatePartner: (data) => ipcRenderer.invoke("update-partner", data),

@@ -59,7 +59,7 @@ export default function registerPaymentIPC() {
             invoice_type
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+        `
           )
           .run(
             data.type,
@@ -74,7 +74,7 @@ export default function registerPaymentIPC() {
             data.effective_rate,
             data.collected_amount,
             data.invoiceId || null,
-            data.mode || null,
+            data.mode || null
           );
 
         const paymentId = result.lastInsertRowid;
@@ -145,6 +145,7 @@ export default function registerPaymentIPC() {
           note: data.note || "",
           date: data.date || new Date().toISOString(),
         });
+
         const fundAmount =
           data.type === "income"
             ? Number(data.collected_amount)
@@ -155,7 +156,7 @@ export default function registerPaymentIPC() {
         UPDATE funds
         SET balance = COALESCE(balance,0) + ?
         WHERE id = ?
-      `,
+      `
         ).run(fundAmount, data.fund_id);
 
         if (data.party_type === "other") {
@@ -199,7 +200,7 @@ export default function registerPaymentIPC() {
     LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
     
     ORDER BY p.id DESC
-  `,
+  `
       )
       .all();
   });
@@ -217,7 +218,7 @@ export default function registerPaymentIPC() {
       LEFT JOIN funds f ON f.id = p.fund_id
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE p.id = ?
-    `,
+    `
       )
       .get(id);
   });
@@ -251,7 +252,7 @@ export default function registerPaymentIPC() {
       WHERE p.fund_id = ?
 
       ORDER BY p.id DESC
-    `,
+    `
       )
       .all(id);
   });
@@ -290,10 +291,10 @@ export default function registerPaymentIPC() {
 
         ORDER BY id DESC
         LIMIT ? OFFSET ?
-        `,
+        `
         )
         .all(partyId, partyType, limit, offset);
-    },
+    }
   );
 
   ipcMain.handle(
@@ -311,12 +312,12 @@ export default function registerPaymentIPC() {
         FROM payments
         WHERE party_id = ?
           AND party_type = ?
-        `,
+        `
         )
         .get(partyId, partyType);
 
       return row?.balance || 0;
-    },
+    }
   );
 
   ipcMain.handle("update-payment", (event, data) => {
@@ -331,7 +332,7 @@ export default function registerPaymentIPC() {
         amount = ?,
         note = ?
       WHERE id = ?
-    `,
+    `
     ).run(
       data.type,
       data.party_type,
@@ -339,7 +340,7 @@ export default function registerPaymentIPC() {
       data.fund_id,
       data.amount,
       data.note,
-      data.id,
+      data.id
     );
 
     return { success: true };
@@ -353,7 +354,7 @@ export default function registerPaymentIPC() {
         SELECT *
         FROM payments
         WHERE id = ?
-      `,
+      `
         )
         .get(id);
 
@@ -368,7 +369,7 @@ export default function registerPaymentIPC() {
         FROM party_history
         WHERE payment_id = ?
           AND record_type = 'payment'
-      `,
+      `
         )
         .all(id);
 
@@ -403,21 +404,21 @@ export default function registerPaymentIPC() {
         `
       DELETE FROM party_history
       WHERE payment_id = ?
-    `,
+    `
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM fund_history
       WHERE payment_id = ?
-    `,
+    `
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM payments
       WHERE id = ?
-    `,
+    `
       ).run(id);
     });
 

@@ -1,20 +1,12 @@
 import React, { useMemo, useState } from "react";
-import {
-  Plus,
-  Save,
-  X,
-  Search,
-  Eye,
-  Trash2,
-  // LucidePencilSparkles,
-  Wallet2,
-} from "lucide-react";
+import { Eye, Search, Trash2, Wallet2 } from "lucide-react";
 import useSuppliersList from "../hooks/useSuppliersList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
 import AddPayment from "../../Cash/Payment/components/AddPayment";
 import Pagination from "../../../Global/Pagination";
+import ContactListHeader from "../../../Global/Contactlistheader";
 
 const BalanceCell = ({ total, paid, balance, money, t }) => {
   const isSettled = balance <= 0;
@@ -86,47 +78,36 @@ export const SuppliersList = () => {
     "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
   const inputClass =
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
-  const primaryButtonClass =
-    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
 
   const filteredSuppliers = useMemo(() => {
     return (suppliers || []).filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
         .toLowerCase()
-        .includes(search.toLowerCase()),
+        .includes(search.toLowerCase())
     );
   }, [suppliers, search]);
 
   return (
     <div className={pageClass}>
-      <div className="max-w-7xl mx-auto grid xl:grid-cols-[1fr_320px] gap-6">
+      <div className="max-w-7xl mx-auto flex flex-col gap-6">
         <div className={panelClass}>
-          <div className="flex items-center justify-between gap-4 p-6 pb-4">
-            <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
-                {t("ui.contacts")}
-              </p>
-              <h2 className="text-2xl font-black text-slate-950">
-                {t("ui.suppliers")}
-              </h2>
-              <p className="text-sm text-slate-500">
-                {t("screens.contacts.suppliersSubtitle")}
-              </p>
-            </div>
-
-            <div className="relative">
-              <Search
-                className="absolute left-3 top-2.5 text-slate-400"
-                size={16}
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("screens.contacts.searchSupplier")}
-                className={`${inputClass} pl-9`}
-              />
-            </div>
-          </div>
+          <ContactListHeader
+            eyebrow={t("ui.contacts")}
+            title={t("ui.suppliers")}
+            subtitle={t("screens.contacts.suppliersSubtitle")}
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder={t("screens.contacts.searchSupplier")}
+            createTitle={t("screens.contacts.createSupplier")}
+            createSubtitle={t("screens.contacts.addSupplierContact")}
+            draft={draft}
+            setDraft={setDraft}
+            onSubmit={submitDraft}
+            saving={saving}
+            actionError={actionError}
+            submitLabel={t("screens.contacts.addSupplier")}
+            t={t}
+          />
 
           {filteredSuppliers.length === 0 ? (
             <div className="text-center text-gray-400 text-sm py-10">
@@ -196,7 +177,6 @@ export const SuppliersList = () => {
                                 placeholder={t("ui.address")}
                               />
                               <button className="flex items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 py-2 text-xs font-bold text-white hover:bg-[#3854e8]">
-                                <Save size={14} />
                                 {t("common.save")}
                               </button>
                               <button
@@ -204,7 +184,7 @@ export const SuppliersList = () => {
                                 onClick={() => setEditingId(null)}
                                 className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
                               >
-                                <X size={14} />
+                                <span>&times;</span>
                               </button>
                             </form>
                           </td>
@@ -267,9 +247,7 @@ export const SuppliersList = () => {
                               onClick={() => startEdit(supplier)}
                               className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               title={t("common.edit")}
-                            >
-                              {/* <LucidePencilSparkles size={16} /> */}
-                            </button>
+                            />
                             <button
                               onClick={() => setDeleteSupplier(supplier)}
                               className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
@@ -298,53 +276,6 @@ export const SuppliersList = () => {
               />
             </div>
           )}
-        </div>
-
-        <div className="top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
-          <h3 className="mb-1 text-lg font-black text-slate-950">
-            {t("screens.contacts.createSupplier")}
-          </h3>
-          <p className="mb-5 text-sm text-slate-500">
-            {t("screens.contacts.addSupplierContact")}
-          </p>
-
-          {actionError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {actionError}
-            </div>
-          )}
-
-          <form onSubmit={submitDraft} className="space-y-3">
-            <input
-              required
-              value={draft.name}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              className={`w-full ${inputClass}`}
-              placeholder={t("ui.name")}
-            />
-
-            <input
-              value={draft.phone}
-              onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
-              className={`w-full ${inputClass}`}
-              placeholder={t("ui.phone")}
-            />
-
-            <input
-              value={draft.address}
-              onChange={(e) => setDraft({ ...draft, address: e.target.value })}
-              className={`w-full ${inputClass}`}
-              placeholder={t("ui.address")}
-            />
-
-            <button
-              disabled={saving}
-              className={`w-full ${primaryButtonClass}`}
-            >
-              <Plus size={15} />
-              {t("screens.contacts.addSupplier")}
-            </button>
-          </form>
         </div>
       </div>
 

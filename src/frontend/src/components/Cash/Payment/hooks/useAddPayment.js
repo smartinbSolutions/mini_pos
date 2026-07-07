@@ -200,6 +200,11 @@ const useAddPayment = ({
       if (!res.success) throw new Error(res.message);
 
       setMessage(t("screens.payments.saved") || "Saved successfully");
+
+      if (refetchList) {
+        await refetchList();
+      }
+
       setTimeout(() => onClose(), 700);
     } catch (err) {
       setMessage(err.message);
@@ -207,12 +212,6 @@ const useAddPayment = ({
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (isOpen && !isCollectorMode && refetchList) {
-      refetchList();
-    }
-  }, [loading, isOpen, isCollectorMode, refetchList]);
 
   return {
     form,

@@ -85,8 +85,8 @@ export default function AddPayment({
                 {isSupplier && "Supplier Balance Settlement"}
                 {isPartner &&
                   (form.partner_transaction_type === "income"
-                    ? "Receipt from Partner (Give)"
-                    : "Payment to Partner (Take)")}
+                    ? "Partner Deposit — Add Funds"
+                    : "Partner Withdrawal — Disburse Funds")}
               </h2>
               {invoice && (
                 <p className="text-xs text-gray-500">
@@ -136,7 +136,7 @@ export default function AddPayment({
                 className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${form.partner_transaction_type === "income" ? "bg-white text-emerald-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <ArrowDownLeft size={16} />
-                Receipt (Give)
+                Deposit
               </button>
               <button
                 type="button"
@@ -146,7 +146,7 @@ export default function AddPayment({
                 className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${form.partner_transaction_type === "expense" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <ArrowUpRight size={16} />
-                Payment (Take)
+                Withdraw
               </button>
             </div>
           )}

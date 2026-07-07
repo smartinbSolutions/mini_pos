@@ -18,6 +18,12 @@ const usePartnersList = () => {
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selectePartner, setSelectePartner] = useState(null);
 
+  // pagination — mirrors useSuppliersList
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const api = window.api;
 
   const normalizePartner = (cust) => ({
@@ -44,19 +50,21 @@ const usePartnersList = () => {
     try {
       setLoading(true);
 
-      let partnersResult = await api.getPartners();
+      const result = await api.getPartners({ page, limit });
 
-      setPartners(partnersResult || []);
+      setPartners(result?.data || []);
+      setTotal(result?.total || 0);
+      setTotalPages(result?.totalPages || 1);
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.partner") }),
+        err?.message || t("errors.createFailed", { field: t("ui.partner") })
       );
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit]);
 
   useEffect(() => {
     refetch();
@@ -111,7 +119,7 @@ const usePartnersList = () => {
     } catch (err) {
       console.error("Failed to create Partner:", err);
       setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.partner") }),
+        err?.message || t("errors.createFailed", { field: t("ui.partner") })
       );
       return false;
     }
@@ -125,7 +133,7 @@ const usePartnersList = () => {
     } catch (err) {
       console.error("Failed to update Partner:", err);
       setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.partner") }),
+        err?.message || t("errors.updateFailed", { field: t("ui.partner") })
       );
       return false;
     }
@@ -149,6 +157,7 @@ const usePartnersList = () => {
     if (saved) {
       setDraft(emptyPartner);
     }
+    return saved;
   };
 
   const startEdit = (cust) => {
@@ -195,6 +204,14 @@ const usePartnersList = () => {
     refetch,
     openPaymentModel,
     setOpenPaymentModel,
+
+    // pagination
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   };
 };
 
