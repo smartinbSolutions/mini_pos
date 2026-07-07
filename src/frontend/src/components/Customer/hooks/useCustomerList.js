@@ -51,7 +51,7 @@ const useCustomerList = () => {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.customer") }),
+        err?.message || t("errors.createFailed", { field: t("ui.customer") })
       );
     } finally {
       setLoading(false);
@@ -111,7 +111,7 @@ const useCustomerList = () => {
     } catch (err) {
       console.error("Failed to create Customer:", err);
       setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.customer") }),
+        err?.message || t("errors.createFailed", { field: t("ui.customer") })
       );
       return false;
     }
@@ -125,7 +125,7 @@ const useCustomerList = () => {
     } catch (err) {
       console.error("Failed to update Customer:", err);
       setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.customer") }),
+        err?.message || t("errors.updateFailed", { field: t("ui.customer") })
       );
       return false;
     }
@@ -152,6 +152,7 @@ const useCustomerList = () => {
     if (saved) {
       setDraft(emptyCustomer);
     }
+    return saved;
   };
 
   const startEdit = (cust) => {

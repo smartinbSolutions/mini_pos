@@ -105,7 +105,6 @@ export default function registerPaymentIPC() {
             amount,
             mode: data.mode,
             note: data.note,
-            effective_rate: data.effective_rate,
             currency_code: data.currency_code,
             exchange_rate: data.exchange_rate,
             effective_rate: data.effective_rate,
@@ -113,7 +112,6 @@ export default function registerPaymentIPC() {
             date: data.date || new Date().toISOString(),
           });
         }
-        console.log(data);
 
         if (data.party_type === "partner") {
           applyPartnerPayment(db, {
@@ -124,7 +122,6 @@ export default function registerPaymentIPC() {
             amount,
             mode: data.mode,
             note: data.note,
-            effective_rate: data.effective_rate,
             currency_code: data.currency_code,
             exchange_rate: data.exchange_rate,
             effective_rate: data.effective_rate,
@@ -145,22 +142,6 @@ export default function registerPaymentIPC() {
           note: data.note || "",
           date: data.date || new Date().toISOString(),
         });
-
-        const fundAmount =
-          data.type === "income"
-            ? Number(data.collected_amount)
-            : -Number(data.collected_amount);
-
-        db.prepare(
-          `
-        UPDATE funds
-        SET balance = COALESCE(balance,0) + ?
-        WHERE id = ?
-      `
-        ).run(fundAmount, data.fund_id);
-
-        if (data.party_type === "other") {
-        }
 
         return paymentId;
       });

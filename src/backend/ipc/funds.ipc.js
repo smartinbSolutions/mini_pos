@@ -1,38 +1,30 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import createFundHistory from "../utils/createFundHistory";
+
 export default function registerFundIPC() {
   ipcMain.handle("create-fund", (event, data) => {
     if (!data.name || !data.currency_id) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
+
     const result = db
       .prepare(
         `
       INSERT INTO funds (name, currency_id, balance)
       VALUES (?, ?, ?)
-    `,
+    `
       )
-      .run(data.name, data.currency_id, data.paymentInfundCurrency || 0);
+      .run(data.name, data.currency_id, 0);
 
     if (data.balance !== 0 && data.paymentInfundCurrency !== 0) {
-      db.prepare(
-        `
-        INSERT INTO payments 
-        (type, party_type, party_id, fund_id, amount, note,
-         currency_code, exchange_rate, amount_fund_currency)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      ).run(
-        data.balance > 0 ? "income" : "expense",
-        "other",
-        null,
-        result.lastInsertRowid,
-        Math.abs(data.balance),
-        "Open Balance",
-        data.currency_code,
-        data.exchange_rate,
-        data.paymentInfundCurrency,
-      );
+      createFundHistory(db, {
+        fund_id: result.lastInsertRowid,
+        record_type: "opening_balance",
+        movement_type: data.balance > 0 ? "in" : "out",
+        amount: Math.abs(data.paymentInfundCurrency),
+        note: "Opening Balance",
+      });
     }
 
     return {
@@ -45,19 +37,34 @@ export default function registerFundIPC() {
     const funds = db
       .prepare(
         `
-      SELECT 
+      SELECT
         f.*,
         c.name as currency_name,
         c.code as currency_code,
         c.symbol as currency_symbol,
-        c.exchangeRate as currency_exchangeRate
+        c.exchangeRate as currency_exchangeRate,
+        COALESCE(
+          SUM(
+            CASE
+              WHEN fh.movement_type = 'in' THEN fh.amount
+              WHEN fh.movement_type = 'out' THEN -fh.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS computed_balance
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
-    `,
+      LEFT JOIN fund_history fh ON fh.fund_id = f.id
+      GROUP BY f.id
+    `
       )
       .all();
 
-    return funds;
+    return funds.map((f) => ({
+      ...f,
+      balance: f.computed_balance,
+    }));
   });
 
   ipcMain.handle("get-fund", (event, id) => {
@@ -73,7 +80,7 @@ export default function registerFundIPC() {
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE f.id = ?
-    `,
+    `
       )
       .get(id);
 
@@ -102,10 +109,10 @@ export default function registerFundIPC() {
         WHERE h.fund_id = ?
         ORDER BY h.id DESC
         LIMIT ? OFFSET ?
-        `,
+        `
         )
         .all(fundId, limit, offset);
-    },
+    }
   );
 
   ipcMain.handle("update-fund", (event, data) => {
@@ -117,7 +124,7 @@ export default function registerFundIPC() {
       UPDATE funds
       SET name = ?
       WHERE id = ?
-    `,
+    `
     ).run(data.name, data.id);
 
     return { success: true };
@@ -127,7 +134,7 @@ export default function registerFundIPC() {
     db.prepare(
       `
       DELETE FROM funds WHERE id = ?
-    `,
+    `
     ).run(id);
 
     return { success: true };
@@ -196,7 +203,7 @@ export default function registerFundIPC() {
         UPDATE funds
         SET balance = balance - ?
         WHERE id = ?
-      `,
+      `
         ).run(Number(deduct_amount), from_fund_id);
 
         db.prepare(
@@ -204,7 +211,7 @@ export default function registerFundIPC() {
         UPDATE funds
         SET balance = balance + ?
         WHERE id = ?
-      `,
+      `
         ).run(Number(receive_amount), to_fund_id);
 
         const insertHistory = db.prepare(`
@@ -228,7 +235,7 @@ export default function registerFundIPC() {
           "out",
           Number(deduct_amount),
           note || `Transferred to ${toFund.name}`,
-          now,
+          now
         );
 
         insertHistory.run(
@@ -237,7 +244,7 @@ export default function registerFundIPC() {
           "in",
           Number(receive_amount),
           note || `Received from ${fromFund.name}`,
-          now,
+          now
         );
 
         return {

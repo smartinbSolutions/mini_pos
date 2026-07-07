@@ -152,6 +152,7 @@ const useSuppliersList = () => {
     if (saved) {
       setDraft(emptySupplier);
     }
+    return saved;
   };
 
   const startEdit = (sup) => {

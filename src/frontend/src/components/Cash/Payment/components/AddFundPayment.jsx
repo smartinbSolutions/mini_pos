@@ -42,7 +42,7 @@ export default function AddPayment({
     initialFundId,
     refetchList,
   });
-
+  console.log(partiesList);
   if (!isOpen) return null;
 
   const isCashIn = mode === "in";

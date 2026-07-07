@@ -21,7 +21,7 @@ const useFundList = () => {
 
   const normalizeFund = (fund) => {
     const exchangeRate = Number(fund.exchange_rate || 1);
-    const balance = Number(fund.balance || 0);
+    const balance = Number(fund.computed_balance || 0);
 
     return {
       ...fund,
@@ -64,7 +64,7 @@ const useFundList = () => {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.fund") }),
+        err?.message || t("errors.createFailed", { field: t("ui.fund") })
       );
     } finally {
       setLoading(false);
