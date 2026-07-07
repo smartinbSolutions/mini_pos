@@ -17,7 +17,7 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import InvoicePaymentModal from "../../../Cash/Payment/components/AddPayment";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 
 export default function AddSales() {
   const { t } = useTranslation();
@@ -440,7 +440,7 @@ export default function AddSales() {
                     value={invoice.tax_id || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value)
+                        (tax) => tax.id === Number(e.target.value),
                       );
                       setInvoice((p) => ({
                         ...p,
@@ -547,7 +547,7 @@ export default function AddSales() {
         message={t("deleteModal.message")}
       />
 
-      <InvoicePaymentModal
+      <AddPayment
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}

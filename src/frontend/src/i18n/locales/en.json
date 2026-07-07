@@ -157,7 +157,8 @@
       "createSubtitle": "Add a cash, bank, or wallet account",
       "namePlaceholder": "Fund name",
       "initialBalance": "Initial balance",
-      "createButton": "Create Fund"
+      "createButton": "Create Fund",
+      "fund_transfer": "Transfer Between Funds"
     },
     "contacts": {
       "customersSubtitle": "Manage your customers easily",
@@ -356,7 +357,32 @@
       "title": "Cash Receipts and Disbursements",
       "party": "Party Type",
       "paymentNo": "Payment No.",
-      "empty": "No payments recorded"
+      "empty": "No payments recorded",
+      "free_transaction_outside_invoices": "Free Financial Transaction Outside Invoices",
+      "cash_in_receipt": "Cash Receipt (Cash In)",
+      "cash_out_payment": "Cash Payment (Cash Out)",
+      "linked_account_type": "Linked Account Type",
+      "customer": "Customer",
+      "supplier": "Supplier",
+      "partner": "Partner",
+      "registered_customer_name": "Registered Customer Name",
+      "registered_supplier_name": "Registered Supplier Name",
+      "registered_partner_name": "Registered Partner Name",
+      "select_name_from_list": "Select a name from the available list",
+      "target_fund": "Target Fund",
+      "select_fund": "Select Fund...",
+      "amount_base_currency": "Amount (Base Currency)",
+      "actual_amount_fund_currency": "Actual Amount (Fund Currency)",
+      "fund_exchange_rate": "Fund Exchange Rate:",
+      "effective": "Effective",
+      "statement_receipt_details": "Statement / Voucher Details",
+      "write_explanatory_statement": "Write the explanatory statement for the voucher here...",
+      "posting_and_saving": "Posting and saving...",
+      "save_and_post_receipt": "Save and Post Voucher",
+      "free_cash_in_receipt": "Free Cash Receipt",
+      "free_cash_out_payment": "Free Cash Payment",
+      "payment_expense": "Payment / Expense",
+      "receipt_deposit": "Receipt / Deposit"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",

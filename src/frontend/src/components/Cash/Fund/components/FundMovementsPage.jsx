@@ -22,11 +22,11 @@ const FundMovementsPage = () => {
   const finalBalance = history[0]?.running_balance || 0;
 
   const totalIn = history
-    .filter((h) => h.record_type === "in")
+    .filter((h) => h.movement_type === "in")
     .reduce((acc, item) => acc + Number(item.amount || 0), 0);
 
   const totalOut = history
-    .filter((h) => h.record_type === "out")
+    .filter((h) => h.movement_type === "out")
     .reduce((acc, item) => acc + Number(item.amount || 0), 0);
 
   return (
@@ -96,7 +96,7 @@ const FundMovementsPage = () => {
           ) : (
             <div className="divide-y">
               {history.map((item) => {
-                const isIn = item.record_type === "in";
+                const isIn = item.movement_type === "in";
 
                 return (
                   <div

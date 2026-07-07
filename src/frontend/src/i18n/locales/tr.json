@@ -156,7 +156,8 @@
       "createSubtitle": "Nakit, banka veya cüzdan hesabı ekle",
       "namePlaceholder": "Kasa adı",
       "initialBalance": "Başlangıç bakiyesi",
-      "createButton": "Kasa Oluştur"
+      "createButton": "Kasa Oluştur",
+      "fund_transfer": "Kasalar Arası Transfer"
     },
     "contacts": {
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
@@ -351,7 +352,32 @@
       "title": "Tahsilat ve Tediye Makbuzları",
       "party": "Cari Tipi",
       "paymentNo": "Ödeme No.",
-      "empty": "Kayıtlı ödeme bulunamadı"
+      "empty": "Kayıtlı ödeme bulunamadı",
+      "free_transaction_outside_invoices": "Faturalar Dışı Serbest Finansal Hareket",
+      "cash_in_receipt": "Nakit Tahsilat Makbuzu (Cash In)",
+      "cash_out_payment": "Nakit Tediye Makbuzu (Cash Out)",
+      "linked_account_type": "İlişkili Hesap Türü",
+      "customer": "Müşteri",
+      "supplier": "Tedarikçi",
+      "partner": "Ortak",
+      "registered_customer_name": "Kayıtlı Müşteri Adı",
+      "registered_supplier_name": "Kayıtlı Tedarikçi Adı",
+      "registered_partner_name": "Kayıtlı Ortak Adı",
+      "select_name_from_list": "Mevcut listeden isim seçiniz",
+      "target_fund": "Hedef Kasa/Fon",
+      "select_fund": "Kasa Seçiniz...",
+      "amount_base_currency": "Tutar (Ana Para Birimi)",
+      "actual_amount_fund_currency": "Gerçek Tutar (Kasa Para Birimi)",
+      "fund_exchange_rate": "Kasa Döviz Kuru:",
+      "effective": "Efektif / Gerçekleşen",
+      "statement_receipt_details": "Açıklama / Makbuz Detayları",
+      "write_explanatory_statement": "Makbuzun açıklama detayını buraya yazınız...",
+      "posting_and_saving": "İşleniyor ve Kaydediliyor...",
+      "save_and_post_receipt": "Makbuzu Kaydet ve İşle",
+      "free_cash_in_receipt": "Serbest Tahsilat Makbuzu",
+      "free_cash_out_payment": "Serbest Tediye Makbuzu",
+      "payment_expense": "Ödeme / Gider",
+      "receipt_deposit": "Tahsilat / Para Yatırma"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",

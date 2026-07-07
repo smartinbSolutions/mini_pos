@@ -17,7 +17,7 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import InvoicePaymentModal from "../../../Cash/Payment/components/AddPayment";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 
 export default function AddExpense() {
   const { t } = useTranslation();
@@ -436,7 +436,7 @@ export default function AddExpense() {
         message={t("deleteModal.message")}
       />
 
-      <InvoicePaymentModal
+      <AddPayment
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}

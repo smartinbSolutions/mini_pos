@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import InvoicePaymentModal from "../../../Cash/Payment/components/AddPayment";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 
@@ -281,7 +281,7 @@ const PurchaseList = () => {
         </section>
       </div>
 
-      <InvoicePaymentModal
+      <AddPayment
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={selecteInvoice}

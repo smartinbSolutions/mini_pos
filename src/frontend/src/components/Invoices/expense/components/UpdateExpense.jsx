@@ -16,7 +16,7 @@ import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import useUpdateExpense from "../hooks/useUpdateExpense";
-import InvoicePaymentModal from "../../../Cash/Payment/components/AddPayment";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 
 export default function UpdateExpense() {
   const { t } = useTranslation();
@@ -78,7 +78,7 @@ export default function UpdateExpense() {
     const res = await submit(paymentData);
     if (res?.success) {
       toast.success(
-        t("screens.expenses.savedPaid") || "Expense updated & paid"
+        t("screens.expenses.savedPaid") || "Expense updated & paid",
       );
       setPaymentModalOpen(false);
     }
@@ -356,7 +356,7 @@ export default function UpdateExpense() {
         message={t("deleteModal.message")}
       />
 
-      <InvoicePaymentModal
+      <AddPayment
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}

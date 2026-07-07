@@ -15,7 +15,7 @@ import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import InvoicePaymentModal from "../../../Cash/Payment/components/AddPayment";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import { ToastContainer } from "react-toastify";
 
 export default function UpdateSales() {
@@ -81,7 +81,7 @@ export default function UpdateSales() {
     const res = await submit(paymentData);
     if (res?.success) {
       toast.success(
-        t("screens.invoices.savedPaid") || "Invoice updated & paid"
+        t("screens.invoices.savedPaid") || "Invoice updated & paid",
       );
       setPaymentModalOpen(false);
     }
@@ -326,7 +326,7 @@ export default function UpdateSales() {
                   disabled={isLocked}
                   onChange={(e) => {
                     const selected = taxes.find(
-                      (tax) => tax.id === Number(e.target.value)
+                      (tax) => tax.id === Number(e.target.value),
                     );
 
                     setInvoice({
@@ -422,7 +422,7 @@ export default function UpdateSales() {
         message={t("deleteModal.message")}
       />
 
-      <InvoicePaymentModal
+      <AddPayment
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}

@@ -68,7 +68,25 @@ export default function allocateCustomerPayment(db, data) {
 
     remainingAmount -= paymentAmount;
   }
-
+  if (allocations.length < 1) {
+    createPartyHistory(db, {
+      party_type: "customer",
+      party_id: data.customerId,
+      record_type: "payment",
+      invoice_id: null,
+      invoice_type: null,
+      payment_id: data.paymentId,
+      movement_type: "debit",
+      fund_id: data.fund_id,
+      amount: data.amount,
+      note: data.note || "",
+      currency_code: data.currency_code ?? "",
+      exchange_rate: Number(data.exchange_rate || 0),
+      effective_rate: Number(data.effective_rate || 0),
+      amount_fund_currency: data.amount_fund_currency,
+      date: data.date,
+    });
+  }
   return {
     allocations,
     remainingAmount,

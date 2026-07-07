@@ -1,12 +1,23 @@
 import React, { useState } from "react";
 import useFundList from "../hooks/useFundList";
-import { Edit2, Plus, Save, Trash2, X, Eye, CloudSync } from "lucide-react";
+import {
+  Edit2,
+  Plus,
+  Save,
+  Trash2,
+  X,
+  Eye,
+  CloudSync,
+  ArrowUpRight,
+  ArrowDownLeft,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import FundTransferModal from "./FundTransferModal";
+import AddFundPayment from "../../Payment/components/AddFundPayment";
 
 const FundList = () => {
   const { t } = useTranslation();
@@ -29,8 +40,15 @@ const FundList = () => {
     actionError,
     setOpenTransferModal,
     openTransferModal,
+    refetch,
   } = useFundList();
+
   const [deleteFund, setDeleteFund] = useState(null);
+
+  const [openPaymentModal, setOpenPaymentModal] = useState(false);
+  const [selectedFund, setSelectedFund] = useState(null);
+  const [paymentMode, setPaymentMode] = useState("out");
+
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =
@@ -39,6 +57,12 @@ const FundList = () => {
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-4 py-2.5 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100 disabled:text-slate-500";
   const primaryButtonClass =
     "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
+
+  const handleOpenPayment = (fund, mode) => {
+    setSelectedFund(fund);
+    setPaymentMode(mode);
+    setOpenPaymentModal(true);
+  };
 
   return (
     <div className={pageClass}>
@@ -164,6 +188,22 @@ const FundList = () => {
 
                     <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition">
                       <button
+                        onClick={() => handleOpenPayment(fund, "out")}
+                        className="rounded-xl p-2 text-red-600 hover:bg-red-50"
+                        title={t("screens.payments.payment_expense")}
+                      >
+                        <ArrowUpRight size={14} />
+                      </button>
+
+                      <button
+                        onClick={() => handleOpenPayment(fund, "in")}
+                        className="rounded-xl p-2 text-emerald-600 hover:bg-emerald-50"
+                        title={t("screens.payments.receipt_deposit")}
+                      >
+                        <ArrowDownLeft size={14} />
+                      </button>
+
+                      <button
                         onClick={() => navigate(`/fund/${fund.id}`)}
                         className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
                         title={t("screens.funds.viewMovements")}
@@ -174,6 +214,7 @@ const FundList = () => {
                       <button
                         onClick={() => setOpenTransferModal(fund)}
                         className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                        title={t("screens.funds.fund_transfer")}
                       >
                         <CloudSync size={14} />
                       </button>
@@ -271,6 +312,7 @@ const FundList = () => {
           </form>
         </div>
       </div>
+
       <DeleteModal
         open={Boolean(deleteFund)}
         onClose={() => setDeleteFund(null)}
@@ -285,7 +327,23 @@ const FundList = () => {
       <FundTransferModal
         isOpen={openTransferModal}
         onClose={() => setOpenTransferModal(false)}
+        refetchList={refetch}
       />
+
+      {openPaymentModal && (
+        <AddFundPayment
+          isOpen={openPaymentModal}
+          onClose={() => {
+            setOpenPaymentModal(false);
+            setSelectedFund(null);
+          }}
+          mode={paymentMode}
+          initialFundId={selectedFund?.id}
+          refetchList={() => {
+            refetch?.();
+          }}
+        />
+      )}
 
       <ToastContainer />
     </div>
