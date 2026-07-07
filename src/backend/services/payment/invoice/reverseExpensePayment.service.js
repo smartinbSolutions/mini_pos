@@ -1,12 +1,4 @@
 export default function reverseExpensePayment(db, payment) {
-  db.prepare(
-    `
-    UPDATE suppliers
-    SET total_paid = COALESCE(total_paid, 0) - ?
-    WHERE id = ?
-  `,
-  ).run(Number(payment.amount), payment.party_id);
-
   const expense = db
     .prepare(
       `

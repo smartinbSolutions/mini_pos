@@ -9,17 +9,11 @@ export default function registerSuppliersIPC() {
     const result = db
       .prepare(
         `
-      INSERT INTO suppliers (name, phone, address, total, total_paid)
+      INSERT INTO suppliers (name, phone, address)
       VALUES (?,?,?,?,?)
-    `
+    `,
       )
-      .run(
-        data.name,
-        data.phone,
-        data.address,
-        data.total || 0,
-        data.total_paid || 0
-      );
+      .run(data.name, data.phone, data.address);
 
     return {
       success: true,
@@ -47,7 +41,7 @@ export default function registerSuppliersIPC() {
         GROUP BY s.id
         ORDER BY s.name
         LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(limit, offset);
 
@@ -79,7 +73,7 @@ export default function registerSuppliersIPC() {
           ON ph.party_type = 'supplier' AND ph.party_id = s.id
         WHERE s.id = ?
         GROUP BY s.id
-      `
+      `,
       )
       .get(id);
 
@@ -95,7 +89,7 @@ export default function registerSuppliersIPC() {
       UPDATE suppliers
       SET name = ?, phone = ?, address = ?
       WHERE id = ?
-    `
+    `,
     ).run(data.name, data.phone, data.address, data.id);
 
     return { success: true };
@@ -105,7 +99,7 @@ export default function registerSuppliersIPC() {
     db.prepare(
       `
       DELETE FROM suppliers WHERE id = ?
-    `
+    `,
     ).run(id);
 
     return { success: true };

@@ -10,17 +10,11 @@ export default function registerCustomersIPC() {
     const result = db
       .prepare(
         `
-      INSERT INTO customers (name, phone, address, total, total_paid)
-      VALUES (?,?,?,?,?)
+      INSERT INTO customers (name, phone, address)
+      VALUES (?,?,?)
     `,
       )
-      .run(
-        data.name,
-        data.phone,
-        data.address,
-        data.total || 0,
-        data.total_paid || 0,
-      );
+      .run(data.name, data.phone, data.address);
 
     return {
       success: true,

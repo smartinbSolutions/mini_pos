@@ -342,7 +342,9 @@
       "remainingMustBeZero": "The remaining amount must be 0.",
       "overpaidError": "The paid amount is greater than the sale total.",
       "failed": "Checkout failed.",
-      "completeSale": "Complete sale"
+      "completeSale": "Complete sale",
+      "splitPayment": "Split Payment",
+      "singleFund": "Single Fund"
     },
     "payments": {
       "purchasePayment": "Purchase Payment",

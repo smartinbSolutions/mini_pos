@@ -8,10 +8,10 @@ import {
   Scale,
   Wallet,
   Package2,
-  LayoutDashboard,
   Percent,
   X,
   Check,
+  ArrowBigLeft,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
@@ -26,12 +26,13 @@ import { ToastContainer } from "react-toastify";
 import CheckoutSingleFundModal from "./CheckoutSingleFundModal";
 import POSSystemEditPriceProdcutCart from "./POSSystemEditPriceProdcutCart";
 import POSSystemEditTotalPrice from "./POSSystemEditTotalPrice";
+import CheckoutCombinedModal from "./CheckoutCombinedModal";
+import UnifiedCheckoutModal from "./CheckoutCombinedModal";
 
 export default function POSSystem() {
   const { t } = useTranslation();
   const [currentWeight, setCurrentWeight] = useState(0);
 
-  // حالات مودال تعديل سعر المنتج
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [newPrice, setNewPrice] = useState("");
@@ -173,26 +174,28 @@ export default function POSSystem() {
         <main className="flex min-w-0 flex-col">
           <div className="sticky top-0 z-20 border-b border-stone-200/80 bg-white/90 shadow-sm shadow-stone-200/50 backdrop-blur-xl">
             <div className="flex flex-col gap-4 px-4 py-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-3"></div>
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white shadow-lg shadow-teal-500/20">
-                  <ShoppingCart size={21} strokeWidth={2.6} />
-                </div>
-
-                <div>
+              <div className="flex items-center justify-between gap-4 border-b border-stone-100 bg-white/50 p-4 backdrop-blur-md sm:px-6">
+                <div className="flex items-center gap-4 min-w-0">
                   <a
                     href="/"
-                    className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3.5 py-2 text-sm font-medium text-stone-700 shadow-sm transition-all hover:bg-stone-50 hover:text-stone-900"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 shadow-sm transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-100 active:scale-95"
+                    aria-label="Go Back"
                   >
-                    <LayoutDashboard size={16} />
-                    <span>Dashboard</span>
+                    <ArrowBigLeft
+                      size={22}
+                      strokeWidth={2.2}
+                      className="transition-transform group-hover:-translate-x-0.5"
+                    />
                   </a>
-                  <h1 className="text-xl font-black tracking-tight text-stone-950 sm:text-2xl">
-                    {t("screens.pos.title")}
-                  </h1>
-                  <p className="text-xs font-medium text-stone-500">
-                    {t("screens.pos.subtitle")}
-                  </p>
+
+                  <div className="min-w-0">
+                    <h1 className="truncate text-xl font-black tracking-tight text-stone-950 sm:text-2xl">
+                      {t("screens.pos.title")}
+                    </h1>
+                    <p className="mt-0.5 truncate text-xs font-semibold tracking-wide text-stone-400 sm:text-sm">
+                      {t("screens.pos.subtitle")}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -496,7 +499,7 @@ export default function POSSystem() {
                           type="number"
                           value={item.qty}
                           onChange={(event) => {
-                            (event.stopPropagation(),
+                            (event?.stopPropagation(),
                               updateQuantity(item.id, event.target.value));
                           }}
                           className="h-10 w-16 bg-transparent text-center text-sm font-black text-stone-950 outline-none"
@@ -561,7 +564,10 @@ export default function POSSystem() {
               </div>
             )}
 
-            <div className="rounded-2xl bg-teal-500 p-5 text-white shadow-xl shadow-teal-200">
+            <div
+              className="rounded-2xl bg-teal-500 p-5 text-white shadow-xl shadow-teal-200"
+              onClick={openCheckout}
+            >
               <div className="flex items-center justify-between gap-4">
                 <span className="text-xs font-black uppercase tracking-wide">
                   {t("screens.pos.totalAmount")}
@@ -576,13 +582,13 @@ export default function POSSystem() {
                 </p>
               )}
               <h2
-                onClick={openTotalModal}
+                // onClick={openTotalModal}
                 className="mt-1 truncate text-4xl font-black tracking-tight"
               >
                 {money(netTotal)}
               </h2>
             </div>
-
+            {/* 
             <button
               type="button"
               onClick={openCheckout}
@@ -603,7 +609,7 @@ export default function POSSystem() {
               {checkingOut
                 ? t("screens.pos.processing")
                 : t("screens.pos.multipleFundCheckout")}
-            </button>
+            </button> */}
           </div>
         </aside>
       </div>
@@ -656,24 +662,17 @@ export default function POSSystem() {
       )}
 
       {isCheckoutOpen && (
-        <CheckoutSingleFundModal
+        <UnifiedCheckoutModal
           funds={funds}
           total={netTotal}
           checkingOut={checkingOut}
           onClose={() => setIsCheckoutOpen(false)}
           onCheckout={completeCheckout}
+          t={t}
+          money={money}
         />
       )}
 
-      {isCheckoutMultiOpen && (
-        <CheckoutModal
-          funds={funds}
-          total={netTotal}
-          checkingOut={checkingOut}
-          onClose={() => setIsCheckoutMultiOpen(false)}
-          onCheckout={completeCheckout}
-        />
-      )}
       <ToastContainer />
     </div>
   );

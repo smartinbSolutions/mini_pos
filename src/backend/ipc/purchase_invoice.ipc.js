@@ -69,7 +69,7 @@ export default function registerPurchaseInvoicesIPC() {
     remaining_amount
   )
   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`
+`,
           )
           .run(
             data.supplier_id,
@@ -81,7 +81,7 @@ export default function registerPurchaseInvoicesIPC() {
             status,
             data.taxValue,
             paidAmount,
-            remainingAmount
+            remainingAmount,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -131,21 +131,6 @@ export default function registerPurchaseInvoicesIPC() {
           amount: netTotal,
           note: `Purchase Invoice #${invoiceId}`,
         });
-
-        // Supplier balance always grows by the invoice total. total_paid only
-        // grows by the base-currency payment.amount when actually paid.
-        const updateSupplier = db.prepare(`
-          UPDATE suppliers
-          SET total = total + ?,
-              total_paid = total_paid + ?
-          WHERE id = ?
-        `);
-
-        updateSupplier.run(
-          netTotal,
-          isPaid ? Number(payment.amount) : 0,
-          data.supplier_id
-        );
 
         let insertPaymentId = null;
 
@@ -213,7 +198,7 @@ export default function registerPurchaseInvoicesIPC() {
       LEFT JOIN suppliers ON suppliers.id = purchase_invoices.supplier_id
       ORDER BY purchase_invoices.id DESC
       LIMIT ? OFFSET ?
-    `
+    `,
       )
       .all(limit, offset);
 
@@ -242,7 +227,7 @@ export default function registerPurchaseInvoicesIPC() {
       LEFT JOIN suppliers s ON s.id = pi.supplier_id
       LEFT JOIN taxes t ON t.id = pi.tax
       WHERE pi.id = ?
-    `
+    `,
       )
       .get(id);
 
@@ -257,7 +242,7 @@ export default function registerPurchaseInvoicesIPC() {
       FROM purchase_invoice_items pii
       LEFT JOIN products p ON p.id = pii.product_id
       WHERE pii.invoice_id = ?
-    `
+    `,
       )
       .all(id);
 
@@ -287,7 +272,7 @@ export default function registerPurchaseInvoicesIPC() {
 
     const existingPayment = db
       .prepare(
-        `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'purchase'`
+        `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'purchase'`,
       )
       .get(data.id);
 
@@ -330,7 +315,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       const adjustStock = db.prepare(
-        `UPDATE products SET quantity = quantity + ? WHERE id = ?`
+        `UPDATE products SET quantity = quantity + ? WHERE id = ?`,
       );
       const updateMovement = db.prepare(`
         UPDATE product_movements
@@ -377,7 +362,7 @@ export default function registerPurchaseInvoicesIPC() {
 
       // ---- Replace line items ----
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        data.id
+        data.id,
       );
 
       const insertItem = db.prepare(`
@@ -394,7 +379,7 @@ export default function registerPurchaseInvoicesIPC() {
           item.product_id,
           quantity,
           price,
-          quantity * price
+          quantity * price,
         );
       }
 
@@ -408,7 +393,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE purchase_invoices
         SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?
         WHERE id = ?
-      `
+      `,
       ).run(
         data.supplier_id,
         fullDateTime,
@@ -417,10 +402,9 @@ export default function registerPurchaseInvoicesIPC() {
         data.tax || 0,
         data.net_total || 0,
         data.taxValue || 0,
-        data.id
+        data.id,
       );
 
-      // ---- Supplier: only `total` moves, never `total_paid` (unpaid by definition here) ----
       const netDelta =
         Number(data.net_total || 0) - Number(oldInvoice.net_total || 0);
 
@@ -429,7 +413,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE suppliers
         SET total = total + ?
         WHERE id = ?
-      `
+      `,
       ).run(netDelta, data.supplier_id);
 
       // ---- Update the invoice ledger row in place ----
@@ -438,7 +422,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE party_history
         SET amount = ?, note = ?
         WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
-      `
+      `,
       ).run(data.net_total, `Purchase Invoice #${data.id}`, data.id);
     });
 
@@ -471,7 +455,7 @@ export default function registerPurchaseInvoicesIPC() {
       UPDATE suppliers
       SET total = total - ?
       WHERE id = ?
-    `
+    `,
       ).run(Number(invoice.net_total || 0), invoice.supplier_id);
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -488,7 +472,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        id
+        id,
       );
       db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);

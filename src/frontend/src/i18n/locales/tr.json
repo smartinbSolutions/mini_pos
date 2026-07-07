@@ -339,7 +339,9 @@
       "remainingMustBeZero": "Kalan tutar 0 olmalı.",
       "overpaidError": "Ödenen tutar satış toplamından büyük.",
       "failed": "Ödeme başarısız.",
-      "completeSale": "Satışı tamamla"
+      "completeSale": "Satışı tamamla",
+      "splitPayment": "Parçalı Ödeme",
+      "singleFund": "Tek Kasa"
     },
     "payments": {
       "purchasePayment": "Satın Alma Ödemesi",

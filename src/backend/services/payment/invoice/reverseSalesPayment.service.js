@@ -1,12 +1,4 @@
 export default function reverseSalesPayment(db, payment) {
-  db.prepare(
-    `
-    UPDATE customers
-    SET total_paid = COALESCE(total_paid, 0) - ?
-    WHERE id = ?
-  `,
-  ).run(Number(payment.amount), payment.party_id);
-
   const invoice = db
     .prepare(
       `

@@ -3,14 +3,6 @@ import updateSalesInvoiceStatus from "../invoice/updateSalesInvoiceStatus.servic
 import allocateCustomerPayment from "./allocateCustomerPayment.service";
 
 export default function applyCustomerPayment(db, data) {
-  db.prepare(
-    `
-    UPDATE customers
-    SET total_paid = COALESCE(total_paid, 0) + ?
-    WHERE id = ?
-  `,
-  ).run(data.amount, data.party_id);
-
   if (data.invoiceId) {
     updateSalesInvoiceStatus(db, data.invoiceId, data.amount);
     createPartyHistory(db, {
