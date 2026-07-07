@@ -63,9 +63,9 @@ const useAddExpense = () => {
   const supplierOptions = useMemo(
     () => [
       { id: NO_SUPPLIER, name: t("ui.noSupplier") || "No supplier" },
-      ...suppliers,
+      ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
     ],
-    [suppliers, t]
+    [suppliers, t],
   );
 
   const addItem = () => {
@@ -149,7 +149,7 @@ const useAddExpense = () => {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, navigate, t]
+    [api, invoice, items, subtotal, netTotal, navigate, t],
   );
 
   const reset = () => {
