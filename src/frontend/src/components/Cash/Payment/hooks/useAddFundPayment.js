@@ -58,7 +58,7 @@ const useAddFundPayment = ({
       } else if (partyType === "partner") {
         res = (await api.getPartners()) || [];
       }
-      setPartiesList(res || []);
+      setPartiesList(res?.data || res || []);
     } catch (err) {
       console.error("Error fetching parties:", err);
     }
