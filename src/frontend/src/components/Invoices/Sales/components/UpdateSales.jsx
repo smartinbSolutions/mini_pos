@@ -379,21 +379,12 @@ export default function UpdateSales() {
                     type="button"
                     onClick={handleSaveUnpaid}
                     disabled={!canSave}
-                    className="flex items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white py-3 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 hover:bg-[#3854e8] disabled:opacity-60"
                   >
                     <Save size={16} />
                     {saving
                       ? t("common.saving")
                       : t("screens.invoices.saveInvoice")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleOpenPayModal}
-                    disabled={!canSave}
-                    className="flex items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <HandCoins size={16} />
-                    {t("screens.invoices.saveAndPay") || "Save & Pay"}
                   </button>
                 </div>
 

@@ -399,6 +399,8 @@ export default function registerSalesInvoiceIPC() {
           `
           UPDATE sales_invoices
           SET customer_id = ?,
+              invoice_name = ?,
+              description = ?,             
               date = ?,
               subtotal = ?,
               discount = ?,
@@ -412,6 +414,8 @@ export default function registerSalesInvoiceIPC() {
         `,
         ).run(
           newCustomerId,
+          data.invoice_name || null,
+          data.description || null,
           fullDateTime,
           newSubtotal,
           data.discount || 0,
