@@ -188,6 +188,13 @@ const FundList = () => {
 
                     <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition">
                       <button
+                        onClick={() => navigate(`/fund/${fund.id}`)}
+                        className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
+                        title={t("screens.funds.viewMovements")}
+                      >
+                        <Eye size={14} />
+                      </button>
+                      <button
                         onClick={() => handleOpenPayment(fund, "out")}
                         className="rounded-xl p-2 text-red-600 hover:bg-red-50"
                         title={t("screens.payments.payment_expense")}
@@ -201,14 +208,6 @@ const FundList = () => {
                         title={t("screens.payments.receipt_deposit")}
                       >
                         <ArrowDownLeft size={14} />
-                      </button>
-
-                      <button
-                        onClick={() => navigate(`/fund/${fund.id}`)}
-                        className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
-                        title={t("screens.funds.viewMovements")}
-                      >
-                        <Eye size={14} />
                       </button>
 
                       <button
