@@ -6,7 +6,7 @@ import {
   Search,
   Eye,
   Trash2,
-  LucidePencilSparkles,
+  // LucidePencilSparkles,
   Wallet2,
 } from "lucide-react";
 import useSuppliersList from "../hooks/useSuppliersList";
@@ -93,7 +93,7 @@ export const SuppliersList = () => {
     return (suppliers || []).filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.toLowerCase()),
     );
   }, [suppliers, search]);
 
@@ -268,7 +268,7 @@ export const SuppliersList = () => {
                               className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               title={t("common.edit")}
                             >
-                              <LucidePencilSparkles size={16} />
+                              {/* <LucidePencilSparkles size={16} /> */}
                             </button>
                             <button
                               onClick={() => setDeleteSupplier(supplier)}

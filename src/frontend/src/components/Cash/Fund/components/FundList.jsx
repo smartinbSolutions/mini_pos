@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import useFundList from "../hooks/useFundList";
-import { Edit2, Plus, Save, Trash2, X, Eye } from "lucide-react";
+import { Edit2, Plus, Save, Trash2, X, Eye, CloudSync } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
+import FundTransferModal from "./FundTransferModal";
 
 const FundList = () => {
   const { t } = useTranslation();
@@ -26,6 +27,8 @@ const FundList = () => {
     submitDraft,
     currencies,
     actionError,
+    setOpenTransferModal,
+    openTransferModal,
   } = useFundList();
   const [deleteFund, setDeleteFund] = useState(null);
   const pageClass =
@@ -151,7 +154,9 @@ const FundList = () => {
 
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <div className="text-sm text-slate-400">{t("ui.balance")}</div>
+                      <div className="text-sm text-slate-400">
+                        {t("ui.balance")}
+                      </div>
                       <div className="text-xl font-black text-emerald-600">
                         {formatMoney(fund.balance || 0, fund)}
                       </div>
@@ -164,6 +169,13 @@ const FundList = () => {
                         title={t("screens.funds.viewMovements")}
                       >
                         <Eye size={14} />
+                      </button>
+
+                      <button
+                        onClick={() => setOpenTransferModal(fund)}
+                        className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                      >
+                        <CloudSync size={14} />
                       </button>
 
                       <button
@@ -269,6 +281,12 @@ const FundList = () => {
         title={t("deleteModal.title")}
         message={t("deleteModal.message")}
       />
+
+      <FundTransferModal
+        isOpen={openTransferModal}
+        onClose={() => setOpenTransferModal(false)}
+      />
+
       <ToastContainer />
     </div>
   );

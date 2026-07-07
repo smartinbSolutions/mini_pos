@@ -91,14 +91,14 @@ const PurchaseList = () => {
 
   const totalNet = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0
+    0,
   );
   const totalTax = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0
+    0,
   );
   const unpaidCount = purchaseInvoices.filter(
-    (inv) => inv.status !== "paid"
+    (inv) => inv.status !== "paid",
   ).length;
 
   return (
@@ -231,33 +231,34 @@ const PurchaseList = () => {
                           >
                             <Eye size={16} />
                           </button>
-                          {inv.status !== "paid" && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  navigate(`/edit-purchase/${inv.id}`)
-                                }
-                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelecteInvoice(inv);
-                                  setOpenPaymentModel(true);
-                                }}
-                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              >
-                                <HandCoins size={16} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteInvoice(inv)}
-                                className="rounded-xl p-2 text-red-500 hover:bg-red-50"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </>
-                          )}
+                          {inv.status !== "paid" ||
+                            (inv.status !== "partial" && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    navigate(`/edit-purchase/${inv.id}`)
+                                  }
+                                  className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelecteInvoice(inv);
+                                    setOpenPaymentModel(true);
+                                  }}
+                                  className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                >
+                                  <HandCoins size={16} />
+                                </button>
+                                <button
+                                  onClick={() => setDeleteInvoice(inv)}
+                                  className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </>
+                            ))}
                         </div>
                       </td>
                     </tr>

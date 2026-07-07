@@ -16,7 +16,7 @@ const useFundList = () => {
   const [draft, setDraft] = useState(emptyFund);
   const [editingId, setEditingId] = useState(null);
   const [editing, setEditing] = useState(emptyFund);
-
+  const [openTransferModal, setOpenTransferModal] = useState(false);
   const api = window.api;
 
   const normalizeFund = (fund) => {
@@ -63,7 +63,9 @@ const useFundList = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || t("errors.createFailed", { field: t("ui.fund") }));
+      setError(
+        err?.message || t("errors.createFailed", { field: t("ui.fund") }),
+      );
     } finally {
       setLoading(false);
     }
@@ -120,7 +122,8 @@ const useFundList = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Fund:", err);
-      const message = err?.message || t("errors.createFailed", { field: t("ui.fund") });
+      const message =
+        err?.message || t("errors.createFailed", { field: t("ui.fund") });
       setActionError(message);
       toast.error(message);
       return false;
@@ -203,6 +206,8 @@ const useFundList = () => {
     draft,
     currencies,
     actionError,
+    setOpenTransferModal,
+    openTransferModal,
   };
 };
 

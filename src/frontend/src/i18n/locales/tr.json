@@ -384,6 +384,20 @@
       "createExpense": "Gider Oluştur",
       "manageItemsPayments": "Öğeleri Yönet",
       "expensesTotal": "Toplam Giderler"
+    },
+    "transfer": {
+      "internal_fund_transfer": "Dahili Fon Transferi",
+      "move_money_safely": "Sistem kasaları arasında güvenle para taşıyın",
+      "source_fund": "Kaynak Fon (Kimden)",
+      "select_source_fund": "Kaynak fonu seçin",
+      "destination_fund": "Hedef Fon (Kime)",
+      "select_destination_fund": "Hedef fonu seçin",
+      "amount": "Tutar",
+      "internal_remarks": "Dahili Notlar / Açıklama",
+      "note_placeholder": "Örn: Hafta sonu vardiyası için kasa dengelemesi...",
+      "processing": "İşleniyor...",
+      "execute_transfer": "Transferi Gerçekleştir",
+      "destination_receives": "Alıcıya Ulaşacak Tutar"
     }
   },
   "languages": {

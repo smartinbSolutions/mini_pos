@@ -45,8 +45,8 @@ export default function InvoicePaymentModal({
 
   // Initial calculated base amount from invoice or totalAmount prop
   const initialBaseAmount = invoice
-    ? Number(invoice.net_total || 0)
-    : Number(totalAmount || 0);
+    ? Number(invoice.remaining_amount || 0)
+    : Number(invoice?.net_total || 0);
 
   const [form, setForm] = useState({
     fund_id: "",

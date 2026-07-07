@@ -384,6 +384,20 @@
       "createExpense": "انشاء مصروف",
       "manageItemsPayments": "إدارة العناصر",
       "expensesTotal": "إجمالي المصروفات"
+    },
+    "transfer": {
+      "internal_fund_transfer": "تحويل مالي داخلي",
+      "move_money_safely": "نقل الأموال بين خزائن النظام بأمان",
+      "source_fund": "صندوق المصدر (من)",
+      "select_source_fund": "اختر صندوق المصدر",
+      "destination_fund": "صندوق الوجهة (إلى)",
+      "select_destination_fund": "اختر صندوق الوجهة",
+      "amount": "المبلغ",
+      "internal_remarks": "ملاحظات داخلية",
+      "note_placeholder": "مثال: إعادة توازن الخزائن لوردية نهاية الأسبوع...",
+      "processing": "جاري المعالجة...",
+      "execute_transfer": "تنفيذ التحويل",
+      "destination_receives": "الوجهة تستلم"
     }
   },
   "languages": {

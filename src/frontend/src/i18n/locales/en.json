@@ -391,6 +391,20 @@
       "createExpense": "Create Expense",
       "manageItemsPayments": "Manage Items",
       "expensesTotal": "Expenses Total"
+    },
+    "transfer": {
+      "internal_fund_transfer": "Internal Fund Transfer",
+      "move_money_safely": "Move money between system vaults safely",
+      "source_fund": "Source Fund (From)",
+      "select_source_fund": "Select source fund",
+      "destination_fund": "Destination Fund (To)",
+      "select_destination_fund": "Select destination fund",
+      "amount": "Amount",
+      "internal_remarks": "Internal Remarks / Note",
+      "note_placeholder": "Ex: Rebalancing registers for weekend shift...",
+      "processing": "Processing...",
+      "execute_transfer": "Execute Transfer",
+      "destination_receives": "Destination Receives"
     }
   },
   "languages": {

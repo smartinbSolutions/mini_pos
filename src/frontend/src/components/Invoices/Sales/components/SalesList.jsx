@@ -6,7 +6,7 @@ import {
   Eye,
   Wallet2,
   Trash2,
-  LucidePencilSparkles,
+  // LucidePencilSparkles,
   Info,
   Clock,
 } from "lucide-react";
@@ -111,10 +111,10 @@ const SalesList = () => {
 
   const totalNet = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0
+    0,
   );
   const unpaidCount = salesInvoices.filter(
-    (inv) => inv.status !== "paid"
+    (inv) => inv.status !== "paid",
   ).length;
 
   return (
@@ -271,7 +271,7 @@ const SalesList = () => {
                                   className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                   title={t("common.edit")}
                                 >
-                                  <LucidePencilSparkles size={16} />
+                                  {/* <LucidePencilSparkles size={16} /> */}
                                 </button>
                                 <button
                                   onClick={() => {
