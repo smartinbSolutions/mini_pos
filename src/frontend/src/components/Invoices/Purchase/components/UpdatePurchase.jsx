@@ -88,12 +88,14 @@ export default function UpdatePurchase() {
                   placeholder={t("ui.selectSupplier")}
                   options={suppliers}
                   selectedValue={invoice?.supplier_id}
-                  onChange={(e) => setInvoice({ ...invoice, supplier_id: e.id })}
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, supplier_id: e.id })
+                  }
                 />
                 <input
                   type="date"
                   className={inputClass}
-                  value={invoice.date}
+                  value={invoice?.date?.slice(0, 10)}
                   onChange={(e) =>
                     setInvoice({ ...invoice, date: e.target.value })
                   }
@@ -104,7 +106,9 @@ export default function UpdatePurchase() {
             <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
               <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
                 <div>
-                  <h2 className="text-lg font-black text-slate-950">{t("ui.items")}</h2>
+                  <h2 className="text-lg font-black text-slate-950">
+                    {t("ui.items")}
+                  </h2>
                   <p className="text-sm text-slate-500">
                     {t("screens.invoices.productsOnInvoice")}
                   </p>

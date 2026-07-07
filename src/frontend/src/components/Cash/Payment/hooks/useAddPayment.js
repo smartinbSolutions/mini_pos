@@ -33,7 +33,7 @@ const useAddPayment = ({
   // Initial calculated base amount from invoice or totalAmount prop
   const initialBaseAmount = invoice
     ? Number(invoice.remaining_amount || 0)
-    : Number(invoice?.net_total || 0);
+    : Number(invoice?.net_total || totalAmount);
 
   const [form, setForm] = useState({
     fund_id: "",

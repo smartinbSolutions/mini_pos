@@ -172,7 +172,7 @@ export default function UpdateSales() {
                 <input
                   type="date"
                   className={inputClass}
-                  value={invoice.date}
+                  value={invoice?.date?.slice(0, 10)}
                   disabled={isLocked}
                   onChange={(e) =>
                     setInvoice({ ...invoice, date: e.target.value })

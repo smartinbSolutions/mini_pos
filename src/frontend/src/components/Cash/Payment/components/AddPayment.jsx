@@ -180,7 +180,7 @@ export default function AddPayment({
                 onChange={(e) => handleBaseAmountChange(e.target.value)}
                 className="w-full h-11 rounded-xl border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="0.00"
-                disabled={!form.fund_id}
+                disabled={!form.fund_id || isSales || isExpense || isPurchase}
               />
               <DollarSign
                 className="absolute right-3 top-3 text-gray-400"

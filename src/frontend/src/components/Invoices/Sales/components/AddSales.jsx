@@ -42,6 +42,7 @@ export default function AddSales() {
     error,
     navigate,
   } = useAddSales();
+  console.log(netTotal);
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
