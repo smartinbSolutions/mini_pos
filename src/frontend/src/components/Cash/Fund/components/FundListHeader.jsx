@@ -30,11 +30,17 @@ const FundListHeader = ({
   onSubmit,
   saving,
   actionError,
+  setActionError,
   submitLabel,
 
   t,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = () => {
+    setActionError?.("");
+    setModalOpen(true);
+  };
 
   const inputClass =
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-4 py-2.5 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
@@ -155,10 +161,7 @@ const FundListHeader = ({
             />
           </div>
 
-          <button
-            onClick={() => setModalOpen(true)}
-            className={primaryButtonClass}
-          >
+          <button onClick={openModal} className={primaryButtonClass}>
             <Plus size={15} />
             {t("common.new") || "New"}
           </button>

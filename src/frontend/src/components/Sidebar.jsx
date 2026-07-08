@@ -77,6 +77,10 @@ export default function Sidebar() {
           title: "navigation.payment",
           path: "/payments",
         },
+        {
+          title: "navigation.transfer",
+          path: "/fundTransfer",
+        },
       ],
     },
     {
@@ -108,7 +112,7 @@ export default function Sidebar() {
       if (!item.children) return;
 
       const match = item.children.some((c) =>
-        location.pathname.startsWith(c.path),
+        location.pathname.startsWith(c.path)
       );
 
       if (match) newOpen[index] = true;

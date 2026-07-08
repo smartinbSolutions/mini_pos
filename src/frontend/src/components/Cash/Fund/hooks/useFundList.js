@@ -75,49 +75,21 @@ const useFundList = () => {
     refetch();
   }, [refetch]);
 
-  const createFund = async (fund) => {
+  // Single handler each — validation + API call + saving state + user
+  // feedback (actionError/toast) all live in one place per action, rather
+  // than a "raw" function plus a separate "for the form" wrapper.
+  const handleCreateFund = async (fund) => {
     const validationError = validateFund(fund);
     if (validationError) {
-      throw new Error(validationError);
+      setActionError(validationError);
+      toast.error(validationError);
+      return false;
     }
 
     setSaving(true);
     try {
       await api.createFund(normalizeFund(fund));
       await refetch();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const updateFund = async (fund) => {
-    const validationError = validateFund(fund);
-    if (validationError) {
-      throw new Error(validationError);
-    }
-
-    setSaving(true);
-    try {
-      await api.updateFund(normalizeFund(fund));
-      await refetch();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const deleteFund = async (fund) => {
-    setSaving(true);
-    try {
-      await api.deleteFund(fund.id);
-      await refetch();
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCreateFund = async (fund) => {
-    try {
-      await createFund(fund);
       setActionError("");
       return true;
     } catch (err) {
@@ -127,33 +99,58 @@ const useFundList = () => {
       setActionError(message);
       toast.error(message);
       return false;
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleUpdateFund = async (fund) => {
+    const validationError = validateFund(fund);
+    if (validationError) {
+      setActionError(validationError);
+      toast.error(validationError);
+      return false;
+    }
+
+    setSaving(true);
     try {
-      await updateFund(fund);
+      await api.updateFund(normalizeFund(fund));
+      await refetch();
       setActionError("");
       return true;
     } catch (err) {
       console.error("Failed to update Fund:", err);
-      const message = t("errors.updateFailed", { field: t("ui.fund") });
+      const message =
+        err?.message || t("errors.updateFailed", { field: t("ui.fund") });
       setActionError(message);
       toast.error(message);
       return false;
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleDeleteFund = async (fund) => {
-    // const confirmed = window.confirm(`Delete Fund "${fund.name}"?`);
-    // if (!confirmed) return;
-
+    setSaving(true);
     try {
-      await deleteFund(fund);
+      const res = await api.deleteFund(fund.id);
+
+      if (!res?.success) {
+        throw new Error(
+          res?.message || t("errors.deleteFailed", { field: t("ui.fund") })
+        );
+      }
+
+      await refetch();
       setActionError("");
     } catch (err) {
       console.error("Failed to delete Fund:", err);
-      toast.error(t("errors.deleteFailed", { field: t("ui.fund") }));
+      const message =
+        err?.message || t("errors.deleteFailed", { field: t("ui.fund") });
+      setActionError(message);
+      toast.error(message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -163,6 +160,7 @@ const useFundList = () => {
     if (saved) {
       setDraft(emptyFund);
     }
+    return saved;
   };
 
   const startEdit = (fund) => {
@@ -185,13 +183,13 @@ const useFundList = () => {
       setEditingId(null);
       setEditing(emptyFund);
     }
+    return saved;
   };
+
   return {
-    createFund,
-    updateFund,
-    deleteFund,
     saving,
     funds,
+    refetch,
     handleDeleteFund,
     handleCreateFund,
     handleUpdateFund,
@@ -206,6 +204,7 @@ const useFundList = () => {
     draft,
     currencies,
     actionError,
+    setActionError,
     setOpenTransferModal,
     openTransferModal,
   };

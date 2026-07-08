@@ -31,10 +31,10 @@ export const formatMoney = (value, currency, options = {}) => {
 
   const formatted = Number.isFinite(num)
     ? num.toLocaleString(undefined, {
-        minimumFractionDigits: options.minimumFractionDigits ?? 2,
-        maximumFractionDigits: options.maximumFractionDigits ?? 2,
+        minimumFractionDigits: options.minimumFractionDigits ?? 0,
+        maximumFractionDigits: options.maximumFractionDigits ?? 4,
       })
-    : "0.00";
+    : "0";
 
   return symbol ? `${formatted}${suffix} ${symbol}` : `${formatted}${suffix}`;
 };

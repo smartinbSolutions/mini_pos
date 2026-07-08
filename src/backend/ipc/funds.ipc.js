@@ -131,6 +131,21 @@ export default function registerFundIPC() {
   });
 
   ipcMain.handle("delete-fund", (event, id) => {
+    const { count } = db
+      .prepare(
+        `
+      SELECT COUNT(*) AS count FROM fund_history WHERE fund_id = ?
+    `
+      )
+      .get(id);
+
+    if (count > 0) {
+      return {
+        success: false,
+        message: "Cannot delete a fund that already has transaction history.",
+      };
+    }
+
     db.prepare(
       `
       DELETE FROM funds WHERE id = ?
@@ -222,7 +237,7 @@ export default function registerFundIPC() {
 
         const insertHistory = db.prepare(`
           INSERT INTO fund_history
-          (fund_id, record_type, movement_type, amount, note, date, transfer_id)
+          (fund_id, record_type, movement_type, amount, note, date, payment_id)
           VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
 
@@ -262,5 +277,277 @@ export default function registerFundIPC() {
         message: error.message || "Transfer failed.",
       };
     }
+  });
+  ipcMain.handle("update-fund-transfer", (event, data) => {
+    try {
+      const {
+        id,
+        from_fund_id,
+        to_fund_id,
+        deduct_amount,
+        receive_amount,
+        note,
+      } = data;
+
+      if (!id) {
+        return { success: false, message: "Transfer id is required." };
+      }
+
+      if (!from_fund_id || !to_fund_id) {
+        return {
+          success: false,
+          message: "Source and destination funds are required.",
+        };
+      }
+
+      if (from_fund_id === to_fund_id) {
+        return { success: false, message: "Cannot transfer to the same fund." };
+      }
+
+      if (Number(deduct_amount) <= 0 || Number(receive_amount) <= 0) {
+        return { success: false, message: "Invalid transfer amounts." };
+      }
+
+      const existing = db
+        .prepare("SELECT * FROM fund_transfers WHERE id = ?")
+        .get(id);
+
+      if (!existing) {
+        return { success: false, message: "Transfer not found." };
+      }
+
+      const fromFund = db
+        .prepare("SELECT * FROM funds WHERE id = ?")
+        .get(from_fund_id);
+
+      const toFund = db
+        .prepare("SELECT * FROM funds WHERE id = ?")
+        .get(to_fund_id);
+
+      if (!fromFund || !toFund) {
+        return { success: false, message: "Selected fund not found." };
+      }
+
+      // Verify both linked fund_history rows actually exist before touching
+      // anything — if either is missing, this transfer's history is already
+      // corrupted and we should fail loudly rather than silently no-op an
+      // UPDATE that matches zero rows.
+      const outRow = db
+        .prepare(
+          `
+        SELECT * FROM fund_history
+        WHERE payment_id = ? AND record_type = 'transfer_out' AND movement_type = 'out'
+      `
+        )
+        .get(id);
+
+      const inRow = db
+        .prepare(
+          `
+        SELECT * FROM fund_history
+        WHERE payment_id = ? AND record_type = 'transfer_in' AND movement_type = 'in'
+      `
+        )
+        .get(id);
+
+      if (!outRow || !inRow) {
+        return {
+          success: false,
+          message:
+            "This transfer's linked fund history is missing or corrupted — cannot safely update.",
+        };
+      }
+
+      const nominalRate =
+        Number(toFund.currency_exchangeRate || 1) /
+        Number(fromFund.currency_exchangeRate || 1);
+
+      const effectiveRate = Number(receive_amount) / Number(deduct_amount);
+
+      const transaction = db.transaction(() => {
+        db.prepare(
+          `
+          UPDATE fund_transfers
+          SET from_fund_id = ?,
+              to_fund_id = ?,
+              deduct_amount = ?,
+              receive_amount = ?,
+              exchange_rate = ?,
+              effective_rate = ?,
+              note = ?
+          WHERE id = ?
+        `
+        ).run(
+          from_fund_id,
+          to_fund_id,
+          Number(deduct_amount),
+          Number(receive_amount),
+          nominalRate,
+          effectiveRate,
+          note || null,
+          id
+        );
+
+        db.prepare(
+          `
+          UPDATE fund_history
+          SET fund_id = ?,
+              amount = ?,
+              note = ?
+          WHERE id = ?
+        `
+        ).run(
+          from_fund_id,
+          Number(deduct_amount),
+          note || `Transferred to ${toFund.name}`,
+          outRow.id
+        );
+
+        db.prepare(
+          `
+          UPDATE fund_history
+          SET fund_id = ?,
+              amount = ?,
+              note = ?
+          WHERE id = ?
+        `
+        ).run(
+          to_fund_id,
+          Number(receive_amount),
+          note || `Received from ${fromFund.name}`,
+          inRow.id
+        );
+
+        return { success: true, message: "Transfer updated successfully." };
+      });
+
+      return transaction();
+    } catch (error) {
+      console.error("Update Fund Transfer Error:", error);
+      return {
+        success: false,
+        message: error.message || "Failed to update transfer.",
+      };
+    }
+  });
+  ipcMain.handle("delete-fund-transfer", (event, id) => {
+    try {
+      if (!id) {
+        return { success: false, message: "Transfer id is required." };
+      }
+
+      const existing = db
+        .prepare("SELECT * FROM fund_transfers WHERE id = ?")
+        .get(id);
+
+      if (!existing) {
+        return { success: false, message: "Transfer not found." };
+      }
+
+      const transaction = db.transaction(() => {
+        db.prepare(
+          `
+          DELETE FROM fund_history
+          WHERE payment_id = ? AND record_type IN ('transfer_out', 'transfer_in')
+        `
+        ).run(id);
+
+        db.prepare("DELETE FROM fund_transfers WHERE id = ?").run(id);
+
+        return { success: true, message: "Transfer deleted successfully." };
+      });
+
+      return transaction();
+    } catch (error) {
+      console.error("Delete Fund Transfer Error:", error);
+      return {
+        success: false,
+        message: error.message || "Failed to delete transfer.",
+      };
+    }
+  });
+
+  ipcMain.handle("get-fund-transfers", (event, params = {}) => {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const conditions = [];
+    const values = [];
+
+    // Optional: filter to transfers touching a specific fund (either side).
+    if (params.fundId) {
+      conditions.push("(t.from_fund_id = ? OR t.to_fund_id = ?)");
+      values.push(params.fundId, params.fundId);
+    }
+
+    // Optional: filter to a specific direction from one fund's perspective.
+    if (params.fromFundId) {
+      conditions.push("t.from_fund_id = ?");
+      values.push(params.fromFundId);
+    }
+
+    if (params.toFundId) {
+      conditions.push("t.to_fund_id = ?");
+      values.push(params.toFundId);
+    }
+
+    // Optional: date range (inclusive), expects ISO date strings.
+    if (params.dateFrom) {
+      conditions.push("t.date >= ?");
+      values.push(params.dateFrom);
+    }
+
+    if (params.dateTo) {
+      conditions.push("t.date <= ?");
+      values.push(params.dateTo);
+    }
+
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
+    const transfers = db
+      .prepare(
+        `
+      SELECT
+        t.*,
+        ff.name AS from_fund_name,
+        ff.currency_code AS from_fund_currency,
+        tf.name AS to_fund_name,
+        tf.currency_code AS to_fund_currency
+      FROM fund_transfers t
+      LEFT JOIN (
+        SELECT f.id, f.name, c.code AS currency_code
+        FROM funds f
+        LEFT JOIN currencies c ON c.id = f.currency_id
+      ) ff ON ff.id = t.from_fund_id
+      LEFT JOIN (
+        SELECT f.id, f.name, c.code AS currency_code
+        FROM funds f
+        LEFT JOIN currencies c ON c.id = f.currency_id
+      ) tf ON tf.id = t.to_fund_id
+      ${whereClause}
+      ORDER BY t.id DESC
+      LIMIT ? OFFSET ?
+    `
+      )
+      .all(...values, limit, offset);
+
+    const { total } = db
+      .prepare(
+        `
+      SELECT COUNT(*) AS total FROM fund_transfers t ${whereClause}
+    `
+      )
+      .get(...values);
+
+    return {
+      data: transfers,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
   });
 }

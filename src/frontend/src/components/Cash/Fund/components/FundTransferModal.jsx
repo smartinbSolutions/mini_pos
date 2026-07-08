@@ -2,7 +2,15 @@ import { X, Save, ArrowRightLeft, ArrowRight } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import useTransferFundtoFund from "../hooks/useTransferFundtoFund";
 
-export default function FundTransferModal({ isOpen, onClose, refetchList }) {
+// `transfer` is optional. Pass an existing fund_transfers row to edit it;
+// omit it (or pass null) to create a brand new transfer.
+export default function FundTransferModal({
+  isOpen,
+  onClose,
+  refetchList,
+  transfer = null,
+  lockedFromFundId = null,
+}) {
   const {
     funds,
     form,
@@ -14,12 +22,20 @@ export default function FundTransferModal({ isOpen, onClose, refetchList }) {
     effectiveRate,
     loading,
     message,
+    isEditMode,
+    isSourceLocked,
     handleSourceFundChange,
     handleAmountChange,
     handleReceiveAmountChange,
     submit,
     t,
-  } = useTransferFundtoFund({ isOpen, refetchList, onClose });
+  } = useTransferFundtoFund({
+    isOpen,
+    refetchList,
+    onClose,
+    transfer,
+    lockedFromFundId,
+  });
 
   if (!isOpen) return null;
 
@@ -34,7 +50,9 @@ export default function FundTransferModal({ isOpen, onClose, refetchList }) {
             </div>
             <div>
               <h2 className="font-semibold text-gray-800">
-                {t("screens.transfer.internal_fund_transfer")}
+                {isEditMode
+                  ? t("screens.transfer.edit_transfer") || "Edit Transfer"
+                  : t("screens.transfer.internal_fund_transfer")}
               </h2>
               <p className="text-xs text-gray-500">
                 {t("screens.transfer.move_money_safely")}
@@ -60,20 +78,28 @@ export default function FundTransferModal({ isOpen, onClose, refetchList }) {
                 {t("screens.transfer.source_fund")}
               </div>
 
-              <select
-                value={form.from_fund_id}
-                onChange={handleSourceFundChange}
-                className="w-full h-10 rounded-xl border px-3 bg-white outline-none focus:border-indigo-500 text-sm"
-              >
-                <option value="">
-                  {t("screens.transfer.select_source_fund")}
-                </option>
-                {funds.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name} ({formatMoney(f.balance, f)})
+              {isSourceLocked ? (
+                <div className="w-full h-10 rounded-xl border px-3 bg-gray-100 text-sm flex items-center text-slate-700 font-medium">
+                  {sourceFund
+                    ? `${sourceFund.name} (${formatMoney(sourceFund.balance, sourceFund)})`
+                    : "…"}
+                </div>
+              ) : (
+                <select
+                  value={form.from_fund_id}
+                  onChange={handleSourceFundChange}
+                  className="w-full h-10 rounded-xl border px-3 bg-white outline-none focus:border-indigo-500 text-sm"
+                >
+                  <option value="">
+                    {t("screens.transfer.select_source_fund")}
                   </option>
-                ))}
-              </select>
+                  {funds.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({formatMoney(f.balance, f)})
+                    </option>
+                  ))}
+                </select>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-gray-600">
@@ -201,7 +227,9 @@ export default function FundTransferModal({ isOpen, onClose, refetchList }) {
             <Save size={18} />
             {loading
               ? t("screens.transfer.processing")
-              : t("screens.transfer.execute_transfer")}
+              : isEditMode
+                ? t("screens.transfer.save_changes") || "Save Changes"
+                : t("screens.transfer.execute_transfer")}
           </button>
         </div>
       </div>

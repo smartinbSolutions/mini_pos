@@ -24,7 +24,9 @@ const FundList = () => {
   const {
     saving,
     funds,
+    refetch,
     handleDeleteFund,
+    submitDraft,
     startEdit,
     submitEdit,
     setEditing,
@@ -33,12 +35,11 @@ const FundList = () => {
     editingId,
     setDraft,
     draft,
-    submitDraft,
     currencies,
     actionError,
+    setActionError,
     setOpenTransferModal,
     openTransferModal,
-    refetch,
   } = useFundList();
 
   const [search, setSearch] = useState("");
@@ -92,6 +93,7 @@ const FundList = () => {
             onSubmit={submitDraft}
             saving={saving}
             actionError={actionError}
+            setActionError={setActionError}
             submitLabel={t("screens.funds.createButton")}
             t={t}
           />
@@ -279,10 +281,12 @@ const FundList = () => {
       />
 
       <FundTransferModal
-        isOpen={openTransferModal}
+        isOpen={Boolean(openTransferModal)}
         onClose={() => setOpenTransferModal(false)}
         refetchList={refetch}
+        lockedFromFundId={openTransferModal?.id}
       />
+
       {openPaymentModal && (
         <AddFundPayment
           isOpen={openPaymentModal}
@@ -292,7 +296,9 @@ const FundList = () => {
           }}
           mode={paymentMode}
           initialFundId={selectedFund?.id}
-          refetchList={() => refetch?.()}
+          refetchList={() => {
+            refetch?.();
+          }}
         />
       )}
 

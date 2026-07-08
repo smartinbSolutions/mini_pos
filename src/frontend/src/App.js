@@ -34,6 +34,7 @@ import UpdateExpense from "./components/Invoices/expense/components/UpdateExpens
 import ExpenseView from "./components/Invoices/expense/components/ExpenseView";
 import PartnersList from "./components/Partners/components/PartnersList";
 import PaymentList from "./components/Cash/Payment/components/paymentList";
+import FundTransferList from "./components/Cash/Fund/components/FundTransferList";
 
 export default function App() {
   const { t } = useTranslation();
@@ -107,6 +108,7 @@ export default function App() {
               />
               <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
               <Route path="payments" element={<PaymentList />} />
+              <Route path="fundTransfer" element={<FundTransferList />} />
               <Route
                 path="payment/:type/:id"
                 element={<PartyLedgerPage />}

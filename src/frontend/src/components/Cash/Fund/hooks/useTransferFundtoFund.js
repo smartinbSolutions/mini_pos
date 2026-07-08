@@ -1,21 +1,38 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-const useTransferFundtoFund = ({ isOpen, onClose, refetchList }) => {
+const emptyForm = {
+  from_fund_id: "",
+  to_fund_id: "",
+  amount: "", // deduct amount, in source fund's currency
+  receive_amount: "", // editable, in destination fund's currency
+  note: "",
+};
+
+// `transfer` is optional — when present, the hook operates in edit mode
+// against that existing fund_transfers row instead of creating a new one.
+//
+// `lockedFromFundId` is optional too — when present (and not editing), the
+// source fund is fixed to it (e.g. opened from a specific fund's row in
+// FundList, where the user already picked the source by clicking that row).
+const useTransferFundtoFund = ({
+  isOpen,
+  onClose,
+  refetchList,
+  transfer,
+  lockedFromFundId,
+}) => {
   const api = window.api;
   const { t } = useTranslation();
+
+  const isEditMode = Boolean(transfer?.id);
+  const isSourceLocked = Boolean(lockedFromFundId) && !isEditMode;
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [funds, setFunds] = useState([]);
 
-  const [form, setForm] = useState({
-    from_fund_id: "",
-    to_fund_id: "",
-    amount: "", // deduct amount, in source fund's currency
-    receive_amount: "", // editable, in destination fund's currency
-    note: "",
-  });
+  const [form, setForm] = useState(emptyForm);
 
   const sourceFund = useMemo(
     () => funds.find((f) => f.id === Number(form.from_fund_id)),
@@ -43,16 +60,30 @@ const useTransferFundtoFund = ({ isOpen, onClose, refetchList }) => {
 
     refetch();
 
-    setForm({
-      from_fund_id: "",
-      to_fund_id: "",
-      amount: "",
-      receive_amount: "",
-      note: "",
-    });
+    if (isEditMode) {
+      setForm({
+        from_fund_id: transfer.from_fund_id,
+        to_fund_id: transfer.to_fund_id,
+        amount: transfer.deduct_amount,
+        receive_amount: transfer.receive_amount,
+        note: transfer.note || "",
+      });
+    } else if (isSourceLocked) {
+      setForm({ ...emptyForm, from_fund_id: lockedFromFundId });
+    } else {
+      setForm(emptyForm);
+    }
 
     setMessage("");
-  }, [isOpen, refetch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isOpen,
+    refetch,
+    isEditMode,
+    transfer?.id,
+    isSourceLocked,
+    lockedFromFundId,
+  ]);
 
   const handleSourceFundChange = (e) => {
     const id = Number(e.target.value);
@@ -74,6 +105,11 @@ const useTransferFundtoFund = ({ isOpen, onClose, refetchList }) => {
     return targetRate / sourceRate;
   }, [sourceRate, targetRate]);
 
+  // Recompute receive_amount whenever the *rate* changes (fund selection
+  // changed), using whatever amount currently exists — so switching funds
+  // never leaves a stale receive_amount behind. Deliberately excludes
+  // form.amount from deps: handleAmountChange already handles that case,
+  // this effect only reacts to fund/rate changes.
   useEffect(() => {
     const amount = Number(form.amount || 0);
 
@@ -90,15 +126,6 @@ const useTransferFundtoFund = ({ isOpen, onClose, refetchList }) => {
   }, [nominalRate, sourceFund, targetFund]);
 
   const isCrossCurrency = sourceFund && targetFund && nominalRate !== 1;
-
-  // Recompute the nominal receive amount whenever the deduct amount or
-  // either fund changes. This is the "auto-calculated" value shown before
-  // any manual override.
-  const nominalReceiveAmount = useMemo(() => {
-    const amount = Number(form.amount || 0);
-    if (!amount || !sourceFund || !targetFund) return 0;
-    return amount * nominalRate;
-  }, [form.amount, sourceFund, targetFund, nominalRate]);
 
   // Same pattern as AddPayment's amount_in_base / collected_amount:
   // changing the deduct amount resets receive_amount to the freshly
@@ -140,6 +167,11 @@ const useTransferFundtoFund = ({ isOpen, onClose, refetchList }) => {
       return;
     }
 
+    if (form.from_fund_id === form.to_fund_id) {
+      setMessage("Cannot transfer to the same fund.");
+      return;
+    }
+
     if (Number(form.amount) <= 0) {
       setMessage("Please enter a valid amount.");
       return;
@@ -164,7 +196,9 @@ const useTransferFundtoFund = ({ isOpen, onClose, refetchList }) => {
           `Internal transfer from ${sourceFund?.name} to ${targetFund?.name}`,
       };
 
-      const res = await api.transferFundToFund(payload);
+      const res = isEditMode
+        ? await api.updateFundTransfer({ id: transfer.id, ...payload })
+        : await api.transferFundToFund(payload);
 
       if (!res.success) {
         throw new Error(res.message);
@@ -191,11 +225,12 @@ const useTransferFundtoFund = ({ isOpen, onClose, refetchList }) => {
     sourceRate,
     targetRate,
     nominalRate,
-    nominalReceiveAmount,
     isCrossCurrency,
     effectiveRate,
     loading,
     message,
+    isEditMode,
+    isSourceLocked,
     handleSourceFundChange,
     handleAmountChange,
     handleReceiveAmountChange,
