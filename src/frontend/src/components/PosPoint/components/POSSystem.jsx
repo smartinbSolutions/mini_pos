@@ -88,7 +88,7 @@ export default function POSSystem() {
     return products.filter((product) =>
       [product.name, product.latinName, product.unit_name, product.unit_code]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
+        .some((value) => String(value).toLowerCase().includes(term))
     );
   }, [products, search]);
 
@@ -322,7 +322,7 @@ export default function POSSystem() {
 
           <div className="flex-1 overflow-auto px-4 pb-28 lg:pb-4">
             {filteredProducts.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
                 {filteredProducts.map((product) => (
                   <button
                     key={product.id}
@@ -331,7 +331,7 @@ export default function POSSystem() {
                       addToCart(
                         product,
                         activeWeight || 1,
-                        Boolean(activeWeight),
+                        Boolean(activeWeight)
                       );
                       setActionError("");
                     }}
@@ -487,7 +487,7 @@ export default function POSSystem() {
                             e.stopPropagation();
                             updateQuantity(
                               item.id,
-                              item.qty === 1 ? -1 : item.qty - 1,
+                              item.qty === 1 ? -1 : item.qty - 1
                             );
                           }}
                           className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"

@@ -156,7 +156,9 @@
       "namePlaceholder": "اسم الصندوق",
       "initialBalance": "الرصيد الافتتاحي",
       "createButton": "إنشاء صندوق",
-      "fund_transfer": "تحويل بين الصناديق"
+      "fund_transfer": "تحويل بين الصناديق",
+      "transfer_Flow": "حركة التحويل",
+      "transfer_rate": "سعر التحويل"
     },
     "contacts": {
       "customersSubtitle": "إدارة العملاء بسهولة",
@@ -463,7 +465,8 @@
     "expense": "المصاريف",
     "partners": "الشركاء",
     "partner": "الشريك",
-    "payment": "المدفوعات"
+    "payment": "المدفوعات",
+    "transfers": "التحويلات"
   },
 
   "dashboard": {

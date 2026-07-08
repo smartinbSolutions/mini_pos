@@ -3,8 +3,7 @@ import {
   Wallet,
   Save,
   X,
-  ArrowUpRight,
-  ArrowDownLeft,
+  ArrowRight,
   DollarSign,
   User,
   Building2,
@@ -13,7 +12,7 @@ import {
 import { formatMoney } from "../../../../Global/FormatNumber";
 import useAddFundPayment from "../hooks/useAddFundPayment";
 
-export default function AddPayment({
+export default function AddFundPayment({
   isOpen,
   onClose,
   mode = "in",
@@ -29,6 +28,9 @@ export default function AddPayment({
     loading,
     message,
     effectiveRate,
+    isFundLocked,
+    selectedFund,
+    selectedParty,
     handleChange,
     handleFundChange,
     handleBaseAmountChange,
@@ -42,31 +44,145 @@ export default function AddPayment({
     initialFundId,
     refetchList,
   });
-  console.log(partiesList);
+
   if (!isOpen) return null;
 
   const isCashIn = mode === "in";
-  const themeClass = isCashIn
+  const theme = isCashIn
     ? {
-        bg: "bg-green-100 text-green-600",
+        chip: "bg-green-100 text-green-600",
         btn: "bg-green-600 hover:bg-green-700",
+        arrow: "bg-green-100 text-green-600",
       }
-    : { bg: "bg-red-100 text-red-600", btn: "bg-red-600 hover:bg-red-700" };
+    : {
+        chip: "bg-red-100 text-red-600",
+        btn: "bg-red-600 hover:bg-red-700",
+        arrow: "bg-red-100 text-red-600",
+      };
+
+  const partyIcon =
+    partyType === "customer" ? (
+      <User size={16} />
+    ) : partyType === "supplier" ? (
+      <Building2 size={16} />
+    ) : (
+      <Users size={16} />
+    );
+
+  const partyCard = (
+    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+      <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+        {isCashIn
+          ? t("screens.payments.linked_account_type")
+          : t("screens.payments.linked_account_type")}
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5 p-1 bg-white rounded-xl text-xs font-semibold border">
+        {mode === "in" ? (
+          <button
+            type="button"
+            onClick={() => setPartyType("customer")}
+            className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "customer" ? "bg-green-50 text-green-600 shadow-sm" : "text-gray-500"}`}
+          >
+            <User size={14} />
+            {t("screens.payments.customer")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPartyType("supplier")}
+            className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "supplier" ? "bg-red-50 text-red-600 shadow-sm" : "text-gray-500"}`}
+          >
+            <Building2 size={14} />
+            {t("screens.payments.supplier")}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setPartyType("partner")}
+          className={`col-span-2 flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "partner" ? "bg-orange-50 text-orange-600 shadow-sm" : "text-gray-500"}`}
+        >
+          <Users size={14} />
+          {t("screens.payments.partner")}
+        </button>
+      </div>
+
+      <select
+        value={form.party_id || ""}
+        onChange={(e) => handleChange("party_id", e.target.value)}
+        className="w-full h-10 rounded-xl border px-3 bg-white outline-none focus:border-blue-500 text-sm"
+        required
+      >
+        <option value="">
+          -- {t("screens.payments.select_name_from_list")} --
+        </option>
+        {partiesList.length > 0 &&
+          partiesList.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name} {p.phone ? `(${p.phone})` : ""}
+            </option>
+          ))}
+      </select>
+    </div>
+  );
+
+  const fundCard = (
+    <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+      <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+        {t("screens.payments.target_fund")}
+      </div>
+
+      {isFundLocked ? (
+        <div className="w-full h-10 rounded-xl border px-3 bg-gray-100 text-sm flex items-center text-slate-700 font-medium">
+          {selectedFund
+            ? `${selectedFund.name} (${formatMoney(selectedFund.balance, selectedFund)})`
+            : "…"}
+        </div>
+      ) : (
+        <select
+          value={form.fund_id || ""}
+          onChange={handleFundChange}
+          className="w-full h-10 rounded-xl border px-3 bg-white outline-none focus:border-blue-500 text-sm"
+        >
+          <option value="">{t("screens.payments.select_fund")}</option>
+          {funds?.map((f) => (
+            <option key={f.id} value={f.id}>
+              {f.name} ({formatMoney(f.balance, f)})
+            </option>
+          ))}
+        </select>
+      )}
+
+      <div>
+        <label className="text-xs font-medium text-gray-600">
+          {t("screens.payments.amount_base_currency")}
+        </label>
+        <div className="relative mt-1">
+          <input
+            type="number"
+            value={form.amount_in_base || ""}
+            onChange={(e) => handleBaseAmountChange(e.target.value)}
+            className="w-full h-10 rounded-xl border px-3 pr-9 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm disabled:bg-gray-100"
+            placeholder="0.00"
+            disabled={!form.fund_id}
+          />
+          <DollarSign
+            className="absolute right-2.5 top-2.5 text-gray-400"
+            size={16}
+          />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl border">
+      <div className="w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl border">
         <div className="flex items-center justify-between px-5 py-4 border-b bg-gray-50">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-2xl ${themeClass.bg}`}>
-              {isCashIn ? (
-                <ArrowDownLeft size={20} />
-              ) : (
-                <ArrowUpRight size={20} />
-              )}
-            </div>
+            <div className={`p-2 rounded-2xl ${theme.chip}`}>{partyIcon}</div>
             <div>
-              <h2 className="font-semibold text-gray-800 animate-fade-in">
+              <h2 className="font-semibold text-gray-800">
                 {isCashIn
                   ? t("screens.payments.cash_in_receipt")
                   : t("screens.payments.cash_out_payment")}
@@ -85,113 +201,25 @@ export default function AddPayment({
         </div>
 
         <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-          <div>
-            <label className="text-sm font-medium text-gray-600">
-              {t("screens.payments.linked_account_type")}
-            </label>
-            <div className="grid grid-cols-3 gap-2 mt-1 p-1 bg-gray-100 rounded-xl text-xs font-semibold">
-              {mode === "in" ? (
-                <button
-                  type="button"
-                  onClick={() => setPartyType("customer")}
-                  className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "customer" ? "bg-white text-green-600 shadow-sm" : "text-gray-500"}`}
-                >
-                  <User size={14} />
-                  {t("screens.payments.customer")}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setPartyType("supplier")}
-                  className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "supplier" ? "bg-white text-red-600 shadow-sm" : "text-gray-500"}`}
-                >
-                  <Building2 size={14} />
-                  {t("screens.payments.supplier")}
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setPartyType("partner")}
-                className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "partner" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500"}`}
-              >
-                <Users size={14} />
-                {t("screens.payments.partner")}
-              </button>
+          {/* Horizontal flow expressing the actual movement of cash:
+              cash-in -> party is the source, fund is the destination.
+              cash-out -> fund is the source, party is the destination. */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
+            {isCashIn ? partyCard : fundCard}
+
+            <div className="flex h-full items-center justify-center pt-8">
+              <div className={`rounded-full p-2 ${theme.arrow}`}>
+                <ArrowRight size={18} />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-600">
-              {partyType === "customer" &&
-                t("screens.payments.registered_customer_name")}
-              {partyType === "supplier" &&
-                t("screens.payments.registered_supplier_name")}
-              {partyType === "partner" &&
-                t("screens.payments.registered_partner_name")}
-            </label>
-            <select
-              value={form.party_id || ""}
-              onChange={(e) => handleChange("party_id", e.target.value)}
-              className="w-full h-11 rounded-xl border px-3 mt-1 bg-white outline-none focus:border-blue-500 shadow-sm"
-              required
-            >
-              <option value="">
-                {" "}
-                -- {t("screens.payments.select_name_from_list")} --
-              </option>
-              {partiesList.length > 0 &&
-                partiesList?.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.phone ? `(${p.phone})` : ""}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-600">
-              {t("screens.payments.target_fund")}
-            </label>
-            <select
-              value={form.fund_id || ""}
-              onChange={handleFundChange}
-              className="w-full h-11 rounded-xl border px-3 mt-1 bg-white outline-none focus:border-blue-500 shadow-sm"
-            >
-              <option value="">{t("screens.payments.select_fund")}</option>
-              {funds?.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name} ({formatMoney(f.balance, f)})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <hr className="border-dashed" />
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              {t("screens.payments.amount_base_currency")}
-            </label>
-            <div className="relative mt-1">
-              <input
-                type="number"
-                value={form.amount_in_base || ""}
-                onChange={(e) => handleBaseAmountChange(e.target.value)}
-                className="w-full h-11 rounded-xl border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
-                placeholder="0.00"
-                disabled={!form.fund_id}
-              />
-              <DollarSign
-                className="absolute right-3 top-3 text-gray-400"
-                size={18}
-              />
-            </div>
+            {isCashIn ? fundCard : partyCard}
           </div>
 
           {form.fund_exchangeRate !== 1 && (
             <div>
               <label className="text-sm font-medium text-gray-700">
-                {t("screens.payments.actual_amount_fund_currency")}{" "}
+                {t("screens.payments.actual_amount_fund_currency")}
               </label>
               <div className="relative mt-1">
                 <input
@@ -250,7 +278,7 @@ export default function AddPayment({
           <button
             onClick={submit}
             disabled={loading}
-            className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 font-medium transition-all ${themeClass.btn} shadow-md`}
+            className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 font-medium transition-all ${theme.btn} shadow-md disabled:opacity-50`}
           >
             <Save size={18} />
             {loading ? t("posting_and_saving") : t("save_and_post_receipt")}

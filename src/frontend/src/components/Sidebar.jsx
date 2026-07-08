@@ -78,7 +78,7 @@ export default function Sidebar() {
           path: "/payments",
         },
         {
-          title: "navigation.transfer",
+          title: "navigation.transfers",
           path: "/fundTransfer",
         },
       ],

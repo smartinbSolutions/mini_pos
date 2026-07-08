@@ -96,10 +96,10 @@ const FundTransferList = () => {
                   <tr>
                     <th className="px-5 py-4">{t("ui.date")}</th>
                     <th className="px-5 py-4">
-                      {t("screens.transfer.flow") || "Transfer"}
+                      {t("screens.funds.transfer_Flow") || "Transfer"}
                     </th>
                     <th className="px-5 py-4 text-right">
-                      {t("screens.transfer.rate") || "Rate"}
+                      {t("screens.funds.transfer_rate") || "Rate"}
                     </th>
                     <th className="px-5 py-4">{t("ui.note")}</th>
                     <th className="px-5 py-4 text-right">

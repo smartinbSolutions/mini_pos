@@ -1,4 +1,4 @@
-import { Wallet, CreditCard } from "lucide-react";
+import { Wallet, CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -18,102 +18,152 @@ export default function CheckoutModal({
   t,
   money,
 }) {
-  const [paymentAmounts, setPaymentAmounts] = useState({});
-  const [changeFundId, setChangeFundId] = useState("");
+  // per fund: how much of the total this fund covers (primary currency),
+  // and how much actually lands in the fund (fund currency). fundAmtEdited
+  // tracks whether the second field has been hand-edited, so we know
+  // whether to keep auto-filling it from the system rate or leave it alone.
+  const [allocations, setAllocations] = useState({});
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!funds.length) {
-      setPaymentAmounts({});
+      setAllocations({});
       return;
     }
 
-    setPaymentAmounts((current) => {
+    setAllocations((current) => {
       const fundIds = new Set(funds.map((fund) => String(fund.id)));
       return Object.fromEntries(
-        Object.entries(current).filter(([fundId]) => fundIds.has(fundId)),
+        Object.entries(current).filter(([fundId]) => fundIds.has(fundId))
       );
     });
-
-    setChangeFundId((current) =>
-      current && funds.some((fund) => String(fund.id) === String(current))
-        ? current
-        : String(funds[0].id),
-    );
   }, [funds]);
 
-  const payments = useMemo(() => {
-    return funds
-      .map((fund) => {
-        const amountFundCurrency = toNumber(paymentAmounts[String(fund.id)]);
-        const exchangeRate = toNumber(fund.currency_exchangeRate || 1) || 1;
+  const getRate = (fund) => toNumber(fund.currency_exchangeRate || 1) || 1;
 
-        return {
-          fundId: Number(fund.id),
-          amount: cents(amountFundCurrency / exchangeRate),
-          amount_fund_currency: amountFundCurrency,
-          currency_code: fund.currency_code,
-          exchange_rate: exchangeRate,
-        };
-      })
-      .filter((payment) => payment.amount_fund_currency > 0);
-  }, [funds, paymentAmounts]);
+  const updatePortion = (fund, value) => {
+    const rate = getRate(fund);
+    const key = String(fund.id);
 
-  const paidTotal = useMemo(
-    () => cents(payments.reduce((sum, payment) => sum + payment.amount, 0)),
-    [payments],
+    setAllocations((current) => {
+      const existing = current[key] || {};
+      const sameCurrency = rate === 1;
+
+      return {
+        ...current,
+        [key]: {
+          portion: value,
+          // same-currency fund: fund amount always mirrors the portion.
+          // foreign fund: keep the hand-edited fund amount if the user set
+          // one, otherwise default it from the system rate.
+          fundAmt: sameCurrency
+            ? value
+            : existing.fundAmtEdited
+              ? existing.fundAmt
+              : cents(toNumber(value) * rate),
+          fundAmtEdited: sameCurrency ? false : existing.fundAmtEdited || false,
+        },
+      };
+    });
+
+    setError("");
+  };
+
+  const updateFundAmt = (fund, value) => {
+    const key = String(fund.id);
+
+    setAllocations((current) => ({
+      ...current,
+      [key]: {
+        ...current[key],
+        fundAmt: value,
+        fundAmtEdited: true,
+      },
+    }));
+
+    setError("");
+  };
+
+  const rows = useMemo(() => {
+    return funds.map((fund) => {
+      const key = String(fund.id);
+      const rate = getRate(fund);
+      const entry = allocations[key] || {};
+      const portion = toNumber(entry.portion);
+      const fundAmt = toNumber(entry.fundAmt);
+      const sameCurrency = rate === 1;
+
+      // for a foreign fund, the effective rate is whatever the two typed
+      // numbers imply - not necessarily the fund's listed rate
+      const effectiveRate =
+        !sameCurrency && portion > 0 ? fundAmt / portion : rate;
+
+      const rateDeviationPct =
+        !sameCurrency && rate
+          ? Math.abs((effectiveRate - rate) / rate) * 100
+          : 0;
+
+      return {
+        fund,
+        rate,
+        sameCurrency,
+        portion,
+        fundAmt,
+        effectiveRate,
+        rateDeviationPct,
+      };
+    });
+  }, [funds, allocations]);
+
+  const allocatedTotal = useMemo(
+    () => cents(rows.reduce((sum, row) => sum + row.portion, 0)),
+    [rows]
   );
 
-  const receivedTotal = useMemo(
-    () =>
-      cents(
-        payments.reduce(
-          (sum, payment) => sum + payment.amount_fund_currency,
-          0,
-        ),
-      ),
-    [payments],
+  // positive = still unallocated, negative = over-allocated, 0 = exact
+  const allocationDiff = useMemo(
+    () => cents(total - allocatedTotal),
+    [total, allocatedTotal]
   );
 
-  const change = useMemo(
-    () => Math.max(0, cents(paidTotal - total)),
-    [paidTotal, total],
-  );
-
-  const remaining = useMemo(
-    () => Math.max(0, cents(total - paidTotal)),
-    [paidTotal, total],
-  );
+  const isFullyAllocated = Math.abs(allocationDiff) < 0.01;
 
   const submit = async (event) => {
     event.preventDefault();
+
+    const payments = rows
+      .filter((row) => row.portion > 0)
+      .map((row) => ({
+        fundId: Number(row.fund.id),
+        amount: row.portion,
+        amount_fund_currency: row.sameCurrency ? row.portion : row.fundAmt,
+        currency_code: row.fund.currency_code,
+        exchange_rate: row.sameCurrency ? 1 : row.effectiveRate,
+      }));
 
     if (!payments.length) {
       setError(t("screens.checkout.selectFundError"));
       return;
     }
 
-    if (remaining > 0) {
-      const message = t("screens.checkout.remainingMustBeZero");
+    if (!isFullyAllocated) {
+      const message =
+        allocationDiff > 0
+          ? t("screens.checkout.remainingToAllocate", {
+              amount: money(allocationDiff),
+            })
+          : t("screens.checkout.overAllocatedBy", {
+              amount: money(-allocationDiff),
+            });
       setError(message);
       toast.error(message);
-      return false;
-    }
-
-    if (change > 0 && !changeFundId) {
-      const message = t("screens.checkout.selectChangeFundError");
-      setError(message);
-      toast.error(message);
-      return false;
+      return;
     }
 
     try {
       await onCheckout({
         payments,
-        received: paidTotal,
-        receivedFundTotal: receivedTotal,
-        change,
-        changeFundId: change > 0 ? Number(changeFundId) : null,
+        received: allocatedTotal,
       });
       onClose();
     } catch (err) {
@@ -128,7 +178,7 @@ export default function CheckoutModal({
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
       <div className="min-h-0 flex-1 overflow-auto p-5">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
           <section className="min-w-0">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
@@ -146,18 +196,21 @@ export default function CheckoutModal({
             </div>
 
             <div className="space-y-2.5">
-              {funds.map((fund) => {
-                const amount = paymentAmounts[String(fund.id)] ?? "";
-                const exchangeRate =
-                  toNumber(fund.currency_exchangeRate || 1) || 1;
-                const convertedAmount = cents(toNumber(amount) / exchangeRate);
-
-                return (
+              {rows.map(
+                ({
+                  fund,
+                  rate,
+                  sameCurrency,
+                  portion,
+                  fundAmt,
+                  effectiveRate,
+                  rateDeviationPct,
+                }) => (
                   <div
                     key={fund.id}
-                    className="grid gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/60 sm:grid-cols-[minmax(0,1fr)_150px_220px] sm:items-center"
+                    className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/60"
                   >
-                    <div className="flex min-w-0 items-center gap-3">
+                    <div className="mb-3 flex items-center gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
                         <Wallet size={19} />
                       </div>
@@ -166,58 +219,102 @@ export default function CheckoutModal({
                         <h4 className="truncate font-black text-stone-950">
                           {fund.name}
                         </h4>
-                        <p className="mt-1 truncate text-xs font-semibold text-stone-500">
+                        <p className="mt-0.5 truncate text-xs font-semibold text-stone-500">
                           {fund.currency_code ||
                             fund.currency_name ||
                             t("screens.checkout.noCurrency")}
                         </p>
                       </div>
-                    </div>
 
-                    <div className="min-w-0 rounded-xl bg-stone-50 px-3 py-2">
-                      <p className="text-xs font-semibold text-stone-400">
-                        {t("ui.balance")}
-                      </p>
-                      <p className="mt-0.5 truncate text-sm font-black text-stone-800">
-                        {money(fund.balance || 0, fund)}
-                      </p>
-                    </div>
-
-                    <label className="flex min-w-0 flex-col gap-1.5 text-xs font-black text-stone-600">
-                      <span className="flex items-center justify-between gap-2">
-                        <span>{t("ui.amount")}</span>
-                      </span>
-
-                      <div className="flex h-11 overflow-hidden rounded-xl border border-stone-200 bg-white focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={amount}
-                          onChange={(event) => {
-                            setPaymentAmounts((current) => ({
-                              ...current,
-                              [String(fund.id)]: event.target.value,
-                            }));
-                            setError("");
-                          }}
-                          className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400"
-                          placeholder="0"
-                        />
-                        <span className="flex items-center border-l border-stone-200 bg-stone-50 px-3 text-xs font-black text-stone-500">
-                          {fund.currency_code || fund.currency_symbol || ""}
-                        </span>
-                      </div>
-
-                      {toNumber(amount) > 0 && (
-                        <span className="truncate text-[11px] font-bold text-stone-400">
-                          {money(convertedAmount)}
+                      {!sameCurrency && (
+                        <span className="ml-auto shrink-0 text-[11px] font-semibold text-stone-400">
+                          1 = {rate}
                         </span>
                       )}
-                    </label>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="flex min-w-0 flex-col gap-1.5 text-xs font-black text-stone-600">
+                        <span>{t("screens.checkout.portionOfTotal")}</span>
+
+                        <div className="flex h-11 overflow-hidden rounded-xl border border-stone-200 bg-white focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100">
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={portion || ""}
+                            onChange={(e) =>
+                              updatePortion(fund, e.target.value)
+                            }
+                            className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400"
+                            placeholder="0"
+                          />
+                          <span className="flex items-center border-l border-stone-200 bg-stone-50 px-3 text-xs font-black text-stone-500">
+                            {t("ui.primaryCurrency")}
+                          </span>
+                        </div>
+                      </label>
+
+                      <label className="flex min-w-0 flex-col gap-1.5 text-xs font-black text-stone-600">
+                        <span>
+                          {t("ui.amount")} · {fund.currency_code}
+                        </span>
+
+                        <div
+                          className={`flex h-11 overflow-hidden rounded-xl border ${
+                            sameCurrency
+                              ? "border-stone-100 bg-stone-50"
+                              : "border-stone-200 bg-white focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100"
+                          }`}
+                        >
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={sameCurrency ? portion || "" : fundAmt || ""}
+                            disabled={sameCurrency}
+                            onChange={(e) =>
+                              updateFundAmt(fund, e.target.value)
+                            }
+                            className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400 disabled:text-stone-400"
+                            placeholder="0"
+                          />
+                          <span className="flex items-center border-l border-stone-200 bg-stone-50 px-3 text-xs font-black text-stone-500">
+                            {fund.currency_code || fund.currency_symbol || ""}
+                          </span>
+                        </div>
+                      </label>
+                    </div>
+
+                    {!sameCurrency && portion > 0 && (
+                      <div
+                        className={`mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-bold ${
+                          rateDeviationPct > 5
+                            ? "bg-amber-50 text-amber-700"
+                            : "bg-stone-100 text-stone-500"
+                        }`}
+                      >
+                        {rateDeviationPct > 5 ? (
+                          <AlertCircle size={13} className="shrink-0" />
+                        ) : (
+                          <CheckCircle2 size={13} className="shrink-0" />
+                        )}
+                        <span>
+                          {t("screens.checkout.effectiveRate")}: 1{" "}
+                          {t("ui.primaryCurrency")} = {effectiveRate.toFixed(2)}{" "}
+                          {fund.currency_code}
+                        </span>
+                        {rateDeviationPct > 5 && (
+                          <span className="text-amber-600">
+                            ({t("screens.checkout.fundRateShort")}{" "}
+                            {rate.toFixed(2)})
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                );
-              })}
+                )
+              )}
             </div>
           </section>
 
@@ -235,57 +332,36 @@ export default function CheckoutModal({
             <div className="mt-3 grid gap-2 rounded-2xl border border-stone-200 bg-white p-3 shadow-sm shadow-stone-200/60">
               <div className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 px-3 py-2.5">
                 <span className="text-xs font-bold text-stone-500">
-                  {t("screens.checkout.receivedAmount")}
+                  {t("screens.checkout.allocated")}
                 </span>
                 <span className="truncate text-sm font-black text-stone-950">
-                  {money(paidTotal)}
+                  {money(allocatedTotal)}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 px-3 py-2.5">
-                <span className="text-xs font-bold text-stone-500">
-                  {t("screens.checkout.change")}
-                </span>
-                <span className="truncate text-sm font-black text-emerald-700">
-                  {money(change)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 rounded-xl bg-stone-50 px-3 py-2.5">
-                <span className="text-xs font-bold text-stone-500">
-                  {t("ui.remaining")}
-                </span>
-                <span
-                  className={`truncate text-sm font-black ${remaining > 0 ? "text-red-600" : "text-stone-950"}`}
-                >
-                  {money(remaining)}
+              <div
+                className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-xs font-bold ${
+                  isFullyAllocated
+                    ? "bg-emerald-50 text-emerald-700"
+                    : allocationDiff > 0
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-red-50 text-red-700"
+                }`}
+              >
+                {isFullyAllocated ? (
+                  <CheckCircle2 size={15} className="shrink-0" />
+                ) : (
+                  <AlertCircle size={15} className="shrink-0" />
+                )}
+                <span>
+                  {isFullyAllocated
+                    ? t("screens.checkout.fullyAllocated")
+                    : allocationDiff > 0
+                      ? `${t("screens.checkout.remainingToAllocate")}: ${money(allocationDiff)}`
+                      : `${t("screens.checkout.overAllocatedBy")}: ${money(-allocationDiff)}`}
                 </span>
               </div>
             </div>
-
-            {change > 0 && (
-              <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-                <label className="flex flex-col gap-2 text-xs font-black text-emerald-900">
-                  {t("screens.checkout.changeFund")}
-                  <select
-                    value={changeFundId}
-                    onChange={(event) => {
-                      setChangeFundId(event.target.value);
-                      setError("");
-                    }}
-                    className="h-11 rounded-xl border border-emerald-200 bg-white px-3 text-sm font-black text-stone-950 outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                  >
-                    {funds.map((fund) => (
-                      <option key={fund.id} value={fund.id}>
-                        {[fund.name, fund.currency_code || fund.currency_name]
-                          .filter(Boolean)
-                          .join(" - ")}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            )}
 
             {error && (
               <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
@@ -296,7 +372,6 @@ export default function CheckoutModal({
         </div>
       </div>
 
-      {/* أزرار الـ Footer أسفل الفورم الداخلي مباشرة */}
       <div className="flex flex-col-reverse gap-3 border-t border-stone-200 bg-white px-5 py-4 sm:flex-row sm:justify-end">
         <button
           type="button"
@@ -308,12 +383,7 @@ export default function CheckoutModal({
 
         <button
           type="submit"
-          disabled={
-            checkingOut ||
-            !funds.length ||
-            remaining > 0 ||
-            (change > 0 && !changeFundId)
-          }
+          disabled={checkingOut || !funds.length || !isFullyAllocated}
           className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 font-black text-white shadow-lg shadow-teal-200 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <CreditCard size={18} />

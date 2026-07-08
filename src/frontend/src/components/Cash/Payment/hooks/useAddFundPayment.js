@@ -18,8 +18,13 @@ const useAddFundPayment = ({
   const [partiesList, setPartiesList] = useState([]);
   const { money } = usePrimaryCurrency();
 
+  // Fund is locked whenever this modal is opened from a specific fund's row
+  // (e.g. FundList's expense/deposit icon on a given fund), same pattern as
+  // FundTransferModal's isSourceLocked.
+  const isFundLocked = Boolean(initialFundId);
+
   const [partyType, setPartyType] = useState(
-    mode === "out" ? "supplier" : "customer",
+    mode === "out" ? "supplier" : "customer"
   );
 
   const [form, setForm] = useState({
@@ -36,6 +41,16 @@ const useAddFundPayment = ({
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
+
+  const selectedFund = useMemo(
+    () => funds.find((f) => f.id === Number(form.fund_id)),
+    [funds, form.fund_id]
+  );
+
+  const selectedParty = useMemo(
+    () => partiesList.find((p) => p.id === Number(form.party_id)),
+    [partiesList, form.party_id]
+  );
 
   const fetchFunds = useCallback(async () => {
     if (!api) return;
@@ -94,15 +109,15 @@ const useAddFundPayment = ({
 
   useEffect(() => {
     if (isOpen && initialFundId && funds.length > 0) {
-      const selectedFund = funds.find((f) => f.id === Number(initialFundId));
-      if (selectedFund) {
-        const rate = selectedFund.currency_exchangeRate || 1;
+      const fund = funds.find((f) => f.id === Number(initialFundId));
+      if (fund) {
+        const rate = fund.currency_exchangeRate || 1;
         setForm((prev) => ({
           ...prev,
           fund_id: Number(initialFundId),
           fund_exchangeRate: rate,
-          currency_code: selectedFund.currency_code || "",
-          currency_symbol: selectedFund.currency_symbol || "",
+          currency_code: fund.currency_code || "",
+          currency_symbol: fund.currency_symbol || "",
         }));
       }
     }
@@ -184,7 +199,11 @@ const useAddFundPayment = ({
       if (!res.success) throw new Error(res.message);
 
       setMessage(t("screens.payments.receipt_saved_successfully"));
-      if (refetchList) refetchList();
+
+      if (refetchList) {
+        await refetchList();
+      }
+
       setTimeout(() => onClose(), 800);
     } catch (err) {
       setMessage(err.message || t("screens.payments.unexpected_error_posting"));
@@ -202,6 +221,9 @@ const useAddFundPayment = ({
     loading,
     message,
     effectiveRate,
+    isFundLocked,
+    selectedFund,
+    selectedParty,
     handleChange,
     handleFundChange,
     handleBaseAmountChange,

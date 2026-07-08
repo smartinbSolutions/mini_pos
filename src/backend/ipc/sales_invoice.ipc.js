@@ -110,7 +110,7 @@ export default function registerSalesInvoiceIPC() {
             INSERT INTO sales_invoices
             (customer_id, invoice_name, description, date, subtotal, discount, tax_id, net_total, status, taxValue, paid_amount, remaining_amount)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
+          `
           )
           .run(
             data.customer_id || null,
@@ -124,7 +124,7 @@ export default function registerSalesInvoiceIPC() {
             status,
             data.taxValue || 0,
             paidAmount,
-            remainingAmount,
+            remainingAmount
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -237,7 +237,7 @@ export default function registerSalesInvoiceIPC() {
         LEFT JOIN customers ON customers.id = sales_invoices.customer_id
         ORDER BY sales_invoices.id DESC
         LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -266,7 +266,7 @@ export default function registerSalesInvoiceIPC() {
         LEFT JOIN customers c ON c.id = sa.customer_id
         LEFT JOIN taxes t ON t.id = sa.tax_id
         WHERE sa.id = ?
-      `,
+      `
       )
       .get(id);
 
@@ -281,7 +281,7 @@ export default function registerSalesInvoiceIPC() {
         FROM sales_invoice_items si
         LEFT JOIN products p ON p.id = si.product_id
         WHERE si.invoice_id = ?
-      `,
+      `
       )
       .all(id);
 
@@ -317,7 +317,7 @@ export default function registerSalesInvoiceIPC() {
         // Block editing once a payment already exists against this invoice
         const existingPayment = db
           .prepare(
-            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'sales'`,
+            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'sales'`
           )
           .get(data.id);
 
@@ -345,13 +345,13 @@ export default function registerSalesInvoiceIPC() {
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          data.id,
+          data.id
         );
         db.prepare(
           `
           DELETE FROM product_movements
           WHERE reference_type = 'sales_invoice' AND reference_id = ?
-        `,
+        `
         ).run(data.id);
 
         const insertItem = db.prepare(`
@@ -411,7 +411,7 @@ export default function registerSalesInvoiceIPC() {
               paid_amount = 0,
               remaining_amount = ?
           WHERE id = ?
-        `,
+        `
         ).run(
           newCustomerId,
           data.invoice_name || null,
@@ -423,7 +423,7 @@ export default function registerSalesInvoiceIPC() {
           newNetTotal,
           data.taxValue || 0,
           newNetTotal,
-          data.id,
+          data.id
         );
 
         // Customer party_history reconciliation for the invoice amount
@@ -433,7 +433,7 @@ export default function registerSalesInvoiceIPC() {
             UPDATE party_history
             SET amount = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-          `,
+          `
           ).run(newNetTotal, `Sales Invoice #${data.id}`, data.id);
         } else {
           if (oldCustomerId) {
@@ -441,7 +441,7 @@ export default function registerSalesInvoiceIPC() {
               `
               DELETE FROM party_history
               WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-            `,
+            `
             ).run(data.id);
           }
 
@@ -502,13 +502,13 @@ export default function registerSalesInvoiceIPC() {
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          id,
+          id
         );
         db.prepare(
           `
           DELETE FROM party_history
           WHERE invoice_id = ? AND invoice_type = 'sales'
-        `,
+        `
         ).run(id);
         db.prepare(`DELETE FROM sales_invoices WHERE id = ?`).run(id);
       });
@@ -521,7 +521,7 @@ export default function registerSalesInvoiceIPC() {
     }
   });
 
-  // POS CHECKOUT — unchanged, kept as-is below
+  // POS CHECKOUT
   ipcMain.handle("pos-checkout", (event, data) => {
     const roundCents = (value) => Math.round(Number(value || 0) * 100) / 100;
     const payments = Array.isArray(data.payments)
@@ -533,7 +533,7 @@ export default function registerSalesInvoiceIPC() {
               payment.amount_fund_currency ||
                 payment.amountFundCurrency ||
                 payment.paymentInfundCurrency ||
-                0,
+                0
             ),
             currencyCode: payment.currency_code,
             exchangeRate: Number(payment.exchange_rate || 1) || 1,
@@ -542,7 +542,7 @@ export default function registerSalesInvoiceIPC() {
             (payment) =>
               payment.fundId &&
               payment.amount > 0 &&
-              payment.amountFundCurrency > 0,
+              payment.amountFundCurrency > 0
           )
       : [];
 
@@ -556,19 +556,13 @@ export default function registerSalesInvoiceIPC() {
       });
     }
 
-    const paidTotal = payments.reduce(
-      (sum, payment) => sum + payment.amount,
-      0,
+    const paidTotal = roundCents(
+      payments.reduce((sum, payment) => sum + payment.amount, 0)
     );
     const invoiceTotal = Number(data.net_total || 0);
-    const changeAmount = roundCents(Math.max(0, paidTotal - invoiceTotal));
 
-    if (!payments.length || paidTotal + 0.01 < invoiceTotal) {
-      throw new Error("POS payments must cover invoice total");
-    }
-
-    if (changeAmount > 0 && !data.change_fund_id) {
-      throw new Error("POS change fund is required");
+    if (!payments.length || Math.abs(paidTotal - invoiceTotal) > 0.01) {
+      throw new Error("POS payments must exactly cover invoice total");
     }
 
     const insertInvoice = db.prepare(`
@@ -587,16 +581,6 @@ export default function registerSalesInvoiceIPC() {
       UPDATE products SET quantity = quantity - ? WHERE id = ?
     `);
 
-    const insertPayment = db.prepare(`
-      INSERT INTO payments
-      (type, party_type, party_id, fund_id, amount, note, currency_code, exchange_rate, amount_fund_currency, invoice_id, invoice_type,date, effective_rate)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    const updateFund = db.prepare(`
-      UPDATE funds SET balance = balance + ? WHERE id = ?
-    `);
-
     const transaction = db.transaction(() => {
       const invoiceResult = insertInvoice.run(
         data.customer_id || null,
@@ -605,7 +589,7 @@ export default function registerSalesInvoiceIPC() {
         data.discount || 0,
         data.tax_id || null,
         data.net_total || 0,
-        "paid",
+        "paid"
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
@@ -617,6 +601,16 @@ export default function registerSalesInvoiceIPC() {
 
         insertItem.run(invoiceId, item.id, quantity, price, total);
         updateStock.run(quantity, item.id);
+
+        createProductMovement(db, {
+          product_id: item.id,
+          reference_id: invoiceId,
+          reference_type: "sales_invoice",
+          type: "out",
+          action: "create",
+          quantity,
+          outPrice: price,
+        });
       }
 
       if (data.customer_id) {
@@ -632,33 +626,31 @@ export default function registerSalesInvoiceIPC() {
       }
 
       for (const payment of payments) {
-        const paymentResult = insertPayment.run(
-          "income",
-          data.customer_id ? "customer" : "walk-in",
-          data.customer_id || null,
-          payment.fundId,
-          payment.amount,
-          `POS Invoice #${invoiceId}`,
-          payment.currencyCode,
-          payment.exchangeRate,
-          payment.amountFundCurrency,
-          invoiceId,
-          "sales",
-          new Date().toISOString(),
-          payment.effectiveRate || payment.exchangeRate || 1,
-        );
-        updateFund.run(payment.amountFundCurrency, payment.fundId);
+        const paymentId = createPayment(db, {
+          type: "income",
+          party_type: data.customer_id ? "customer" : "walk-in",
+          party_id: data.customer_id || null,
+          fund_id: payment.fundId,
+          amount: payment.amount,
+          amount_fund_currency: payment.amountFundCurrency,
+          currency_code: payment.currencyCode,
+          exchange_rate: payment.exchangeRate,
+          effective_rate: payment.exchangeRate,
+          invoice_id: invoiceId,
+          invoice_type: "sales",
+          note: `POS Invoice`,
+          fundOperation: "add",
+        });
 
         createFundHistory(db, {
           fund_id: payment.fundId,
           record_type: "payment",
-          payment_id: paymentResult.lastInsertRowid,
-          invoice_id: invoiceId ?? null,
-          invoice_type: "sales" ?? null,
+          payment_id: paymentId,
+          invoice_id: invoiceId,
+          invoice_type: "sales",
           movement_type: "in",
           amount: payment.amountFundCurrency,
-          note: payment.note || "",
-          date: payment.date || new Date().toISOString(),
+          note: `Payment for POS Invoice #${invoiceId}`,
         });
 
         if (data.customer_id) {
@@ -668,62 +660,11 @@ export default function registerSalesInvoiceIPC() {
             invoice_id: invoiceId,
             invoice_type: "sales",
             record_type: "payment",
-            movement_type: "deposit",
-            payment_id: paymentResult.lastInsertRowid,
+            payment_id: paymentId,
             amount: payment.amount,
             note: `Payment for POS Invoice #${invoiceId}`,
           });
         }
-      }
-
-      if (changeAmount > 0) {
-        const changeFund = db
-          .prepare(
-            `
-            SELECT f.id, c.code AS currency_code, c.exchangeRate AS exchange_rate
-            FROM funds f
-            LEFT JOIN currencies c ON c.id = f.currency_id
-            WHERE f.id = ?
-          `,
-          )
-          .get(data.change_fund_id);
-
-        if (!changeFund) {
-          throw new Error("POS change fund was not found");
-        }
-
-        const changeExchangeRate = Number(changeFund.exchange_rate || 1) || 1;
-        const changeFundAmount = roundCents(changeAmount * changeExchangeRate);
-
-        const changePaymentResult = insertPayment.run(
-          "change",
-          data.customer_id ? "customer" : "walk-in",
-          data.customer_id || null,
-          changeFund.id,
-          changeAmount,
-          `Change for POS Invoice #${invoiceId}`,
-          changeFund.currency_code,
-          changeExchangeRate,
-          changeFundAmount,
-          invoiceId,
-          "sales",
-          new Date().toISOString(),
-          changeExchangeRate,
-        );
-
-        createFundHistory(db, {
-          fund_id: changeFund.id,
-          record_type: "payment",
-          payment_id: changePaymentResult.lastInsertRowid,
-          invoice_id: invoiceId ?? null,
-          invoice_type: "sales" ?? null,
-          movement_type: "out",
-          amount: changeFundAmount,
-          note: `Change for POS Invoice #${invoiceId}` || "",
-          date: new Date().toISOString(),
-        });
-
-        updateFund.run(-changeFundAmount, changeFund.id);
       }
 
       return invoiceId;
@@ -741,11 +682,11 @@ export default function registerSalesInvoiceIPC() {
   ipcMain.handle("print-receipt", async (event, data) => {
     const companySettings = db
       .prepare(
-        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`,
+        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`
       )
       .get();
     const language = getReceiptLanguage(
-      data.language || companySettings?.language,
+      data.language || companySettings?.language
     );
     const labels = receiptLabels[language];
     const direction = language === "ar" ? "rtl" : "ltr";
@@ -771,7 +712,7 @@ export default function registerSalesInvoiceIPC() {
         <td class="right">${Number(item.price).toFixed(2)}</td>
         <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
-    `,
+    `
       )
       .join("");
 
@@ -829,7 +770,7 @@ export default function registerSalesInvoiceIPC() {
   `;
 
     await win.loadURL(
-      "data:text/html;charset=utf-8," + encodeURIComponent(html),
+      "data:text/html;charset=utf-8," + encodeURIComponent(html)
     );
 
     win.webContents.print(
@@ -839,7 +780,7 @@ export default function registerSalesInvoiceIPC() {
         margins: { marginType: "none" },
         scaleFactor: 100,
       },
-      () => win.close(),
+      () => win.close()
     );
   });
 
@@ -872,7 +813,7 @@ export default function registerSalesInvoiceIPC() {
 
               printWindow.destroy();
               printWindow = null;
-            },
+            }
           );
         }, 600);
       });

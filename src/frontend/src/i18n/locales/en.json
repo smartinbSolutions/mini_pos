@@ -158,7 +158,9 @@
       "namePlaceholder": "Fund name",
       "initialBalance": "Initial balance",
       "createButton": "Create Fund",
-      "fund_transfer": "Transfer Between Funds"
+      "fund_transfer": "Transfer Between Funds",
+      "transfer_Flow": "Transfer Flow",
+      "transfer_rate": "Transfer Rate"
     },
     "contacts": {
       "customersSubtitle": "Manage your customers easily",
@@ -464,7 +466,8 @@
     "expensesCategory": "Expenses Category",
     "expense": "Expenses",
     "partners": "Partners",
-    "payment": "Payments"
+    "payment": "Payments",
+    "transfers": "transfers"
   },
   "dashboard": {
     "loading": "Loading dashboard...",
