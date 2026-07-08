@@ -7,7 +7,10 @@ const usePayment = () => {
   const [payments, setPayments] = useState([]);
   const [actionError, setActionError] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const api = window.api;
 
   const refetch = useCallback(async () => {
@@ -19,9 +22,11 @@ const usePayment = () => {
     try {
       setLoading(true);
 
-      let payment = await api.getPayments();
+      let res = await api.getPayments({ page, limit });
 
-      setPayments(payment || []);
+      setPayments(res.data || []);
+      setTotal(res?.total || 0);
+      setTotalPages(res?.totalPages || 1);
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setActionError(
@@ -30,7 +35,7 @@ const usePayment = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit, t]);
 
   useEffect(() => {
     refetch();
@@ -39,8 +44,6 @@ const usePayment = () => {
   const deletePayment = async (payment) => {
     // setSaving(true);
     try {
-      console.log(payment);
-
       await api.deletePayment(payment.id);
       await refetch();
     } finally {
@@ -65,6 +68,12 @@ const usePayment = () => {
     refetch,
     deletePayment,
     handleDeletePayment,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   };
 };
 

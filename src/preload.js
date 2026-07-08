@@ -39,7 +39,7 @@ contextBridge.exposeInMainWorld("api", {
   deleteFundTransfer: (id) => ipcRenderer.invoke("delete-fund-transfer", id),
 
   /* ================= PAYMENTS ================= */
-  getPayments: () => ipcRenderer.invoke("get-payments"),
+  getPayments: (params) => ipcRenderer.invoke("get-payments", params),
   getPayment: (id) => ipcRenderer.invoke("get-payment", id),
   getPaymentFund: (id) => ipcRenderer.invoke("get-payment-fund", id),
   getPartyLedger: (params) => ipcRenderer.invoke("get-party-ledger", params),

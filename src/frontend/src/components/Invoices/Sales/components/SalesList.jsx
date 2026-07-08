@@ -107,7 +107,6 @@ const SalesList = () => {
 
       await api.printSalesInvoice(invoice.id);
 
-      // أو إذا كنت تستخدم window.api
       // await window.api.printInvoice(invoice.id);
     } catch (err) {
       console.error(err);

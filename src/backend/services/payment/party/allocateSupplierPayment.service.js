@@ -11,30 +11,52 @@ export default function allocateSupplierPayment(db, data) {
       remainingAmount: 0,
     };
   }
-  const invoices = db
+
+  const purchaseInvoices = db
     .prepare(
       `
-    SELECT
-      i.id,
-      i.net_total,
-      COALESCE(SUM(pa.amount), 0) AS paid_amount,
-      i.net_total - COALESCE(SUM(pa.amount), 0) AS remaining
-    FROM purchase_invoices i
-    LEFT JOIN payment_allocations pa
-      ON pa.invoice_id = i.id
-     AND pa.invoice_type = 'purchase'
-    WHERE i.supplier_id = ?
-    GROUP BY i.id, i.net_total
-    HAVING i.net_total - COALESCE(SUM(pa.amount), 0) > 0
-    ORDER BY i.date ASC, i.id ASC
-    `,
+      SELECT
+        id,
+        date,
+        net_total,
+        net_total - COALESCE((
+          SELECT SUM(amount)
+          FROM payment_allocations
+          WHERE invoice_id = purchase_invoices.id
+            AND invoice_type = 'purchase'
+        ), 0) AS remaining,
+        'purchase' AS invoice_type
+      FROM purchase_invoices
+      WHERE supplier_id = ?
+      `,
     )
     .all(data.supplierId);
 
-  const allocations = [];
+  const expenseInvoices = db
+    .prepare(
+      `
+      SELECT
+        id,
+        date,
+        net_total,
+        net_total - COALESCE((
+          SELECT SUM(amount)
+          FROM payment_allocations
+          WHERE invoice_id = expense.id
+            AND invoice_type = 'expense'
+        ), 0) AS remaining,
+        'expense' AS invoice_type
+      FROM expense
+      WHERE supplier_id = ?
+      `,
+    )
+    .all(data.supplierId);
 
-  const totalAmount = Number(data.amount);
-  const totalFundAmount = Number(data.amount_fund_currency || 0);
+  const invoices = [...purchaseInvoices, ...expenseInvoices]
+    .filter((invoice) => Number(invoice.remaining) > 0)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const allocations = [];
 
   for (const invoice of invoices) {
     if (remainingAmount <= 0) break;
@@ -45,25 +67,45 @@ export default function allocateSupplierPayment(db, data) {
 
     const paymentAmount = Math.min(remainingAmount, invoiceRemaining);
 
-    const paymentFundCurrency =
-      totalAmount > 0 ? (paymentAmount * totalFundAmount) / totalAmount : 0;
-
-    updatePurchaseInvoiceStatus(db, invoice.id, paymentAmount, "purchase");
-
-    allocations.push({
-      invoiceId: invoice.id,
-      amount: paymentAmount,
-    });
-
     createPaymentAllocation(db, {
       payment_id: data.paymentId,
       invoice_id: invoice.id,
-      invoice_type: "purchase",
+      invoice_type: invoice.invoice_type,
+      amount: paymentAmount,
+    });
+
+    updatePurchaseInvoiceStatus(
+      db,
+      invoice.id,
+      paymentAmount,
+      invoice.invoice_type,
+    );
+
+    allocations.push({
+      invoiceId: invoice.id,
+      invoiceType: invoice.invoice_type,
       amount: paymentAmount,
     });
 
     remainingAmount -= paymentAmount;
   }
+
+  createPartyHistory(db, {
+    party_type: "supplier",
+    party_id: data.supplierId,
+    record_type: "payment",
+    invoice_id: null,
+    invoice_type: null,
+    payment_id: data.paymentId,
+    movement_type: "withdrawal",
+    fund_id: data.fund_id,
+    amount: data.amount,
+    note: data.note || "",
+    currency_code: data.currency_code ?? "",
+    exchange_rate: Number(data.exchange_rate || 0),
+    effective_rate: Number(data.effective_rate || 0),
+    amount_fund_currency: data.amount_fund_currency,
+  });
 
   return {
     allocations,

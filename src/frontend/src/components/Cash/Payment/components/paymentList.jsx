@@ -15,6 +15,7 @@ import {
   Trash2,
   Calendar,
 } from "lucide-react";
+import Pagination from "../../../../Global/Pagination";
 
 const formatMoney = (amount) => {
   return new Intl.NumberFormat("en-US", {
@@ -33,6 +34,12 @@ const PaymentList = () => {
     actionError,
     refetch,
     handleDeletePayment,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   } = usePayment();
 
   const [deletePaymentId, setDeletePaymentId] = useState(null);
@@ -197,6 +204,17 @@ const PaymentList = () => {
               </tbody>
             </table>
           </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
         </section>
       </div>
 

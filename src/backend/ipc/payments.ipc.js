@@ -144,8 +144,14 @@ export default function registerPaymentIPC() {
     }
   });
 
-  ipcMain.handle("get-payments", () => {
-    return db
+  ipcMain.handle("get-payments", (event, params = {}) => {
+    console.log(params);
+
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const payments = db
       .prepare(
         `
     SELECT 
@@ -161,9 +167,23 @@ export default function registerPaymentIPC() {
     LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
     
     ORDER BY p.id DESC
+
+     LIMIT ? OFFSET ?
   `,
       )
-      .all();
+      .all(limit, offset);
+
+    const { total } = db
+      .prepare(`SELECT COUNT(*) AS total FROM payments`)
+      .get();
+
+    return {
+      data: payments,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
   });
 
   ipcMain.handle("get-payment", (event, id) => {

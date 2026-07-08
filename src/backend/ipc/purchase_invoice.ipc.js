@@ -190,15 +190,36 @@ export default function registerPurchaseInvoicesIPC() {
     const invoices = db
       .prepare(
         `
-      SELECT 
-        purchase_invoices.*,
-        suppliers.name AS supplier_name,
-        suppliers.phone AS supplier_phone
-      FROM purchase_invoices
-      LEFT JOIN suppliers ON suppliers.id = purchase_invoices.supplier_id
-      ORDER BY purchase_invoices.id DESC
+      SELECT
+        p.*,
+        s.name AS supplier_name,
+        s.phone AS supplier_phone,
+
+        COALESCE(SUM(pa.amount), 0) AS paid_amount,
+
+        p.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
+
+        CASE
+          WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
+          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+          ELSE 'unpaid'
+        END AS status
+
+      FROM purchase_invoices p
+
+      LEFT JOIN suppliers s
+        ON s.id = p.supplier_id
+
+      LEFT JOIN payment_allocations pa
+        ON pa.invoice_id = p.id
+       AND pa.invoice_type = 'purchase'
+
+      GROUP BY p.id
+
+      ORDER BY p.id DESC
+
       LIMIT ? OFFSET ?
-    `,
+      `,
       )
       .all(limit, offset);
 

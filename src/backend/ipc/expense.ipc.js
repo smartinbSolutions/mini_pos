@@ -147,14 +147,35 @@ export default function registerExpenseIPC() {
     const rows = db
       .prepare(
         `
-        SELECT 
-          expense.*,
-          suppliers.name AS supplier_name,
-          suppliers.phone AS supplier_phone
-        FROM expense
-        LEFT JOIN suppliers ON suppliers.id = expense.supplier_id
-        ORDER BY expense.id DESC
-        LIMIT ? OFFSET ?
+      SELECT
+        e.*,
+        s.name AS supplier_name,
+        s.phone AS supplier_phone,
+
+        COALESCE(SUM(pa.amount), 0) AS paid_amount,
+
+        e.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
+
+        CASE
+          WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
+          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+          ELSE 'unpaid'
+        END AS status
+
+      FROM expense e
+
+      LEFT JOIN suppliers s
+        ON s.id = e.supplier_id
+
+      LEFT JOIN payment_allocations pa
+        ON pa.invoice_id = e.id
+       AND pa.invoice_type = 'expense'
+
+      GROUP BY e.id
+
+      ORDER BY e.id DESC
+
+      LIMIT ? OFFSET ?
       `,
       )
       .all(limit, offset);
@@ -169,7 +190,6 @@ export default function registerExpenseIPC() {
       totalPages: Math.ceil(total / limit),
     };
   });
-
   // GET ONE
   ipcMain.handle("get-expense", (event, id) => {
     const invoice = db
