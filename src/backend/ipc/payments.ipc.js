@@ -58,7 +58,6 @@ export default function registerPaymentIPC() {
         });
 
         const paymentId = result;
-        console.log(data);
 
         if (data.party_type === "supplier") {
           applySupplierPayment(db, {

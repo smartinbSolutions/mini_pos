@@ -5,23 +5,6 @@ import allocateCustomerPayment from "./allocateCustomerPayment.service";
 export default function applyCustomerPayment(db, data) {
   if (data.invoiceId) {
     updateSalesInvoiceStatus(db, data.invoiceId, data.amount);
-    createPartyHistory(db, {
-      party_type: "customer",
-      party_id: data.party_id,
-      record_type: "payment",
-      invoice_id: data.invoiceId ?? null,
-      invoice_type: "sales",
-      payment_id: data.paymentId,
-      movement_type: "deposit",
-      fund_id: data.fund_id,
-      amount: data.amount,
-      note: data.note,
-      currency_code: data.currency_code ?? "",
-      exchange_rate: Number(data.exchange_rate || 0),
-      effective_rate: Number(data.effective_rate || 0),
-      amount_fund_currency: Number(data.collected_amount || 0),
-      date: data.date,
-    });
   } else {
     allocateCustomerPayment(db, {
       customerId: data.party_id,
