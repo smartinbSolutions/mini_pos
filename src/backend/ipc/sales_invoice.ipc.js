@@ -630,7 +630,6 @@ export default function registerSalesInvoiceIPC() {
           note: `POS Invoice #${invoiceId}`,
         });
       }
-      console.log(data);
 
       for (const payment of payments) {
         const paymentResult = insertPayment.run(
@@ -841,5 +840,50 @@ export default function registerSalesInvoiceIPC() {
       },
       () => win.close(),
     );
+  });
+
+  ipcMain.handle("print-sales-invoice", async (_, invoiceId) => {
+    let printWindow = new BrowserWindow({
+      width: 900,
+      height: 1000,
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+      },
+    });
+
+    return new Promise((resolve, reject) => {
+      printWindow.webContents.on("did-finish-load", () => {
+        setTimeout(() => {
+          printWindow.webContents.print(
+            {
+              silent: false,
+              printBackground: true,
+            },
+            (success, failureReason) => {
+              if (!success) {
+                console.error(`Print failed: ${failureReason}`);
+                resolve({ success: false, error: failureReason });
+              } else {
+                resolve({ success: true });
+              }
+
+              printWindow.destroy();
+              printWindow = null;
+            },
+          );
+        }, 600);
+      });
+
+      printWindow.webContents.on("did-fail-load", (e) => {
+        printWindow.destroy();
+        reject(new Error("Failed to load print route"));
+      });
+
+      const baseUrl =
+        process.env.VITE_DEV_SERVER_URL || "http://localhost:3000";
+      printWindow.loadURL(`${baseUrl}/print-sales/${invoiceId}`);
+    });
   });
 }
