@@ -154,7 +154,7 @@ export default function CheckoutSingleFundModal({
         </div>
 
         <div>
-          <label className="font-black text-sm">
+          <label className="font-black text-sm ">
             {t("ui.amount")}
 
             <input
@@ -163,10 +163,9 @@ export default function CheckoutSingleFundModal({
               value={amount}
               onChange={(e) => {
                 setAmount(e.target.value);
-
                 setError("");
               }}
-              className="mt-2 h-11 w-full rounded-xl border px-3 font-black"
+              className="mt-2 mb-2 h-11 w-full rounded-xl border px-3 font-black"
             />
           </label>
         </div>

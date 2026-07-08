@@ -7,6 +7,8 @@ import applyCustomerPayment from "../services/payment/party/applyCustomerPayment
 import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.service";
 import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
 import createFundHistory from "../utils/createFundHistory";
+import createPayment from "../utils/createPayment";
+import createPaymentAllocation from "../utils/createPaymentAllocations";
 
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
@@ -39,45 +41,24 @@ export default function registerPaymentIPC() {
       }
 
       const transaction = db.transaction(() => {
-        const result = db
-          .prepare(
-            `
-          INSERT INTO payments
-          (
-            type,
-            party_type,
-            party_id,
-            fund_id,
-            date,
-            amount,
-            note,
-            currency_code,
-            exchange_rate,
-            effective_rate,
-            amount_fund_currency,
-            invoice_id,
-            invoice_type
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
-          )
-          .run(
-            data.type,
-            data.party_type,
-            data.party_id,
-            data.fund_id,
-            data.date || new Date().toISOString(),
-            amount,
-            data.note || null,
-            data.currency_code,
-            data.exchange_rate,
-            data.effective_rate,
-            data.collected_amount,
-            data.invoiceId || null,
-            data.mode || null
-          );
+        const result = createPayment(db, {
+          type: data.type,
+          party_type: data.party_type,
+          party_id: data.party_id,
+          fund_id: data.fund_id,
+          date: data.date || new Date().toISOString(),
+          amount: amount,
+          note: data.note || null,
+          currency_code: data.currency_code,
+          exchange_rate: data.exchange_rate,
+          effective_rate: data.effective_rate,
+          amount_fund_currency: data.collected_amount,
+          invoice_id: data.invoiceId || null,
+          invoice_type: data.mode || null,
+        });
 
-        const paymentId = result.lastInsertRowid;
+        const paymentId = result;
+        console.log(data);
 
         if (data.party_type === "supplier") {
           applySupplierPayment(db, {
@@ -181,7 +162,7 @@ export default function registerPaymentIPC() {
     LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
     
     ORDER BY p.id DESC
-  `
+  `,
       )
       .all();
   });
@@ -199,7 +180,7 @@ export default function registerPaymentIPC() {
       LEFT JOIN funds f ON f.id = p.fund_id
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE p.id = ?
-    `
+    `,
       )
       .get(id);
   });
@@ -233,7 +214,7 @@ export default function registerPaymentIPC() {
       WHERE p.fund_id = ?
 
       ORDER BY p.id DESC
-    `
+    `,
       )
       .all(id);
   });
@@ -272,10 +253,10 @@ export default function registerPaymentIPC() {
 
         ORDER BY id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
         )
         .all(partyId, partyType, limit, offset);
-    }
+    },
   );
 
   ipcMain.handle(
@@ -293,12 +274,12 @@ export default function registerPaymentIPC() {
         FROM payments
         WHERE party_id = ?
           AND party_type = ?
-        `
+        `,
         )
         .get(partyId, partyType);
 
       return row?.balance || 0;
-    }
+    },
   );
 
   ipcMain.handle("update-payment", (event, data) => {
@@ -313,7 +294,7 @@ export default function registerPaymentIPC() {
         amount = ?,
         note = ?
       WHERE id = ?
-    `
+    `,
     ).run(
       data.type,
       data.party_type,
@@ -321,7 +302,7 @@ export default function registerPaymentIPC() {
       data.fund_id,
       data.amount,
       data.note,
-      data.id
+      data.id,
     );
 
     return { success: true };
@@ -335,7 +316,7 @@ export default function registerPaymentIPC() {
         SELECT *
         FROM payments
         WHERE id = ?
-      `
+      `,
         )
         .get(id);
 
@@ -350,7 +331,7 @@ export default function registerPaymentIPC() {
         FROM party_history
         WHERE payment_id = ?
           AND record_type = 'payment'
-      `
+      `,
         )
         .all(id);
 
@@ -385,21 +366,21 @@ export default function registerPaymentIPC() {
         `
       DELETE FROM party_history
       WHERE payment_id = ?
-    `
+    `,
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM fund_history
       WHERE payment_id = ?
-    `
+    `,
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM payments
       WHERE id = ?
-    `
+    `,
       ).run(id);
     });
 

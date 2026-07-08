@@ -43,11 +43,23 @@ export default function SalesInvoiceView() {
       cancelled = true;
     };
   }, [id]);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const api = window.api;
 
-  const printInvoice = () => {
-    window.print();
+  const handlePrint = async (invoice) => {
+    try {
+      setIsPrinting(true);
+
+      await api.printSalesInvoice(invoice);
+
+      // أو إذا كنت تستخدم window.api
+      // await window.api.printInvoice(invoice.id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
   };
-
   const formatDate = (value) => {
     if (!value) return "-";
     const date = new Date(value);
@@ -175,7 +187,14 @@ export default function SalesInvoiceView() {
                 </tbody>
               </table>
             </div>
-
+            {/* <button
+              onClick={() => handlePrint(id)}
+              disabled={isPrinting}
+              className={`rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] ${isPrinting ? "opacity-50 cursor-not-allowed" : ""}`}
+              title={t("common.print") || "Print"}
+            >
+              <Printer size={16} />
+            </button> */}
             <div className="mt-6 flex justify-end">
               <div className="w-80 max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5">
                 <div className="flex justify-between">

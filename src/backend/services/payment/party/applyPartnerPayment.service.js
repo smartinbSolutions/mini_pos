@@ -1,3 +1,4 @@
+import createPaymentAllocation from "../../../utils/createPaymentAllocations";
 import createPartyHistory from "../../../utils/createPaymentHistory";
 
 export default function applyPartnerPayment(db, data) {

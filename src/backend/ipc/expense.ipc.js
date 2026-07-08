@@ -45,7 +45,7 @@ export default function registerExpenseIPC() {
                 INSERT INTO expense
                 (supplier_id, invoice_name, description, date, subtotal, net_total, status, paid_amount, remaining_amount)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-              `
+              `,
           )
           .run(
             data.supplier_id || null,
@@ -56,7 +56,7 @@ export default function registerExpenseIPC() {
             netTotal,
             status,
             paidAmount,
-            remainingAmount
+            remainingAmount,
           );
         const invoiceId = invoiceResult.lastInsertRowid;
 
@@ -105,6 +105,7 @@ export default function registerExpenseIPC() {
             invoice_type: data.payment.mode,
             note: `${data.payment.note} #${invoiceId}`,
             fundOperation: "subtract",
+            date: data.date || new Date().toISOString(),
           });
 
           createFundHistory(db, {
@@ -154,7 +155,7 @@ export default function registerExpenseIPC() {
         LEFT JOIN suppliers ON suppliers.id = expense.supplier_id
         ORDER BY expense.id DESC
         LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(limit, offset);
 
@@ -180,7 +181,7 @@ export default function registerExpenseIPC() {
         FROM expense pi
         LEFT JOIN suppliers s ON s.id = pi.supplier_id
         WHERE pi.id = ?
-      `
+      `,
       )
       .get(id);
 
@@ -195,7 +196,7 @@ export default function registerExpenseIPC() {
         FROM expense_items pii
         LEFT JOIN expence_category c ON c.id = pii.category_id
         WHERE pii.expense_id = ?
-      `
+      `,
       )
       .all(id);
 
@@ -226,7 +227,7 @@ export default function registerExpenseIPC() {
               AND ph.invoice_type = 'expense'
               AND ph.record_type = 'payment'
             ORDER BY ph.createdAt ASC
-          `
+          `,
           )
           .all(id);
       } else {
@@ -251,7 +252,7 @@ export default function registerExpenseIPC() {
             LEFT JOIN funds f ON f.id = p.fund_id
             WHERE p.invoice_id = ? AND p.invoice_type = 'expense'
             ORDER BY p.createdAt ASC
-          `
+          `,
           )
           .all(id);
       }
@@ -289,7 +290,7 @@ export default function registerExpenseIPC() {
         // Block editing if this invoice already has a payment against it
         const existingPayment = db
           .prepare(
-            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'expense'`
+            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'expense'`,
           )
           .get(data.id);
 
@@ -333,7 +334,7 @@ export default function registerExpenseIPC() {
               paid_amount = ?,
               remaining_amount = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           newSupplierId,
           data.invoice_name || null,
@@ -344,11 +345,11 @@ export default function registerExpenseIPC() {
           status,
           paidAmount,
           remainingAmount,
-          data.id
+          data.id,
         );
         // Replace items
         db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(
-          data.id
+          data.id,
         );
 
         const insertItem = db.prepare(`
@@ -370,7 +371,7 @@ export default function registerExpenseIPC() {
           const delta = newNetTotal - oldNetTotal;
           if (delta !== 0) {
             db.prepare(
-              `UPDATE suppliers SET total = total + ? WHERE id = ?`
+              `UPDATE suppliers SET total = total + ? WHERE id = ?`,
             ).run(delta, newSupplierId);
           }
 
@@ -379,29 +380,29 @@ export default function registerExpenseIPC() {
             UPDATE party_history
             SET amount = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'expense' AND record_type = 'invoice'
-          `
+          `,
           ).run(
             newNetTotal,
             data.note || `Expense Invoice #${data.id}`,
-            data.id
+            data.id,
           );
         } else {
           if (oldSupplierId) {
             db.prepare(
-              `UPDATE suppliers SET total = total - ? WHERE id = ?`
+              `UPDATE suppliers SET total = total - ? WHERE id = ?`,
             ).run(oldNetTotal, oldSupplierId);
 
             db.prepare(
               `
               DELETE FROM party_history
               WHERE invoice_id = ? AND invoice_type = 'expense' AND record_type = 'invoice'
-            `
+            `,
             ).run(data.id);
           }
 
           if (newSupplierId) {
             db.prepare(
-              `UPDATE suppliers SET total = total + ? WHERE id = ?`
+              `UPDATE suppliers SET total = total + ? WHERE id = ?`,
             ).run(newNetTotal, newSupplierId);
 
             createPartyHistory(db, {
@@ -473,7 +474,7 @@ export default function registerExpenseIPC() {
   WHERE invoice_id = ?
     AND invoice_type = 'expense'
     AND record_type = 'invoice'
-`
+`,
       ).run(id);
       db.prepare(`DELETE FROM expense WHERE id = ?`).run(id);
     });

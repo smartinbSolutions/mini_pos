@@ -12,7 +12,7 @@ export default function applyCustomerPayment(db, data) {
       invoice_id: data.invoiceId ?? null,
       invoice_type: "sales",
       payment_id: data.paymentId,
-      movement_type: "debit",
+      movement_type: "deposit",
       fund_id: data.fund_id,
       amount: data.amount,
       note: data.note,

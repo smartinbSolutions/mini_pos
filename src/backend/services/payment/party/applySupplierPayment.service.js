@@ -12,7 +12,7 @@ export default function applySupplierPayment(db, data) {
       invoice_id: data.invoiceId,
       invoice_type: data.mode,
       payment_id: data.paymentId,
-      movement_type: "credit",
+      movement_type: "withdrawal",
       fund_id: data.fund_id,
       amount: data.amount,
       note: data.note,

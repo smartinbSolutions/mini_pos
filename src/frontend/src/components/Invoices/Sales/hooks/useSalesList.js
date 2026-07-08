@@ -50,7 +50,7 @@ const useSalesList = () => {
       await refetch();
     } catch (err) {
       setError(
-        err?.message || t("errors.deleteFailed", { field: t("ui.invoice") })
+        err?.message || t("errors.deleteFailed", { field: t("ui.invoice") }),
       );
     } finally {
       setSaving(false);
@@ -71,7 +71,7 @@ const useSalesList = () => {
     setLimit,
     total,
     totalPages,
-
+    api,
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,

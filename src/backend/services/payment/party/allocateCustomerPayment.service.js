@@ -1,3 +1,4 @@
+import createPaymentAllocation from "../../../utils/createPaymentAllocations";
 import createPartyHistory from "../../../utils/createPaymentHistory";
 import updateSalesInvoiceStatus from "../invoice/updateSalesInvoiceStatus.service";
 
@@ -10,37 +11,39 @@ export default function allocateCustomerPayment(db, data) {
       remainingAmount: 0,
     };
   }
-
   const invoices = db
     .prepare(
       `
-      SELECT
-        id,
-        remaining_amount
-      FROM sales_invoices
-      WHERE customer_id = ?
-        AND remaining_amount > 0
-      ORDER BY date ASC, id ASC
+    SELECT
+      i.id,
+      i.net_total,
+      COALESCE(SUM(pa.amount), 0) AS paid_amount,
+      i.net_total - COALESCE(SUM(pa.amount), 0) AS remaining
+    FROM sales_invoices i
+    LEFT JOIN payment_allocations pa
+      ON pa.invoice_id = i.id
+     AND pa.invoice_type = 'sales'
+    WHERE i.customer_id = ?
+    GROUP BY i.id, i.net_total
+    HAVING i.net_total - COALESCE(SUM(pa.amount), 0) > 0
+    ORDER BY i.date ASC, i.id ASC
     `,
     )
     .all(data.customerId);
 
   const allocations = [];
 
+  const roundToTwo = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
   for (const invoice of invoices) {
     if (remainingAmount <= 0) break;
 
-    const invoiceRemaining = Number(invoice.remaining_amount);
+    const invoiceRemaining = Number(invoice.remaining);
 
     if (invoiceRemaining <= 0) continue;
 
     const paymentAmount = Math.min(remainingAmount, invoiceRemaining);
 
-    const paymentFundCurrency =
-      Number(data.amount) > 0
-        ? (paymentAmount * Number(data.amount_fund_currency || 0)) /
-          Number(data.amount)
-        : 0;
     updateSalesInvoiceStatus(db, invoice.id, paymentAmount);
 
     allocations.push({
@@ -48,44 +51,14 @@ export default function allocateCustomerPayment(db, data) {
       amount: paymentAmount,
     });
 
-    createPartyHistory(db, {
-      party_type: "customer",
-      party_id: data.customerId,
-      record_type: "payment",
+    createPaymentAllocation(db, {
+      payment_id: data.paymentId,
       invoice_id: invoice.id,
       invoice_type: "sales",
-      payment_id: data.paymentId,
-      movement_type: "debit",
-      fund_id: data.fund_id,
       amount: paymentAmount,
-      note: data.note || "",
-      currency_code: data.currency_code ?? "",
-      exchange_rate: Number(data.exchange_rate || 0),
-      effective_rate: Number(data.effective_rate || 0),
-      amount_fund_currency: paymentFundCurrency,
-      date: data.date,
     });
 
-    remainingAmount -= paymentAmount;
-  }
-  if (allocations.length < 1) {
-    createPartyHistory(db, {
-      party_type: "customer",
-      party_id: data.customerId,
-      record_type: "payment",
-      invoice_id: null,
-      invoice_type: null,
-      payment_id: data.paymentId,
-      movement_type: "debit",
-      fund_id: data.fund_id,
-      amount: data.amount,
-      note: data.note || "",
-      currency_code: data.currency_code ?? "",
-      exchange_rate: Number(data.exchange_rate || 0),
-      effective_rate: Number(data.effective_rate || 0),
-      amount_fund_currency: data.amount_fund_currency,
-      date: data.date,
-    });
+    remainingAmount = roundToTwo(remainingAmount - paymentAmount);
   }
   return {
     allocations,

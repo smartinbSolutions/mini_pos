@@ -1,3 +1,4 @@
+import createPaymentAllocation from "./createPaymentAllocations";
 import createPartyHistory from "./createPaymentHistory";
 
 export default function createPayment(db, data) {
@@ -14,7 +15,8 @@ export default function createPayment(db, data) {
       effective_rate,
       amount_fund_currency,
       invoice_id,
-      invoice_type
+      invoice_type,
+      date
     )
     VALUES (
       @type,
@@ -28,23 +30,10 @@ export default function createPayment(db, data) {
       @effective_rate,
       @amount_fund_currency,
       @invoice_id,
-      @invoice_type
+      @invoice_type,
+      @date
     )
   `);
-
-  const updateFund = db.prepare(`
-    UPDATE funds
-    SET balance = balance + @fund_balance
-    WHERE id = @fund_id
-  `);
-  const fundAmount =
-    data.fundOperation === "subtract"
-      ? -Number(data.amount_fund_currency || 0)
-      : Number(data.amount_fund_currency || 0);
-  updateFund.run({
-    fund_balance: fundAmount,
-    fund_id: data.fund_id,
-  });
 
   const result = insertPayment.run({
     type: data.type,
@@ -59,7 +48,16 @@ export default function createPayment(db, data) {
     amount_fund_currency: Number(data.amount_fund_currency || 0),
     invoice_id: data.invoice_id || null,
     invoice_type: data.invoice_type || null,
+    date: data.date || new Date().toISOString(),
   });
+  if (data.invoice_id !== null) {
+    createPaymentAllocation(db, {
+      payment_id: result.lastInsertRowid,
+      invoice_id: data.invoice_id || null,
+      invoice_type: data.invoice_type || null,
+      amount: data.amount_fund_currency || 0,
+    });
+  }
 
   createPartyHistory(db, {
     party_type: data.party_type,
@@ -68,6 +66,7 @@ export default function createPayment(db, data) {
     invoice_id: data.invoice_id,
     invoice_type: data.invoice_type,
     amount: data.amount,
+    movement_type: data.type === "income" ? "deposit" : "withdrawal",
     note: data.note,
     payment_id: result.lastInsertRowid,
     fund_id: data.fund_id,

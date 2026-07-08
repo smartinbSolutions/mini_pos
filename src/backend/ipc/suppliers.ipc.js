@@ -10,7 +10,7 @@ export default function registerSuppliersIPC() {
       .prepare(
         `
       INSERT INTO suppliers (name, phone, address)
-      VALUES (?,?,?,?,?)
+      VALUES (?,?,?)
     `,
       )
       .run(data.name, data.phone, data.address);

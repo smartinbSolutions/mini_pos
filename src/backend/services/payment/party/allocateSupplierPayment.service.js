@@ -1,3 +1,4 @@
+import createPaymentAllocation from "../../../utils/createPaymentAllocations";
 import createPartyHistory from "../../../utils/createPaymentHistory";
 import updatePurchaseInvoiceStatus from "../invoice/updatePurchaseInvoiceStatus.service";
 
@@ -10,19 +11,22 @@ export default function allocateSupplierPayment(db, data) {
       remainingAmount: 0,
     };
   }
-
-  const table = data.mode === "expense" ? "expense" : "purchase_invoices";
-
   const invoices = db
     .prepare(
       `
-      SELECT
-        id,
-        remaining_amount
-      FROM ${table}
-      WHERE supplier_id = ?
-        AND remaining_amount > 0
-      ORDER BY date ASC, id ASC
+    SELECT
+      i.id,
+      i.net_total,
+      COALESCE(SUM(pa.amount), 0) AS paid_amount,
+      i.net_total - COALESCE(SUM(pa.amount), 0) AS remaining
+    FROM purchase_invoices i
+    LEFT JOIN payment_allocations pa
+      ON pa.invoice_id = i.id
+     AND pa.invoice_type = 'purchase'
+    WHERE i.supplier_id = ?
+    GROUP BY i.id, i.net_total
+    HAVING i.net_total - COALESCE(SUM(pa.amount), 0) > 0
+    ORDER BY i.date ASC, i.id ASC
     `,
     )
     .all(data.supplierId);
@@ -35,7 +39,7 @@ export default function allocateSupplierPayment(db, data) {
   for (const invoice of invoices) {
     if (remainingAmount <= 0) break;
 
-    const invoiceRemaining = Number(invoice.remaining_amount);
+    const invoiceRemaining = Number(invoice.remaining);
 
     if (invoiceRemaining <= 0) continue;
 
@@ -44,28 +48,18 @@ export default function allocateSupplierPayment(db, data) {
     const paymentFundCurrency =
       totalAmount > 0 ? (paymentAmount * totalFundAmount) / totalAmount : 0;
 
-    updatePurchaseInvoiceStatus(db, invoice.id, paymentAmount, data.mode);
+    updatePurchaseInvoiceStatus(db, invoice.id, paymentAmount, "purchase");
 
     allocations.push({
       invoiceId: invoice.id,
       amount: paymentAmount,
     });
 
-    createPartyHistory(db, {
-      party_type: "supplier",
-      party_id: data.supplierId,
-      record_type: "payment",
-      invoice_id: invoice.id,
-      invoice_type: data.mode,
+    createPaymentAllocation(db, {
       payment_id: data.paymentId,
-      movement_type: "credit",
-      fund_id: data.fund_id,
+      invoice_id: invoice.id,
+      invoice_type: "purchase",
       amount: paymentAmount,
-      note: data.note || "",
-      currency_code: data.currency_code ?? "",
-      exchange_rate: Number(data.exchange_rate || 0),
-      effective_rate: Number(data.effective_rate || 0),
-      amount_fund_currency: paymentFundCurrency,
     });
 
     remainingAmount -= paymentAmount;

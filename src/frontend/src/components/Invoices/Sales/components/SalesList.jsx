@@ -9,6 +9,7 @@ import {
   // LucidePencilSparkles,
   Info,
   Clock,
+  Printer,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useSalesList from "../hooks/useSalesList";
@@ -67,7 +68,7 @@ const SalesList = () => {
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
-
+    api,
     page,
     setPage,
     limit,
@@ -99,6 +100,21 @@ const SalesList = () => {
         .some((v) => String(v).toLowerCase().includes(term));
     });
   }, [salesInvoices, search]);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const handlePrint = async (invoice) => {
+    try {
+      setIsPrinting(true);
+
+      await api.printSalesInvoice(invoice.id);
+
+      // أو إذا كنت تستخدم window.api
+      // await window.api.printInvoice(invoice.id);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -261,7 +277,14 @@ const SalesList = () => {
                             >
                               <Eye size={16} />
                             </button>
-
+                            {/* <button
+                              onClick={() => handlePrint(inv)}
+                              disabled={isPrinting}
+                              className={`rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] ${isPrinting ? "opacity-50 cursor-not-allowed" : ""}`}
+                              title={t("common.print") || "Print"}
+                            >
+                              <Printer size={16} />
+                            </button> */}
                             {inv.status !== "paid" && (
                               <>
                                 <button

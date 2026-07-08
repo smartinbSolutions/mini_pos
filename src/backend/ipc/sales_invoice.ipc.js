@@ -668,6 +668,7 @@ export default function registerSalesInvoiceIPC() {
             invoice_id: invoiceId,
             invoice_type: "sales",
             record_type: "payment",
+            movement_type: "deposit",
             payment_id: paymentResult.lastInsertRowid,
             amount: payment.amount,
             note: `Payment for POS Invoice #${invoiceId}`,
