@@ -92,24 +92,6 @@ export default function registerPaymentIPC() {
           });
         }
 
-        if (data.party_type === "partner") {
-          applyPartnerPayment(db, {
-            party_id: data.party_id,
-            invoiceId: data.invoiceId,
-            paymentId,
-            fund_id: data.fund_id,
-            amount,
-            mode: data.mode,
-            note: data.note,
-            currency_code: data.currency_code,
-            exchange_rate: data.exchange_rate,
-            effective_rate: data.effective_rate,
-            collected_amount: data.collected_amount,
-            date: data.date || new Date().toISOString(),
-            type: data.type,
-          });
-        }
-
         createFundHistory(db, {
           fund_id: data.fund_id,
           record_type: "payment",
