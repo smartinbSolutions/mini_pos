@@ -55,7 +55,7 @@ export default function createPayment(db, data) {
       payment_id: result.lastInsertRowid,
       invoice_id: data.invoice_id || null,
       invoice_type: data.invoice_type || null,
-      amount: data.amount_fund_currency || 0,
+      amount: data.amount || 0,
     });
   }
 

@@ -8,7 +8,6 @@ import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.s
 import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
-import createPaymentAllocation from "../utils/createPaymentAllocations";
 
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
