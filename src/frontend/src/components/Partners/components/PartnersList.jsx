@@ -7,6 +7,7 @@ import DeleteModal from "../../../Global/DeleteModel";
 import AddPayment from "../../Cash/Payment/components/AddPayment";
 import ContactListHeader from "../../../Global/Contactlistheader";
 import Pagination from "../../../Global/Pagination";
+import { ToastContainer } from "react-toastify";
 
 const BalanceCell = ({ deposited, withdrawn, balance, money, t }) => {
   const isSettled = balance <= 0;
@@ -301,6 +302,7 @@ const PartnersList = () => {
         title={t("deleteModal.title")}
         message={t("deleteModal.message")}
       />
+      <ToastContainer />
     </div>
   );
 };

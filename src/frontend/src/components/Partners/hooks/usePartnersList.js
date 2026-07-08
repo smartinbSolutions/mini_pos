@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 
 const usePartnersList = () => {
   const { t } = useTranslation();
@@ -115,12 +116,14 @@ const usePartnersList = () => {
     try {
       await createPartner(part);
       setActionError("");
+      toast.success(t("success.created", { field: t("ui.partner") }));
       return true;
     } catch (err) {
       console.error("Failed to create Partner:", err);
-      setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.partner") })
-      );
+      const message =
+        err?.message || t("errors.createFailed", { field: t("ui.partner") });
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
@@ -129,12 +132,14 @@ const usePartnersList = () => {
     try {
       await updatePartner(cust);
       setActionError("");
+      toast.success(t("success.updated", { field: t("ui.partner") }));
       return true;
     } catch (err) {
       console.error("Failed to update Partner:", err);
-      setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.partner") })
-      );
+      const message =
+        err?.message || t("errors.updateFailed", { field: t("ui.partner") });
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
@@ -145,9 +150,12 @@ const usePartnersList = () => {
       setActionError("");
       setEditing(emptyPartner);
       setEditingId("");
+      toast.success(t("success.deleted", { field: t("ui.partner") }));
     } catch (err) {
       console.error("Failed to delete Partner:", err);
-      setActionError(t("errors.deleteHasData", { field: t("ui.partner") }));
+      const message = t("errors.deleteHasData", { field: t("ui.partner") });
+      setActionError(message);
+      toast.error(message);
     }
   };
 

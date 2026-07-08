@@ -119,9 +119,9 @@ const FundListHeader = ({
 
           <input
             type="number"
-            value={draft.balance || ""}
+            value={draft.initial_balance || ""}
             onChange={(e) =>
-              setDraft({ ...draft, balance: Number(e.target.value) })
+              setDraft({ ...draft, initial_balance: Number(e.target.value) })
             }
             className={`w-full ${inputClass}`}
             placeholder={t("screens.funds.initialBalance")}

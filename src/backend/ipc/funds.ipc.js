@@ -8,21 +8,23 @@ export default function registerFundIPC() {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
 
+    const initialBalance = Number(data.initial_balance || 0);
+
     const result = db
       .prepare(
         `
-      INSERT INTO funds (name, currency_id, balance)
-      VALUES (?, ?, ?)
-    `
+        INSERT INTO funds (name, currency_id)
+        VALUES (?, ?)
+      `
       )
-      .run(data.name, data.currency_id, 0);
+      .run(data.name, data.currency_id);
 
-    if (data.balance !== 0 && data.paymentInfundCurrency !== 0) {
+    if (initialBalance !== 0) {
       createFundHistory(db, {
         fund_id: result.lastInsertRowid,
         record_type: "opening_balance",
-        movement_type: data.balance > 0 ? "in" : "out",
-        amount: Math.abs(data.paymentInfundCurrency),
+        movement_type: initialBalance > 0 ? "in" : "out",
+        amount: Math.abs(initialBalance),
         note: "Opening Balance",
       });
     }

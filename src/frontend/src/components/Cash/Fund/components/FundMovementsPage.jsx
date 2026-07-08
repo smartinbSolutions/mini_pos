@@ -16,7 +16,7 @@ const FundMovementsPage = () => {
   const { id } = useParams();
 
   const { history, fund, loading } = useFundHistory(id);
-
+  console.log(history);
   const fundCurrency = fund || {};
 
   const finalBalance = history[0]?.running_balance || 0;
@@ -138,7 +138,7 @@ const FundMovementsPage = () => {
                             : "bg-red-100 text-red-600"
                         }`}
                       >
-                        {isIn ? t("ui.income") : t("ui.expense")}
+                        {isIn ? t("ui.in") : t("ui.out")}
                       </span>
                     </div>
 

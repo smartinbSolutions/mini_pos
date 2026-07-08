@@ -259,7 +259,7 @@ export default function AddPayment({
               ? t("common.saving")
               : confirmLabel ||
                 (isCollectorMode
-                  ? "Confirm Collection"
+                  ? "Confirm"
                   : t("screens.payments.savePayment"))}
           </button>
         </div>

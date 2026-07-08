@@ -1,6 +1,12 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowDownLeft, ArrowUpRight, Wallet, Landmark } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Wallet,
+  Landmark,
+  ArrowLeft,
+} from "lucide-react";
 
 import usePartyLedger from "../hooks/useGetPartyPayments";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
@@ -77,11 +83,22 @@ const PartyLedgerPage = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       {/* HEADER */}
       <div className="bg-white p-5 rounded-3xl border shadow-sm mb-5 flex flex-col lg:flex-row justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">{partyName}</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t("screens.ledger.partyId", { type: typeLabel, id })}
-          </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-gray-100 text-gray-600 transition hover:bg-gray-200"
+            aria-label={t("common.back")}
+          >
+            <ArrowLeft size={18} />
+          </button>
+
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{partyName}</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {t("screens.ledger.partyId", { type: typeLabel, id })}
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-4 flex-wrap">
@@ -136,12 +153,6 @@ const PartyLedgerPage = () => {
                   ? t("screens.ledger.payment")
                   : t("screens.ledger.invoice");
 
-            // A row is "foreign currency" when its exchange rate isn't 1 —
-            // i.e. the fund it moved through isn't the primary currency.
-            // In that case we show the base amount, the fund's rate, the
-            // converted fund-currency amount, and the effective rate used
-            // (which can differ from the fund's nominal rate if the amount
-            // was manually adjusted at payment time).
             const rate = Number(p.exchange_rate || 1);
             const isForeignCurrency = rate !== 1;
             const effectiveRate = Number(p.effective_rate || rate);
@@ -157,7 +168,6 @@ const PartyLedgerPage = () => {
                   hasInvoiceLink ? "cursor-pointer" : ""
                 }`}
               >
-                {/* LEFT */}
                 <div className="flex items-center gap-4">
                   <div
                     className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
@@ -214,7 +224,6 @@ const PartyLedgerPage = () => {
                   </div>
                 </div>
 
-                {/* RIGHT */}
                 <div className="text-right">
                   <div
                     className={`font-bold text-lg ${
