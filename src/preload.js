@@ -104,7 +104,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("delete-sales-invoice-item", id),
 
   /* ================= SALES ================= */
-  getSalesInvoices: () => ipcRenderer.invoke("get-sales-invoices"),
+  getSalesInvoices: (params) =>
+    ipcRenderer.invoke("get-sales-invoices", params),
   getSalesInvoiceById: (id) => ipcRenderer.invoke("get-sales-invoice", id),
   createSalesInvoice: (data) =>
     ipcRenderer.invoke("create-sales-invoice", data),
