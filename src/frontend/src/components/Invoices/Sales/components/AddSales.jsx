@@ -46,9 +46,9 @@ export default function AddSales() {
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();
-
+  console.log(customers);
   const customerName =
-    customers.find((c) => c.id === invoice.customer_id)?.name || "";
+    customers?.data?.find((c) => c.id === invoice.customer_id)?.name || "";
 
   const hasUsableItems = items.some((i) => i.product_id);
   const canSave = !!invoice.customer_id && hasUsableItems && !saving;
@@ -440,7 +440,7 @@ export default function AddSales() {
                     value={invoice.tax_id || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value),
+                        (tax) => tax.id === Number(e.target.value)
                       );
                       setInvoice((p) => ({
                         ...p,

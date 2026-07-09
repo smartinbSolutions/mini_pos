@@ -101,7 +101,7 @@ export default function POSSystem() {
     return products.filter((product) =>
       [product.name, product.latinName, product.unit_name, product.unit_code]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
+        .some((value) => String(value).toLowerCase().includes(term))
     );
   }, [products, search]);
 
@@ -351,7 +351,7 @@ export default function POSSystem() {
                       addToCart(
                         product,
                         activeWeight || 1,
-                        Boolean(activeWeight),
+                        Boolean(activeWeight)
                       );
                       setActionError("");
                     }}
@@ -441,7 +441,7 @@ export default function POSSystem() {
                     phone: "",
                     address: "",
                   },
-                  ...customers,
+                  ...customers?.data,
                 ]}
                 selectedValue={selectedCustomerId}
                 onChange={(customer) =>
@@ -507,7 +507,7 @@ export default function POSSystem() {
                             e.stopPropagation();
                             updateQuantity(
                               item.id,
-                              item.qty === 1 ? -1 : item.qty - 1,
+                              item.qty === 1 ? -1 : item.qty - 1
                             );
                           }}
                           className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"

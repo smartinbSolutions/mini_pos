@@ -76,6 +76,7 @@ const useAddPayment = ({
           ? await api.getSupplierCredit(party)
           : await api.getCustomerCredit(party);
       setAvailableCredit(res?.totalAvailable || 0);
+      console.log(res);
     } catch (err) {
       setAvailableCredit(0);
     }
