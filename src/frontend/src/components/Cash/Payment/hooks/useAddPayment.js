@@ -30,21 +30,30 @@ const useAddPayment = ({
   const isSupplier = mode === "supplier";
   const isCollectorMode = !invoice;
 
-  // Initial calculated base amount from invoice or totalAmount prop
+  const partyType =
+    isPurchase || isExpense || isSupplier
+      ? "supplier"
+      : isSales || isCustomer
+        ? "customer"
+        : "partner";
+
   const initialBaseAmount = invoice
     ? Number(invoice.remaining_amount || 0)
     : Number(invoice?.net_total || totalAmount);
 
   const [form, setForm] = useState({
     fund_id: "",
-    fund_exchangeRate: 1, // Fund's nominal exchange rate
-    amount_in_base: 0, // Editable base currency amount
-    collected_amount: 0, // Editable fund currency amount
+    fund_exchangeRate: 1,
+    amount_in_base: 0,
+    collected_amount: 0,
     currency_code: "",
     currency_symbol: "",
     note: "",
     partner_transaction_type: "",
   });
+
+  const [availableCredit, setAvailableCredit] = useState(0);
+  const [useCredit, setUseCredit] = useState(false);
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -56,9 +65,27 @@ const useAddPayment = ({
     setFunds(res || []);
   }, [api]);
 
+  const refetchCredit = useCallback(async () => {
+    if (!api || !party || partyType === "partner") {
+      setAvailableCredit(0);
+      return;
+    }
+    try {
+      const res =
+        partyType === "supplier"
+          ? await api.getSupplierCredit(party)
+          : await api.getCustomerCredit(party);
+      setAvailableCredit(res?.totalAvailable || 0);
+    } catch (err) {
+      setAvailableCredit(0);
+    }
+  }, [api, party, partyType]);
+
   useEffect(() => {
     if (isOpen) {
       refetch();
+      refetchCredit();
+      setUseCredit(false);
 
       let defaultNote = "";
       if (isPurchase) {
@@ -99,6 +126,7 @@ const useAddPayment = ({
   }, [
     isOpen,
     refetch,
+    refetchCredit,
     invoice,
     isPurchase,
     isExpense,
@@ -140,18 +168,43 @@ const useAddPayment = ({
     }));
   };
 
+  const toggleUseCredit = () => {
+    setUseCredit((prev) => {
+      const next = !prev;
+      if (next) {
+        const capped = Math.min(
+          availableCredit,
+          initialBaseAmount || availableCredit
+        );
+        setForm((f) => ({
+          ...f,
+          fund_id: "",
+          amount_in_base: capped,
+          collected_amount: capped,
+        }));
+      }
+      return next;
+    });
+  };
+
   const effectiveRate = useMemo(() => {
     if (!form.amount_in_base) return form.fund_exchangeRate;
     return Number(form.collected_amount || 0) / Number(form.amount_in_base);
   }, [form.collected_amount, form.amount_in_base, form.fund_exchangeRate]);
 
   const submit = async () => {
-    if (!form.fund_id) {
+    if (!useCredit && !form.fund_id) {
       setMessage(t("ui.selectFundRequired") || "Please select a fund first");
       return;
     }
     if (Number(form.amount_in_base) <= 0) {
       setMessage("Please enter a valid amount");
+      return;
+    }
+    if (useCredit && Number(form.amount_in_base) > availableCredit) {
+      setMessage(
+        t("errors.creditExceeded") || "Amount exceeds available credit"
+      );
       return;
     }
 
@@ -162,18 +215,11 @@ const useAddPayment = ({
           ? "income"
           : form.partner_transaction_type;
 
-    const partyType =
-      isPurchase || isExpense || isSupplier
-        ? "supplier"
-        : isSales || isCustomer
-          ? "customer"
-          : "partner";
-
     const paymentData = {
       type: paymentType,
       party_type: partyType,
       party_id: party,
-      fund_id: form.fund_id,
+      fund_id: useCredit ? null : form.fund_id,
       amount: Number(form.amount_in_base),
       exchange_rate: form.fund_exchangeRate,
       collected_amount: Number(form.collected_amount || 0),
@@ -182,6 +228,7 @@ const useAddPayment = ({
       currency_symbol: form.currency_symbol,
       note: form.note,
       mode,
+      source: useCredit ? "credit" : "new",
     };
 
     if (isCollectorMode && onSubmit) {
@@ -193,11 +240,24 @@ const useAddPayment = ({
     setLoading(true);
     setMessage("");
     try {
-      const res = await api.createPayment({
-        ...paymentData,
-        invoiceId: invoice?.id || null,
-      });
-      if (!res.success) throw new Error(res.message);
+      let res;
+
+      if (useCredit) {
+        res = await api.applyInvoiceCredit({
+          partyId: party,
+          partyType,
+          invoiceId: invoice?.id,
+          invoiceType: mode,
+          amount: Number(form.amount_in_base),
+        });
+        if (!res.success) throw new Error(res.error);
+      } else {
+        res = await api.createPayment({
+          ...paymentData,
+          invoiceId: invoice?.id || null,
+        });
+        if (!res.success) throw new Error(res.message);
+      }
 
       setMessage(t("screens.payments.saved") || "Saved successfully");
 
@@ -233,6 +293,9 @@ const useAddPayment = ({
     initialBaseAmount,
     t,
     money,
+    availableCredit,
+    useCredit,
+    toggleUseCredit,
   };
 };
 

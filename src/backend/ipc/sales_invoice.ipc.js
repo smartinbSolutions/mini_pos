@@ -4,6 +4,7 @@ import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
+import { applyPartyCredit } from "../utils/partyCredit";
 
 const receiptLabels = {
   en: {
@@ -80,8 +81,9 @@ export default function registerSalesInvoiceIPC() {
 
         const payment = data.payment || null;
         const isPaid = !!payment;
+        const isCredit = payment?.source === "credit";
 
-        if (isPaid) {
+        if (isPaid && !isCredit) {
           if (!payment.fund_id) {
             throw new Error("FUND_REQUIRED");
           }
@@ -90,13 +92,18 @@ export default function registerSalesInvoiceIPC() {
           }
         }
 
+        if (
+          isPaid &&
+          isCredit &&
+          (!payment.amount || Number(payment.amount) <= 0)
+        ) {
+          throw new Error("INVALID_CREDIT_AMOUNT");
+        }
+
         const dateOnly = data.date.slice(0, 10);
         const now = new Date();
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
-
-        const paidAmount = isPaid ? Number(payment.amount) : 0;
-        const remainingAmount = netTotal - paidAmount;
 
         const invoiceResult = db
           .prepare(
@@ -104,7 +111,7 @@ export default function registerSalesInvoiceIPC() {
             INSERT INTO sales_invoices
             (customer_id, invoice_name, description, date, subtotal, discount, tax_id, net_total, taxValue)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
+          `
           )
           .run(
             data.customer_id || null,
@@ -115,7 +122,7 @@ export default function registerSalesInvoiceIPC() {
             discount,
             data.tax_id || null,
             netTotal,
-            data.taxValue || 0,
+            data.taxValue || 0
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -147,7 +154,7 @@ export default function registerSalesInvoiceIPC() {
             quantity,
             price,
             item.buyingPrice,
-            total,
+            total
           );
           updateStock.run(quantity, item.product_id);
 
@@ -175,8 +182,17 @@ export default function registerSalesInvoiceIPC() {
         }
 
         let insertPaymentId = null;
+        let creditApplied = null;
 
-        if (isPaid) {
+        if (isPaid && isCredit) {
+          creditApplied = applyPartyCredit(db, {
+            partyId: payment.party_id,
+            partyType: payment.party_type,
+            invoiceId,
+            invoiceType: "sales",
+            amount: payment.amount,
+          });
+        } else if (isPaid) {
           insertPaymentId = createPayment(db, {
             type: payment.type,
             party_type: payment.party_type,
@@ -191,7 +207,7 @@ export default function registerSalesInvoiceIPC() {
             invoice_type: payment.mode,
             note: `${payment.note} #${invoiceId}`,
             fundOperation: "add",
-            date: data.date || new Date().toISOString,
+            date: data.date || new Date().toISOString(),
           });
 
           createFundHistory(db, {
@@ -206,7 +222,7 @@ export default function registerSalesInvoiceIPC() {
           });
         }
 
-        return { invoiceId, paymentId: insertPaymentId };
+        return { invoiceId, paymentId: insertPaymentId, creditApplied };
       });
 
       return { success: true, ...transaction() };
@@ -256,7 +272,7 @@ export default function registerSalesInvoiceIPC() {
       ORDER BY s.id DESC
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -308,7 +324,7 @@ export default function registerSalesInvoiceIPC() {
       WHERE sa.id = ?
 
       GROUP BY sa.id
-      `,
+      `
       )
       .get(id);
 
@@ -324,7 +340,7 @@ export default function registerSalesInvoiceIPC() {
       LEFT JOIN products p
         ON p.id = si.product_id
       WHERE si.invoice_id = ?
-      `,
+      `
       )
       .all(id);
 
@@ -355,7 +371,7 @@ export default function registerSalesInvoiceIPC() {
       WHERE pa.invoice_id = ?
         AND pa.invoice_type = 'sales'
       ORDER BY p.createdAt ASC
-      `,
+      `
       )
       .all(id);
 
@@ -392,7 +408,7 @@ export default function registerSalesInvoiceIPC() {
         // Block editing once a payment already exists against this invoice
         const existingPayment = db
           .prepare(
-            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'sales'`,
+            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'sales'`
           )
           .get(data.id);
 
@@ -420,13 +436,13 @@ export default function registerSalesInvoiceIPC() {
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          data.id,
+          data.id
         );
         db.prepare(
           `
           DELETE FROM product_movements
           WHERE reference_type = 'sales_invoice' AND reference_id = ?
-        `,
+        `
         ).run(data.id);
 
         const insertItem = db.prepare(`
@@ -456,7 +472,7 @@ export default function registerSalesInvoiceIPC() {
             quantity,
             price,
             item.buyingPrice,
-            total,
+            total
           );
           applyStock.run(quantity, item.product_id);
 
@@ -490,7 +506,7 @@ export default function registerSalesInvoiceIPC() {
               net_total = ?,
               taxValue = ?
           WHERE id = ?
-        `,
+        `
         ).run(
           newCustomerId,
           data.invoice_name || null,
@@ -501,7 +517,7 @@ export default function registerSalesInvoiceIPC() {
           data.tax_id || null,
           newNetTotal,
           data.taxValue || 0,
-          data.id,
+          data.id
         );
 
         // Customer party_history reconciliation for the invoice amount
@@ -511,7 +527,7 @@ export default function registerSalesInvoiceIPC() {
             UPDATE party_history
             SET amount = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-          `,
+          `
           ).run(newNetTotal, `Sales Invoice #${data.id}`, data.id);
         } else {
           if (oldCustomerId) {
@@ -519,7 +535,7 @@ export default function registerSalesInvoiceIPC() {
               `
               DELETE FROM party_history
               WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-            `,
+            `
             ).run(data.id);
           }
 
@@ -580,13 +596,13 @@ export default function registerSalesInvoiceIPC() {
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          id,
+          id
         );
         db.prepare(
           `
           DELETE FROM party_history
           WHERE invoice_id = ? AND invoice_type = 'sales'
-        `,
+        `
         ).run(id);
         db.prepare(`DELETE FROM sales_invoices WHERE id = ?`).run(id);
       });
@@ -611,7 +627,7 @@ export default function registerSalesInvoiceIPC() {
               payment.amount_fund_currency ||
                 payment.amountFundCurrency ||
                 payment.paymentInfundCurrency ||
-                0,
+                0
             ),
             currencyCode: payment.currency_code,
             exchangeRate: Number(payment.exchange_rate || 1) || 1,
@@ -620,7 +636,7 @@ export default function registerSalesInvoiceIPC() {
             (payment) =>
               payment.fundId &&
               payment.amount > 0 &&
-              payment.amountFundCurrency > 0,
+              payment.amountFundCurrency > 0
           )
       : [];
 
@@ -635,7 +651,7 @@ export default function registerSalesInvoiceIPC() {
     }
 
     const paidTotal = roundCents(
-      payments.reduce((sum, payment) => sum + payment.amount, 0),
+      payments.reduce((sum, payment) => sum + payment.amount, 0)
     );
     const invoiceTotal = Number(data.net_total || 0);
 
@@ -666,7 +682,7 @@ export default function registerSalesInvoiceIPC() {
         data.subtotal || 0,
         data.discount || 0,
         data.tax_id || null,
-        data.net_total || 0,
+        data.net_total || 0
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
@@ -681,7 +697,7 @@ export default function registerSalesInvoiceIPC() {
           quantity,
           price,
           item.costPrice,
-          total,
+          total
         );
         updateStock.run(quantity, item.id);
 
@@ -765,11 +781,11 @@ export default function registerSalesInvoiceIPC() {
   ipcMain.handle("print-receipt", async (event, data) => {
     const companySettings = db
       .prepare(
-        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`,
+        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`
       )
       .get();
     const language = getReceiptLanguage(
-      data.language || companySettings?.language,
+      data.language || companySettings?.language
     );
     const labels = receiptLabels[language];
     const direction = language === "ar" ? "rtl" : "ltr";
@@ -795,7 +811,7 @@ export default function registerSalesInvoiceIPC() {
         <td class="right">${Number(item.price).toFixed(2)}</td>
         <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
-    `,
+    `
       )
       .join("");
 
@@ -853,7 +869,7 @@ export default function registerSalesInvoiceIPC() {
   `;
 
     await win.loadURL(
-      "data:text/html;charset=utf-8," + encodeURIComponent(html),
+      "data:text/html;charset=utf-8," + encodeURIComponent(html)
     );
 
     win.webContents.print(
@@ -863,7 +879,7 @@ export default function registerSalesInvoiceIPC() {
         margins: { marginType: "none" },
         scaleFactor: 100,
       },
-      () => win.close(),
+      () => win.close()
     );
   });
 
@@ -896,7 +912,7 @@ export default function registerSalesInvoiceIPC() {
 
               printWindow.destroy();
               printWindow = null;
-            },
+            }
           );
         }, 600);
       });

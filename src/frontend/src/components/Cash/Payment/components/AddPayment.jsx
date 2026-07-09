@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React from "react";
 import {
   Wallet,
   Save,
@@ -10,10 +10,9 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   DollarSign,
+  Sparkles,
 } from "lucide-react";
-import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { formatMoney } from "../../../../Global/FormatNumber";
-import { useTranslation } from "react-i18next";
 import useAddPayment from "../hooks/useAddPayment";
 
 export default function AddPayment({
@@ -24,7 +23,7 @@ export default function AddPayment({
   totalAmount,
   party,
   partyName,
-  mode = "purchase", // "purchase" | "sales" | "expense" | "partner" | "customer" | "supplier"
+  mode = "purchase",
   refetchList,
   confirmLabel,
 }) {
@@ -48,6 +47,9 @@ export default function AddPayment({
     initialBaseAmount,
     t,
     money,
+    availableCredit,
+    useCredit,
+    toggleUseCredit,
   } = useAddPayment({
     isOpen,
     onClose,
@@ -60,7 +62,9 @@ export default function AddPayment({
     refetchList,
     confirmLabel,
   });
+
   if (!isOpen) return null;
+
   const getHeaderStyle = () => {
     if (isPurchase || isExpense || isSupplier) return "bg-red-100 text-red-600";
     if (isSales || isCustomer) return "bg-green-100 text-green-600";
@@ -68,6 +72,7 @@ export default function AddPayment({
       ? "bg-emerald-100 text-emerald-600"
       : "bg-orange-100 text-orange-600";
   };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl border">
@@ -126,6 +131,50 @@ export default function AddPayment({
             </div>
           </div>
 
+          {/* CREDIT BANNER */}
+          {!isPartner && availableCredit > 0 && (
+            <div
+              className={`rounded-2xl border p-4 transition ${
+                useCredit
+                  ? "border-emerald-300 bg-emerald-50"
+                  : "border-dashed border-emerald-200 bg-emerald-50/40"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                    <Sparkles size={16} />
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-emerald-800">
+                      {t(
+                        "screens.payments.creditAvailable",
+                        "Credit available"
+                      )}
+                    </p>
+                    <p className="text-xs text-emerald-600">
+                      {money(availableCredit)}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={toggleUseCredit}
+                  className={`rounded-xl px-3 py-2 text-xs font-bold transition ${
+                    useCredit
+                      ? "bg-emerald-600 text-white"
+                      : "bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50"
+                  }`}
+                >
+                  {useCredit
+                    ? t("common.applied", "Applied")
+                    : t("screens.payments.applyCredit", "Apply credit")}
+                </button>
+              </div>
+            </div>
+          )}
+
           {isPartner && (
             <div className="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-xl">
               <button
@@ -151,27 +200,36 @@ export default function AddPayment({
             </div>
           )}
 
-          <div>
-            <label className="text-sm text-gray-600">{t("ui.cashFund")}</label>
-            <select
-              value={form.fund_id}
-              onChange={handleFundChange}
-              className="w-full h-11 rounded-xl border px-3 mt-1 bg-white outline-none"
-            >
-              <option value="">{t("ui.selectFund")}</option>
-              {funds?.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name} ({formatMoney(f.balance, f)})
-                </option>
-              ))}
-            </select>
-          </div>
+          {!useCredit && (
+            <div>
+              <label className="text-sm text-gray-600">
+                {t("ui.cashFund")}
+              </label>
+              <select
+                value={form.fund_id}
+                onChange={handleFundChange}
+                className="w-full h-11 rounded-xl border px-3 mt-1 bg-white outline-none"
+              >
+                <option value="">{t("ui.selectFund")}</option>
+                {funds?.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name} ({formatMoney(f.balance, f)})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <hr className="border-dashed" />
 
           <div>
             <label className="text-sm font-medium text-gray-700">
-              Amount to Receive / Pay (Base Currency)
+              {useCredit
+                ? t(
+                    "screens.payments.amountFromCredit",
+                    "Amount to apply from credit"
+                  )
+                : "Amount to Receive / Pay (Base Currency)"}
             </label>
             <div className="relative mt-1">
               <input
@@ -180,7 +238,11 @@ export default function AddPayment({
                 onChange={(e) => handleBaseAmountChange(e.target.value)}
                 className="w-full h-11 rounded-xl border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="0.00"
-                disabled={!form.fund_id || isSales || isExpense || isPurchase}
+                disabled={
+                  !useCredit &&
+                  (!form.fund_id || isSales || isExpense || isPurchase)
+                }
+                max={useCredit ? availableCredit : undefined}
               />
               <DollarSign
                 className="absolute right-3 top-3 text-gray-400"
@@ -192,9 +254,15 @@ export default function AddPayment({
                 Original Net Total: {money(invoice?.net_total)}
               </p>
             )}
+            {useCredit && (
+              <p className="mt-1 text-xs text-emerald-600">
+                {t("screens.payments.creditCap", "Max")}:{" "}
+                {money(availableCredit)}
+              </p>
+            )}
           </div>
 
-          {form.fund_exchangeRate !== 1 && (
+          {!useCredit && form.fund_exchangeRate !== 1 && (
             <div>
               <label className="text-sm font-medium text-gray-700">
                 Collected / Paid Amount (Fund Currency)
@@ -230,6 +298,7 @@ export default function AddPayment({
               )}
             </div>
           )}
+
           <div>
             <label className="text-sm text-gray-600">{t("ui.note")}</label>
             <textarea
@@ -252,7 +321,17 @@ export default function AddPayment({
           <button
             onClick={submit}
             disabled={loading}
-            className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 font-medium transition-all ${isPurchase || isExpense || isSupplier ? "bg-red-600 hover:bg-red-700" : isSales || isCustomer ? "bg-green-600 hover:bg-green-700" : form.partner_transaction_type === "income" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-orange-600 hover:bg-orange-700"}`}
+            className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 font-medium transition-all ${
+              useCredit
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : isPurchase || isExpense || isSupplier
+                  ? "bg-red-600 hover:bg-red-700"
+                  : isSales || isCustomer
+                    ? "bg-green-600 hover:bg-green-700"
+                    : form.partner_transaction_type === "income"
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-orange-600 hover:bg-orange-700"
+            }`}
           >
             <Save size={18} />
             {loading

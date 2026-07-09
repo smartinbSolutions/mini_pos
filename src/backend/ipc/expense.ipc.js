@@ -3,6 +3,7 @@ import db from "../db";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
+import { applyPartyCredit } from "../utils/partyCredit";
 
 export default function registerExpenseIPC() {
   ipcMain.handle("create-expense", (event, data) => {
@@ -18,13 +19,29 @@ export default function registerExpenseIPC() {
 
         const payment = data.payment || null;
         const isPaid = !!payment;
+        const isCredit = payment?.source === "credit";
         const subtotal = Number(data.subtotal || 0);
         const netTotal = Number(data.net_total || 0);
-        const paidAmount = isPaid ? Number(payment.amount) : 0;
-        const remainingAmount = netTotal - paidAmount;
 
         if (subtotal <= 0 || netTotal <= 0) {
           throw new Error("INVALID TOTALS");
+        }
+
+        if (isPaid && !isCredit) {
+          if (!payment.fund_id) {
+            throw new Error("FUND_REQUIRED");
+          }
+          if (!payment.amount || Number(payment.amount) <= 0) {
+            throw new Error("INVALID_PAYMENT_AMOUNT");
+          }
+        }
+
+        if (
+          isPaid &&
+          isCredit &&
+          (!payment.amount || Number(payment.amount) <= 0)
+        ) {
+          throw new Error("INVALID_CREDIT_AMOUNT");
         }
 
         const dateOnly = data.date;
@@ -79,40 +96,50 @@ export default function registerExpenseIPC() {
         }
 
         let insertPaymentId = null;
+        let creditApplied = null;
 
-        if (paidAmount > 0) {
+        if (isPaid && isCredit) {
+          creditApplied = applyPartyCredit(db, {
+            partyId: payment.party_id,
+            partyType: payment.party_type,
+            invoiceId,
+            invoiceType: "expense",
+            amount: payment.amount,
+          });
+        } else if (isPaid) {
           insertPaymentId = createPayment(db, {
-            type: data.payment.type,
-            party_type: data.payment.party_type,
-            party_id: data.payment.party_id,
-            fund_id: data.payment.fund_id,
-            amount: data.payment.amount,
-            amount_fund_currency: data.payment.collected_amount,
-            currency_code: data.payment.currency_code,
-            exchange_rate: data.payment.exchange_rate,
-            effective_rate: data.payment.effective_rate,
+            type: payment.type,
+            party_type: payment.party_type,
+            party_id: payment.party_id,
+            fund_id: payment.fund_id,
+            amount: payment.amount,
+            amount_fund_currency: payment.collected_amount,
+            currency_code: payment.currency_code,
+            exchange_rate: payment.exchange_rate,
+            effective_rate: payment.effective_rate,
             invoice_id: invoiceId,
-            invoice_type: data.payment.mode,
-            note: `${data.payment.note} #${invoiceId}`,
+            invoice_type: payment.mode,
+            note: `${payment.note} #${invoiceId}`,
             fundOperation: "subtract",
             date: data.date || new Date().toISOString(),
           });
 
           createFundHistory(db, {
-            fund_id: data.payment.fund_id,
+            fund_id: payment.fund_id,
             record_type: "payment",
             payment_id: insertPaymentId,
             invoice_id: invoiceId,
             invoice_type: "expense",
             movement_type: "out",
-            amount: data.payment.collected_amount,
-            note: `${data.payment.note} #${invoiceId}`,
+            amount: payment.collected_amount,
+            note: `${payment.note} #${invoiceId}`,
           });
         }
 
         return {
           invoiceId,
           paymentId: insertPaymentId,
+          creditApplied,
         };
       });
 

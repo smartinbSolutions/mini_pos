@@ -4,6 +4,7 @@ import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
+import { applyPartyCredit } from "../utils/partyCredit";
 export default function registerPurchaseInvoicesIPC() {
   // CREATE
   ipcMain.handle("create-purchase-invoice", (event, data) => {
@@ -21,7 +22,7 @@ export default function registerPurchaseInvoicesIPC() {
         const subtotal = Number(data.subtotal || 0);
         const netTotal = Number(data.net_total || 0);
         const discount = Number(data.discount || 0);
-        const tax = Number(data.tax_rate || 0);
+        const tax = Number(data.tax || 0);
 
         if (subtotal <= 0 || netTotal <= 0) {
           throw new Error("INVALID TOTALS");
@@ -29,8 +30,9 @@ export default function registerPurchaseInvoicesIPC() {
 
         const payment = data.payment || null;
         const isPaid = !!payment;
+        const isCredit = payment?.source === "credit";
 
-        if (isPaid) {
+        if (isPaid && !isCredit) {
           if (!payment.fund_id) {
             throw new Error("FUND_REQUIRED");
           }
@@ -39,11 +41,18 @@ export default function registerPurchaseInvoicesIPC() {
           }
         }
 
+        if (
+          isPaid &&
+          isCredit &&
+          (!payment.amount || Number(payment.amount) <= 0)
+        ) {
+          throw new Error("INVALID_CREDIT_AMOUNT");
+        }
+
         const dateOnly = data.date;
         const now = new Date();
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
-        const paidAmount = isPaid ? Number(payment.amount) : 0;
 
         const invoiceResult = db
           .prepare(
@@ -74,16 +83,16 @@ export default function registerPurchaseInvoicesIPC() {
         const invoiceId = invoiceResult.lastInsertRowid;
 
         const insertItem = db.prepare(`
-        INSERT INTO purchase_invoice_items
-        (invoice_id, product_id, quantity, price, total)
-        VALUES (?, ?, ?, ?, ?)
-      `);
+          INSERT INTO purchase_invoice_items
+          (invoice_id, product_id, quantity, price, total)
+          VALUES (?, ?, ?, ?, ?)
+        `);
 
         const updateStock = db.prepare(`
-        UPDATE products
-        SET quantity = quantity + ?, costPrice = ?
-        WHERE id = ?
-      `);
+          UPDATE products
+          SET quantity = quantity + ?, costPrice = ?
+          WHERE id = ?
+        `);
 
         for (const item of data.items) {
           const quantity = Number(item.quantity || 0);
@@ -120,8 +129,17 @@ export default function registerPurchaseInvoicesIPC() {
         });
 
         let insertPaymentId = null;
+        let creditApplied = null;
 
-        if (isPaid) {
+        if (isPaid && isCredit) {
+          creditApplied = applyPartyCredit(db, {
+            partyId: data.payment.party_id,
+            partyType: data.payment.party_type,
+            invoiceId,
+            invoiceType: "purchase",
+            amount: data.payment.amount,
+          });
+        } else if (isPaid) {
           insertPaymentId = createPayment(db, {
             type: data.payment.type,
             party_type: data.payment.party_type,
@@ -152,6 +170,7 @@ export default function registerPurchaseInvoicesIPC() {
         return {
           invoiceId,
           paymentId: insertPaymentId,
+          creditApplied,
         };
       });
 
@@ -163,7 +182,7 @@ export default function registerPurchaseInvoicesIPC() {
       return {
         success: false,
         error: err.message || String(err),
-        code: err.code, // keep this too, useful for programmatic checks
+        code: err.code,
       };
     }
   });

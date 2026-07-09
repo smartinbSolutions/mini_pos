@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld("api", {
   createCustomer: (data) => ipcRenderer.invoke("create-customer", data),
   updateCustomer: (data) => ipcRenderer.invoke("update-customer", data),
   deleteCustomer: (id) => ipcRenderer.invoke("delete-customer", id),
+  getCustomerCredit: (customerId) =>
+    ipcRenderer.invoke("get-customer-credit", customerId),
 
   /* ================= FUND ================= */
   getFunds: () => ipcRenderer.invoke("get-funds"),
@@ -121,6 +123,8 @@ contextBridge.exposeInMainWorld("api", {
   deleteSalesInvoice: (id) => ipcRenderer.invoke("delete-sales-invoice", id),
   posCheckout: (data) => ipcRenderer.invoke("pos-checkout", data),
   printReceipt: (data) => ipcRenderer.invoke("print-receipt", data),
+  applyInvoiceCredit: (data) =>
+    ipcRenderer.invoke("apply-invoice-credit", data),
 
   /* ================= SCALE ================= */
   listScalePorts: () => ipcRenderer.invoke("scale:list-ports"),
@@ -144,6 +148,8 @@ contextBridge.exposeInMainWorld("api", {
   createSupplier: (data) => ipcRenderer.invoke("create-supplier", data),
   updateSupplier: (data) => ipcRenderer.invoke("update-supplier", data),
   deleteSupplier: (id) => ipcRenderer.invoke("delete-supplier", id),
+  getSupplierCredit: (supplierId) =>
+    ipcRenderer.invoke("get-supplier-credit", supplierId),
 
   /* ================= TAX ================= */
   getTaxes: () => ipcRenderer.invoke("get-taxes"),
