@@ -394,7 +394,14 @@ export default function registerSalesInvoiceIPC() {
 
           const total = quantity * price;
 
-          insertItem.run(data.id, item.product_id, quantity, price, total);
+          insertItem.run(
+            data.id,
+            item.product_id,
+            quantity,
+            price,
+            item.buyingPrice,
+            total,
+          );
           applyStock.run(quantity, item.product_id);
 
           createProductMovement(db, {

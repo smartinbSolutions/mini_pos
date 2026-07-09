@@ -245,9 +245,10 @@ export default function UpdateSales() {
                             placeholder={t("ui.selectProducts")}
                             options={products}
                             selectedValue={item.product_id}
-                            onChange={(e) =>
-                              updateItem(index, "product_id", e.id)
-                            }
+                            onChange={(e) => {
+                              updateItem(index, "product_id", e.id);
+                              updateItem(index, "buyingPrice", e.costPrice);
+                            }}
                             disabled={isLocked}
                           />
                         </td>
