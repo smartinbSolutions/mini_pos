@@ -37,7 +37,7 @@ export default function registerExpenseIPC() {
             `
                 INSERT INTO expense
                 (supplier_id, invoice_name, description, date, subtotal, net_total)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?)
               `,
           )
           .run(

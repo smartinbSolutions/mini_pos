@@ -1,8 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-import reverseExpensePayment from "../services/payment/invoice/reverseExpensePayment.service";
-import reversePurchasePayment from "../services/payment/invoice/reversePurchasePayment.service";
-import reverseSalesPayment from "../services/payment/invoice/reverseSalesPayment.service";
+import reversePayment from "../services/payment/invoice/reversePayment.service";
 import applyCustomerPayment from "../services/payment/party/applyCustomerPayment.service";
 import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.service";
 import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
@@ -195,7 +193,7 @@ export default function registerPaymentIPC() {
       ${whereClause}
       ORDER BY p.id DESC
       LIMIT ? OFFSET ?
-    `
+    `,
       )
       .all(...filterParams, limit, offset);
 
@@ -213,7 +211,7 @@ export default function registerPaymentIPC() {
         COALESCE(SUM(CASE WHEN p.type = 'expense' THEN p.amount END), 0) AS expense_total
       FROM payments p
       ${whereClause}
-    `
+    `,
       )
       .get(...filterParams);
 
@@ -240,7 +238,7 @@ export default function registerPaymentIPC() {
       LEFT JOIN funds f ON f.id = p.fund_id
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE p.id = ?
-    `
+    `,
       )
       .get(id);
   });
@@ -253,7 +251,7 @@ export default function registerPaymentIPC() {
         FROM payment_allocations
         WHERE payment_id = ?
         ORDER BY id ASC
-      `
+      `,
       )
       .all(paymentId);
   });
@@ -287,7 +285,7 @@ export default function registerPaymentIPC() {
       WHERE p.fund_id = ?
 
       ORDER BY p.id DESC
-    `
+    `,
       )
       .all(id);
   });
@@ -326,10 +324,10 @@ export default function registerPaymentIPC() {
 
         ORDER BY id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
         )
         .all(partyId, partyType, limit, offset);
-    }
+    },
   );
 
   ipcMain.handle(
@@ -347,12 +345,12 @@ export default function registerPaymentIPC() {
         FROM payments
         WHERE party_id = ?
           AND party_type = ?
-        `
+        `,
         )
         .get(partyId, partyType);
 
       return row?.balance || 0;
-    }
+    },
   );
 
   ipcMain.handle("update-payment", (event, data) => {
@@ -367,7 +365,7 @@ export default function registerPaymentIPC() {
         amount = ?,
         note = ?
       WHERE id = ?
-    `
+    `,
     ).run(
       data.type,
       data.party_type,
@@ -375,7 +373,7 @@ export default function registerPaymentIPC() {
       data.fund_id,
       data.amount,
       data.note,
-      data.id
+      data.id,
     );
 
     return { success: true };
@@ -389,7 +387,7 @@ export default function registerPaymentIPC() {
         SELECT *
         FROM payments
         WHERE id = ?
-      `
+      `,
         )
         .get(id);
 
@@ -404,7 +402,7 @@ export default function registerPaymentIPC() {
         FROM party_history
         WHERE payment_id = ?
           AND record_type = 'payment'
-      `
+      `,
         )
         .all(id);
 
@@ -412,48 +410,27 @@ export default function registerPaymentIPC() {
         throw new Error("PAYMENT_HISTORY_NOT_FOUND");
       }
 
-      for (const item of history) {
-        const paymentData = {
-          ...payment,
-          ...item,
-        };
-
-        if (item.invoice_type === "purchase") {
-          reversePurchasePayment(db, paymentData);
-        }
-
-        if (item.invoice_type === "expense") {
-          reverseExpensePayment(db, paymentData);
-        }
-
-        if (item.invoice_type === "sales") {
-          reverseSalesPayment(db, paymentData);
-        }
-      }
-
-      if (payment.party_type === "partner") {
-        reversePartnerPayment(db, payment);
-      }
+      reversePayment(db, payment);
 
       db.prepare(
         `
       DELETE FROM party_history
       WHERE payment_id = ?
-    `
+    `,
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM fund_history
       WHERE payment_id = ?
-    `
+    `,
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM payments
       WHERE id = ?
-    `
+    `,
       ).run(id);
     });
 

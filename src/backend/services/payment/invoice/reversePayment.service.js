@@ -3,7 +3,6 @@ export default function reversePayment(db, payment) {
     `
     DELETE FROM payment_allocations
     WHERE payment_id = ?
-      AND invoice_type = 'sales'
     `,
   ).run(payment.id);
 }

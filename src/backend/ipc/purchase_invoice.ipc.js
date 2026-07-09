@@ -49,19 +49,18 @@ export default function registerPurchaseInvoicesIPC() {
         const invoiceResult = db
           .prepare(
             `
-  INSERT INTO purchase_invoices
-  (
-    supplier_id,
-    date,
-    subtotal,
-    discount,
-    tax,
-    net_total,
-      taxValue
-    
-  )
-  VALUES (?, ?, ?, ?, ?, ?, ?)
-`,
+            INSERT INTO purchase_invoices
+            (
+              supplier_id,
+              date,
+              subtotal,
+              discount,
+              tax,
+              net_total,
+              taxValue    
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            `,
           )
           .run(
             data.supplier_id,
