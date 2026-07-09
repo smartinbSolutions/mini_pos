@@ -181,6 +181,21 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("update-expence_category", data),
   deleteExpenseCategory: (id) =>
     ipcRenderer.invoke("delete-expence_category", id),
+  /* ================= CUSTOMER DISPLAY ================= */
+  openCustomerDisplay: () => ipcRenderer.invoke("customer-display:open"),
+  closeCustomerDisplay: () => ipcRenderer.invoke("customer-display:close"),
+  isCustomerDisplayOpen: () => ipcRenderer.invoke("customer-display:is-open"),
+  pushCartToCustomerDisplay: (cartPayload) =>
+    ipcRenderer.send("customer-display:push-cart", cartPayload),
+
+  // received by the customer display window only - the POS window never
+  // calls this, since it's the one sending, not receiving
+  onCustomerDisplayCartUpdate: (callback) => {
+    const listener = (_event, cartPayload) => callback(cartPayload);
+    ipcRenderer.on("customer-display:cart-update", listener);
+    return () =>
+      ipcRenderer.removeListener("customer-display:cart-update", listener);
+  },
 });
 
 contextBridge.exposeInMainWorld("license", {

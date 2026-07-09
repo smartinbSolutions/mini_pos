@@ -17,8 +17,10 @@ import registerPartnersIPC from "./ipc/partners.ipc";
 import registerExpenseIPC from "./ipc/expense.ipc";
 import registerExpenceCategoryIPC from "./ipc/expence_category.ipc";
 import registerPartyHistoryIPC from "./ipc/party_history.ipc";
+import registerCustomerDisplayIPC from "./ipc/customer_display.ipc";
 
 export default function registerAllIPC() {
+  registerCustomerDisplayIPC();
   registerCompanySettingIPC();
   registerCurrenciesIPC();
   registerCustomersIPC();

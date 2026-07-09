@@ -41,7 +41,7 @@ const PaymentList = () => {
     total,
     totalPages,
   } = usePayment();
-
+  console.log(payments);
   const [deletePaymentId, setDeletePaymentId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -54,7 +54,7 @@ const PaymentList = () => {
 
   const totalPaymentsAmount = payments.reduce(
     (acc, curr) => acc + (curr.amount || 0),
-    0,
+    0
   );
 
   return (

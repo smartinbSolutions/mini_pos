@@ -12,8 +12,9 @@ import {
   X,
   Check,
   ArrowBigLeft,
+  Monitor,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
 import CheckoutModal from "../components/CheckoutModal";
 import usePosCheckout from "../hooks/usePosCheckout";
@@ -70,7 +71,19 @@ export default function POSSystem() {
     clearCart,
     checkout,
   } = usePosCheckout({ weight });
-  const { money } = usePrimaryCurrency();
+  const { money, primaryCurrency } = usePrimaryCurrency();
+
+  const openCustomerDisplay = () => {
+    window.api?.openCustomerDisplay?.();
+  };
+
+  useEffect(() => {
+    window.api?.pushCartToCustomerDisplay?.({
+      items: cart,
+      total: netTotal,
+      currencyCode: primaryCurrency?.symbol || primaryCurrency?.code || "",
+    });
+  }, [cart, netTotal, primaryCurrency]);
 
   const activeWeight = Number(currentWeight) > 0 ? Number(currentWeight) : 0;
 
@@ -273,6 +286,15 @@ export default function POSSystem() {
                 >
                   <RefreshCw size={16} />
                   {t("common.refresh")}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={openCustomerDisplay}
+                  className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:border-teal-200 hover:bg-teal-50"
+                >
+                  <Monitor size={16} />
+                  {t("screens.pos.customerDisplay")}
                 </button>
               </div>
             </div>

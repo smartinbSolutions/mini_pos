@@ -283,6 +283,7 @@
     "pos": {
       "loading": "POS Sistemi yükleniyor...",
       "title": "POS Sistemi",
+      "customerDisplay": "Müşteri Ekranı",
       "subtitle": "Ürünler, terazi ve ödeme tek alanda",
       "disconnect": "Bağlantıyı kes",
       "connect": "Bağlan",

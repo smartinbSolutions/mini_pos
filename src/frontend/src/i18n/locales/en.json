@@ -288,6 +288,7 @@
     "pos": {
       "loading": "Loading POS System...",
       "title": "POS System",
+      "customerDisplay": "Customer Display",
       "subtitle": "Products, scale, and checkout in one workspace",
       "disconnect": "Disconnect",
       "connect": "Connect",
