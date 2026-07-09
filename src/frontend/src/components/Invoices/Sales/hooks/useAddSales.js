@@ -113,7 +113,7 @@ export default function useAddSales() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id)
+              (i) => Number(i.product_id) === Number(product.id),
             );
 
             if (existingIndex !== -1) {
@@ -138,6 +138,7 @@ export default function useAddSales() {
                 quantity: 1,
                 price: product.price || 0,
                 total: product.price || 0,
+                buyingPrice: product.costPrice,
               },
             ];
           });
@@ -207,7 +208,7 @@ export default function useAddSales() {
           items,
           payment: paymentData,
         };
-        console.log(payload);
+
         const res = await api.createSalesInvoice(payload);
 
         if (!res?.success) {
@@ -226,7 +227,7 @@ export default function useAddSales() {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t]
+    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t],
   );
 
   const reset = () => {

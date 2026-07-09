@@ -15,11 +15,18 @@ export default function registerSalesInvoiceItemsIPC() {
       .prepare(
         `
       INSERT INTO sales_invoice_items
-      (invoice_id, product_id, quantity, price, total)
-      VALUES (?, ?, ?, ?, ?)
+      (invoice_id, product_id, quantity, price, buyingPrice, total)
+      VALUES (?, ?, ?, ?, ?, ?)
     `,
       )
-      .run(data.invoice_id, data.product_id, data.quantity, data.price, total);
+      .run(
+        data.invoice_id,
+        data.product_id,
+        data.quantity,
+        data.price,
+        data.buyingPrice,
+        total,
+      );
 
     return {
       success: true,
@@ -85,6 +92,7 @@ export default function registerSalesInvoiceItemsIPC() {
         product_id = ?,
         quantity = ?,
         price = ?,
+        buyingPrice = ?,
         total = ?
       WHERE id = ?
     `,
@@ -93,6 +101,7 @@ export default function registerSalesInvoiceItemsIPC() {
       data.product_id,
       data.quantity,
       data.price,
+      data.buyingPrice,
       total,
       data.id,
     );

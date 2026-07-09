@@ -122,8 +122,8 @@ export default function registerSalesInvoiceIPC() {
 
         const insertItem = db.prepare(`
           INSERT INTO sales_invoice_items
-          (invoice_id, product_id, quantity, price, total)
-          VALUES (?, ?, ?, ?, ?)
+          (invoice_id, product_id, quantity, price, buyingPrice, total)
+          VALUES (?, ?, ?, ?, ?, ?)
         `);
         const updateStock = db.prepare(`
           UPDATE products
@@ -141,7 +141,14 @@ export default function registerSalesInvoiceIPC() {
 
           const total = quantity * price;
 
-          insertItem.run(invoiceId, item.product_id, quantity, price, total);
+          insertItem.run(
+            invoiceId,
+            item.product_id,
+            quantity,
+            price,
+            item.buyingPrice,
+            total,
+          );
           updateStock.run(quantity, item.product_id);
 
           createProductMovement(db, {
@@ -368,8 +375,8 @@ export default function registerSalesInvoiceIPC() {
 
         const insertItem = db.prepare(`
           INSERT INTO sales_invoice_items
-          (invoice_id, product_id, quantity, price, total)
-          VALUES (?, ?, ?, ?, ?)
+          (invoice_id, product_id, quantity, price, buyingPrice, total)
+          VALUES (?, ?, ?, ?, ?, ?)
         `);
 
         const newNetTotal = Number(data.net_total || 0);
@@ -581,8 +588,8 @@ export default function registerSalesInvoiceIPC() {
 
     const insertItem = db.prepare(`
       INSERT INTO sales_invoice_items
-      (invoice_id, product_id, quantity, price, total)
-      VALUES (?, ?, ?, ?, ?)
+      (invoice_id, product_id, quantity, price, buyingPrice, total)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     const updateStock = db.prepare(`
@@ -597,7 +604,6 @@ export default function registerSalesInvoiceIPC() {
         data.discount || 0,
         data.tax_id || null,
         data.net_total || 0,
-        "paid",
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
@@ -606,8 +612,14 @@ export default function registerSalesInvoiceIPC() {
         const quantity = Number(item.qty || 0);
         const price = Number(item.price || 0);
         const total = quantity * price;
-
-        insertItem.run(invoiceId, item.id, quantity, price, total);
+        insertItem.run(
+          invoiceId,
+          item.id,
+          quantity,
+          price,
+          item.costPrice,
+          total,
+        );
         updateStock.run(quantity, item.id);
 
         createProductMovement(db, {

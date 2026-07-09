@@ -42,7 +42,6 @@ export default function AddSales() {
     error,
     navigate,
   } = useAddSales();
-  console.log(netTotal);
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -259,7 +258,6 @@ export default function AddSales() {
                           <th className="p-3"></th>
                         </tr>
                       </thead>
-
                       <tbody className="divide-y divide-[#e5ebff]">
                         {items.map((item, i) => (
                           <tr key={i} className="transition hover:bg-[#f8faff]">
@@ -268,9 +266,10 @@ export default function AddSales() {
                                 placeholder={t("ui.selectProduct")}
                                 options={products}
                                 selectedValue={item.product_id}
-                                onChange={(e) =>
-                                  updateItem(i, "product_id", e.id)
-                                }
+                                onChange={(e) => {
+                                  updateItem(i, "product_id", e.id);
+                                  updateItem(i, "buyingPrice", e.costPrice);
+                                }}
                               />
                             </td>
                             <td className="p-2">

@@ -169,6 +169,7 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
   product_id INTEGER,
   quantity REAL,
   price REAL,
+  buyingPrice REAL,
   total REAL,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id),
