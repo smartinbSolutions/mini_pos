@@ -38,7 +38,7 @@ export default function registerExpenseIPC() {
                 INSERT INTO expense
                 (supplier_id, invoice_name, description, date, subtotal, net_total)
                 VALUES (?, ?, ?, ?, ?, ?)
-              `,
+              `
           )
           .run(
             data.supplier_id || null,
@@ -46,7 +46,7 @@ export default function registerExpenseIPC() {
             data.description || null,
             fullDateTime,
             subtotal,
-            netTotal,
+            netTotal
           );
         const invoiceId = invoiceResult.lastInsertRowid;
 
@@ -166,7 +166,7 @@ export default function registerExpenseIPC() {
       ORDER BY e.id DESC
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -187,12 +187,29 @@ export default function registerExpenseIPC() {
       .prepare(
         `
         SELECT 
-          pi.*,
-          s.name AS supplier_name
-        FROM expense pi
-        LEFT JOIN suppliers s ON s.id = pi.supplier_id
-        WHERE pi.id = ?
-      `,
+          e.*,
+          s.name AS supplier_name,
+          s.phone AS supplier_phone,
+  
+          COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
+          e.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
+  
+          CASE
+            WHEN COALESCE(pa_sum.paid_amount, 0) >= e.net_total THEN 'paid'
+            WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
+            ELSE 'unpaid'
+          END AS status
+  
+        FROM expense e
+        LEFT JOIN suppliers s ON s.id = e.supplier_id
+        LEFT JOIN (
+          SELECT invoice_id, SUM(amount) AS paid_amount
+          FROM payment_allocations
+          WHERE invoice_type = 'expense'
+          GROUP BY invoice_id
+        ) pa_sum ON pa_sum.invoice_id = e.id
+        WHERE e.id = ?
+      `
       )
       .get(id);
 
@@ -207,67 +224,37 @@ export default function registerExpenseIPC() {
         FROM expense_items pii
         LEFT JOIN expence_category c ON c.id = pii.category_id
         WHERE pii.expense_id = ?
-      `,
+      `
       )
       .all(id);
 
-    let payments = [];
-
-    if (invoice.supplier_id) {
-      payments = db
-        .prepare(
-          `
-            SELECT 
-              ph.id,
-              ph.payment_id,
-              ph.amount,
-              ph.note,
-              ph.currency_code,
-              ph.exchange_rate,
-              ph.effective_rate,
-              ph.amount_fund_currency,
-              ph.createdAt,
-              p.fund_id,
-              f.name AS fund_name
-            FROM party_history ph
-            LEFT JOIN payments p ON p.id = ph.payment_id
-            LEFT JOIN funds f ON f.id = p.fund_id
-            WHERE ph.invoice_id = ?
-              AND ph.invoice_type = 'expense'
-              AND ph.record_type = 'payment'
-            ORDER BY ph.createdAt ASC
-          `,
-        )
-        .all(id);
-    } else {
-      payments = db
-        .prepare(
-          `
-            SELECT 
-              p.id,
-              p.id AS payment_id,
-              p.amount,
-              p.note,
-              p.currency_code,
-              p.exchange_rate,
-              p.effective_rate,
-              p.amount_fund_currency,
-              p.createdAt,
-              p.fund_id,
-              f.name AS fund_name
-            FROM payments p
-            LEFT JOIN funds f ON f.id = p.fund_id
-            WHERE p.invoice_id = ? AND p.invoice_type = 'expense'
-            ORDER BY p.createdAt ASC
-          `,
-        )
-        .all(id);
-    }
+    const allocations = db
+      .prepare(
+        `
+        SELECT
+          pa.id,
+          pa.payment_id,
+          pa.amount,
+          p.date,
+          p.fund_id,
+          f.name AS fund_name,
+          c.code AS fund_currency_code,
+          c.symbol AS fund_currency_symbol
+        FROM payment_allocations pa
+        LEFT JOIN payments p ON p.id = pa.payment_id
+        LEFT JOIN funds f ON f.id = p.fund_id
+        LEFT JOIN currencies c ON c.id = f.currency_id
+        WHERE pa.invoice_id = ?
+          AND pa.invoice_type = 'expense'
+        ORDER BY pa.id ASC
+      `
+      )
+      .all(id);
 
     return {
       ...invoice,
       items,
-      payments,
+      allocations,
     };
   });
   // UPDATE
@@ -296,7 +283,7 @@ export default function registerExpenseIPC() {
         // Block editing if this invoice already has a payment against it
         const existingPayment = db
           .prepare(
-            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'expense'`,
+            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'expense'`
           )
           .get(data.id);
 
@@ -331,7 +318,7 @@ export default function registerExpenseIPC() {
               subtotal = ?,
               net_total = ?
           WHERE id = ?
-        `,
+        `
         ).run(
           newSupplierId,
           data.invoice_name || null,
@@ -339,11 +326,11 @@ export default function registerExpenseIPC() {
           fullDateTime,
           newSubtotal,
           newNetTotal,
-          data.id,
+          data.id
         );
         // Replace items
         db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(
-          data.id,
+          data.id
         );
 
         const insertItem = db.prepare(`
@@ -365,7 +352,7 @@ export default function registerExpenseIPC() {
           const delta = newNetTotal - oldNetTotal;
           if (delta !== 0) {
             db.prepare(
-              `UPDATE suppliers SET total = total + ? WHERE id = ?`,
+              `UPDATE suppliers SET total = total + ? WHERE id = ?`
             ).run(delta, newSupplierId);
           }
 
@@ -374,29 +361,29 @@ export default function registerExpenseIPC() {
             UPDATE party_history
             SET amount = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'expense' AND record_type = 'invoice'
-          `,
+          `
           ).run(
             newNetTotal,
             data.note || `Expense Invoice #${data.id}`,
-            data.id,
+            data.id
           );
         } else {
           if (oldSupplierId) {
             db.prepare(
-              `UPDATE suppliers SET total = total - ? WHERE id = ?`,
+              `UPDATE suppliers SET total = total - ? WHERE id = ?`
             ).run(oldNetTotal, oldSupplierId);
 
             db.prepare(
               `
               DELETE FROM party_history
               WHERE invoice_id = ? AND invoice_type = 'expense' AND record_type = 'invoice'
-            `,
+            `
             ).run(data.id);
           }
 
           if (newSupplierId) {
             db.prepare(
-              `UPDATE suppliers SET total = total + ? WHERE id = ?`,
+              `UPDATE suppliers SET total = total + ? WHERE id = ?`
             ).run(newNetTotal, newSupplierId);
 
             createPartyHistory(db, {
@@ -468,7 +455,7 @@ export default function registerExpenseIPC() {
   WHERE invoice_id = ?
     AND invoice_type = 'expense'
     AND record_type = 'invoice'
-`,
+`
       ).run(id);
       db.prepare(`DELETE FROM expense WHERE id = ?`).run(id);
     });

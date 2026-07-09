@@ -19,30 +19,43 @@ import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 
-const StatusBadge = ({ status, t }) => {
+const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
-    paid: {
-      label: t("ui.paid"),
-      className: "bg-emerald-50 text-emerald-600",
-    },
+    paid: { label: t("ui.paid"), className: "bg-emerald-50 text-emerald-600" },
     partial: {
       label: t("ui.partial") || "Partial",
       className: "bg-amber-50 text-amber-600",
     },
-    unpaid: {
-      label: t("ui.unpaid"),
-      className: "bg-red-50 text-red-500",
-    },
+    unpaid: { label: t("ui.unpaid"), className: "bg-red-50 text-red-500" },
   };
 
   const { label, className } = config[status] || config.unpaid;
 
   return (
-    <span
-      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${className}`}
-    >
-      {label}
-    </span>
+    <div className="group relative inline-block">
+      <span
+        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${className}`}
+      >
+        {label}
+      </span>
+
+      {status === "partial" && (
+        <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
+          <div className="flex justify-between">
+            <span>{t("ui.paid")}</span>
+            <span className="font-bold text-emerald-600">
+              {money(paidAmount)}
+            </span>
+          </div>
+          <div className="mt-1 flex justify-between">
+            <span>{t("ui.remaining", "Remaining")}</span>
+            <span className="font-bold text-amber-600">
+              {money(remainingAmount)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -112,7 +125,7 @@ const ExpenseList = () => {
 
   const totalNet = expenses.reduce(
     (sum, inv) => sum + Number(inv?.net_total || 0),
-    0,
+    0
   );
 
   const unpaidCount = expenses.filter((inv) => inv.status !== "paid").length;
@@ -240,7 +253,13 @@ const ExpenseList = () => {
                         </td>
 
                         <td className="px-5 py-4 text-center">
-                          <StatusBadge status={exp.status} t={t} />
+                          <StatusBadge
+                            status={exp.status}
+                            paidAmount={exp.paid_amount}
+                            remainingAmount={exp.remaining_amount}
+                            money={money}
+                            t={t}
+                          />
                         </td>
 
                         <td className="px-5 py-4">
@@ -256,6 +275,19 @@ const ExpenseList = () => {
                             </button>
 
                             {exp.status !== "paid" && (
+                              <button
+                                onClick={() => {
+                                  setSelecteInvoice(exp);
+                                  setOpenPaymentModel(true);
+                                }}
+                                className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                title={t("ui.payment")}
+                              >
+                                <Wallet2 size={16} />
+                              </button>
+                            )}
+
+                            {exp.status === "unpaid" && (
                               <>
                                 <button
                                   onClick={() =>
@@ -265,16 +297,6 @@ const ExpenseList = () => {
                                   title={t("common.edit")}
                                 >
                                   {/* <LucidePencilSparkles size={16} /> */}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelecteInvoice(exp);
-                                    setOpenPaymentModel(true);
-                                  }}
-                                  className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                  title={t("ui.payment")}
-                                >
-                                  <Wallet2 size={16} />
                                 </button>
                                 <button
                                   onClick={() => setDeleteExpense(exp)}

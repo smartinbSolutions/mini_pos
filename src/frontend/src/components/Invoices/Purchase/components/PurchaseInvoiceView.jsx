@@ -105,10 +105,10 @@ export default function PurchaseInvoiceView() {
                 <Receipt size={24} />
               </span>
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+                <p className="text-xs uppercase tracking-[0.22em] text-[#4663ff]">
                   {t("screens.invoices.purchaseInvoice")}
                 </p>
-                <h1 className="text-3xl font-black text-slate-950">
+                <h1 className="text-3xl  text-slate-950">
                   {t("ui.invoice")} #{invoice.id}
                 </h1>
                 <p className="text-sm text-slate-500">
@@ -120,12 +120,12 @@ export default function PurchaseInvoiceView() {
             </div>
 
             <div className="text-left md:text-right">
-              <p className="text-lg font-black text-slate-950">
+              <p className="text-lgtext-slate-950">
                 {invoice.supplier_name || "-"}
               </p>
               <p className="text-sm text-slate-500">{t("ui.supplier")}</p>
               <span
-                className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-black ${statusStyle.bg} ${statusStyle.text}`}
+                className={`mt-3 inline-block rounded-full px-3 py-1 text-xs  ${statusStyle.bg} ${statusStyle.text}`}
               >
                 {statusLabel}
               </span>
@@ -164,9 +164,7 @@ export default function PurchaseInvoiceView() {
                         <td className="p-3 text-center">
                           {Number(item.quantity || 0)}
                         </td>
-                        <td className="p-3 text-center font-black">
-                          {money(item.total)}
-                        </td>
+                        <td className="p-3 text-center">{money(item.total)}</td>
                       </tr>
                     ))
                   )}
@@ -177,7 +175,7 @@ export default function PurchaseInvoiceView() {
             <div className="mt-6 flex flex-col-reverse gap-6 lg:flex-row lg:justify-between">
               {/* PAYMENT HISTORY */}
               <div className="flex-1">
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-slate-700">
+                <h3 className="mb-3 flex items-center gap-2 text-sm f text-slate-700">
                   <HandCoins size={16} className="text-[#4663ff]" />
                   {t("screens.invoices.paymentHistory", "Payment History")}
                 </h3>
@@ -205,12 +203,8 @@ export default function PurchaseInvoiceView() {
                             {alloc.payment_id}
                           </div>
                         </div>
-                        <div className="font-black tabular-nums text-emerald-700">
-                          {formatMoney(
-                            alloc.amount,
-                            alloc.fund_currency_code,
-                            alloc.fund_currency_symbol
-                          )}
+                        <div className="tabular-nums text-emerald-700">
+                          {money(alloc.amount)}
                         </div>
                       </div>
                     ))}
@@ -240,7 +234,7 @@ export default function PurchaseInvoiceView() {
                 ) : (
                   ""
                 )}
-                <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl font-black">
+                <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl ">
                   <span>{t("ui.total")}</span>
                   <span className="text-[#4663ff]">
                     {money(invoice.net_total)}
