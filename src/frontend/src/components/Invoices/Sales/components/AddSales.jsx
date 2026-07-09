@@ -46,7 +46,6 @@ export default function AddSales() {
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();
-  console.log(customers);
   const customerName =
     customers?.data?.find((c) => c.id === invoice.customer_id)?.name || "";
 
@@ -68,7 +67,7 @@ export default function AddSales() {
 
   const handleOpenPayModal = () => {
     if (!invoice.customer_id) {
-      toast.error(t("errors.customerRequired"));
+      toast.error(t("errors.customer_required"));
       return;
     }
     if (!hasUsableItems) {
@@ -152,7 +151,7 @@ export default function AddSales() {
                   {!invoice.customer_id && (
                     <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600">
                       <AlertCircle size={12} />
-                      {t("errors.customerRequired")}
+                      {t("errors.customer_required")}
                     </p>
                   )}
                 </div>
@@ -171,7 +170,9 @@ export default function AddSales() {
                 <input
                   type="text"
                   className={inputClass}
-                  placeholder={t("ui.invoiceName") || "Invoice name"}
+                  placeholder={
+                    t("screens.invoices.invoiceName") || "Invoice name"
+                  }
                   value={invoice.invoice_name || ""}
                   onChange={(e) =>
                     setInvoice((p) => ({ ...p, invoice_name: e.target.value }))
@@ -440,7 +441,7 @@ export default function AddSales() {
                     value={invoice.tax_id || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value)
+                        (tax) => tax.id === Number(e.target.value),
                       );
                       setInvoice((p) => ({
                         ...p,
@@ -495,7 +496,7 @@ export default function AddSales() {
               <div>
                 <h3 className="font-black">{t("ui.payment")}</h3>
                 <p className="text-xs text-slate-500">
-                  {t("screens.invoices.paymentHelper") ||
+                  {t("screens.invoices.save_now_settle_later") ||
                     "Save now and settle later, or pay right away."}
                 </p>
               </div>
@@ -527,7 +528,7 @@ export default function AddSales() {
                 <p className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
                   <AlertCircle size={12} />
                   {!invoice.customer_id
-                    ? t("errors.customerRequired")
+                    ? t("errors.customer_required")
                     : t("errors.addOneItem")}
                 </p>
               )}

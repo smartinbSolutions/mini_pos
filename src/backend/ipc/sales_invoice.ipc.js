@@ -109,9 +109,9 @@ export default function registerSalesInvoiceIPC() {
           .prepare(
             `
             INSERT INTO sales_invoices
-            (customer_id, invoice_name, description, date, subtotal, discount, tax_id, net_total, taxValue)
+            (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, taxValue)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
           .run(
             data.customer_id || null,
@@ -120,9 +120,9 @@ export default function registerSalesInvoiceIPC() {
             fullDateTime,
             subtotal,
             discount,
-            data.tax_id || null,
+            data.tax_rate || 0,
             netTotal,
-            data.taxValue || 0
+            data.taxValue || 0,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -154,7 +154,7 @@ export default function registerSalesInvoiceIPC() {
             quantity,
             price,
             item.buyingPrice,
-            total
+            total,
           );
           updateStock.run(quantity, item.product_id);
 
@@ -272,7 +272,7 @@ export default function registerSalesInvoiceIPC() {
       ORDER BY s.id DESC
 
       LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(limit, offset);
 
@@ -297,7 +297,6 @@ export default function registerSalesInvoiceIPC() {
       SELECT
         sa.*,
         c.name AS customer_name,
-        t.rate AS tax_rate,
 
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
 
@@ -314,9 +313,7 @@ export default function registerSalesInvoiceIPC() {
       LEFT JOIN customers c
         ON c.id = sa.customer_id
 
-      LEFT JOIN taxes t
-        ON t.id = sa.tax_id
-
+      
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = sa.id
        AND pa.invoice_type = 'sales'
@@ -324,7 +321,7 @@ export default function registerSalesInvoiceIPC() {
       WHERE sa.id = ?
 
       GROUP BY sa.id
-      `
+      `,
       )
       .get(id);
 
@@ -340,7 +337,7 @@ export default function registerSalesInvoiceIPC() {
       LEFT JOIN products p
         ON p.id = si.product_id
       WHERE si.invoice_id = ?
-      `
+      `,
       )
       .all(id);
 
@@ -371,7 +368,7 @@ export default function registerSalesInvoiceIPC() {
       WHERE pa.invoice_id = ?
         AND pa.invoice_type = 'sales'
       ORDER BY p.createdAt ASC
-      `
+      `,
       )
       .all(id);
 
@@ -408,7 +405,7 @@ export default function registerSalesInvoiceIPC() {
         // Block editing once a payment already exists against this invoice
         const existingPayment = db
           .prepare(
-            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'sales'`
+            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'sales'`,
           )
           .get(data.id);
 
@@ -436,13 +433,13 @@ export default function registerSalesInvoiceIPC() {
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          data.id
+          data.id,
         );
         db.prepare(
           `
           DELETE FROM product_movements
           WHERE reference_type = 'sales_invoice' AND reference_id = ?
-        `
+        `,
         ).run(data.id);
 
         const insertItem = db.prepare(`
@@ -472,7 +469,7 @@ export default function registerSalesInvoiceIPC() {
             quantity,
             price,
             item.buyingPrice,
-            total
+            total,
           );
           applyStock.run(quantity, item.product_id);
 
@@ -502,11 +499,11 @@ export default function registerSalesInvoiceIPC() {
               date = ?,
               subtotal = ?,
               discount = ?,
-              tax_id = ?,
+              tax,,
               net_total = ?,
               taxValue = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           newCustomerId,
           data.invoice_name || null,
@@ -514,10 +511,10 @@ export default function registerSalesInvoiceIPC() {
           fullDateTime,
           newSubtotal,
           data.discount || 0,
-          data.tax_id || null,
+          data.tax_rate || null,
           newNetTotal,
           data.taxValue || 0,
-          data.id
+          data.id,
         );
 
         // Customer party_history reconciliation for the invoice amount
@@ -527,7 +524,7 @@ export default function registerSalesInvoiceIPC() {
             UPDATE party_history
             SET amount = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-          `
+          `,
           ).run(newNetTotal, `Sales Invoice #${data.id}`, data.id);
         } else {
           if (oldCustomerId) {
@@ -535,7 +532,7 @@ export default function registerSalesInvoiceIPC() {
               `
               DELETE FROM party_history
               WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-            `
+            `,
             ).run(data.id);
           }
 
@@ -596,13 +593,13 @@ export default function registerSalesInvoiceIPC() {
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          id
+          id,
         );
         db.prepare(
           `
           DELETE FROM party_history
           WHERE invoice_id = ? AND invoice_type = 'sales'
-        `
+        `,
         ).run(id);
         db.prepare(`DELETE FROM sales_invoices WHERE id = ?`).run(id);
       });
@@ -627,7 +624,7 @@ export default function registerSalesInvoiceIPC() {
               payment.amount_fund_currency ||
                 payment.amountFundCurrency ||
                 payment.paymentInfundCurrency ||
-                0
+                0,
             ),
             currencyCode: payment.currency_code,
             exchangeRate: Number(payment.exchange_rate || 1) || 1,
@@ -636,7 +633,7 @@ export default function registerSalesInvoiceIPC() {
             (payment) =>
               payment.fundId &&
               payment.amount > 0 &&
-              payment.amountFundCurrency > 0
+              payment.amountFundCurrency > 0,
           )
       : [];
 
@@ -651,7 +648,7 @@ export default function registerSalesInvoiceIPC() {
     }
 
     const paidTotal = roundCents(
-      payments.reduce((sum, payment) => sum + payment.amount, 0)
+      payments.reduce((sum, payment) => sum + payment.amount, 0),
     );
     const invoiceTotal = Number(data.net_total || 0);
 
@@ -682,7 +679,7 @@ export default function registerSalesInvoiceIPC() {
         data.subtotal || 0,
         data.discount || 0,
         data.tax_id || null,
-        data.net_total || 0
+        data.net_total || 0,
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
@@ -697,7 +694,7 @@ export default function registerSalesInvoiceIPC() {
           quantity,
           price,
           item.costPrice,
-          total
+          total,
         );
         updateStock.run(quantity, item.id);
 
@@ -781,11 +778,11 @@ export default function registerSalesInvoiceIPC() {
   ipcMain.handle("print-receipt", async (event, data) => {
     const companySettings = db
       .prepare(
-        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`
+        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`,
       )
       .get();
     const language = getReceiptLanguage(
-      data.language || companySettings?.language
+      data.language || companySettings?.language,
     );
     const labels = receiptLabels[language];
     const direction = language === "ar" ? "rtl" : "ltr";
@@ -811,7 +808,7 @@ export default function registerSalesInvoiceIPC() {
         <td class="right">${Number(item.price).toFixed(2)}</td>
         <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
-    `
+    `,
       )
       .join("");
 
@@ -869,7 +866,7 @@ export default function registerSalesInvoiceIPC() {
   `;
 
     await win.loadURL(
-      "data:text/html;charset=utf-8," + encodeURIComponent(html)
+      "data:text/html;charset=utf-8," + encodeURIComponent(html),
     );
 
     win.webContents.print(
@@ -879,7 +876,7 @@ export default function registerSalesInvoiceIPC() {
         margins: { marginType: "none" },
         scaleFactor: 100,
       },
-      () => win.close()
+      () => win.close(),
     );
   });
 
@@ -912,7 +909,7 @@ export default function registerSalesInvoiceIPC() {
 
               printWindow.destroy();
               printWindow = null;
-            }
+            },
           );
         }, 600);
       });

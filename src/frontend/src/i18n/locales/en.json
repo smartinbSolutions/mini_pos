@@ -19,7 +19,8 @@
     "delete": "Delete",
     "deleting": "Deleting...",
     "cancel": "Cancel",
-    "language": "Language"
+    "language": "Language",
+    "perPage": "Per Page"
   },
   "ui": {
     "setup": "Setup",
@@ -252,7 +253,17 @@
       "payInFull": "Paid",
       "saveInvoice": "Save Invoice",
       "expensesTitle": "Expenses",
-      "expenseSubtitle": "Track supplier invoices, payments, and outstanding balances."
+      "expenseSubtitle": "Track supplier invoices, payments, and outstanding balances.",
+      "save_now_settle_later": "Save now and settle later, or pay right away",
+      "saveUnpaid": "Save Unpaid",
+      "saveAndPay": "Save and Pay",
+      "invoiceName": "Invoice Name",
+      "paymentHistory": "Payment History",
+      "noPaymentsRecordedYet": "No payments recorded yet",
+      "unpaid": "Unpaid",
+      "partial": "Partial",
+      "paid": "Paid",
+      "taxCollected": "Tax Collected"
     },
     "company": {
       "title": "Company Settings",
@@ -472,26 +483,37 @@
   },
   "dashboard": {
     "loading": "Loading dashboard...",
-    "totalSales": "Total Sales",
     "products": "Products",
     "customers": "Customers",
-    "profit": "Profit",
-    "analytics": "Analytics",
-    "todaySales": "Today's Sales",
-    "todayPurchases": "Today's Purchases",
-    "inventoryValue": "Inventory Value",
     "lowStock": "Low Stock",
-    "salesPurchasesTrend": "Sales and Purchases",
-    "sales": "Sales",
-    "purchases": "Purchases",
-    "invoiceStatus": "Invoice Status",
-    "paidInvoices": "Paid Invoices",
-    "unpaidInvoices": "Unpaid Invoices",
-    "invoices": "Invoices",
     "cashFlow": "Cash Flow",
     "topProducts": "Top Products",
     "noSalesData": "No sales data yet",
-    "expense": "Expenses"
+    "expense": "Expenses",
+    "dashboard": "Dashboard",
+    "overview": "Overview",
+    "new_purchase": "New Purchase",
+    "new_expense": "New Expense",
+    "new_payment": "New Payment",
+    "new_sale": "New Sale",
+    "transfer": "Transfer Funds",
+    "profit_loss": "Profit & Loss",
+    "revenue": "Revenue",
+    "cost_of_goods_sold": "Cost of Goods Sold",
+    "gross_profit": "Gross Profit",
+    "expenses": "Expenses",
+    "net_profit": "Net Profit",
+    "net_cash_movement": "Net Cash Movement",
+    "fund_balances": "Fund Balances",
+    "by_revenue": "By Revenue",
+    "by_quantity": "By Quantity",
+    "low_stock": "Low Stock",
+    "purchase": "Purchase",
+    "income": "Income",
+    "today": "Today",
+    "unpaid": "Unpaid",
+    "partial": "Partial",
+    "paid": "Paid"
   },
   "activation": {
     "title": "Activate POS License",
@@ -532,6 +554,7 @@
     "updateFailed": "Failed to update {{field}}.",
     "deleteFailed": "Failed to delete {{field}}.",
     "deleteHasData": "Failed to delete {{field}} because it has related data.",
-    "partialLoad": "{{field}} loaded, but some features are unavailable because IPC handlers are not registered."
+    "partialLoad": "{{field}} loaded, but some features are unavailable because IPC handlers are not registered.",
+    "customer_required": "Customer Required"
   }
 }

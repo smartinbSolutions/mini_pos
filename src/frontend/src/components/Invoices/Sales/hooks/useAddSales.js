@@ -31,6 +31,7 @@ export default function useAddSales() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  console.log(invoice);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -187,7 +188,7 @@ export default function useAddSales() {
       }
 
       if (!invoice.customer_id) {
-        setError(t("errors.customerRequired"));
+        setError(t("errors.customer_required"));
         return;
       }
 

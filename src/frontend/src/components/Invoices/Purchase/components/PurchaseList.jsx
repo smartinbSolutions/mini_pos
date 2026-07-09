@@ -228,6 +228,7 @@ const PurchaseList = () => {
                           </div>
                         )}
                       </td>
+                      {console.log(inv)}
 
                       <td className="px-5 py-4 text-right tabular-nums">
                         {Number(inv.taxValue || 0) > 0 ? (

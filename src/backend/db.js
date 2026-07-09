@@ -151,13 +151,12 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   date TEXT,
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
-  tax_id INTEGER,
+  tax REAL DEFAULT 0,
   description TEXT,
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (customer_id) REFERENCES customers(id),
-  FOREIGN KEY (tax_id) REFERENCES taxes(id)
+  FOREIGN KEY (customer_id) REFERENCES customers(id)
 )
 `,
 ).run();

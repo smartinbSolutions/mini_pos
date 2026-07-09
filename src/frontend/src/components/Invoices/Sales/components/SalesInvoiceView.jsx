@@ -89,7 +89,7 @@ export default function SalesInvoiceView() {
     text: "text-slate-600",
   };
 
-  const statusLabel = t(`ui.${status}`, status);
+  const statusLabel = t(`screens.invoices.${status}`, status);
 
   if (loading) {
     return (
@@ -221,7 +221,7 @@ export default function SalesInvoiceView() {
                 {allocations.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400">
                     {t(
-                      "screens.invoices.noPayments",
+                      "screens.invoices.noPaymentsRecordedYet",
                       "No payments recorded yet.",
                     )}
                   </div>
@@ -283,7 +283,9 @@ export default function SalesInvoiceView() {
                 {status !== "unpaid" && (
                   <>
                     <div className="flex justify-between border-t border-dashed border-[#dbe4ff] pt-3 text-sm">
-                      <span className="text-slate-500">{t("ui.paid")}</span>
+                      <span className="text-slate-500">
+                        {t("screens.invoices.paid")}
+                      </span>
 
                       <span className="font-bold text-emerald-700">
                         {money(invoice.paid_amount)}

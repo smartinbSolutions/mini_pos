@@ -49,7 +49,7 @@ export default function UpdateSales() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   const customerName =
-    customers.find((c) => c.id === invoice?.customer_id)?.name || "";
+    customers?.data?.find((c) => c.id === invoice?.customer_id)?.name || "";
 
   const isLocked = status === "paid" || status === "partial";
   const hasUsableItems = items.some((i) => i.product_id);
@@ -126,7 +126,7 @@ export default function UpdateSales() {
                     : "bg-red-100 text-red-600"
               }`}
             >
-              {status?.toUpperCase()}
+              {t(`screens.invoices.${status}`)}
             </span>
             <button
               type="button"
@@ -184,7 +184,9 @@ export default function UpdateSales() {
                 <input
                   type="text"
                   className={inputClass}
-                  placeholder={t("ui.invoiceName") || "Invoice name"}
+                  placeholder={
+                    t("screens.invoices.invoiceName") || "Invoice name"
+                  }
                   value={invoice.invoice_name || ""}
                   disabled={isLocked}
                   onChange={(e) =>
@@ -370,7 +372,7 @@ export default function UpdateSales() {
                 <div>
                   <h3 className="font-black">{t("ui.payment")}</h3>
                   <p className="text-xs text-slate-500">
-                    {t("screens.invoices.paymentHelper") ||
+                    {t("screens.invoices.save_now_settle_later") ||
                       "Save your edits and settle later, or pay right away."}
                   </p>
                 </div>
@@ -393,7 +395,7 @@ export default function UpdateSales() {
                   <p className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
                     <AlertCircle size={12} />
                     {!invoice?.customer_id
-                      ? t("errors.customerRequired")
+                      ? t("errors.customer_required")
                       : t("errors.addOneItem")}
                   </p>
                 )}

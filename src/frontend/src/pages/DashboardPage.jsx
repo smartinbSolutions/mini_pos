@@ -120,35 +120,35 @@ export default function Dashboard() {
   const quickActions = [
     {
       key: "sale",
-      label: t("dashboard.newSale", "New Sale"),
+      label: t("dashboard.new_sale", "New Sale"),
       icon: ShoppingCart,
       tone: "emerald",
       to: "/add-sales",
     },
     {
       key: "purchase",
-      label: t("dashboard.newPurchase", "New Purchase"),
+      label: t("dashboard.new_purchase", "New Purchase"),
       icon: Boxes,
       tone: "blue",
       to: "/add-purchase",
     },
     {
       key: "expense",
-      label: t("dashboard.newExpense", "New Expense"),
+      label: t("dashboard.new_expense", "New Expense"),
       icon: ReceiptText,
       tone: "rose",
       to: "/add-expense",
     },
     {
       key: "payment",
-      label: t("dashboard.newPayment", "New Payment"),
+      label: t("dashboard.new_payment", "New Payment"),
       icon: HandCoins,
       tone: "blue",
       to: "/payments/new",
     },
     {
       key: "transfer",
-      label: t("dashboard.transferFunds", "Transfer Funds"),
+      label: t("dashboard.transfer", "Transfer Funds"),
       icon: ArrowRightLeft,
       tone: "blue",
       to: "/funds",
@@ -159,8 +159,8 @@ export default function Dashboard() {
   const topProductMax = Math.max(
     1,
     ...topProductsList.map((p) =>
-      Number(productView === "byQuantity" ? p.quantity : p.revenue || 0)
-    )
+      Number(productView === "byQuantity" ? p.quantity : p.revenue || 0),
+    ),
   );
 
   if (loading) {
@@ -180,7 +180,7 @@ export default function Dashboard() {
             {t("dashboard.overview", "Overview")}
           </p>
           <h1 className="text-4xl font-black leading-tight text-slate-950">
-            {t("dashboard.title", "Dashboard")}
+            {t("dashboard.dashboard", "Dashboard")}
           </h1>
         </div>
 
@@ -214,11 +214,11 @@ export default function Dashboard() {
             const Icon = meta.icon;
             const statusTotal = Math.max(
               1,
-              stat.paid + stat.partial + stat.unpaid
+              stat.paid + stat.partial + stat.unpaid,
             );
             const maxTrend = Math.max(
               1,
-              ...stat.trend.map((d) => Number(d.total || 0))
+              ...stat.trend.map((d) => Number(d.total || 0)),
             );
 
             return (
@@ -302,7 +302,7 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
             <h2 className="mb-5 text-lg font-black text-slate-900">
-              {t("dashboard.profitLoss", "Profit & Loss")}
+              {t("dashboard.profit_loss", "Profit & Loss")}
             </h2>
             <div className="space-y-3 font-mono tabular-nums text-sm">
               <div className="flex items-center justify-between">
@@ -315,7 +315,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="font-sans text-slate-500">
-                  {t("dashboard.cogs", "Cost of goods sold")}
+                  {t("dashboard.cost_of_goods_sold", "Cost of goods sold")}
                 </span>
                 <span className="font-bold text-rose-600">
                   -{money(data.profitLoss.cogs)}
@@ -323,7 +323,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
                 <span className="font-sans font-bold text-slate-700">
-                  {t("dashboard.grossProfit", "Gross profit")}
+                  {t("dashboard.gross_profit", "Gross profit")}
                 </span>
                 <span className="font-bold text-slate-900">
                   {money(data.profitLoss.grossProfit)}
@@ -339,7 +339,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center justify-between rounded-2xl bg-[#f8faff] px-4 py-3 border-t-0">
                 <span className="font-sans font-black text-slate-900">
-                  {t("dashboard.netProfit", "Net profit")}
+                  {t("dashboard.net_profit", "Net profit")}
                 </span>
                 <span
                   className={`text-lg font-black ${
@@ -380,7 +380,7 @@ export default function Dashboard() {
             </div>
             <div className="mt-4 flex items-center justify-between rounded-2xl bg-[#f8faff] px-4 py-3">
               <span className="text-sm font-bold text-slate-700">
-                {t("dashboard.netCash", "Net cash movement")}
+                {t("dashboard.net_cash_movement", "Net cash movement")}
               </span>
               <span
                 className={`font-mono tabular-nums text-lg font-black ${
@@ -397,7 +397,7 @@ export default function Dashboard() {
         <section className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <h2 className="mb-5 flex items-center gap-2 text-lg font-black text-slate-900">
             <Landmark size={18} className="text-[#4663ff]" />
-            {t("dashboard.fundBalances", "Fund Balances")}
+            {t("dashboard.fund_balances", "Fund Balances")}
           </h2>
           {data.fundBalances.length ? (
             <div className="flex gap-4 overflow-x-auto pb-2">
@@ -422,7 +422,7 @@ export default function Dashboard() {
                     {formatMoney(
                       fund.balance,
                       fund.currency_code,
-                      fund.currency_symbol
+                      fund.currency_symbol,
                     )}
                   </div>
                 </div>
@@ -451,7 +451,7 @@ export default function Dashboard() {
                       : "text-slate-500"
                   }`}
                 >
-                  {t("dashboard.byQuantity", "By quantity")}
+                  {t("dashboard.by_quantity", "By quantity")}
                 </button>
                 <button
                   onClick={() => setProductView("byRevenue")}
@@ -461,7 +461,7 @@ export default function Dashboard() {
                       : "text-slate-500"
                   }`}
                 >
-                  {t("dashboard.byRevenue", "By revenue")}
+                  {t("dashboard.by_revenue", "By revenue")}
                 </button>
               </div>
             </div>
@@ -549,7 +549,7 @@ export default function Dashboard() {
                   {data.lowStockProducts > 0 && (
                     <p className="mt-1 flex items-center gap-1 text-xs font-bold text-amber-600">
                       <AlertTriangle size={12} />
-                      {t("dashboard.lowStockCount", "{{count}} low stock", {
+                      {t("dashboard.lowStock", "{{count}} low stock", {
                         count: data.lowStockProducts,
                       })}
                     </p>

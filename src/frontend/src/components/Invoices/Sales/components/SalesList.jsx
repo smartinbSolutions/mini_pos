@@ -6,11 +6,11 @@ import {
   Eye,
   Wallet2,
   Trash2,
-  // LucidePencilSparkles,
   Info,
   Clock,
   Printer,
   Percent,
+  Edit2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useSalesList from "../hooks/useSalesList";
@@ -24,15 +24,15 @@ import Pagination from "../../../../Global/Pagination";
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
     paid: {
-      label: t("ui.paid"),
+      label: t("screens.invoices.paid"),
       classes: "bg-emerald-50 text-emerald-600",
     },
     partial: {
-      label: t("ui.partial", "Partial"),
+      label: t("screens.invoices.partial", "Partial"),
       classes: "bg-amber-50 text-amber-600",
     },
     unpaid: {
-      label: t("ui.unpaid"),
+      label: t("screens.invoices.unpaid"),
       classes: "bg-slate-100 text-slate-500",
     },
   };
@@ -179,7 +179,7 @@ const SalesList = () => {
             {
               icon: Percent,
               value: money(totalTax),
-              label: t("ui.taxCollected"),
+              label: t("screens.invoices.taxCollected"),
               variant: "violet",
             },
             {
@@ -282,6 +282,7 @@ const SalesList = () => {
                             </div>
                           )}
                         </td>
+                        {console.log(inv)}
                         <td className="px-5 py-4 text-right tabular-nums">
                           {Number(inv.taxValue || 0) > 0 ? (
                             <div>
@@ -336,7 +337,7 @@ const SalesList = () => {
                                 className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                 title={t("common.edit")}
                               >
-                                {/* <LucidePencilSparkles size={16} /> */}
+                                <Edit2 size={16} />
                               </button>
                             )}
                             {inv.status !== "paid" && (

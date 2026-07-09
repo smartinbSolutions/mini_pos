@@ -19,7 +19,8 @@
     "delete": "Sil",
     "deleting": "Siliniyor...",
     "cancel": "İptal",
-    "language": "Dil"
+    "language": "Dil",
+    "perPage": "Sayfa Başına"
   },
   "ui": {
     "setup": "Kurulum",
@@ -247,7 +248,17 @@
       "paymentInCash": "nakit ödeme",
       "noPaymentNow": "Ödenmedi",
       "payInFull": "Ödendi",
-      "saveInvoice": "Faturayı Kaydet"
+      "saveInvoice": "Faturayı Kaydet",
+      "save_now_settle_later": "Şimdi kaydet sonra öde veya hemen ödeme yap",
+      "saveUnpaid": "Ödenmemiş Olarak Kaydet",
+      "saveAndPay": "Kaydet ve Öde",
+      "invoiceName": "Fatura Adı",
+      "paymentHistory": "Ödeme Geçmişi",
+      "noPaymentsRecordedYet": "Henüz kaydedilmiş bir ödeme yok",
+      "unpaid": "Ödenmedi",
+      "partial": "Kısmen Ödendi",
+      "paid": "Ödendi",
+      "taxCollected": "Tahsil Edilen Vergi"
     },
     "company": {
       "title": "Şirket Ayarları",
@@ -482,7 +493,31 @@
     "cashFlow": "Nakit Akışı",
     "topProducts": "En Çok Satan Ürünler",
     "noSalesData": "Henüz satış verisi yok",
-    "expense": "Giderler"
+    "expense": "Giderler",
+    "dashboard": "Gösterge Paneli",
+    "overview": "Genel Bakış",
+    "new_sale": "Yeni Satış",
+    "new_purchase": "Yeni Satın Alma",
+    "new_expense": "Yeni Gider",
+    "new_payment": "Yeni Ödeme",
+    "transfer": "Transfer",
+    "profit_loss": "Kâr ve Zarar",
+    "revenue": "Gelir",
+    "cost_of_goods_sold": "Satılan Malların Maliyeti",
+    "gross_profit": "Brüt Kâr",
+    "expenses": "Giderler",
+    "net_profit": "Net Kâr",
+    "net_cash_movement": "Net Nakit Hareketi",
+    "fund_balances": "Fon Bakiyeleri",
+    "by_revenue": "Gelire Göre",
+    "by_quantity": "Miktara Göre",
+    "low_stock": "Düşük Stok",
+    "purchase": "Satın Alma",
+    "income": "Gelir",
+    "today": "Bugün",
+    "unpaid": "Ödenmemiş",
+    "partial": "Tam olmayan",
+    "paid": "Ödenmiş"
   },
   "activation": {
     "title": "POS Lisansını Etkinleştir",
@@ -502,6 +537,7 @@
     "paymentTitle": "Bu makbuzu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
   },
   "errors": {
+    "customer_required": "Müşteri gerekli",
     "rendererTitle": "Renderer hatası",
     "rendererMessage": "Ön yüz yüklenirken çöktü.",
     "apiUnavailable": "Electron preload API kullanılamıyor.",

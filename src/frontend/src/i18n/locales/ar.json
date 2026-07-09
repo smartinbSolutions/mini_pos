@@ -19,7 +19,8 @@
     "delete": "حذف",
     "deleting": "جار الحذف...",
     "cancel": "إلغاء",
-    "language": "اللغة"
+    "language": "اللغة",
+    "perPage": "لكل صفحة"
   },
   "ui": {
     "setup": "الإعداد",
@@ -248,7 +249,17 @@
       "paymentInCash": "الدفع نقداً",
       "noPaymentNow": "غير مدفوعة",
       "payInFull": "مدفوعة",
-      "saveInvoice": "حفظ الفاتورة"
+      "saveInvoice": "حفظ الفاتورة",
+      "save_now_settle_later": "احفظ الآن وسدد لاحقاً، أو ادفع على الفور",
+      "saveUnpaid": "حفظ غير مدفوع",
+      "saveAndPay": "حفظ ودفع",
+      "invoiceName": "اسم الفاتورة",
+      "paymentHistory": "سجل الدفعات",
+      "noPaymentsRecordedYet": "لم يتم تسجيل أي دفعات بعد",
+      "unpaid": "غير مدفوع",
+      "partial": "مدفوع جزئياً",
+      "paid": "مدفوع",
+      "taxCollected": "الضرائب المحصلة"
     },
     "company": {
       "title": "إعدادات الشركة",
@@ -491,7 +502,31 @@
     "cashFlow": "التدفق النقدي",
     "topProducts": "أفضل المنتجات",
     "noSalesData": "لا توجد بيانات مبيعات بعد",
-    "expense": "المصاريف"
+    "expense": "المصاريف",
+    "dashboard": "لوحة التحكم",
+    "overview": "نظرة عامة",
+    "new_sale": "مبيعات جديدة",
+    "new_purchase": "مشتريات جديدة",
+    "new_expense": "مصروف جديد",
+    "new_payment": "دفعة جديدة",
+    "transfer": "تحويل",
+    "profit_loss": "الأرباح والخسائر",
+    "revenue": "الإيرادات",
+    "cost_of_goods_sold": "تكلفة البضائع المباعة",
+    "gross_profit": "إجمالي الربح",
+    "expenses": "المصروفات",
+    "net_profit": "صافي الربح",
+    "net_cash_movement": "صافي الحركة النقدية",
+    "fund_balances": "أرصدة الصناديق",
+    "by_revenue": "حسب الإيرادات",
+    "by_quantity": "حسب الكمية",
+    "low_stock": "مخزون منخفض",
+    "purchase": "الشراء",
+    "income": "دخل",
+    "today": "اليوم",
+    "unpaid": "غير مدفوعة",
+    "partial": "جزئي",
+    "paid": "مدفوع "
   },
   "activation": {
     "title": "تفعيل رخصة نقاط البيع",
@@ -532,6 +567,7 @@
     "updateFailed": "فشل تحديث {{field}}.",
     "deleteFailed": "فشل حذف {{field}}.",
     "deleteHasData": "فشل حذف {{field}} لوجود بيانات مرتبطة.",
-    "partialLoad": "تم تحميل {{field}}، لكن بعض الميزات غير متاحة لأن معالجات IPC غير مسجلة."
+    "partialLoad": "تم تحميل {{field}}، لكن بعض الميزات غير متاحة لأن معالجات IPC غير مسجلة.",
+    "customer_required": "العميل مطلوب"
   }
 }
