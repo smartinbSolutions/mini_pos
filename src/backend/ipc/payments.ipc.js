@@ -1,13 +1,11 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-import reverseExpensePayment from "../services/payment/invoice/reverseExpensePayment.service";
-import reversePurchasePayment from "../services/payment/invoice/reversePurchasePayment.service";
-import reverseSalesPayment from "../services/payment/invoice/reverseSalesPayment.service";
 import applyCustomerPayment from "../services/payment/party/applyCustomerPayment.service";
 import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.service";
 import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
+import reversePayment from "../services/payment/invoice/reversePayment.service";
 
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
@@ -339,28 +337,7 @@ export default function registerPaymentIPC() {
         throw new Error("PAYMENT_HISTORY_NOT_FOUND");
       }
 
-      for (const item of history) {
-        const paymentData = {
-          ...payment,
-          ...item,
-        };
-
-        if (item.invoice_type === "purchase") {
-          reversePurchasePayment(db, paymentData);
-        }
-
-        if (item.invoice_type === "expense") {
-          reverseExpensePayment(db, paymentData);
-        }
-
-        if (item.invoice_type === "sales") {
-          reverseSalesPayment(db, paymentData);
-        }
-      }
-
-      if (payment.party_type === "partner") {
-        reversePartnerPayment(db, payment);
-      }
+      reversePayment(db, payment);
 
       db.prepare(
         `

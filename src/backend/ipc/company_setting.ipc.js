@@ -11,7 +11,7 @@ export default function registerCompanySettingsIPC() {
       .prepare(
         `
       SELECT * FROM company_settings LIMIT 1
-    `
+    `,
       )
       .get();
 
@@ -28,7 +28,7 @@ export default function registerCompanySettingsIPC() {
         `
       INSERT INTO currencies (name, latinName, code, exchangeRate, symbol,isPrimary)
       VALUES (?,?,?,?,?,?)
-    `
+    `,
       )
       .run(data.currency_name, data.latinName, data.code, 1, data.symbol, 1);
     const result = db
@@ -45,7 +45,7 @@ export default function registerCompanySettingsIPC() {
         language,
         timezone
       ) VALUES (?,?,?,?,?,?,?,?,?)
-    `
+    `,
       )
       .run(
         data.company_name,
@@ -56,7 +56,7 @@ export default function registerCompanySettingsIPC() {
         data.logo,
         currencyResult.lastInsertRowid,
         data.language,
-        data.timezone
+        data.timezone,
       );
     seedData(db);
     return { success: true, id: result.lastInsertRowid };
@@ -96,7 +96,7 @@ export default function registerCompanySettingsIPC() {
         timezone = ?,
         updatedAt = datetime('now')
       WHERE id = ?
-    `
+    `,
     ).run(
       data.company_name,
       data.company_latin_name,
@@ -107,7 +107,7 @@ export default function registerCompanySettingsIPC() {
       data.base_currency_id,
       data.language,
       data.timezone,
-      data.id
+      data.id,
     );
 
     return { success: true };
@@ -154,16 +154,31 @@ export default function registerCompanySettingsIPC() {
     `);
 
     const paidInvoices = scalar(`
-      SELECT COUNT(*) AS value
-      FROM sales_invoices
-      WHERE status = 'paid'
-    `);
-
+  SELECT COUNT(*) AS value
+  FROM (
+    SELECT
+      s.id
+    FROM sales_invoices s
+    LEFT JOIN payment_allocations pa
+      ON pa.invoice_id = s.id
+     AND pa.invoice_type = 'sales'
+    GROUP BY s.id
+    HAVING COALESCE(SUM(pa.amount), 0) >= s.net_total
+  )
+`);
     const unpaidInvoices = scalar(`
-      SELECT COUNT(*) AS value
-      FROM sales_invoices
-      WHERE status != 'paid' OR status IS NULL
-    `);
+  SELECT COUNT(*) AS value
+  FROM (
+    SELECT
+      s.id
+    FROM sales_invoices s
+    LEFT JOIN payment_allocations pa
+      ON pa.invoice_id = s.id
+     AND pa.invoice_type = 'sales'
+    GROUP BY s.id
+    HAVING COALESCE(SUM(pa.amount), 0) < s.net_total
+  )
+`);
 
     const inventoryValue = scalar(`
       SELECT COALESCE(SUM(quantity * costPrice), 0) AS value
@@ -203,7 +218,7 @@ export default function registerCompanySettingsIPC() {
         LEFT JOIN sales_invoices ON date(sales_invoices.date) = days.day
         GROUP BY days.day
         ORDER BY days.day
-      `
+      `,
       )
       .all();
 
@@ -222,7 +237,7 @@ export default function registerCompanySettingsIPC() {
         LEFT JOIN purchase_invoices ON date(purchase_invoices.date) = days.day
         GROUP BY days.day
         ORDER BY days.day
-      `
+      `,
       )
       .all();
 
@@ -241,7 +256,7 @@ export default function registerCompanySettingsIPC() {
         LEFT JOIN expense ON date(expense.date) = days.day
         GROUP BY days.day
         ORDER BY days.day
-      `
+      `,
       )
       .all();
 
@@ -257,7 +272,7 @@ export default function registerCompanySettingsIPC() {
         GROUP BY sales_invoice_items.product_id
         ORDER BY quantity DESC
         LIMIT 5
-      `
+      `,
       )
       .all();
 

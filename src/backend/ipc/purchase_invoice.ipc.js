@@ -46,12 +46,6 @@ export default function registerPurchaseInvoicesIPC() {
         const paidAmount = isPaid ? Number(payment.amount) : 0;
         const remainingAmount = netTotal - paidAmount;
 
-        const status =
-          paidAmount <= 0
-            ? "unpaid"
-            : remainingAmount <= 0
-              ? "paid"
-              : "partial";
         const invoiceResult = db
           .prepare(
             `
@@ -63,12 +57,10 @@ export default function registerPurchaseInvoicesIPC() {
     discount,
     tax,
     net_total,
-    status,
-    taxValue,
-    paid_amount,
-    remaining_amount
+      taxValue
+    
   )
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
 `,
           )
           .run(
@@ -78,10 +70,7 @@ export default function registerPurchaseInvoicesIPC() {
             discount,
             tax,
             netTotal,
-            status,
             data.taxValue,
-            paidAmount,
-            remainingAmount,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;

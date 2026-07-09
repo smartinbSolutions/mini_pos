@@ -32,18 +32,11 @@ export default function registerExpenseIPC() {
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
 
-        const status =
-          paidAmount <= 0
-            ? "unpaid"
-            : remainingAmount <= 0
-              ? "paid"
-              : "partial";
-
         const invoiceResult = db
           .prepare(
             `
                 INSERT INTO expense
-                (supplier_id, invoice_name, description, date, subtotal, net_total, status, paid_amount, remaining_amount)
+                (supplier_id, invoice_name, description, date, subtotal, net_total)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
               `,
           )
@@ -54,9 +47,6 @@ export default function registerExpenseIPC() {
             fullDateTime,
             subtotal,
             netTotal,
-            status,
-            paidAmount,
-            remainingAmount,
           );
         const invoiceId = invoiceResult.lastInsertRowid;
 
@@ -190,6 +180,7 @@ export default function registerExpenseIPC() {
       totalPages: Math.ceil(total / limit),
     };
   });
+
   // GET ONE
   ipcMain.handle("get-expense", (event, id) => {
     const invoice = db
@@ -222,12 +213,10 @@ export default function registerExpenseIPC() {
 
     let payments = [];
 
-    if (invoice.status !== "unpaid") {
-      if (invoice.supplier_id) {
-        // Party has a ledger — pull the payment trail from party_history
-        payments = db
-          .prepare(
-            `
+    if (invoice.supplier_id) {
+      payments = db
+        .prepare(
+          `
             SELECT 
               ph.id,
               ph.payment_id,
@@ -248,14 +237,12 @@ export default function registerExpenseIPC() {
               AND ph.record_type = 'payment'
             ORDER BY ph.createdAt ASC
           `,
-          )
-          .all(id);
-      } else {
-        // No supplier -> no party_history rows exist for this invoice.
-        // Read directly from payments instead.
-        payments = db
-          .prepare(
-            `
+        )
+        .all(id);
+    } else {
+      payments = db
+        .prepare(
+          `
             SELECT 
               p.id,
               p.id AS payment_id,
@@ -273,9 +260,8 @@ export default function registerExpenseIPC() {
             WHERE p.invoice_id = ? AND p.invoice_type = 'expense'
             ORDER BY p.createdAt ASC
           `,
-          )
-          .all(id);
-      }
+        )
+        .all(id);
     }
 
     return {
@@ -328,12 +314,6 @@ export default function registerExpenseIPC() {
         const payment = data.payment || null;
         const paidAmount = payment ? Number(payment.amount || 0) : 0;
         const remainingAmount = newNetTotal - paidAmount;
-        const status =
-          paidAmount <= 0
-            ? "unpaid"
-            : remainingAmount <= 0
-              ? "paid"
-              : "partial";
 
         const dateOnly = data.date.slice(0, 10);
         const now = new Date();
@@ -349,10 +329,7 @@ export default function registerExpenseIPC() {
               description = ?,
               date = ?,
               subtotal = ?,
-              net_total = ?,
-              status = ?,
-              paid_amount = ?,
-              remaining_amount = ?
+              net_total = ?
           WHERE id = ?
         `,
         ).run(
@@ -362,9 +339,6 @@ export default function registerExpenseIPC() {
           fullDateTime,
           newSubtotal,
           newNetTotal,
-          status,
-          paidAmount,
-          remainingAmount,
           data.id,
         );
         // Replace items

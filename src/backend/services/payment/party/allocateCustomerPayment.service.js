@@ -1,6 +1,5 @@
 import createPaymentAllocation from "../../../utils/createPaymentAllocations";
 import createPartyHistory from "../../../utils/createPaymentHistory";
-import updateSalesInvoiceStatus from "../invoice/updateSalesInvoiceStatus.service";
 
 export default function allocateCustomerPayment(db, data) {
   let remainingAmount = Number(data.amount);
@@ -43,8 +42,6 @@ export default function allocateCustomerPayment(db, data) {
     if (invoiceRemaining <= 0) continue;
 
     const paymentAmount = Math.min(remainingAmount, invoiceRemaining);
-
-    updateSalesInvoiceStatus(db, invoice.id, paymentAmount);
 
     allocations.push({
       invoiceId: invoice.id,

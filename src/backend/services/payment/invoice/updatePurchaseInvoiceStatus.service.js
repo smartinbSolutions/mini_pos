@@ -9,12 +9,11 @@ export default function applyPurchaseInvoicePayment(
   const invoice = db
     .prepare(
       `
-    SELECT
-      net_total,
-      paid_amount
-    FROM ${table}
-    WHERE id = ?
-  `,
+      SELECT
+        net_total
+      FROM ${table}
+      WHERE id = ?
+      `,
     )
     .get(invoiceId);
 
@@ -22,35 +21,19 @@ export default function applyPurchaseInvoicePayment(
     throw new Error("INVOICE_NOT_FOUND");
   }
 
-  const netTotal = Number(invoice.net_total);
-  const currentPaid = Number(invoice.paid_amount || 0);
-
-  const newPaid = Math.min(netTotal, currentPaid + Number(amount));
-
-  const remaining = netTotal - newPaid;
-
-  let status = "partial";
-
-  if (newPaid <= 0) {
-    status = "unpaid";
-  } else if (remaining === 0) {
-    status = "paid";
-  }
-
-  db.prepare(
-    `
-    UPDATE ${table}
-    SET
-      paid_amount = ?,
-      remaining_amount = ?,
-      status = ?
-    WHERE id = ?
-  `,
-  ).run(newPaid, remaining, status, invoiceId);
+  const { paid_amount } = db
+    .prepare(
+      `
+      SELECT
+        COALESCE(SUM(amount), 0) AS paid_amount
+      FROM payment_allocations
+      WHERE invoice_id = ?
+        AND invoice_type = ?
+      `,
+    )
+    .get(invoiceId, mode);
 
   return {
-    paid_amount: newPaid,
-    remaining_amount: remaining,
-    status,
+    paid_amount: Number(paid_amount),
   };
 }

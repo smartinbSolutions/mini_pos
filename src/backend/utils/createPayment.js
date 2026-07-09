@@ -14,7 +14,7 @@ export default function createPayment(db, data) {
       exchange_rate,
       effective_rate,
       amount_fund_currency,
-      invoice_id,
+      
       invoice_type,
       date
     )
@@ -29,7 +29,7 @@ export default function createPayment(db, data) {
       @exchange_rate,
       @effective_rate,
       @amount_fund_currency,
-      @invoice_id,
+    
       @invoice_type,
       @date
     )
@@ -46,7 +46,6 @@ export default function createPayment(db, data) {
     exchange_rate: Number(data.exchange_rate || 1),
     effective_rate: Number(data.effective_rate || 1),
     amount_fund_currency: Number(data.amount_fund_currency || 0),
-    invoice_id: data.invoice_id || null,
     invoice_type: data.invoice_type || null,
     date: data.date || new Date().toISOString(),
   });

@@ -1,10 +1,8 @@
 import createPartyHistory from "../../../utils/createPaymentHistory";
-import updateSalesInvoiceStatus from "../invoice/updateSalesInvoiceStatus.service";
 import allocateCustomerPayment from "./allocateCustomerPayment.service";
 
 export default function applyCustomerPayment(db, data) {
   if (data.invoiceId) {
-    updateSalesInvoiceStatus(db, data.invoiceId, data.amount);
   } else {
     allocateCustomerPayment(db, {
       customerId: data.party_id,

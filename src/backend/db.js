@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS unit (
   latinName TEXT,
   code TEXT UNIQUE
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS products (
   unit_id INTEGER,
   FOREIGN KEY (unit_id) REFERENCES unit(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS product_movements (
     createdAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (product_id) REFERENCES products(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -65,7 +65,7 @@ db.prepare(
   barcode TEXT UNIQUE,
   FOREIGN KEY (product_id) REFERENCES products(id)
 )
-  `
+  `,
 ).run();
 
 db.prepare(
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
 
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS partners (
   address TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS currencies (
   symbol TEXT,
   isPrimary INTEGER DEFAULT 0
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -129,7 +129,7 @@ CREATE TABLE IF NOT EXISTS funds (
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (currency_id) REFERENCES currencies(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS taxes (
   name TEXT,
   rate REAL DEFAULT 0
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   FOREIGN KEY (customer_id) REFERENCES customers(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -174,7 +174,7 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
   FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id),
   FOREIGN KEY (product_id) REFERENCES products(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
     ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -209,12 +209,9 @@ CREATE TABLE IF NOT EXISTS expense (
   date TEXT,
   subtotal REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
-  status TEXT DEFAULT 'unpaid',
-  paid_amount REAL DEFAULT 0,
-  remaining_amount REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -225,7 +222,7 @@ CREATE TABLE IF NOT EXISTS expence_category (
   latinName TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -238,7 +235,7 @@ CREATE TABLE IF NOT EXISTS expense_items (
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (expense_id) REFERENCES expense(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -261,7 +258,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoice_items (
     REFERENCES products(id)
     ON DELETE RESTRICT
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -279,12 +276,11 @@ CREATE TABLE IF NOT EXISTS payments (
   amount_fund_currency REAL, 
   note TEXT,
   date TEXT,
-  invoice_id INTEGER,
   invoice_type TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -297,7 +293,7 @@ CREATE TABLE IF NOT EXISTS payment_allocations (
     amount REAL NOT NULL,
     FOREIGN KEY (payment_id) REFERENCES payments(id)
 );
-`
+`,
 ).run();
 db.prepare(
   `
@@ -320,7 +316,7 @@ CREATE TABLE IF NOT EXISTS party_history (
   amount_fund_currency REAL, 
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 db.prepare(
   `
@@ -337,7 +333,7 @@ db.prepare(
     note TEXT,
     createdAt TEXT DEFAULT (datetime('now'))
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -354,7 +350,7 @@ db.prepare(
     date TEXT,
     createdAt TEXT DEFAULT (datetime('now'))
   );
-  `
+  `,
 ).run();
 
 db.prepare(
@@ -373,14 +369,14 @@ db.prepare(
     createdAt TEXT DEFAULT (datetime('now')),
     updatedAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (base_currency_id) REFERENCES currencies(id)
-  )`
+  )`,
 ).run();
 
 db.prepare(
-  `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`
+  `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`,
 ).run();
 db.prepare(
-  `CREATE INDEX IF NOT EXISTS idx_purchase_invoice ON purchase_invoice_items(invoice_id)`
+  `CREATE INDEX IF NOT EXISTS idx_purchase_invoice ON purchase_invoice_items(invoice_id)`,
 ).run();
 
 export default db;

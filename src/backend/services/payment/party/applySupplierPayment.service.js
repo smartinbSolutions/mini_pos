@@ -1,10 +1,8 @@
 import createPartyHistory from "../../../utils/createPaymentHistory";
-import applyPurchaseInvoicePayment from "../invoice/updatePurchaseInvoiceStatus.service";
 import allocateSupplierPayment from "./allocateSupplierPayment.service";
 
 export default function applySupplierPayment(db, data) {
   if (data.invoiceId) {
-    applyPurchaseInvoicePayment(db, data.invoiceId, data.amount, data.mode);
   } else {
     allocateSupplierPayment(db, {
       supplierId: data.party_id,
