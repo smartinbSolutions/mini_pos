@@ -1,6 +1,4 @@
 import createPaymentAllocation from "../../../utils/createPaymentAllocations";
-import createPartyHistory from "../../../utils/createPaymentHistory";
-import updatePurchaseInvoiceStatus from "../invoice/updatePurchaseInvoiceStatus.service";
 
 export default function allocateSupplierPayment(db, data) {
   let remainingAmount = Number(data.amount);
@@ -28,7 +26,7 @@ export default function allocateSupplierPayment(db, data) {
         'purchase' AS invoice_type
       FROM purchase_invoices
       WHERE supplier_id = ?
-      `,
+      `
     )
     .all(data.supplierId);
 
@@ -48,7 +46,7 @@ export default function allocateSupplierPayment(db, data) {
         'expense' AS invoice_type
       FROM expense
       WHERE supplier_id = ?
-      `,
+      `
     )
     .all(data.supplierId);
 
@@ -74,13 +72,6 @@ export default function allocateSupplierPayment(db, data) {
       amount: paymentAmount,
     });
 
-    updatePurchaseInvoiceStatus(
-      db,
-      invoice.id,
-      paymentAmount,
-      invoice.invoice_type,
-    );
-
     allocations.push({
       invoiceId: invoice.id,
       invoiceType: invoice.invoice_type,
@@ -89,23 +80,6 @@ export default function allocateSupplierPayment(db, data) {
 
     remainingAmount -= paymentAmount;
   }
-
-  createPartyHistory(db, {
-    party_type: "supplier",
-    party_id: data.supplierId,
-    record_type: "payment",
-    invoice_id: null,
-    invoice_type: null,
-    payment_id: data.paymentId,
-    movement_type: "withdrawal",
-    fund_id: data.fund_id,
-    amount: data.amount,
-    note: data.note || "",
-    currency_code: data.currency_code ?? "",
-    exchange_rate: Number(data.exchange_rate || 0),
-    effective_rate: Number(data.effective_rate || 0),
-    amount_fund_currency: data.amount_fund_currency,
-  });
 
   return {
     allocations,

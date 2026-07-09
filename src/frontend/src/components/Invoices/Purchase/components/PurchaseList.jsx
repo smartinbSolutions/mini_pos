@@ -55,6 +55,7 @@ const PurchaseList = () => {
     openPaymentModel,
     setOpenPaymentModel,
   } = usePurchaseList();
+  console.log(purchaseInvoices);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
@@ -91,14 +92,14 @@ const PurchaseList = () => {
 
   const totalNet = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0,
+    0
   );
   const totalTax = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0,
+    0
   );
   const unpaidCount = purchaseInvoices.filter(
-    (inv) => inv.status !== "paid",
+    (inv) => inv.status !== "paid"
   ).length;
 
   return (

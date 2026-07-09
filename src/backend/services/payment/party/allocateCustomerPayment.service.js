@@ -26,7 +26,7 @@ export default function allocateCustomerPayment(db, data) {
     GROUP BY i.id, i.net_total
     HAVING i.net_total - COALESCE(SUM(pa.amount), 0) > 0
     ORDER BY i.date ASC, i.id ASC
-    `,
+    `
     )
     .all(data.customerId);
 
