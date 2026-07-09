@@ -278,13 +278,36 @@ export default function registerSalesInvoiceIPC() {
     const invoice = db
       .prepare(
         `
-        SELECT sa.*,
-         c.name AS customer_name,
-         t.rate AS tax_rate
-        FROM sales_invoices sa
-        LEFT JOIN customers c ON c.id = sa.customer_id
-        LEFT JOIN taxes t ON t.id = sa.tax_id
-        WHERE sa.id = ?
+      SELECT
+        sa.*,
+        c.name AS customer_name,
+        t.rate AS tax_rate,
+
+        COALESCE(SUM(pa.amount), 0) AS paid_amount,
+
+        sa.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
+
+        CASE
+          WHEN COALESCE(SUM(pa.amount), 0) >= sa.net_total THEN 'paid'
+          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+          ELSE 'unpaid'
+        END AS status
+
+      FROM sales_invoices sa
+
+      LEFT JOIN customers c
+        ON c.id = sa.customer_id
+
+      LEFT JOIN taxes t
+        ON t.id = sa.tax_id
+
+      LEFT JOIN payment_allocations pa
+        ON pa.invoice_id = sa.id
+       AND pa.invoice_type = 'sales'
+
+      WHERE sa.id = ?
+
+      GROUP BY sa.id
       `,
       )
       .get(id);
@@ -294,12 +317,44 @@ export default function registerSalesInvoiceIPC() {
     const items = db
       .prepare(
         `
-        SELECT 
-          si.*,
-          p.name AS name
-        FROM sales_invoice_items si
-        LEFT JOIN products p ON p.id = si.product_id
-        WHERE si.invoice_id = ?
+      SELECT
+        si.*,
+        p.name
+      FROM sales_invoice_items si
+      LEFT JOIN products p
+        ON p.id = si.product_id
+      WHERE si.invoice_id = ?
+      `,
+      )
+      .all(id);
+
+    const payments = db
+      .prepare(
+        `
+      SELECT
+        p.id,
+        p.id AS payment_id,
+        pa.amount,
+        p.note,
+        p.currency_code,
+        p.exchange_rate,
+        p.effective_rate,
+        p.amount_fund_currency,
+        p.createdAt,
+        p.fund_id,
+        f.name AS fund_name,
+        c.code AS fund_currency_code,
+        c.symbol AS fund_currency_symbol
+      FROM payment_allocations pa
+      INNER JOIN payments p
+        ON p.id = pa.payment_id
+      LEFT JOIN funds f
+        ON f.id = p.fund_id
+      LEFT JOIN currencies c
+        ON c.id = f.currency_id
+      WHERE pa.invoice_id = ?
+        AND pa.invoice_type = 'sales'
+      ORDER BY p.createdAt ASC
       `,
       )
       .all(id);
@@ -307,6 +362,7 @@ export default function registerSalesInvoiceIPC() {
     return {
       ...invoice,
       items,
+      payments,
     };
   });
 

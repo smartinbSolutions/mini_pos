@@ -152,6 +152,7 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   tax_id INTEGER,
+  description TEXT,
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now')),

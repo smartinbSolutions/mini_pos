@@ -10,6 +10,7 @@ import {
   Info,
   Clock,
   Printer,
+  Percent,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useSalesList from "../hooks/useSalesList";
@@ -20,33 +21,52 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 
-const StatusBadge = ({ status, t }) => {
+const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
     paid: {
       label: t("ui.paid"),
-      className: "bg-emerald-50 text-emerald-600",
+      classes: "bg-emerald-50 text-emerald-600",
     },
     partial: {
-      label: t("ui.partial") || "Partial",
-      className: "bg-amber-50 text-amber-600",
+      label: t("ui.partial", "Partial"),
+      classes: "bg-amber-50 text-amber-600",
     },
     unpaid: {
       label: t("ui.unpaid"),
-      className: "bg-red-50 text-red-500",
+      classes: "bg-slate-100 text-slate-500",
     },
   };
 
-  const { label, className } = config[status] || config.unpaid;
+  const current = config[status] || config.unpaid;
 
   return (
-    <span
-      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${className}`}
-    >
-      {label}
-    </span>
+    <div className="group relative inline-block">
+      <span
+        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] uppercase tracking-wide ${current.classes}`}
+      >
+        {current.label}
+      </span>
+
+      {status === "partial" && (
+        <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
+          <div className="flex justify-between">
+            <span>{t("ui.paid")}</span>
+            <span className="font-bold text-emerald-600">
+              {money(paidAmount)}
+            </span>
+          </div>
+
+          <div className="mt-1 flex justify-between">
+            <span>{t("ui.remaining", "Remaining")}</span>
+            <span className="font-bold text-amber-600">
+              {money(remainingAmount)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
-
 const splitDateTime = (value) => {
   if (!value) return { dateLabel: "-", fullLabel: "" };
   const [datePart, timePart] = String(value).split(/[ T]/);
@@ -128,6 +148,11 @@ const SalesList = () => {
     (sum, inv) => sum + Number(inv.net_total || 0),
     0,
   );
+  const totalTax = salesInvoices.reduce(
+    (sum, inv) => sum + Number(inv.taxValue || 0),
+    0,
+  );
+
   const unpaidCount = salesInvoices.filter(
     (inv) => inv.status !== "paid",
   ).length;
@@ -150,6 +175,12 @@ const SalesList = () => {
               value: unpaidCount,
               label: t("ui.open"),
               variant: "amber",
+            },
+            {
+              icon: Percent,
+              value: money(totalTax),
+              label: t("ui.taxCollected"),
+              variant: "violet",
             },
             {
               eyebrow: "NET",
@@ -182,7 +213,7 @@ const SalesList = () => {
                   <th className="px-5 py-4">{t("ui.customer")}</th>
                   <th className="px-5 py-4">{t("ui.date")}</th>
                   <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.discount")}</th>
+                  <th className="px-5 py-4 text-right">{t("ui.tax")}</th>{" "}
                   <th className="px-5 py-4 text-right">{t("ui.net")}</th>
                   <th className="px-5 py-4 text-center">{t("ui.status")}</th>
                   <th className="px-5 py-4 text-right">
@@ -238,33 +269,46 @@ const SalesList = () => {
                           </div>
                         </td>
 
-                        <td className="px-5 py-4 text-slate-500">
-                          <span className="group relative inline-flex cursor-help items-center gap-1.5">
-                            {dateLabel}
-                            <Clock
-                              size={12}
-                              className="text-slate-300 group-hover:text-[#4663ff]"
-                            />
-                            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                              {fullLabel}
-                            </span>
-                          </span>
-                        </td>
+                        <td className="px-5 py-4 text-slate-500">{inv.date}</td>
 
+                        <td className="px-5 py-4 text-right">
+                          <div className="font-semibold tabular-nums text-slate-700">
+                            {money(inv.subtotal || 0)}
+                          </div>
+
+                          {Number(inv.discount || 0) > 0 && (
+                            <div className="mt-0.5 inline-flex items-center rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-500">
+                              -{money(inv.discount)} {t("ui.discount")}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-5 py-4 text-right tabular-nums">
-                          {money(inv.subtotal || 0)}
-                        </td>
+                          {Number(inv.taxValue || 0) > 0 ? (
+                            <div>
+                              <div className="font-bold text-slate-700">
+                                + {money(inv.taxValue)}
+                              </div>
 
-                        <td className="px-5 py-4 text-right tabular-nums text-slate-500">
-                          {money(inv.discount || 0)}
+                              <div className="text-[11px] font-semibold text-slate-400">
+                                {inv.tax}%
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400">{money(0)}</span>
+                          )}
                         </td>
-
                         <td className="px-5 py-4 text-right tabular-nums text-emerald-700">
                           {money(inv.net_total || 0)}
                         </td>
 
                         <td className="px-5 py-4 text-center">
-                          <StatusBadge status={inv.status} t={t} />
+                          <StatusBadge
+                            status={inv.status}
+                            paidAmount={inv.paid_amount}
+                            remainingAmount={inv.remaining_amount}
+                            money={money}
+                            t={t}
+                          />
                         </td>
 
                         <td className="px-5 py-4">
@@ -284,35 +328,37 @@ const SalesList = () => {
                             >
                               <Printer size={16} />
                             </button> */}
+                            {inv.status === "unpaid" && (
+                              <button
+                                onClick={() =>
+                                  navigate(`/edit-sales/${inv.id}`)
+                                }
+                                className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                title={t("common.edit")}
+                              >
+                                {/* <LucidePencilSparkles size={16} /> */}
+                              </button>
+                            )}
                             {inv.status !== "paid" && (
-                              <>
-                                <button
-                                  onClick={() =>
-                                    navigate(`/edit-sales/${inv.id}`)
-                                  }
-                                  className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                  title={t("common.edit")}
-                                >
-                                  {/* <LucidePencilSparkles size={16} /> */}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setSelecteInvoice(inv);
-                                    setOpenPaymentModel(true);
-                                  }}
-                                  className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                  title={t("ui.payment")}
-                                >
-                                  <Wallet2 size={16} />
-                                </button>
-                                <button
-                                  onClick={() => setDeleteInvoice(inv)}
-                                  className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
-                                  title={t("common.delete")}
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </>
+                              <button
+                                onClick={() => {
+                                  setSelecteInvoice(inv);
+                                  setOpenPaymentModel(true);
+                                }}
+                                className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                title={t("ui.payment")}
+                              >
+                                <HandCoins size={16} />
+                              </button>
+                            )}
+                            {inv.status === "unpaid" && (
+                              <button
+                                onClick={() => setDeleteInvoice(inv)}
+                                className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
+                                title={t("common.delete")}
+                              >
+                                <Trash2 size={16} />
+                              </button>
                             )}
                           </div>
                         </td>

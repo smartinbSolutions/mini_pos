@@ -43,8 +43,8 @@ export function seedData(db) {
   ].forEach((tax) => insertTax.run(...tax));
 
   const insertFund = db.prepare(`
-    INSERT OR IGNORE INTO funds(name, currency_id, balance)
-    VALUES (?, ?, ?)
+    INSERT OR IGNORE INTO funds(name, currency_id)
+    VALUES (?, ?)
   `);
 
   insertFund.run("Mine Fund", 1, 0);
@@ -61,4 +61,3 @@ export function seedData(db) {
     ["Sales Expenses", "مصاريف مبيعات"],
   ].forEach((category) => insertExpenseCategory.run(...category));
 }
-

@@ -56,7 +56,7 @@ const useSalesList = () => {
       setSaving(false);
     }
   };
-  console.log(salesInvoices);
+
   return {
     salesInvoices,
     loading,

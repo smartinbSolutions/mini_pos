@@ -117,14 +117,14 @@ const PurchaseList = () => {
 
   const totalNet = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0
+    0,
   );
   const totalTax = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0
+    0,
   );
   const unpaidCount = purchaseInvoices.filter(
-    (inv) => inv.status !== "paid"
+    (inv) => inv.status !== "paid",
   ).length;
 
   return (

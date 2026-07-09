@@ -68,8 +68,28 @@ export default function SalesInvoiceView() {
   };
 
   const items = invoice?.items || [];
+  const allocations = invoice?.payments || [];
   const status = invoice?.status || "unpaid";
-  const isPaid = status === "paid";
+
+  const statusStyle = {
+    unpaid: {
+      bg: "bg-red-100",
+      text: "text-red-600",
+    },
+    partial: {
+      bg: "bg-amber-100",
+      text: "text-amber-700",
+    },
+    paid: {
+      bg: "bg-emerald-100",
+      text: "text-emerald-700",
+    },
+  }[status] || {
+    bg: "bg-slate-100",
+    text: "text-slate-600",
+  };
+
+  const statusLabel = t(`ui.${status}`, status);
 
   if (loading) {
     return (
@@ -135,13 +155,9 @@ export default function SalesInvoiceView() {
               </p>
               <p className="text-sm text-slate-500">{t("ui.customer")}</p>
               <span
-                className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-black ${
-                  isPaid
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-600"
-                }`}
+                className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-black ${statusStyle.bg} ${statusStyle.text}`}
               >
-                {isPaid ? t("ui.paidStatus") : status.toUpperCase()}
+                {statusLabel}
               </span>
             </div>
           </div>
@@ -195,34 +211,98 @@ export default function SalesInvoiceView() {
             >
               <Printer size={16} />
             </button> */}
-            <div className="mt-6 flex justify-end">
-              <div className="w-80 max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5">
+            <div className="mt-6 flex flex-col-reverse gap-6 lg:flex-row lg:justify-between">
+              {/* PAYMENT HISTORY */}
+              <div className="flex-1">
+                <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-slate-700">
+                  {t("screens.invoices.paymentHistory", "Payment History")}
+                </h3>
+
+                {allocations.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400">
+                    {t(
+                      "screens.invoices.noPayments",
+                      "No payments recorded yet.",
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {allocations.map((alloc) => (
+                      <div
+                        key={alloc.payment_id}
+                        className="flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
+                      >
+                        <div>
+                          <div className="font-bold text-slate-800">
+                            {alloc.fund_name || "-"}
+                          </div>
+
+                          <div className="text-xs text-slate-400">
+                            {formatDate(alloc.createdAt)} · {t("ui.payment")} #
+                            {alloc.payment_id}
+                          </div>
+                        </div>
+
+                        <div className="font-black text-emerald-700">
+                          {money(alloc.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="w-full max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5 lg:w-80">
                 <div className="flex justify-between">
                   <span className="text-slate-500">{t("ui.subtotal")}</span>
                   <span className="font-bold">{money(invoice.subtotal)}</span>
                 </div>
-                {invoice.discount > 0 ? (
+
+                {invoice.discount > 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">{t("ui.discount")}</span>
                     <span>-{money(invoice.discount)}</span>
                   </div>
-                ) : (
-                  ""
                 )}
-                {invoice.taxValue > 0 ? (
+
+                {invoice.taxValue > 0 && (
                   <div className="flex justify-between">
                     <span className="text-slate-500">{t("ui.tax")}</span>
                     <span>{money(invoice.taxValue)}</span>
                   </div>
-                ) : (
-                  ""
                 )}
+
                 <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl font-black">
                   <span>{t("ui.total")}</span>
+
                   <span className="text-[#4663ff]">
                     {money(invoice.net_total)}
                   </span>
                 </div>
+
+                {status !== "unpaid" && (
+                  <>
+                    <div className="flex justify-between border-t border-dashed border-[#dbe4ff] pt-3 text-sm">
+                      <span className="text-slate-500">{t("ui.paid")}</span>
+
+                      <span className="font-bold text-emerald-700">
+                        {money(invoice.paid_amount)}
+                      </span>
+                    </div>
+
+                    {status === "partial" && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500">
+                          {t("ui.remaining")}
+                        </span>
+
+                        <span className="font-bold text-amber-600">
+                          {money(invoice.remaining_amount)}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
