@@ -35,10 +35,11 @@ const ContactListHeader = ({
   saving,
   actionError,
   submitLabel,
-
+  type,
   t,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
+  console.log(title);
 
   const inputClass =
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
@@ -103,6 +104,29 @@ const ContactListHeader = ({
             className={`w-full ${inputClass}`}
             placeholder={t("ui.address")}
           />
+          <div className="flex gap-2">
+            <input
+              value={draft.opening_balance}
+              onChange={(e) =>
+                setDraft({ ...draft, opening_balance: e.target.value })
+              }
+              className={`w-full ${inputClass}`}
+              placeholder={t("ui.opening_balance")}
+            />
+
+            {type === "partner" && (
+              <select
+                value={draft.balance_type}
+                onChange={(e) =>
+                  setDraft({ ...draft, balance_type: e.target.value })
+                }
+                className={inputClass}
+              >
+                <option value="deposit">{t("ui.debit")}</option>
+                <option value="withdrawal">{t("ui.credit")}</option>
+              </select>
+            )}
+          </div>
 
           <button disabled={saving} className={`w-full ${primaryButtonClass}`}>
             <Plus size={15} />

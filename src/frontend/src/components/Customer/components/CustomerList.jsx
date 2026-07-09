@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
 import AddPayment from "../../Cash/Payment/components/AddPayment";
 import ContactListHeader from "../../../Global/Contactlistheader";
+import Pagination from "../../../Global/Pagination";
 
 const BalanceCell = ({ total, paid, balance, money, t }) => {
   const isSettled = balance <= 0;
@@ -58,6 +59,12 @@ export const CustomerList = () => {
     selecteCustomer,
     setSelecteCustomer,
     refetch,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   } = useCustomerList();
   const { money } = usePrimaryCurrency();
 
@@ -74,7 +81,7 @@ export const CustomerList = () => {
     return customers.filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.toLowerCase()),
     );
   }, [customers, search]);
 
@@ -255,6 +262,17 @@ export const CustomerList = () => {
                   })}
                 </tbody>
               </table>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
+              />
             </div>
           )}
         </div>

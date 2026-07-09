@@ -122,6 +122,7 @@ const PaymentList = () => {
         .catch(() => setFunds([]));
     }
   }, [api]);
+  const { money } = usePrimaryCurrency();
 
   const filteredPayments = payments.filter((pay) => {
     const partyName = pay.party_name?.toLowerCase() || "";
@@ -415,7 +416,7 @@ const PaymentList = () => {
                                   {formatMoney(
                                     pay.amount_fund_currency,
                                     pay.fund_currency_code,
-                                    pay.fund_currency_symbol
+                                    pay.fund_currency_symbol,
                                   )}
                                 </div>
                               )}
@@ -469,10 +470,7 @@ const PaymentList = () => {
                                         {alloc.invoice_type} #{alloc.invoice_id}
                                       </span>
                                       <span className="font-black text-slate-900">
-                                        {formatMoney(
-                                          alloc.amount,
-                                          pay.currency_code
-                                        )}
+                                        {money(alloc.amount)}
                                       </span>
                                     </div>
                                   ))}
@@ -481,7 +479,7 @@ const PaymentList = () => {
                                 <div className="text-sm text-slate-500">
                                   {t(
                                     "screens.payments.noAllocations",
-                                    "No allocations recorded for this payment."
+                                    "No allocations recorded for this payment.",
                                   )}
                                 </div>
                               )}

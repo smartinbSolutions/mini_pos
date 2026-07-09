@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import createPartyHistory from "../utils/createPaymentHistory";
 export default function registerSuppliersIPC() {
   // CREATE
   ipcMain.handle("create-supplier", (event, data) => {
@@ -15,6 +16,20 @@ export default function registerSuppliersIPC() {
       )
       .run(data.name, data.phone, data.address);
 
+    const openingBalance = Number(data.opening_balance || 0);
+    if (openingBalance !== 0) {
+      createPartyHistory(db, {
+        party_type: "supplier",
+        party_id: result.lastInsertRowid,
+        invoice_id: null,
+        invoice_type: "opening_balance",
+        record_type: "opening_balance",
+        movement_type: "withdrawal",
+        amount: openingBalance,
+        note: "Opening Balance",
+        date: new Date().toISOString(),
+      });
+    }
     return {
       success: true,
       id: result.lastInsertRowid,
@@ -31,11 +46,54 @@ export default function registerSuppliersIPC() {
         `
         SELECT
           s.*,
-          COALESCE(SUM(CASE WHEN ph.record_type = 'invoice' THEN ph.amount ELSE 0 END), 0) AS total,
-          COALESCE(SUM(CASE WHEN ph.record_type = 'payment' THEN ph.amount ELSE 0 END), 0) AS total_paid,
-          COALESCE(SUM(CASE WHEN ph.record_type = 'invoice' THEN ph.amount ELSE 0 END), 0) -
-          COALESCE(SUM(CASE WHEN ph.record_type = 'payment' THEN ph.amount ELSE 0 END), 0) AS balance
-        FROM suppliers s
+      
+  COALESCE(
+  SUM(
+    CASE
+      WHEN ph.record_type = 'invoice'
+        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit')
+      THEN ph.amount
+      ELSE 0
+    END
+  ),
+  0
+) AS total,
+
+COALESCE(
+  SUM(
+    CASE
+      WHEN ph.record_type = 'payment'
+        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal')
+      THEN ph.amount
+      ELSE 0
+    END
+  ),
+  0
+) AS total_paid,
+
+COALESCE(
+  SUM(
+    CASE
+      WHEN ph.record_type = 'invoice'
+        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit')
+      THEN ph.amount
+      ELSE 0
+    END
+  ),
+  0
+)
+-
+COALESCE(
+  SUM(
+    CASE
+      WHEN ph.record_type = 'payment'
+        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal')
+      THEN ph.amount
+      ELSE 0
+    END
+  ),
+  0
+) AS balance FROM suppliers s
         LEFT JOIN party_history ph
           ON ph.party_type = 'supplier' AND ph.party_id = s.id
         GROUP BY s.id
@@ -96,6 +154,25 @@ export default function registerSuppliersIPC() {
   });
 
   ipcMain.handle("delete-supplier", (event, id) => {
+    const partyHistory = db
+      .prepare(
+        `
+      SELECT id
+      FROM party_history
+      WHERE party_type = 'supplier'
+        AND party_id = ?
+      LIMIT 1
+    `,
+      )
+      .get(id);
+
+    if (partyHistory) {
+      return {
+        success: false,
+        message: "Cannot delete supplier because it has transactions.",
+      };
+    }
+
     db.prepare(
       `
       DELETE FROM suppliers WHERE id = ?

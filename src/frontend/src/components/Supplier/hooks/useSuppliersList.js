@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 
 const useSuppliersList = () => {
   const { t } = useTranslation();
-  const emptySupplier = { name: "", phone: "", address: "" };
+  const emptySupplier = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+  };
   const navigate = useNavigate();
 
   const [saving, setSaving] = useState(false);
@@ -31,6 +36,7 @@ const useSuppliersList = () => {
     name: String(sup.name || "").trim(),
     phone: String(sup.phone || "").trim(),
     address: String(sup.address || "").trim(),
+    balance_type: sup.balance_type || "deposit",
   });
 
   const validateSupplier = (sup) => {
@@ -59,7 +65,7 @@ const useSuppliersList = () => {
       console.error("Failed to load supplier list:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.supplier") })
+        err?.message || t("errors.createFailed", { field: t("ui.supplier") }),
       );
     } finally {
       setLoading(false);

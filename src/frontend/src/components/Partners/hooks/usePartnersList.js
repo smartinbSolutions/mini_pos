@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 
 const usePartnersList = () => {
   const { t } = useTranslation();
-  const emptyPartner = { name: "", phone: "", address: "" };
+  const emptyPartner = { name: "", phone: "", address: "", opening_balance: 0 };
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState([]);
@@ -32,6 +32,7 @@ const usePartnersList = () => {
     name: String(cust.name || "").trim(),
     phone: String(cust.phone || "").trim(),
     address: String(cust.address || "").trim(),
+    balance_type: cust.balance_type || "deposit",
   });
 
   const validatePartner = (cust) => {
@@ -60,7 +61,7 @@ const usePartnersList = () => {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.partner") })
+        err?.message || t("errors.createFailed", { field: t("ui.partner") }),
       );
     } finally {
       setLoading(false);

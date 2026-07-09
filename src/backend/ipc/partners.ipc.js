@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import createPartyHistory from "../utils/createPaymentHistory";
 export default function registerPartnersIPC() {
   // CREATE
   ipcMain.handle("create-partner", (event, data) => {
@@ -11,10 +12,24 @@ export default function registerPartnersIPC() {
         `
       INSERT INTO partners (name, phone, address)
       VALUES (?,?,?)
-    `
+    `,
       )
       .run(data.name, data.phone, data.address);
 
+    const openingBalance = Number(data.opening_balance || 0);
+    if (openingBalance !== 0) {
+      createPartyHistory(db, {
+        party_type: "partner",
+        party_id: result.lastInsertRowid,
+        invoice_id: null,
+        invoice_type: "opening_balance",
+        record_type: "opening_balance",
+        movement_type: data.balance_type,
+        amount: openingBalance,
+        note: "Opening Balance",
+        date: new Date().toISOString(),
+      });
+    }
     return {
       success: true,
       id: result.lastInsertRowid,
@@ -28,19 +43,78 @@ export default function registerPartnersIPC() {
     const partners = db
       .prepare(
         `
-        SELECT
-          p.*,
-          COALESCE(SUM(CASE WHEN ph.movement_type = 'deposit' THEN ph.amount ELSE 0 END), 0) AS total_deposit,
-          COALESCE(SUM(CASE WHEN ph.movement_type = 'withdrawal' THEN ph.amount ELSE 0 END), 0) AS total_withdrawal,
-          COALESCE(SUM(CASE WHEN ph.movement_type = 'withdrawal' THEN ph.amount ELSE 0 END), 0) -
-          COALESCE(SUM(CASE WHEN ph.movement_type = 'deposit' THEN ph.amount ELSE 0 END), 0) AS balance
-        FROM partners p
-        LEFT JOIN party_history ph
-          ON ph.party_type = 'partner' AND ph.party_id = p.id
-        GROUP BY p.id
-        ORDER BY p.name
-        LIMIT ? OFFSET ?
-      `
+      SELECT
+        p.*,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'deposit'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'deposit'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS total_deposit,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'withdrawal'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'withdrawal'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS total_withdrawal,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'deposit'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'deposit'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        )
+        -
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'withdrawal'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'withdrawal'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS balance
+
+      FROM partners p
+      LEFT JOIN party_history ph
+        ON ph.party_type = 'partner'
+       AND ph.party_id = p.id
+
+      GROUP BY p.id
+      ORDER BY p.name
+      LIMIT ? OFFSET ?
+      `,
       )
       .all(limit, offset);
 
@@ -56,35 +130,87 @@ export default function registerPartnersIPC() {
       totalPages: Math.ceil(total / limit),
     };
   });
+
   ipcMain.handle("get-partner", (event, id) => {
     const partner = db
       .prepare(
         `
-      SELECT * FROM partners WHERE id = ?
-    `
-      )
-      .get(id);
-
-    if (!partner) return null;
-
-    const totals = db
-      .prepare(
-        `
       SELECT
-        SUM(CASE WHEN movement_type = 'deposit' THEN amount ELSE 0 END) AS total_deposit,
-        SUM(CASE WHEN movement_type = 'withdrawal' THEN amount ELSE 0 END) AS total_withdrawal
-      FROM party_history
-      WHERE party_id = ?
-        AND party_type = 'partner'
-    `
+        p.*,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'deposit'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'deposit'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS total_deposit,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'withdrawal'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'withdrawal'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS total_withdrawal,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'deposit'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'deposit'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        )
+        -
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'withdrawal'
+                OR (
+                  ph.record_type = 'opening_balance'
+                  AND ph.movement_type = 'withdrawal'
+                )
+              THEN ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS balance
+
+      FROM partners p
+      LEFT JOIN party_history ph
+        ON ph.party_type = 'partner'
+       AND ph.party_id = p.id
+
+      WHERE p.id = ?
+
+      GROUP BY p.id
+      `,
       )
       .get(id);
 
-    return {
-      ...partner,
-      total_deposit: totals?.total_deposit || 0,
-      total_withdrawal: totals?.total_withdrawal || 0,
-    };
+    return partner || null;
   });
 
   ipcMain.handle("update-partner", (event, data) => {
@@ -96,7 +222,7 @@ export default function registerPartnersIPC() {
       UPDATE partners
       SET name = ?, phone = ?, address = ?
       WHERE id = ?
-    `
+    `,
     ).run(data.name, data.phone, data.address, data.id);
 
     return { success: true };
@@ -108,20 +234,20 @@ export default function registerPartnersIPC() {
         `
       SELECT COUNT(*) AS count FROM party_history
       WHERE party_type = 'partner' AND party_id = ?
-    `
+    `,
       )
       .get(id);
 
     if (count > 0) {
       throw new Error(
-        "Cannot delete a partner that already has transaction history."
+        "Cannot delete a partner that already has transaction history.",
       );
     }
 
     db.prepare(
       `
       DELETE FROM partners WHERE id = ?
-    `
+    `,
     ).run(id);
 
     return { success: true };

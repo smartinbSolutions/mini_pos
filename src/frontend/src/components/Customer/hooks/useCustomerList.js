@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 
 const useCustomerList = () => {
   const { t } = useTranslation();
-  const emptyCustomer = { name: "", phone: "", address: "" };
+  const emptyCustomer = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+  };
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
@@ -18,6 +23,10 @@ const useCustomerList = () => {
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteCustomer, setSelecteCustomer] = useState(null);
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const api = window.api;
 
   const normalizeCustomer = (cust) => ({
@@ -25,6 +34,8 @@ const useCustomerList = () => {
     name: String(cust.name || "").trim(),
     phone: String(cust.phone || "").trim(),
     address: String(cust.address || "").trim(),
+    opening_balance: cust.opening_balance,
+    balance_type: cust.balance_type || "deposit",
   });
 
   const validateCustomer = (cust) => {
@@ -44,14 +55,16 @@ const useCustomerList = () => {
     try {
       setLoading(true);
 
-      let customersResult = await api.getCustomers();
+      let res = await api.getCustomers({ page, limit });
 
-      setCustomers(customersResult || []);
+      setCustomers(res.data || []);
+      setTotal(res?.total || 0);
+      setTotalPages(res?.totalPages || 1);
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.customer") })
+        err?.message || t("errors.createFailed", { field: t("ui.customer") }),
       );
     } finally {
       setLoading(false);
@@ -111,7 +124,7 @@ const useCustomerList = () => {
     } catch (err) {
       console.error("Failed to create Customer:", err);
       setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.customer") })
+        err?.message || t("errors.createFailed", { field: t("ui.customer") }),
       );
       return false;
     }
@@ -125,7 +138,7 @@ const useCustomerList = () => {
     } catch (err) {
       console.error("Failed to update Customer:", err);
       setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.customer") })
+        err?.message || t("errors.updateFailed", { field: t("ui.customer") }),
       );
       return false;
     }
@@ -199,6 +212,12 @@ const useCustomerList = () => {
     selecteCustomer,
     setSelecteCustomer,
     refetch,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   };
 };
 
