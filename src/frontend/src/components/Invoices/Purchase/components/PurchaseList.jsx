@@ -20,19 +20,44 @@ import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 
-const StatusBadge = ({ status, t }) => {
-  const isPaid = status === "paid";
+const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
+  const config = {
+    paid: { label: t("ui.paid"), classes: "bg-emerald-50 text-emerald-600" },
+    partial: {
+      label: t("ui.partial", "Partial"),
+      classes: "bg-amber-50 text-amber-600",
+    },
+    unpaid: { label: t("ui.unpaid"), classes: "bg-slate-100 text-slate-500" },
+  };
+  const current = config[status] || config.unpaid;
+
   return (
-    <span
-      className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px]  uppercase tracking-wide ${
-        isPaid ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-      }`}
-    >
-      {isPaid ? t("ui.paid") : t("ui.unpaid")}
-    </span>
+    <div className="group relative inline-block">
+      <span
+        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] uppercase tracking-wide ${current.classes}`}
+      >
+        {current.label}
+      </span>
+
+      {status === "partial" && (
+        <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
+          <div className="flex justify-between">
+            <span>{t("ui.paid")}</span>
+            <span className="font-bold text-emerald-600">
+              {money(paidAmount)}
+            </span>
+          </div>
+          <div className="mt-1 flex justify-between">
+            <span>{t("ui.remaining", "Remaining")}</span>
+            <span className="font-bold text-amber-600">
+              {money(remainingAmount)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
-
 const PurchaseList = () => {
   const { t } = useTranslation();
   const {
@@ -222,7 +247,13 @@ const PurchaseList = () => {
                         {money(inv.net_total || 0)}
                       </td>
                       <td className="px-5 py-4 text-center">
-                        <StatusBadge status={inv.status} t={t} />
+                        <StatusBadge
+                          status={inv.status}
+                          paidAmount={inv.paid_amount}
+                          remainingAmount={inv.remaining_amount}
+                          money={money}
+                          t={t}
+                        />
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-1">
@@ -232,6 +263,19 @@ const PurchaseList = () => {
                           >
                             <Eye size={16} />
                           </button>
+
+                          {inv.status !== "paid" && (
+                            <button
+                              onClick={() => {
+                                setSelecteInvoice(inv);
+                                setOpenPaymentModel(true);
+                              }}
+                              className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                            >
+                              <HandCoins size={16} />
+                            </button>
+                          )}
+
                           {inv.status === "unpaid" && (
                             <>
                               <button
@@ -241,15 +285,6 @@ const PurchaseList = () => {
                                 className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               >
                                 <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelecteInvoice(inv);
-                                  setOpenPaymentModel(true);
-                                }}
-                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              >
-                                <HandCoins size={16} />
                               </button>
                               <button
                                 onClick={() => setDeleteInvoice(inv)}

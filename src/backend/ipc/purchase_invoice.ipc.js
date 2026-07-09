@@ -21,7 +21,7 @@ export default function registerPurchaseInvoicesIPC() {
         const subtotal = Number(data.subtotal || 0);
         const netTotal = Number(data.net_total || 0);
         const discount = Number(data.discount || 0);
-        const tax = Number(data.tax || 0);
+        const tax = Number(data.tax_rate || 0);
 
         if (subtotal <= 0 || netTotal <= 0) {
           throw new Error("INVALID TOTALS");
@@ -44,7 +44,6 @@ export default function registerPurchaseInvoicesIPC() {
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
         const paidAmount = isPaid ? Number(payment.amount) : 0;
-        const remainingAmount = netTotal - paidAmount;
 
         const invoiceResult = db
           .prepare(
@@ -60,7 +59,7 @@ export default function registerPurchaseInvoicesIPC() {
               taxValue    
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            `,
+            `
           )
           .run(
             data.supplier_id,
@@ -69,7 +68,7 @@ export default function registerPurchaseInvoicesIPC() {
             discount,
             tax,
             netTotal,
-            data.taxValue,
+            data.taxValue
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -207,7 +206,7 @@ export default function registerPurchaseInvoicesIPC() {
       ORDER BY p.id DESC
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -231,12 +230,29 @@ export default function registerPurchaseInvoicesIPC() {
       SELECT 
         pi.*,
         s.name AS supplier_name,
-        t.rate AS tax_rate
+        s.phone AS supplier_phone,
+        t.rate AS tax_rate,
+  
+        COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
+        pi.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
+  
+        CASE
+          WHEN COALESCE(pa_sum.paid_amount, 0) >= pi.net_total THEN 'paid'
+          WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
+          ELSE 'unpaid'
+        END AS status
+  
       FROM purchase_invoices pi
       LEFT JOIN suppliers s ON s.id = pi.supplier_id
       LEFT JOIN taxes t ON t.id = pi.tax
+      LEFT JOIN (
+        SELECT invoice_id, SUM(amount) AS paid_amount
+        FROM payment_allocations
+        WHERE invoice_type = 'purchase'
+        GROUP BY invoice_id
+      ) pa_sum ON pa_sum.invoice_id = pi.id
       WHERE pi.id = ?
-    `,
+    `
       )
       .get(id);
 
@@ -251,13 +267,37 @@ export default function registerPurchaseInvoicesIPC() {
       FROM purchase_invoice_items pii
       LEFT JOIN products p ON p.id = pii.product_id
       WHERE pii.invoice_id = ?
-    `,
+    `
+      )
+      .all(id);
+
+    const allocations = db
+      .prepare(
+        `
+      SELECT
+        pa.id,
+        pa.payment_id,
+        pa.amount,
+        p.date,
+        p.fund_id,
+        f.name AS fund_name,
+        c.code AS fund_currency_code,
+        c.symbol AS fund_currency_symbol
+      FROM payment_allocations pa
+      LEFT JOIN payments p ON p.id = pa.payment_id
+      LEFT JOIN funds f ON f.id = p.fund_id
+      LEFT JOIN currencies c ON c.id = f.currency_id
+      WHERE pa.invoice_id = ?
+        AND pa.invoice_type = 'purchase'
+      ORDER BY pa.id ASC
+    `
       )
       .all(id);
 
     return {
       ...invoice,
       items,
+      allocations,
     };
   });
   // UPDATE
@@ -281,7 +321,7 @@ export default function registerPurchaseInvoicesIPC() {
 
     const existingPayment = db
       .prepare(
-        `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'purchase'`,
+        `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'purchase'`
       )
       .get(data.id);
 
@@ -324,7 +364,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       const adjustStock = db.prepare(
-        `UPDATE products SET quantity = quantity + ? WHERE id = ?`,
+        `UPDATE products SET quantity = quantity + ? WHERE id = ?`
       );
       const updateMovement = db.prepare(`
         UPDATE product_movements
@@ -371,7 +411,7 @@ export default function registerPurchaseInvoicesIPC() {
 
       // ---- Replace line items ----
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        data.id,
+        data.id
       );
 
       const insertItem = db.prepare(`
@@ -388,7 +428,7 @@ export default function registerPurchaseInvoicesIPC() {
           item.product_id,
           quantity,
           price,
-          quantity * price,
+          quantity * price
         );
       }
 
@@ -402,7 +442,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE purchase_invoices
         SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?
         WHERE id = ?
-      `,
+      `
       ).run(
         data.supplier_id,
         fullDateTime,
@@ -411,7 +451,7 @@ export default function registerPurchaseInvoicesIPC() {
         data.tax || 0,
         data.net_total || 0,
         data.taxValue || 0,
-        data.id,
+        data.id
       );
 
       const netDelta =
@@ -422,7 +462,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE suppliers
         SET total = total + ?
         WHERE id = ?
-      `,
+      `
       ).run(netDelta, data.supplier_id);
 
       // ---- Update the invoice ledger row in place ----
@@ -431,7 +471,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE party_history
         SET amount = ?, note = ?
         WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
-      `,
+      `
       ).run(data.net_total, `Purchase Invoice #${data.id}`, data.id);
     });
 
@@ -464,7 +504,7 @@ export default function registerPurchaseInvoicesIPC() {
       UPDATE suppliers
       SET total = total - ?
       WHERE id = ?
-    `,
+    `
       ).run(Number(invoice.net_total || 0), invoice.supplier_id);
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -481,7 +521,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        id,
+        id
       );
       db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);

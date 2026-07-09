@@ -115,7 +115,7 @@ export default function useAddPurchase() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {
@@ -223,7 +223,7 @@ export default function useAddPurchase() {
           status: paymentData ? "paid" : "unpaid",
           payment: paymentData,
         };
-
+        console.log(payload);
         const res = await api.createPurchaseInvoice(payload);
 
         if (!res?.success) {
@@ -242,7 +242,7 @@ export default function useAddPurchase() {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue],
+    [api, invoice, items, subtotal, netTotal, taxValue]
   );
 
   const reset = () => {
