@@ -1,11 +1,13 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import reverseExpensePayment from "../services/payment/invoice/reverseExpensePayment.service";
+import reversePurchasePayment from "../services/payment/invoice/reversePurchasePayment.service";
+import reverseSalesPayment from "../services/payment/invoice/reverseSalesPayment.service";
 import applyCustomerPayment from "../services/payment/party/applyCustomerPayment.service";
 import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.service";
 import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
-import reversePayment from "../services/payment/invoice/reversePayment.service";
 
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
@@ -124,37 +126,96 @@ export default function registerPaymentIPC() {
   });
 
   ipcMain.handle("get-payments", (event, params = {}) => {
-    console.log(params);
-
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
 
+    const conditions = [];
+    const filterParams = [];
+
+    if (params.type) {
+      conditions.push(`p.type = ?`);
+      filterParams.push(params.type);
+    }
+
+    if (params.party_type) {
+      conditions.push(`p.party_type = ?`);
+      filterParams.push(params.party_type);
+    }
+
+    if (params.invoice_type) {
+      conditions.push(`p.invoice_type = ?`);
+      filterParams.push(params.invoice_type);
+    }
+
+    if (params.fund_id) {
+      conditions.push(`p.fund_id = ?`);
+      filterParams.push(params.fund_id);
+    }
+
+    if (params.dateFrom) {
+      conditions.push(`date(p.date) >= date(?)`);
+      filterParams.push(params.dateFrom);
+    }
+
+    if (params.dateTo) {
+      conditions.push(`date(p.date) <= date(?)`);
+      filterParams.push(params.dateTo);
+    }
+
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
     const payments = db
       .prepare(
         `
-    SELECT 
-      p.*,
-      f.name AS fund_name,
-      c.code AS fund_currency_code,
-      c.symbol AS fund_currency_symbol,
-      COALESCE(cust.name, supp.name) AS party_name
-    FROM payments p
-    LEFT JOIN funds f ON f.id = p.fund_id
-    LEFT JOIN currencies c ON c.id = f.currency_id
-    LEFT JOIN customers cust ON cust.id = p.party_id AND p.party_type = 'customer'
-    LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
-    
-    ORDER BY p.id DESC
-
-     LIMIT ? OFFSET ?
-  `,
+      SELECT 
+        p.*,
+        f.name AS fund_name,
+        c.code AS fund_currency_code,
+        c.symbol AS fund_currency_symbol,
+        COALESCE(cust.name, supp.name, part.name) AS party_name,
+        (
+          SELECT COUNT(*) 
+          FROM payment_allocations pa 
+          WHERE pa.payment_id = p.id
+        ) AS allocation_count,
+        (
+          SELECT COALESCE(SUM(pa.amount), 0) 
+          FROM payment_allocations pa 
+          WHERE pa.payment_id = p.id
+        ) AS allocated_amount
+      FROM payments p
+      LEFT JOIN funds f ON f.id = p.fund_id
+      LEFT JOIN currencies c ON c.id = f.currency_id
+      LEFT JOIN customers cust ON cust.id = p.party_id AND p.party_type = 'customer'
+      LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
+      LEFT JOIN partners part ON part.id = p.party_id AND p.party_type = 'partner'
+      ${whereClause}
+      ORDER BY p.id DESC
+      LIMIT ? OFFSET ?
+    `
       )
-      .all(limit, offset);
+      .all(...filterParams, limit, offset);
 
     const { total } = db
-      .prepare(`SELECT COUNT(*) AS total FROM payments`)
-      .get();
+      .prepare(`SELECT COUNT(*) AS total FROM payments p ${whereClause}`)
+      .get(...filterParams);
+
+    const summary = db
+      .prepare(
+        `
+      SELECT
+        COUNT(CASE WHEN p.type = 'income' THEN 1 END) AS income_count,
+        COALESCE(SUM(CASE WHEN p.type = 'income' THEN p.amount END), 0) AS income_total,
+        COUNT(CASE WHEN p.type = 'expense' THEN 1 END) AS expense_count,
+        COALESCE(SUM(CASE WHEN p.type = 'expense' THEN p.amount END), 0) AS expense_total
+      FROM payments p
+      ${whereClause}
+    `
+      )
+      .get(...filterParams);
 
     return {
       data: payments,
@@ -162,6 +223,7 @@ export default function registerPaymentIPC() {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
+      summary,
     };
   });
 
@@ -178,9 +240,22 @@ export default function registerPaymentIPC() {
       LEFT JOIN funds f ON f.id = p.fund_id
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE p.id = ?
-    `,
+    `
       )
       .get(id);
+  });
+
+  ipcMain.handle("get-payment-allocations", (event, paymentId) => {
+    return db
+      .prepare(
+        `
+        SELECT *
+        FROM payment_allocations
+        WHERE payment_id = ?
+        ORDER BY id ASC
+      `
+      )
+      .all(paymentId);
   });
 
   ipcMain.handle("get-payment-fund", (event, id) => {
@@ -212,7 +287,7 @@ export default function registerPaymentIPC() {
       WHERE p.fund_id = ?
 
       ORDER BY p.id DESC
-    `,
+    `
       )
       .all(id);
   });
@@ -251,10 +326,10 @@ export default function registerPaymentIPC() {
 
         ORDER BY id DESC
         LIMIT ? OFFSET ?
-        `,
+        `
         )
         .all(partyId, partyType, limit, offset);
-    },
+    }
   );
 
   ipcMain.handle(
@@ -272,12 +347,12 @@ export default function registerPaymentIPC() {
         FROM payments
         WHERE party_id = ?
           AND party_type = ?
-        `,
+        `
         )
         .get(partyId, partyType);
 
       return row?.balance || 0;
-    },
+    }
   );
 
   ipcMain.handle("update-payment", (event, data) => {
@@ -292,7 +367,7 @@ export default function registerPaymentIPC() {
         amount = ?,
         note = ?
       WHERE id = ?
-    `,
+    `
     ).run(
       data.type,
       data.party_type,
@@ -300,7 +375,7 @@ export default function registerPaymentIPC() {
       data.fund_id,
       data.amount,
       data.note,
-      data.id,
+      data.id
     );
 
     return { success: true };
@@ -314,7 +389,7 @@ export default function registerPaymentIPC() {
         SELECT *
         FROM payments
         WHERE id = ?
-      `,
+      `
         )
         .get(id);
 
@@ -329,7 +404,7 @@ export default function registerPaymentIPC() {
         FROM party_history
         WHERE payment_id = ?
           AND record_type = 'payment'
-      `,
+      `
         )
         .all(id);
 
@@ -337,27 +412,48 @@ export default function registerPaymentIPC() {
         throw new Error("PAYMENT_HISTORY_NOT_FOUND");
       }
 
-      reversePayment(db, payment);
+      for (const item of history) {
+        const paymentData = {
+          ...payment,
+          ...item,
+        };
+
+        if (item.invoice_type === "purchase") {
+          reversePurchasePayment(db, paymentData);
+        }
+
+        if (item.invoice_type === "expense") {
+          reverseExpensePayment(db, paymentData);
+        }
+
+        if (item.invoice_type === "sales") {
+          reverseSalesPayment(db, paymentData);
+        }
+      }
+
+      if (payment.party_type === "partner") {
+        reversePartnerPayment(db, payment);
+      }
 
       db.prepare(
         `
       DELETE FROM party_history
       WHERE payment_id = ?
-    `,
+    `
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM fund_history
       WHERE payment_id = ?
-    `,
+    `
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM payments
       WHERE id = ?
-    `,
+    `
       ).run(id);
     });
 

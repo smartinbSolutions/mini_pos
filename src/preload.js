@@ -41,6 +41,8 @@ contextBridge.exposeInMainWorld("api", {
   /* ================= PAYMENTS ================= */
   getPayments: (params) => ipcRenderer.invoke("get-payments", params),
   getPayment: (id) => ipcRenderer.invoke("get-payment", id),
+  getPaymentAllocations: (paymentId) =>
+    ipcRenderer.invoke("get-payment-allocations", paymentId),
   getPaymentFund: (id) => ipcRenderer.invoke("get-payment-fund", id),
   getPartyLedger: (params) => ipcRenderer.invoke("get-party-ledger", params),
   createPayment: (data) => ipcRenderer.invoke("create-payment", data),
