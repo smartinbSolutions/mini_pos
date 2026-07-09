@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld("api", {
   deleteCurrency: (id) => ipcRenderer.invoke("delete-currency", id),
 
   /* ================= CUSTOMER ================= */
-  getCustomers: () => ipcRenderer.invoke("get-customers"),
+  getCustomers: (params) => ipcRenderer.invoke("get-customers", params),
   getCustomer: (id) => ipcRenderer.invoke("get-customer", id),
   createCustomer: (data) => ipcRenderer.invoke("create-customer", data),
   updateCustomer: (data) => ipcRenderer.invoke("update-customer", data),
