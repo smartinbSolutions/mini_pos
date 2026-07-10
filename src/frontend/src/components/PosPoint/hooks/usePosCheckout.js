@@ -22,7 +22,20 @@ export default function usePosCheckout({ weight } = {}) {
   const [error, setError] = useState("");
   const [currencies, setCurrencies] = useState();
   const weightRef = useRef(weight);
+  const now = new Date();
 
+  const date =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0") +
+    " " +
+    String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0") +
+    ":" +
+    String(now.getSeconds()).padStart(2, "0");
   const api = window.api;
 
   useEffect(() => {
@@ -175,7 +188,7 @@ export default function usePosCheckout({ weight } = {}) {
     return Math.max(0, subtotal - discountAmount);
   }, [subtotal, discountAmount]);
 
-  console.log(cart);
+  console.log(date);
 
   const checkout = async ({ payments, received }) => {
     setCheckingOut(true);
@@ -210,6 +223,7 @@ export default function usePosCheckout({ weight } = {}) {
         payments: normalizedPayments,
         customer_id: selectedCustomerId,
         language: i18n.language,
+        date,
       };
 
       const sales = await api.posCheckout({
@@ -220,6 +234,7 @@ export default function usePosCheckout({ weight } = {}) {
         paid_amount: netTotal,
         customer_id: selectedCustomerId,
         payments: normalizedPayments,
+        date,
       });
 
       payload.id = sales.invoiceId;

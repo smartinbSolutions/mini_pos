@@ -658,7 +658,7 @@ export default function registerSalesInvoiceIPC() {
 
     const insertInvoice = db.prepare(`
       INSERT INTO sales_invoices
-      (customer_id, date, subtotal, discount, tax_id, net_total)
+      (customer_id, date, subtotal, discount, tax, net_total)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
 
@@ -678,7 +678,7 @@ export default function registerSalesInvoiceIPC() {
         data.date || new Date().toISOString(),
         data.subtotal || 0,
         data.discount || 0,
-        data.tax_id || null,
+        data.tax_rate || 0,
         data.net_total || 0,
       );
 
@@ -798,6 +798,7 @@ export default function registerSalesInvoiceIPC() {
         contextIsolation: false,
       },
     });
+    console.log(data);
 
     const itemsHtml = (data.items || [])
       .map(
@@ -839,7 +840,7 @@ export default function registerSalesInvoiceIPC() {
       <div class="header">
         <h1>${escapeHtml(companyName)}</h1>
         <p>${labels.invoice} #${escapeHtml(data.id)}</p>
-        <p>${new Date().toLocaleString()}</p>
+        <p>${escapeHtml(data.date)}</p>
       </div>
       <div class="line"></div>
       <table>

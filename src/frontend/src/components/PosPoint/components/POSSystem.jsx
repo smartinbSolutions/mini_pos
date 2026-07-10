@@ -13,6 +13,7 @@ import {
   Check,
   ArrowBigLeft,
   Monitor,
+  ArrowBigRight,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
@@ -31,7 +32,9 @@ import CheckoutCombinedModal from "./CheckoutCombinedModal";
 import UnifiedCheckoutModal from "./CheckoutCombinedModal";
 
 export default function POSSystem() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
+
   const [currentWeight, setCurrentWeight] = useState(0);
 
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
@@ -101,7 +104,7 @@ export default function POSSystem() {
     return products.filter((product) =>
       [product.name, product.latinName, product.unit_name, product.unit_code]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term))
+        .some((value) => String(value).toLowerCase().includes(term)),
     );
   }, [products, search]);
 
@@ -192,11 +195,19 @@ export default function POSSystem() {
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 shadow-sm transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-100 active:scale-95"
                     aria-label="Go Back"
                   >
-                    <ArrowBigLeft
-                      size={22}
-                      strokeWidth={2.2}
-                      className="transition-transform group-hover:-translate-x-0.5"
-                    />
+                    {!isRtl ? (
+                      <ArrowBigLeft
+                        size={22}
+                        strokeWidth={2.2}
+                        className="transition-transform group-hover:-translate-x-0.5"
+                      />
+                    ) : (
+                      <ArrowBigRight
+                        size={22}
+                        strokeWidth={2.2}
+                        className="transition-transform group-hover:-translate-x-0.5"
+                      />
+                    )}
                   </a>
 
                   <div className="min-w-0">
@@ -351,7 +362,7 @@ export default function POSSystem() {
                       addToCart(
                         product,
                         activeWeight || 1,
-                        Boolean(activeWeight)
+                        Boolean(activeWeight),
                       );
                       setActionError("");
                     }}
@@ -507,7 +518,7 @@ export default function POSSystem() {
                             e.stopPropagation();
                             updateQuantity(
                               item.id,
-                              item.qty === 1 ? -1 : item.qty - 1
+                              item.qty === 1 ? -1 : item.qty - 1,
                             );
                           }}
                           className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
