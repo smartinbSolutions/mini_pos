@@ -1,42 +1,91 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  HashRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import "react-toastify/dist/ReactToastify.css";
+
 import Layout from "./Layout";
+import { AuthProvider, useAuth } from "./Global/AuthContext";
+import LoginScreen from "./components/Auth/component/LoginScreen";
+import ActivationPage from "./renderer/ActivationPage";
+import SetupPage from "./components/SetupPage/components/SetupPage";
 
 import Dashboard from "./pages/DashboardPage";
-import UnitList from "./components/Unit/components/UnitList";
-import CurrencyList from "./components/Cash/Currency/components/CurrencyList";
-import FundList from "./components/Cash/Fund/components/FundList";
-import TaxList from "./components/Tax/components/TaxList";
-import { SuppliersList } from "./components/Supplier/components/SuppliersList";
-import { CustomerList } from "./components/Customer/components/CustomerList";
-import ProductList from "./components/Products/components/productList";
-import PurchaseList from "./components/Invoices/Purchase/components/PurchaseList";
-import AddPurchase from "./components/Invoices/Purchase/components/AddPurchase";
-import UpdatePurchase from "./components/Invoices/Purchase/components/UpdatePurchase";
+import POSSystem from "./components/PosPoint/components/POSSystem";
+
+// Sales
 import SalesList from "./components/Invoices/Sales/components/SalesList";
 import AddSales from "./components/Invoices/Sales/components/AddSales";
 import UpdateSales from "./components/Invoices/Sales/components/UpdateSales";
-import SetupPage from "./components/SetupPage/components/SetupPage";
-
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import CompanySettings from "./components/CompanySettings/components/CompanySettings";
-import FundMovementsPage from "./components/Cash/Fund/components/FundMovementsPage";
-import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
-import ActivationPage from "./renderer/ActivationPage";
 import SalesInvoiceView from "./components/Invoices/Sales/components/SalesInvoiceView";
+import { CustomerList } from "./components/Customer/components/CustomerList";
+
+// Purchase
+import PurchaseList from "./components/Invoices/Purchase/components/PurchaseList";
+import AddPurchase from "./components/Invoices/Purchase/components/AddPurchase";
+import UpdatePurchase from "./components/Invoices/Purchase/components/UpdatePurchase";
 import PurchaseInvoiceView from "./components/Invoices/Purchase/components/PurchaseInvoiceView";
-import POSSystem from "./components/PosPoint/components/POSSystem";
-import "react-toastify/dist/ReactToastify.css";
+import { SuppliersList } from "./components/Supplier/components/SuppliersList";
+
+// Expenses
 import ExpenseList from "./components/Invoices/expense/components/ExpenseList";
 import AddExpense from "./components/Invoices/expense/components/AddExpense";
-import ExpenseCategoryList from "./components/ExpenseCategory/components/ExpenseCategoryList";
 import UpdateExpense from "./components/Invoices/expense/components/UpdateExpense";
 import ExpenseView from "./components/Invoices/expense/components/ExpenseView";
-import PartnersList from "./components/Partners/components/PartnersList";
-import PaymentList from "./components/Cash/Payment/components/paymentList";
+import ExpenseCategoryList from "./components/ExpenseCategory/components/ExpenseCategoryList";
+
+// Cash / Funds
+import FundList from "./components/Cash/Fund/components/FundList";
+import FundMovementsPage from "./components/Cash/Fund/components/FundMovementsPage";
 import FundTransferList from "./components/Cash/Fund/components/FundTransferList";
+import PaymentList from "./components/Cash/Payment/components/paymentList";
+import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
+import CurrencyList from "./components/Cash/Currency/components/CurrencyList";
+
+// Products
+import ProductList from "./components/Products/components/productList";
 import ImportSummary from "./components/Products/components/ImportSummary";
+
+// Partners
+import PartnersList from "./components/Partners/components/PartnersList";
+
+// Settings
+import UnitList from "./components/Unit/components/UnitList";
+import TaxList from "./components/Tax/components/TaxList";
+import CompanySettings from "./components/CompanySettings/components/CompanySettings";
 import UsersList from "./components/users/components/UsersList";
+
+/* ================= ROUTE GUARDS ================= */
+
+// pos-role users can only ever see /pos — anything else redirects them there
+function PosGate({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  if (user?.role === "pos" && location.pathname !== "/pos") {
+    return <Navigate to="/pos" replace />;
+  }
+
+  return children;
+}
+
+// admin-only routes (e.g. Users management)
+function AdminRoute({ children }) {
+  const { isAdmin } = useAuth();
+  return isAdmin ? children : <Navigate to="/" replace />;
+}
+
+// blocks the whole app until a PIN is entered
+function AuthGate({ children }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <LoginScreen />;
+  return children;
+}
 
 export default function App() {
   const { t } = useTranslation();
@@ -84,7 +133,7 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* SETUP MODE */}
+        {/* ================= SETUP MODE ================= */}
         {!isSetup ? (
           <>
             <Route
@@ -95,14 +144,30 @@ export default function App() {
           </>
         ) : (
           <>
-            <Route path="/" element={<Layout />}>
+            <Route
+              path="/"
+              element={
+                <AuthProvider>
+                  <AuthGate>
+                    <PosGate>
+                      <Layout />
+                    </PosGate>
+                  </AuthGate>
+                </AuthProvider>
+              }
+            >
+              {/* ================= CORE ================= */}
               <Route index element={<Dashboard />} />
-              <Route path="products" element={<ProductList />} />
-              <Route path="import-reports" element={<ImportSummary />} />
+              <Route path="pos" element={<POSSystem />} />
+
+              {/* ================= SALES ================= */}
               <Route path="sales" element={<SalesList />} />
               <Route path="add-sales" element={<AddSales />} />
               <Route path="view-sales/:id" element={<SalesInvoiceView />} />
               <Route path="edit-sales/:id" element={<UpdateSales />} />
+              <Route path="customer" element={<CustomerList />} />
+
+              {/* ================= PURCHASE ================= */}
               <Route path="purchase" element={<PurchaseList />} />
               <Route path="add-purchase" element={<AddPurchase />} />
               <Route
@@ -110,31 +175,45 @@ export default function App() {
                 element={<PurchaseInvoiceView />}
               />
               <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
-              <Route path="payments" element={<PaymentList />} />
-              <Route path="fundTransfer" element={<FundTransferList />} />
+              <Route path="supplier" element={<SuppliersList />} />
+
+              {/* ================= EXPENSES ================= */}
+              <Route path="expense" element={<ExpenseList />} />
+              <Route path="add-expense" element={<AddExpense />} />
+              <Route path="edit-expense/:id" element={<UpdateExpense />} />
+              <Route path="view-expense/:id" element={<ExpenseView />} />
               <Route
-                path="payment/:type/:id"
-                element={<PartyLedgerPage />}
-              />{" "}
-              <Route path="pos" element={<POSSystem />} />
-              <Route path="/expense" element={<ExpenseList />} />
-              <Route path="/view-expense/:id" element={<ExpenseView />} />
-              <Route path="/add-expense" element={<AddExpense />} />
-              <Route path="/edit-expense/:id" element={<UpdateExpense />} />
-              <Route
-                path="/expense-category"
+                path="expense-category"
                 element={<ExpenseCategoryList />}
               />
-              <Route path="unit" element={<UnitList />} />
-              <Route path="users" element={<UsersList />} />
-              <Route path="/partners" element={<PartnersList />} />
-              <Route path="currency" element={<CurrencyList />} />
+
+              {/* ================= CASH / FUNDS ================= */}
               <Route path="funds" element={<FundList />} />
-              <Route path="/fund/:id" element={<FundMovementsPage />} />
+              <Route path="fund/:id" element={<FundMovementsPage />} />
+              <Route path="fundTransfer" element={<FundTransferList />} />
+              <Route path="payments" element={<PaymentList />} />
+              <Route path="payment/:type/:id" element={<PartyLedgerPage />} />
+              <Route path="currency" element={<CurrencyList />} />
+
+              {/* ================= PRODUCTS ================= */}
+              <Route path="products" element={<ProductList />} />
+              <Route path="import-reports" element={<ImportSummary />} />
+
+              {/* ================= PARTNERS ================= */}
+              <Route path="partners" element={<PartnersList />} />
+
+              {/* ================= SETTINGS ================= */}
+              <Route path="unit" element={<UnitList />} />
               <Route path="tax" element={<TaxList />} />
-              <Route path="supplier" element={<SuppliersList />} />
-              <Route path="customer" element={<CustomerList />} />
               <Route path="company-settings" element={<CompanySettings />} />
+              <Route
+                path="users"
+                element={
+                  <AdminRoute>
+                    <UsersList />
+                  </AdminRoute>
+                }
+              />
             </Route>
 
             {/* fallback */}

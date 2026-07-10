@@ -17,14 +17,18 @@ import {
   Settings,
   Handshake,
   Zap,
+  LogOut,
+  User as UserIcon,
 } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
+import { useAuth } from "../Global/AuthContext";
 
 export default function Sidebar() {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const isPos = location.pathname.startsWith("/pos");
 
@@ -89,7 +93,9 @@ export default function Sidebar() {
         { title: "navigation.units", path: "/unit" },
         { title: "navigation.currency", path: "/currency" },
         { title: "navigation.taxes", path: "/tax" },
-        { title: "navigation.users", path: "/users" },
+        ...(user?.role === "admin"
+          ? [{ title: "navigation.users", path: "/users" }]
+          : []),
         { title: "navigation.companySettings", path: "/company-settings" },
       ],
     },
@@ -109,7 +115,8 @@ export default function Sidebar() {
     });
 
     setOpen((prev) => ({ ...prev, ...newOpen }));
-  }, [location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, user?.role]);
 
   function toggleGroup(index) {
     setOpen((prev) => ({
@@ -293,6 +300,30 @@ export default function Sidebar() {
 
       {/* FOOTER */}
       <div className="border-t border-white/5 p-4">
+        <div className="mb-3 flex items-center justify-between rounded-xl bg-white/[0.04] px-3 py-2.5">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#4663ff]/20 text-[#8fa5ff]">
+              <UserIcon size={15} />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-slate-100">
+                {user?.full_name || user?.username}
+              </p>
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                {t(`screens.users.role_${user?.role}`)}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={logout}
+            title={t("navigation.logout")}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-500/10 hover:text-red-400"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
+
         <LanguageSwitcher />
       </div>
     </div>

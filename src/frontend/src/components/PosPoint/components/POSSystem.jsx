@@ -8,16 +8,16 @@ import {
   Scale,
   Wallet,
   Package2,
-  Percent,
   X,
   Check,
   ArrowBigLeft,
   Monitor,
   ArrowBigRight,
+  LogOut,
+  User as UserIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
-import CheckoutModal from "../components/CheckoutModal";
 import usePosCheckout from "../hooks/usePosCheckout";
 import { formatNumber } from "../../../Global/FormatNumber";
 import useWeight from "../hooks/useWeight";
@@ -25,15 +25,16 @@ import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
-import CheckoutSingleFundModal from "./CheckoutSingleFundModal";
 import POSSystemEditPriceProdcutCart from "./POSSystemEditPriceProdcutCart";
 import POSSystemEditTotalPrice from "./POSSystemEditTotalPrice";
-import CheckoutCombinedModal from "./CheckoutCombinedModal";
 import UnifiedCheckoutModal from "./CheckoutCombinedModal";
+import { useAuth } from "../../../Global/AuthContext";
+import { Link } from "react-router-dom";
 
 export default function POSSystem() {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
+  const { user, isAdmin, logout } = useAuth();
 
   const [currentWeight, setCurrentWeight] = useState(0);
 
@@ -104,7 +105,7 @@ export default function POSSystem() {
     return products.filter((product) =>
       [product.name, product.latinName, product.unit_name, product.unit_code]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
+        .some((value) => String(value).toLowerCase().includes(term))
     );
   }, [products, search]);
 
@@ -184,176 +185,173 @@ export default function POSSystem() {
 
   return (
     <div className="min-h-screen bg-[#f7f3ee] text-stone-900">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px]">
         <main className="flex min-w-0 flex-col">
+          {/* HEADER — single dense bar */}
           <div className="sticky top-0 z-20 border-b border-stone-200/80 bg-white/90 shadow-sm shadow-stone-200/50 backdrop-blur-xl">
-            <div className="flex flex-col gap-4 px-4 py-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex items-center justify-between gap-4 border-b border-stone-100 bg-white/50 p-4 backdrop-blur-md sm:px-6">
-                <div className="flex items-center gap-4 min-w-0">
-                  <a
-                    href="/"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 shadow-sm transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-100 active:scale-95"
-                    aria-label="Go Back"
-                  >
-                    {!isRtl ? (
-                      <ArrowBigLeft
-                        size={22}
-                        strokeWidth={2.2}
-                        className="transition-transform group-hover:-translate-x-0.5"
-                      />
-                    ) : (
-                      <ArrowBigRight
-                        size={22}
-                        strokeWidth={2.2}
-                        className="transition-transform group-hover:-translate-x-0.5"
-                      />
-                    )}
-                  </a>
+            <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+              {isAdmin && (
+                <Link
+                  to="/"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-600 shadow-sm transition-all duration-200 hover:border-stone-300 hover:bg-stone-50 hover:text-stone-900 focus:outline-none focus:ring-4 focus:ring-stone-100 active:scale-95"
+                  aria-label="Go Back"
+                >
+                  {!isRtl ? (
+                    <ArrowBigLeft size={19} strokeWidth={2.2} />
+                  ) : (
+                    <ArrowBigRight size={19} strokeWidth={2.2} />
+                  )}
+                </Link>
+              )}
 
-                  <div className="min-w-0">
-                    <h1 className="truncate text-xl font-black tracking-tight text-stone-950 sm:text-2xl">
-                      {t("screens.pos.title")}
-                    </h1>
-                    <p className="mt-0.5 truncate text-xs font-semibold tracking-wide text-stone-400 sm:text-sm">
-                      {t("screens.pos.subtitle")}
-                    </p>
-                  </div>
-                </div>
+              <div className="min-w-0 shrink-0">
+                <h1 className="truncate text-lg font-black leading-tight tracking-tight text-stone-950">
+                  {t("screens.pos.title")}
+                </h1>
+                <p className="truncate text-[11px] font-semibold tracking-wide text-stone-400">
+                  {t("screens.pos.subtitle")}
+                </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex h-11 items-center overflow-hidden rounded-xl border border-stone-200 bg-stone-50">
-                  <div className="flex h-full items-center gap-2 border-r border-stone-200 px-3">
-                    <Scale
-                      size={16}
-                      className={
-                        isScaleConnected ? "text-teal-600" : "text-stone-400"
-                      }
-                    />
-                    <span className="min-w-[96px] text-sm font-bold">
-                      {activeWeight
-                        ? `${formatNumber(weight)} KG`
-                        : scaleStatus}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      isScaleConnected
-                        ? disconnectScale()
-                        : connectScale(selectedScalePort)
+              <div className="flex h-10 items-center overflow-hidden rounded-xl border border-stone-200 bg-stone-50">
+                <div className="flex h-full items-center gap-1.5 border-r border-stone-200 px-2.5">
+                  <Scale
+                    size={14}
+                    className={
+                      isScaleConnected ? "text-teal-600" : "text-stone-400"
                     }
-                    className={`h-full px-4 text-sm font-bold transition ${
-                      isScaleConnected
-                        ? "text-rose-600 hover:bg-rose-50"
-                        : "text-teal-700 hover:bg-teal-50"
-                    }`}
-                  >
-                    {isScaleConnected
-                      ? t("screens.pos.disconnect")
-                      : t("screens.pos.connect")}
-                  </button>
-                </div>
-
-                {!isScaleConnected && scalePorts.length > 1 && (
-                  <select
-                    value={selectedScalePort}
-                    onChange={(event) =>
-                      setSelectedScalePort(event.target.value)
-                    }
-                    className="h-11 max-w-[220px] rounded-xl border border-stone-200 bg-white px-3 text-sm text-stone-800 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-                  >
-                    <option value="">{t("screens.pos.autoCom")}</option>
-                    {scalePorts.map((port) => (
-                      <option key={port.path} value={port.path}>
-                        {[port.path, port.friendlyName || port.manufacturer]
-                          .filter(Boolean)
-                          .join(" - ")}
-                      </option>
-                    ))}
-                  </select>
-                )}
-
-                <div className="relative w-full sm:w-[320px]">
-                  <Search
-                    size={17}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"
                   />
-                  <input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder={t("screens.pos.search")}
-                    className="h-11 w-full rounded-xl border border-stone-200 bg-white pl-10 pr-4 text-sm text-stone-800 outline-none transition placeholder:text-stone-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
-                  />
+                  <span className="min-w-[84px] text-xs font-bold">
+                    {activeWeight ? `${formatNumber(weight)} KG` : scaleStatus}
+                  </span>
                 </div>
-
                 <button
                   type="button"
-                  onClick={refetch}
-                  className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:border-teal-200 hover:bg-teal-50"
+                  onClick={() =>
+                    isScaleConnected
+                      ? disconnectScale()
+                      : connectScale(selectedScalePort)
+                  }
+                  className={`h-full px-3 text-xs font-bold transition ${
+                    isScaleConnected
+                      ? "text-rose-600 hover:bg-rose-50"
+                      : "text-teal-700 hover:bg-teal-50"
+                  }`}
                 >
-                  <RefreshCw size={16} />
-                  {t("common.refresh")}
+                  {isScaleConnected
+                    ? t("screens.pos.disconnect")
+                    : t("screens.pos.connect")}
                 </button>
+              </div>
 
+              {!isScaleConnected && scalePorts.length > 1 && (
+                <select
+                  value={selectedScalePort}
+                  onChange={(event) => setSelectedScalePort(event.target.value)}
+                  className="h-10 max-w-[160px] rounded-xl border border-stone-200 bg-white px-2.5 text-xs text-stone-800 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                >
+                  <option value="">{t("screens.pos.autoCom")}</option>
+                  {scalePorts.map((port) => (
+                    <option key={port.path} value={port.path}>
+                      {[port.path, port.friendlyName || port.manufacturer]
+                        .filter(Boolean)
+                        .join(" - ")}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <div className="relative min-w-[200px] flex-1">
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"
+                />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder={t("screens.pos.search")}
+                  className="h-10 w-full rounded-xl border border-stone-200 bg-white pl-9 pr-3 text-sm text-stone-800 outline-none transition placeholder:text-stone-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/10"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={refetch}
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 transition hover:border-teal-200 hover:bg-teal-50"
+              >
+                <RefreshCw size={14} />
+                {t("common.refresh")}
+              </button>
+
+              <button
+                type="button"
+                onClick={openCustomerDisplay}
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-stone-200 bg-white px-3 text-xs font-bold text-stone-700 transition hover:border-teal-200 hover:bg-teal-50"
+              >
+                <Monitor size={14} />
+                {t("screens.pos.customerDisplay")}
+              </button>
+
+              {/* USER + LOGOUT */}
+              <div className="ml-auto flex h-10 shrink-0 items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 pl-3 pr-1.5">
+                <UserIcon size={14} className="text-stone-500" />
+                <span className="max-w-[120px] truncate text-xs font-bold text-stone-800">
+                  {user?.full_name || user?.username}
+                </span>
                 <button
                   type="button"
-                  onClick={openCustomerDisplay}
-                  className="flex h-11 items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:border-teal-200 hover:bg-teal-50"
+                  onClick={logout}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 transition hover:bg-rose-50 hover:text-rose-500"
+                  aria-label={t("navigation.logout")}
                 >
-                  <Monitor size={16} />
-                  {t("screens.pos.customerDisplay")}
+                  <LogOut size={15} />
                 </button>
               </div>
             </div>
 
             {(error || actionError) && (
-              <div className="px-4 pb-4">
-                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              <div className="px-4 pb-3">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
                   {actionError || error}
                 </div>
               </div>
             )}
           </div>
 
-          <div className="grid gap-3 p-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                    {t("ui.products")}
-                  </p>
-                  <h2 className="mt-2 text-3xl font-black text-stone-950">
-                    {filteredProducts.length}
-                  </h2>
-                </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-50 text-teal-600">
-                  <Package2 size={23} />
-                </div>
+          {/* STATS STRIP */}
+          <div className="grid grid-cols-2 gap-3 p-4 pb-0">
+            <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-2.5 shadow-sm shadow-stone-200/70">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                  {t("ui.products")}
+                </p>
+                <h2 className="text-xl font-black text-stone-950">
+                  {filteredProducts.length}
+                </h2>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
+                <Package2 size={18} />
               </div>
             </div>
 
-            <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm shadow-stone-200/70">
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                    {t("ui.totalWithOutDiscont")}
-                  </p>
-                  <h2 className="mt-2 truncate text-3xl font-black text-stone-950">
-                    {money(subtotal)}
-                  </h2>
-                </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                  <Wallet size={23} />
-                </div>
+            <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-2.5 shadow-sm shadow-stone-200/70">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                  {t("ui.totalWithOutDiscont")}
+                </p>
+                <h2 className="truncate text-xl font-black text-stone-950">
+                  {money(subtotal)}
+                </h2>
+              </div>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                <Wallet size={18} />
               </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto px-4 pb-28 lg:pb-4">
+          <div className="flex-1 overflow-auto p-4 pb-28 lg:pb-4">
             {filteredProducts.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+              <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {filteredProducts.map((product) => (
                   <button
                     key={product.id}
@@ -362,11 +360,11 @@ export default function POSSystem() {
                       addToCart(
                         product,
                         activeWeight || 1,
-                        Boolean(activeWeight),
+                        Boolean(activeWeight)
                       );
                       setActionError("");
                     }}
-                    className="group overflow-hidden rounded-2xl border border-stone-200 bg-white text-left shadow-sm shadow-stone-200/70 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-100"
+                    className="group overflow-hidden rounded-xl border border-stone-200 bg-white text-left shadow-sm shadow-stone-200/70 transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-lg hover:shadow-teal-100"
                   >
                     <div className="relative aspect-[4/3] bg-stone-100">
                       {product.logo ? (
@@ -377,23 +375,20 @@ export default function POSSystem() {
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center text-teal-600">
-                          <Package2 size={34} />
+                          <Package2 size={28} />
                         </div>
                       )}
 
-                      <div className="absolute right-3 top-3 rounded-xl bg-white/95 px-3 py-1.5 text-sm font-black text-teal-700 shadow-sm backdrop-blur">
+                      <div className="absolute right-2 top-2 rounded-lg bg-white/95 px-2 py-1 text-xs font-black text-teal-700 shadow-sm backdrop-blur">
                         {money(product.price || 0)}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 p-3">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-black text-stone-950">
-                          {product.name || t("ui.unnamedProduct")}
-                        </h3>
-                      </div>
-
-                      <span className="shrink-0 rounded-xl bg-stone-100 px-2.5 py-1 text-xs font-bold text-stone-600">
+                    <div className="flex items-center justify-between gap-2 p-2.5">
+                      <h3 className="truncate text-sm font-black text-stone-950">
+                        {product.name || t("ui.unnamedProduct")}
+                      </h3>
+                      <span className="shrink-0 rounded-lg bg-stone-100 px-2 py-0.5 text-[11px] font-bold text-stone-600">
                         {formatNumber(product.quantity || 0, 2)}
                       </span>
                     </div>
@@ -401,13 +396,13 @@ export default function POSSystem() {
                 ))}
               </div>
             ) : (
-              <div className="flex min-h-[460px] items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/70">
+              <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-white/70">
                 <div className="text-center">
-                  <Search size={38} className="mx-auto text-stone-400" />
-                  <h2 className="mt-4 text-xl font-black text-stone-950">
+                  <Search size={34} className="mx-auto text-stone-400" />
+                  <h2 className="mt-3 text-lg font-black text-stone-950">
                     {t("screens.pos.emptyProducts")}
                   </h2>
-                  <p className="mt-2 text-sm text-stone-500">
+                  <p className="mt-1.5 text-sm text-stone-500">
                     {t("screens.pos.emptyProductsHint")}
                   </p>
                 </div>
@@ -417,13 +412,13 @@ export default function POSSystem() {
         </main>
 
         <aside className="hidden border-l border-stone-200 bg-white lg:flex lg:flex-col">
-          <div className="border-b border-stone-200 p-5">
-            <div className="flex items-center justify-between gap-4">
+          <div className="border-b border-stone-200 p-4">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-black text-stone-950">
+                <h2 className="text-lg font-black text-stone-950">
                   {t("screens.pos.currentCart")}
                 </h2>
-                <p className="mt-1 text-sm text-stone-500">
+                <p className="text-xs text-stone-500">
                   {t("screens.pos.itemCount", { count: cart.length })}
                 </p>
               </div>
@@ -431,16 +426,13 @@ export default function POSSystem() {
                 type="button"
                 onClick={clearCart}
                 disabled={!cart.length}
-                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-bold text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-bold text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {t("screens.pos.clear")}
               </button>
             </div>
 
-            <div className="mt-5">
-              <p className="mb-2 text-sm font-bold text-stone-700">
-                {t("ui.customer")}
-              </p>
+            <div className="mt-3">
               <SearchableSelect
                 label=""
                 labelWidth="0"
@@ -470,70 +462,67 @@ export default function POSSystem() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4">
+          <div className="flex-1 overflow-auto p-3">
             {cart.length === 0 ? (
               <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 text-center">
                 <div>
-                  <ShoppingCart size={46} className="mx-auto text-stone-400" />
-                  <h3 className="mt-4 text-lg font-black text-stone-950">
+                  <ShoppingCart size={40} className="mx-auto text-stone-400" />
+                  <h3 className="mt-3 text-base font-black text-stone-950">
                     {t("screens.pos.cartEmpty")}
                   </h3>
-                  <p className="mt-2 text-sm text-stone-500">
+                  <p className="mt-1.5 text-sm text-stone-500">
                     {t("screens.pos.cartEmptyHint")}
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-2xl border border-stone-200 bg-stone-50 p-4"
+                    className="rounded-xl border border-stone-200 bg-stone-50 p-3"
                     onClick={() => openPriceModal(item)}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-black text-stone-950">
-                          {item.name}
-                        </h3>
-                      </div>
-
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="min-w-0 flex-1 truncate text-sm font-black text-stone-950">
+                        {item.name}
+                      </h3>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           removeFromCart(item.id);
                         }}
-                        className="rounded-xl bg-rose-50 p-2 text-rose-600 transition hover:bg-rose-100"
+                        className="rounded-lg bg-rose-50 p-1.5 text-rose-600 transition hover:bg-rose-100"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <div className="flex h-10 items-center overflow-hidden rounded-xl border border-stone-200 bg-white">
+                    <div className="mt-2.5 flex items-center justify-between gap-2">
+                      <div className="flex h-9 items-center overflow-hidden rounded-lg border border-stone-200 bg-white">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             updateQuantity(
                               item.id,
-                              item.qty === 1 ? -1 : item.qty - 1,
+                              item.qty === 1 ? -1 : item.qty - 1
                             );
                           }}
-                          className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
+                          className="flex h-9 w-9 items-center justify-center text-stone-700 transition hover:bg-stone-100"
                         >
-                          <Minus size={14} />
+                          <Minus size={13} />
                         </button>
 
                         <input
                           type="number"
                           value={item.qty}
                           onChange={(event) => {
-                            (event?.stopPropagation(),
-                              updateQuantity(item.id, event.target.value));
+                            event.stopPropagation();
+                            updateQuantity(item.id, event.target.value);
                           }}
-                          className="h-10 w-16 bg-transparent text-center text-sm font-black text-stone-950 outline-none"
+                          className="h-9 w-14 bg-transparent text-center text-sm font-black text-stone-950 outline-none"
                         />
 
                         <button
@@ -542,18 +531,17 @@ export default function POSSystem() {
                             e.stopPropagation();
                             updateQuantity(item.id, item.qty + 1);
                           }}
-                          className="flex h-10 w-10 items-center justify-center text-stone-700 transition hover:bg-stone-100"
+                          className="flex h-9 w-9 items-center justify-center text-stone-700 transition hover:bg-stone-100"
                         >
-                          <Plus size={14} />
+                          <Plus size={13} />
                         </button>
                       </div>
 
                       <div className="text-right">
-                        <p className="text-xs text-stone-500">
+                        <p className="text-[10px] text-stone-500">
                           {t("ui.subtotal")}
                         </p>
-
-                        <h3 className="text-lg font-black text-teal-700">
+                        <h3 className="text-base font-black text-teal-700">
                           {money((item.price || 0) * item.qty)}
                         </h3>
                       </div>
@@ -564,29 +552,25 @@ export default function POSSystem() {
             )}
           </div>
 
-          <div className="border-t border-stone-200 p-5 space-y-3">
+          <div className="space-y-2.5 border-t border-stone-200 p-4">
             {cart.length > 0 && (
-              <div className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-sm font-black text-stone-800">
+              <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <h3 className="text-xs font-black text-stone-800">
                     {t("ui.discount")}
                   </h3>
-
-                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-700">
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                     {t("ui.optional")}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-[100px_1fr] gap-3">
+                <div className="grid grid-cols-[80px_1fr] gap-2">
                   <select
                     value={discount.type}
                     onChange={(e) =>
-                      setDiscount((prev) => ({
-                        ...prev,
-                        type: e.target.value,
-                      }))
+                      setDiscount((prev) => ({ ...prev, type: e.target.value }))
                     }
-                    className="h-11 rounded-xl border border-stone-300 bg-stone-50 px-3 font-semibold outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                    className="h-9 rounded-lg border border-stone-300 bg-stone-50 px-2 text-sm font-semibold outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                   >
                     <option value="amount">$</option>
                     <option value="percent">%</option>
@@ -602,14 +586,14 @@ export default function POSSystem() {
                       }))
                     }
                     placeholder="0.00"
-                    className="h-11 rounded-xl border border-stone-300 bg-white px-4 text-center font-bold outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                    className="h-9 rounded-lg border border-stone-300 bg-white px-3 text-center text-sm font-bold outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={openTotalModal}
-                  className="mt-4 flex h-12 w-full items-center justify-center rounded-xl bg-teal-600 font-black text-white shadow-lg shadow-teal-200 transition hover:bg-teal-700 active:scale-[0.99]"
+                  className="mt-2.5 flex h-10 w-full items-center justify-center rounded-lg bg-teal-600 text-sm font-black text-white shadow-md shadow-teal-200 transition hover:bg-teal-700 active:scale-[0.99]"
                 >
                   {t("screens.pos.changeTotal")}
                 </button>
@@ -617,51 +601,26 @@ export default function POSSystem() {
             )}
 
             <div
-              className="rounded-2xl bg-teal-500 p-5 text-white shadow-xl shadow-teal-200"
+              className="cursor-pointer rounded-xl bg-teal-500 p-4 text-white shadow-lg shadow-teal-200"
               onClick={openCheckout}
             >
-              <div className="flex items-center justify-between gap-4">
-                <span className="text-xs font-black uppercase tracking-wide">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] font-black uppercase tracking-wide">
                   {t("screens.pos.totalAmount")}
                 </span>
-                <span className="text-xs font-black uppercase tracking-wide">
+                <span className="text-[10px] font-black uppercase tracking-wide">
                   {t("screens.pos.itemCount", { count: cart.length })}
                 </span>
               </div>
               {Number(discount) > 0 && (
-                <p className="mt-1 text-xs font-bold line-through opacity-75">
+                <p className="mt-0.5 text-xs font-bold line-through opacity-75">
                   {money(subtotal)}
                 </p>
               )}
-              <h2
-                // onClick={openTotalModal}
-                className="mt-1 truncate text-4xl font-black tracking-tight"
-              >
+              <h2 className="mt-0.5 truncate text-3xl font-black tracking-tight">
                 {money(netTotal)}
               </h2>
             </div>
-            {/* 
-            <button
-              type="button"
-              onClick={openCheckout}
-              disabled={!cart.length || checkingOut}
-              className="mt-2 flex h-14 w-full items-center justify-center rounded-2xl bg-teal-600 text-lg font-black text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {checkingOut
-                ? t("screens.pos.processing")
-                : t("screens.pos.checkout")}
-            </button>
-
-            <button
-              type="button"
-              onClick={openMultiCheckout}
-              disabled={!cart.length || checkingOut}
-              className="flex h-14 w-full items-center justify-center rounded-2xl bg-stone-800 text-lg font-black text-white transition hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {checkingOut
-                ? t("screens.pos.processing")
-                : t("screens.pos.multipleFundCheckout")}
-            </button> */}
           </div>
         </aside>
       </div>
