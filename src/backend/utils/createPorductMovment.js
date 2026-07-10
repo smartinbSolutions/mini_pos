@@ -8,6 +8,7 @@ export default function createProductMovement(db, data) {
       action,
       enterPrice,
       outPrice,
+      date,
       quantity
     )
     VALUES (
@@ -18,6 +19,7 @@ export default function createProductMovement(db, data) {
       @action,
       @enterPrice,
       @outPrice,
+      @date,
       @quantity
     )
   `);
@@ -28,6 +30,7 @@ export default function createProductMovement(db, data) {
     reference_type: data.reference_type ?? null,
     type: data.type,
     action: data.action,
+    date: data.date,
     enterPrice: Number(data.enterPrice || 0),
     outPrice: Number(data.outPrice || 0),
     quantity: Number(data.quantity || 0),

@@ -166,6 +166,7 @@ export default function registerSalesInvoiceIPC() {
             action: "create",
             quantity,
             outPrice: price,
+            date: fullDateTime,
           });
         }
 
@@ -391,7 +392,9 @@ export default function registerSalesInvoiceIPC() {
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
-
+    const dateOnly = data.date.slice(0, 10);
+    const time = new Date().toTimeString().slice(0, 8);
+    const fullDateTime = `${dateOnly} ${time}`;
     try {
       const transaction = db.transaction(() => {
         const oldInvoice = db
@@ -400,17 +403,6 @@ export default function registerSalesInvoiceIPC() {
 
         if (!oldInvoice) {
           throw new Error("SALES INVOICE NOT FOUND");
-        }
-
-        // Block editing once a payment already exists against this invoice
-        const existingPayment = db
-          .prepare(
-            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'sales'`,
-          )
-          .get(data.id);
-
-        if (existingPayment) {
-          throw new Error("CANNOT EDIT A PAID SALES INVOICE");
         }
 
         const oldCustomerId = oldInvoice.customer_id || null;
@@ -481,12 +473,9 @@ export default function registerSalesInvoiceIPC() {
             type: "out",
             quantity,
             outPrice: price,
+            date: fullDateTime,
           });
         }
-
-        const dateOnly = data.date.slice(0, 10);
-        const time = new Date().toTimeString().slice(0, 8);
-        const fullDateTime = `${dateOnly} ${time}`;
 
         // Sales invoice can only reach this handler while unpaid (guard above),
         // so paid_amount/remaining_amount/status stay at their unpaid defaults.
@@ -499,7 +488,7 @@ export default function registerSalesInvoiceIPC() {
               date = ?,
               subtotal = ?,
               discount = ?,
-              tax,,
+              tax = ?,
               net_total = ?,
               taxValue = ?
           WHERE id = ?
@@ -580,7 +569,20 @@ export default function registerSalesInvoiceIPC() {
 
         for (const item of items) {
           reverseStock.run(item.quantity || 0, item.product_id);
+          const now = new Date();
 
+          const date =
+            now.getFullYear() +
+            "-" +
+            String(now.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(now.getDate()).padStart(2, "0") +
+            " " +
+            String(now.getHours()).padStart(2, "0") +
+            ":" +
+            String(now.getMinutes()).padStart(2, "0") +
+            ":" +
+            String(now.getSeconds()).padStart(2, "0");
           createProductMovement(db, {
             product_id: item.product_id,
             reference_id: id,
@@ -589,6 +591,7 @@ export default function registerSalesInvoiceIPC() {
             type: "in",
             quantity: item.quantity,
             enterPrice: item.price,
+            date,
           });
         }
 
@@ -706,6 +709,7 @@ export default function registerSalesInvoiceIPC() {
           action: "create",
           quantity,
           outPrice: price,
+          date: data.date || new Date().toISOString(),
         });
       }
 

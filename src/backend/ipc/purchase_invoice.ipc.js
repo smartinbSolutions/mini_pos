@@ -68,7 +68,7 @@ export default function registerPurchaseInvoicesIPC() {
               taxValue    
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            `
+            `,
           )
           .run(
             data.supplier_id,
@@ -77,7 +77,7 @@ export default function registerPurchaseInvoicesIPC() {
             discount,
             tax,
             netTotal,
-            data.taxValue
+            data.taxValue,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -115,6 +115,7 @@ export default function registerPurchaseInvoicesIPC() {
             action: "create",
             quantity: quantity,
             enterPrice: price,
+            date: fullDateTime,
           });
         }
 
@@ -225,7 +226,7 @@ export default function registerPurchaseInvoicesIPC() {
       ORDER BY p.id DESC
 
       LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(limit, offset);
 
@@ -271,7 +272,7 @@ export default function registerPurchaseInvoicesIPC() {
         GROUP BY invoice_id
       ) pa_sum ON pa_sum.invoice_id = pi.id
       WHERE pi.id = ?
-    `
+    `,
       )
       .get(id);
 
@@ -286,7 +287,7 @@ export default function registerPurchaseInvoicesIPC() {
       FROM purchase_invoice_items pii
       LEFT JOIN products p ON p.id = pii.product_id
       WHERE pii.invoice_id = ?
-    `
+    `,
       )
       .all(id);
 
@@ -309,7 +310,7 @@ export default function registerPurchaseInvoicesIPC() {
       WHERE pa.invoice_id = ?
         AND pa.invoice_type = 'purchase'
       ORDER BY pa.id ASC
-    `
+    `,
       )
       .all(id);
 
@@ -336,19 +337,6 @@ export default function registerPurchaseInvoicesIPC() {
 
     if (!oldInvoice) {
       return { success: false, error: "Invoice not found" };
-    }
-
-    const existingPayment = db
-      .prepare(
-        `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'purchase'`
-      )
-      .get(data.id);
-
-    if (existingPayment) {
-      return {
-        success: false,
-        error: "Paid invoices cannot be edited",
-      };
     }
 
     const transaction = db.transaction(() => {
@@ -383,11 +371,11 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       const adjustStock = db.prepare(
-        `UPDATE products SET quantity = quantity + ? WHERE id = ?`
+        `UPDATE products SET quantity = quantity + ? WHERE id = ?`,
       );
       const updateMovement = db.prepare(`
         UPDATE product_movements
-        SET quantity = ?, enterPrice = ?, action = 'update'
+        SET quantity = ?, enterPrice = ?, action = 'update', date = ?
         WHERE reference_type = 'purchase_invoice' AND reference_id = ? AND product_id = ?
       `);
       const deleteMovement = db.prepare(`
@@ -402,7 +390,10 @@ export default function registerPurchaseInvoicesIPC() {
           deleteMovement.run(data.id, productId);
         }
       }
-
+      console.log(data);
+      const dateOnly = data.date.slice(0, 10);
+      const time = new Date().toTimeString().slice(0, 8);
+      const fullDateTime = `${dateOnly} ${time}`;
       // ---- Present in new set: adjust stock by delta, update movement in place ----
       for (const [productId, next] of newByProduct) {
         const old = oldByProduct.get(productId);
@@ -414,7 +405,13 @@ export default function registerPurchaseInvoicesIPC() {
         }
 
         if (old) {
-          updateMovement.run(next.quantity, next.price, data.id, productId);
+          updateMovement.run(
+            next.quantity,
+            next.price,
+            fullDateTime,
+            data.id,
+            productId,
+          );
         } else {
           createProductMovement(db, {
             product_id: productId,
@@ -424,13 +421,14 @@ export default function registerPurchaseInvoicesIPC() {
             type: "in",
             quantity: next.quantity,
             enterPrice: next.price,
+            date: fullDateTime,
           });
         }
       }
 
       // ---- Replace line items ----
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        data.id
+        data.id,
       );
 
       const insertItem = db.prepare(`
@@ -447,21 +445,18 @@ export default function registerPurchaseInvoicesIPC() {
           item.product_id,
           quantity,
           price,
-          quantity * price
+          quantity * price,
         );
       }
 
       // ---- Update the invoice row ----
-      const dateOnly = data.date.slice(0, 10);
-      const time = new Date().toTimeString().slice(0, 8);
-      const fullDateTime = `${dateOnly} ${time}`;
 
       db.prepare(
         `
         UPDATE purchase_invoices
         SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?
         WHERE id = ?
-      `
+      `,
       ).run(
         data.supplier_id,
         fullDateTime,
@@ -470,19 +465,8 @@ export default function registerPurchaseInvoicesIPC() {
         data.tax || 0,
         data.net_total || 0,
         data.taxValue || 0,
-        data.id
+        data.id,
       );
-
-      const netDelta =
-        Number(data.net_total || 0) - Number(oldInvoice.net_total || 0);
-
-      db.prepare(
-        `
-        UPDATE suppliers
-        SET total = total + ?
-        WHERE id = ?
-      `
-      ).run(netDelta, data.supplier_id);
 
       // ---- Update the invoice ledger row in place ----
       db.prepare(
@@ -490,7 +474,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE party_history
         SET amount = ?, note = ?
         WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
-      `
+      `,
       ).run(data.net_total, `Purchase Invoice #${data.id}`, data.id);
     });
 
@@ -509,7 +493,20 @@ export default function registerPurchaseInvoicesIPC() {
       const items = db
         .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
         .all(id);
+      const now = new Date();
 
+      const date =
+        now.getFullYear() +
+        "-" +
+        String(now.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(now.getDate()).padStart(2, "0") +
+        " " +
+        String(now.getHours()).padStart(2, "0") +
+        ":" +
+        String(now.getMinutes()).padStart(2, "0") +
+        ":" +
+        String(now.getSeconds()).padStart(2, "0");
       const invoice = db
         .prepare(`SELECT * FROM purchase_invoices WHERE id = ?`)
         .get(id);
@@ -518,13 +515,7 @@ export default function registerPurchaseInvoicesIPC() {
       SET quantity = quantity - ?
       WHERE id = ?
     `);
-      db.prepare(
-        `
-      UPDATE suppliers
-      SET total = total - ?
-      WHERE id = ?
-    `
-      ).run(Number(invoice.net_total || 0), invoice.supplier_id);
+
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
 
@@ -536,11 +527,12 @@ export default function registerPurchaseInvoicesIPC() {
           type: "out",
           quantity: item.quantity,
           enterPrice: item.price,
+          date: date,
         });
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        id
+        id,
       );
       db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);

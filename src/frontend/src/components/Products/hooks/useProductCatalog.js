@@ -15,7 +15,20 @@ const normalizeBarcodes = (barcodes = []) => {
       return true;
     });
 };
+const now = new Date();
 
+const date =
+  now.getFullYear() +
+  "-" +
+  String(now.getMonth() + 1).padStart(2, "0") +
+  "-" +
+  String(now.getDate()).padStart(2, "0") +
+  " " +
+  String(now.getHours()).padStart(2, "0") +
+  ":" +
+  String(now.getMinutes()).padStart(2, "0") +
+  ":" +
+  String(now.getSeconds()).padStart(2, "0");
 const productPayload = (product) => ({
   id: product.id,
   name: String(product.name || "").trim(),
@@ -26,6 +39,7 @@ const productPayload = (product) => ({
   unit_id: product.unit_id ? Number(product.unit_id) : null,
   logo: product.logo || "",
   oldQuantity: product.oldQuantity || 0,
+  date,
 });
 
 export default function useProductCatalog() {

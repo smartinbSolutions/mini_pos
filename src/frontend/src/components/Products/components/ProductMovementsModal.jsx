@@ -84,7 +84,7 @@ export default function ProductMovementsModal({
                               `screens.products.refType.${movement.reference_type}`,
                               {
                                 defaultValue: movement.reference_type,
-                              }
+                              },
                             )}
                           </span>
                         </div>
