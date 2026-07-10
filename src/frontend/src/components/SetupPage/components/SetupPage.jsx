@@ -1,16 +1,17 @@
+import { useState } from "react";
 import {
   AlertCircle,
   ArrowRight,
   Banknote,
   BriefcaseBusiness,
   Check,
-  ChevronDown,
   Phone,
   Mail,
   MapPin,
   Save,
   Camera,
-  ShieldCheck,
+  KeyRound,
+  User,
 } from "lucide-react";
 import useSetupPage from "../hooks/useSetupPage";
 import appLogo from "../../../assets/logo.png";
@@ -33,21 +34,27 @@ export default function CompanySettings({ onSetupComplete }) {
   } = useSetupPage({ onSetupComplete });
 
   const inputClass =
-    "h-12 w-full rounded-xl border border-[#dbe4ff] bg-white/90 px-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+    "h-10 w-full rounded-lg border border-[#dbe4ff] bg-white/90 px-3.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
   const errorInputClass =
     "border-red-300 bg-red-50/60 focus:border-red-400 focus:ring-red-100";
   const labelClass =
-    "mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700";
+    "mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-600";
   const requiredMark = <span className="text-red-500">*</span>;
   const fieldClass = (name) =>
     `${inputClass} ${errors[name] ? errorInputClass : ""}`;
   const errorText = (name) =>
     errors[name] ? (
-      <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600">
-        <AlertCircle size={13} />
+      <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+        <AlertCircle size={12} />
         {errors[name]}
       </p>
     ) : null;
+
+  const StepBadge = ({ n }) => (
+    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#4663ff] text-xs font-black text-white">
+      {n}
+    </span>
+  );
 
   if (loading) {
     return (
@@ -65,54 +72,47 @@ export default function CompanySettings({ onSetupComplete }) {
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] px-5 py-6 text-slate-900 sm:px-8">
-      <div className="relative mx-auto flex min-h-[calc(100vh-48px)] max-w-6xl items-center">
-        <div className="grid w-full overflow-hidden rounded-[28px] border border-white/80 bg-white/75 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur xl:grid-cols-[390px_1fr]">
-          <aside className="relative flex flex-col justify-between bg-[#f8faff] p-8 xl:min-h-[720px]">
+    <main className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] px-4 py-5 text-slate-900 sm:px-6">
+      <div className="relative mx-auto flex min-h-[calc(100vh-40px)] max-w-5xl items-center">
+        <div className="grid w-full overflow-hidden rounded-2xl border border-white/80 bg-white/75 shadow-[0_20px_60px_rgba(70,99,255,0.12)] backdrop-blur lg:grid-cols-[260px_1fr]">
+          {/* Sidebar */}
+          <aside className="flex flex-col justify-between bg-[#f8faff] p-6">
             <div>
-              <div className="mb-10 flex items-center gap-3">
+              <div className="mb-6 flex items-center gap-2.5">
                 <img
                   src={appLogo}
                   alt={t("screens.setupPage.title")}
-                  className="h-14 w-14 rounded-[18px] shadow-sm"
+                  className="h-10 w-10 rounded-xl shadow-sm"
                 />
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#4663ff]">
                     {t("app.name")}
                   </p>
-                  <h1 className="text-2xl font-black text-slate-950">
+                  <h1 className="text-lg font-black leading-tight text-slate-950">
                     {t("screens.setupPage.title")}
                   </h1>
                 </div>
               </div>
 
-              <div className="mb-8">
-                <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#dbe4ff] bg-white px-3 py-1 text-xs font-semibold text-[#4663ff]">
-                  <ShieldCheck size={14} />
-                  {t("screens.setupPage.firstTime")}
-                </p>
-                <h2 className="max-w-xs text-4xl font-black leading-tight text-slate-950">
-                  {t("screens.setupPage.headline")}
-                </h2>
-                <p className="mt-4 max-w-sm text-sm leading-6 text-slate-500">
-                  {t("screens.setupPage.description")}
-                </p>
-              </div>
+              <p className="mb-5 text-xs leading-5 text-slate-500">
+                {t("screens.setupPage.description")}
+              </p>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {[
                   t("screens.setupPage.profile"),
                   t("screens.setupPage.contact"),
+                  t("screens.setupPage.adminAccount"),
                   t("screens.setupPage.baseCurrency"),
-                ].map((item) => (
+                ].map((item, i) => (
                   <div
                     key={item}
-                    className="flex items-center gap-3 rounded-2xl border border-[#e5ebff] bg-white/80 p-3"
+                    className="flex items-center gap-2 rounded-lg border border-[#e5ebff] bg-white/80 px-2.5 py-2"
                   >
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4663ff]/10 text-[#4663ff]">
-                      <Check size={15} />
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#4663ff]/10 text-[10px] font-black text-[#4663ff]">
+                      {i + 1}
                     </span>
-                    <span className="text-sm font-semibold text-slate-700">
+                    <span className="text-xs font-semibold text-slate-700">
                       {item}
                     </span>
                   </div>
@@ -120,39 +120,29 @@ export default function CompanySettings({ onSetupComplete }) {
               </div>
             </div>
 
-            <div>
-              <div
-                onClick={() => fileInputRef.current.click()}
-                className="group cursor-pointer rounded-3xl border border-[#dbe4ff] bg-white p-4 transition hover:border-[#4663ff]/50 hover:shadow-lg hover:shadow-[#4663ff]/10"
-              >
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-slate-900">
-                      {t("screens.setupPage.logo")}
-                    </h3>
-                    <p className="text-xs text-slate-500">
-                      {t("screens.setupPage.logoHint")}
-                    </p>
-                  </div>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#eef3ff] text-[#4663ff]">
-                    <Camera size={18} />
-                  </span>
-                </div>
-                <div
-                  className={`flex h-32 items-center justify-center rounded-2xl border border-dashed bg-[#f8faff] p-4 `}
-                >
-                  {form.logo ? (
-                    <img
-                      src={getAssetUrl(form.logo)}
-                      alt={t("screens.setupPage.logo")}
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  ) : (
-                    <Camera size={28} className="text-[#4663ff]/50" />
-                  )}
-                </div>
+            <div
+              onClick={() => fileInputRef.current.click()}
+              className="group mt-5 cursor-pointer rounded-2xl border border-[#dbe4ff] bg-white p-3 transition hover:border-[#4663ff]/50 hover:shadow-md hover:shadow-[#4663ff]/10"
+            >
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-900">
+                  {t("screens.setupPage.logo")}
+                </h3>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#eef3ff] text-[#4663ff]">
+                  <Camera size={14} />
+                </span>
               </div>
-
+              <div className="flex h-20 items-center justify-center rounded-xl border border-dashed bg-[#f8faff]">
+                {form.logo ? (
+                  <img
+                    src={getAssetUrl(form.logo)}
+                    alt={t("screens.setupPage.logo")}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                ) : (
+                  <Camera size={22} className="text-[#4663ff]/50" />
+                )}
+              </div>
               <input
                 type="file"
                 hidden
@@ -163,194 +153,232 @@ export default function CompanySettings({ onSetupComplete }) {
             </div>
           </aside>
 
-          <section className="p-6 sm:p-8 xl:p-10">
-            <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-              <div>
-                <p className="mb-2 text-sm font-bold text-[#4663ff]">
-                  {t("screens.setupPage.details")}
-                </p>
-                <h2 className="text-3xl font-black text-slate-950">
-                  {t("screens.setupPage.tellUs")}
-                </h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  {t("screens.setupPage.fieldsHint")}
-                </p>
-              </div>
-
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <Save size={18} />
-                {saving ? t("common.saving") : t("screens.setupPage.saveSetup")}
-                <ArrowRight size={17} />
-              </button>
-            </div>
-
-            <div className="space-y-8">
-              <div className="rounded-3xl border border-[#e5ebff] bg-white p-5 shadow-sm sm:p-6">
-                <div className="mb-5 flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4663ff]">
-                    <BriefcaseBusiness size={20} />
-                  </span>
-                  <div>
-                    <h3 className="font-black text-slate-950">
+          {/* Form */}
+          <section className="flex max-h-[calc(100vh-40px)] flex-col">
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+              <div className="space-y-4">
+                {/* Company profile */}
+                <div className="rounded-2xl border border-[#e5ebff] bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <StepBadge n={1} />
+                    <h3 className="text-sm font-black text-slate-950">
                       {t("screens.setupPage.companyProfile")}
                     </h3>
-                    <p className="text-sm text-slate-500">
-                      {t("screens.setupPage.businessIdentity")}
-                    </p>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label>
+                      <span className={labelClass}>
+                        {t("screens.company.companyName")} {requiredMark}
+                      </span>
+                      <input
+                        name="company_name"
+                        value={form.company_name}
+                        onChange={handleChange}
+                        placeholder={t("screens.company.companyName")}
+                        className={fieldClass("company_name")}
+                        required
+                      />
+                      {errorText("company_name")}
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>{t("ui.latinName")}</span>
+                      <input
+                        name="company_latin_name"
+                        value={form.company_latin_name}
+                        onChange={handleChange}
+                        placeholder={t("ui.latinName")}
+                        className={inputClass}
+                      />
+                    </label>
                   </div>
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label>
-                    <span className={labelClass}>
-                      {t("screens.company.companyName")} {requiredMark}
-                    </span>
-                    <input
-                      name="company_name"
-                      value={form.company_name}
-                      onChange={handleChange}
-                      placeholder={t("screens.company.companyName")}
-                      className={fieldClass("company_name")}
-                      required
-                    />
-                    {errorText("company_name")}
-                  </label>
-
-                  <label>
-                    <span className={labelClass}>{t("ui.latinName")}</span>
-                    <input
-                      name="company_latin_name"
-                      value={form.company_latin_name}
-                      onChange={handleChange}
-                      placeholder={t("ui.latinName")}
-                      className={inputClass}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-[#e5ebff] bg-white p-5 shadow-sm sm:p-6">
-                <div className="mb-5 flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4663ff]">
-                    <Mail size={20} />
-                  </span>
-                  <div>
-                    <h3 className="font-black text-slate-950">
+                {/* Contact */}
+                <div className="rounded-2xl border border-[#e5ebff] bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <StepBadge n={2} />
+                    <h3 className="text-sm font-black text-slate-950">
                       {t("screens.setupPage.contactDetails")}
                     </h3>
-                    <p className="text-sm text-slate-500">
-                      {t("screens.setupPage.publicInfo")}
-                    </p>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label>
+                      <span className={labelClass}>
+                        <Phone size={12} />
+                        {t("ui.phone")} {requiredMark}
+                      </span>
+                      <input
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        placeholder={t("ui.phone")}
+                        className={fieldClass("phone")}
+                        required
+                      />
+                      {errorText("phone")}
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>
+                        <Mail size={12} />
+                        {t("ui.email")}
+                      </span>
+                      <input
+                        name="email"
+                        type="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder={t("ui.email")}
+                        className={fieldClass("email")}
+                      />
+                    </label>
+
+                    <label className="md:col-span-2">
+                      <span className={labelClass}>
+                        <MapPin size={12} />
+                        {t("ui.address")}
+                      </span>
+                      <textarea
+                        name="address"
+                        value={form.address}
+                        onChange={handleChange}
+                        placeholder={t("ui.address")}
+                        className={`${fieldClass("address")} h-16 resize-none py-2`}
+                      />
+                    </label>
                   </div>
                 </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label>
-                    <span className={labelClass}>
-                      <Phone size={15} />
-                      {t("ui.phone")} {requiredMark}
-                    </span>
-                    <input
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder={t("ui.phone")}
-                      className={fieldClass("phone")}
-                      required
-                    />
-                    {errorText("phone")}
-                  </label>
-
-                  <label>
-                    <span className={labelClass}>
-                      <Mail size={15} />
-                      {t("ui.email")}
-                    </span>
-                    <input
-                      name="email"
-                      type="email"
-                      value={form.email}
-                      onChange={handleChange}
-                      placeholder={t("ui.email")}
-                      className={fieldClass("email")}
-                      required
-                    />
-                  </label>
-
-                  <label className="md:col-span-2">
-                    <span className={labelClass}>
-                      <MapPin size={15} />
-                      {t("ui.address")}
-                    </span>
-                    <textarea
-                      name="address"
-                      value={form.address}
-                      onChange={handleChange}
-                      placeholder={t("ui.address")}
-                      className={`${fieldClass("address")} min-h-24 resize-none py-3`}
-                      required
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-[#e5ebff] bg-white p-5 shadow-sm sm:p-6">
-                <div className="mb-5 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4663ff]">
-                      <Banknote size={20} />
-                    </span>
+                {/* Admin account */}
+                <div className="rounded-2xl border border-[#e5ebff] bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <StepBadge n={3} />
                     <div>
-                      <h3 className="font-black text-slate-950">
-                        {t("screens.setupPage.baseCurrency")} {requiredMark}
+                      <h3 className="text-sm font-black text-slate-950">
+                        {t("screens.setupPage.adminAccount")}
                       </h3>
-                      <p className="text-sm text-slate-500">
-                        {t("screens.setupPage.chooseCurrency")}
+                      <p className="text-[11px] text-slate-500">
+                        {t("screens.setupPage.adminAccountHint")}
                       </p>
                     </div>
                   </div>
-                  <ChevronDown size={18} className="text-slate-400" />
+
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <label>
+                      <span className={labelClass}>
+                        <User size={12} />
+                        {t("screens.setupPage.adminUsername")} {requiredMark}
+                      </span>
+                      <input
+                        name="admin_username"
+                        value={form.admin_username}
+                        onChange={handleChange}
+                        placeholder={t("screens.setupPage.adminUsername")}
+                        className={fieldClass("admin_username")}
+                        required
+                      />
+                      {errorText("admin_username")}
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>
+                        <KeyRound size={12} />
+                        {t("screens.setupPage.adminPin")} {requiredMark}
+                      </span>
+                      <input
+                        name="admin_pin"
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={form.admin_pin}
+                        onChange={handleChange}
+                        placeholder="••••••"
+                        className={fieldClass("admin_pin")}
+                        required
+                      />
+                      {errorText("admin_pin")}
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>
+                        <KeyRound size={12} />
+                        {t("screens.setupPage.adminPinConfirm")} {requiredMark}
+                      </span>
+                      <input
+                        name="admin_pin_confirm"
+                        type="password"
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={form.admin_pin_confirm}
+                        onChange={handleChange}
+                        placeholder="••••••"
+                        className={fieldClass("admin_pin_confirm")}
+                        required
+                      />
+                      {errorText("admin_pin_confirm")}
+                    </label>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-                  {currencies.map((c) => {
-                    const active = form.base_currency_id === c.id;
+                {/* Currency */}
+                <div className="rounded-2xl border border-[#e5ebff] bg-white p-4">
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <StepBadge n={4} />
+                    <h3 className="text-sm font-black text-slate-950">
+                      {t("screens.setupPage.baseCurrency")} {requiredMark}
+                    </h3>
+                  </div>
 
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => handleCurrencySelect(c)}
-                        className={`relative rounded-2xl border p-4 text-left transition ${
-                          active
-                            ? "border-[#4663ff] bg-[#4663ff] text-white shadow-lg shadow-[#4663ff]/20"
-                            : "border-[#e5ebff] bg-[#f8faff] text-slate-700 hover:border-[#b9c6ff]"
-                        }`}
-                      >
-                        {active && (
-                          <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
-                            <Check size={13} />
-                          </span>
-                        )}
-                        <div className="text-2xl font-black">{c.symbol}</div>
-                        <div className="mt-2 text-sm font-bold">{c.code}</div>
-                        <div
-                          className={`mt-1 truncate text-xs ${
-                            active ? "text-white/75" : "text-slate-400"
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {currencies.map((c) => {
+                      const active = form.base_currency_id === c.id;
+
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => handleCurrencySelect(c)}
+                          className={`relative rounded-xl border p-2.5 text-left transition ${
+                            active
+                              ? "border-[#4663ff] bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/20"
+                              : "border-[#e5ebff] bg-[#f8faff] text-slate-700 hover:border-[#b9c6ff]"
                           }`}
                         >
-                          {c.name}
-                        </div>
-                      </button>
-                    );
-                  })}
+                          {active && (
+                            <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-white/20">
+                              <Check size={10} />
+                            </span>
+                          )}
+                          <div className="text-lg font-black">{c.symbol}</div>
+                          <div className="mt-0.5 text-xs font-bold">
+                            {c.code}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {errorText("base_currency_id")}
                 </div>
-                {errorText("base_currency_id")}
               </div>
+            </div>
+
+            {/* Sticky save bar */}
+            <div className="flex items-center justify-between border-t border-[#e5ebff] bg-white/90 px-5 py-3 backdrop-blur sm:px-6">
+              <p className="text-xs text-slate-500">
+                {t("screens.setupPage.fieldsHint")}
+              </p>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                <Save size={16} />
+                {saving ? t("common.saving") : t("screens.setupPage.saveSetup")}
+                <ArrowRight size={15} />
+              </button>
             </div>
           </section>
         </div>

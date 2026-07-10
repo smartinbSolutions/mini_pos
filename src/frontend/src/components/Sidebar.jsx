@@ -89,6 +89,7 @@ export default function Sidebar() {
         { title: "navigation.units", path: "/unit" },
         { title: "navigation.currency", path: "/currency" },
         { title: "navigation.taxes", path: "/tax" },
+        { title: "navigation.users", path: "/users" },
         { title: "navigation.companySettings", path: "/company-settings" },
       ],
     },

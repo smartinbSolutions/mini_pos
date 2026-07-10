@@ -31,6 +31,20 @@ const validateSetupForm = (form, t) => {
     });
   }
 
+  if (!form.admin_username?.trim()) {
+    nextErrors.admin_username = t("errors.valueRequired", {
+      field: t("screens.setupPage.adminUsername"),
+    });
+  }
+
+  if (!/^\d{6}$/.test(form.admin_pin || "")) {
+    nextErrors.admin_pin = t("errors.pinInvalid");
+  }
+
+  if (form.admin_pin !== form.admin_pin_confirm) {
+    nextErrors.admin_pin_confirm = t("errors.pinMismatch");
+  }
+
   return nextErrors;
 };
 
@@ -55,6 +69,9 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
     logo: "",
     code: defaultCurrency.code,
     symbol: defaultCurrency.symbol,
+    admin_username: "",
+    admin_pin: "",
+    admin_pin_confirm: "",
   });
 
   useEffect(() => {
@@ -63,7 +80,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
         const res = await window.api.getCompanySetting();
 
         if (res?.exists) {
-          setForm(res.settings);
+          setForm((prev) => ({ ...prev, ...res.settings }));
         }
       } catch (err) {
         console.error(err);
@@ -147,11 +164,15 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
         currency_name: form.currency_name,
         code: form.code,
         symbol: form.symbol,
+        admin_username: form.admin_username,
+        admin_pin: form.admin_pin,
       });
 
       if (res?.success) {
         onSetupComplete?.();
         navigate("/", { replace: true });
+      } else if (res?.error) {
+        setErrors((current) => ({ ...current, admin_pin: res.error }));
       }
     } catch (err) {
       console.error(err);

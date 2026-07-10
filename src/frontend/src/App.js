@@ -36,6 +36,7 @@ import PartnersList from "./components/Partners/components/PartnersList";
 import PaymentList from "./components/Cash/Payment/components/paymentList";
 import FundTransferList from "./components/Cash/Fund/components/FundTransferList";
 import ImportSummary from "./components/Products/components/ImportSummary";
+import UsersList from "./components/users/components/UsersList";
 
 export default function App() {
   const { t } = useTranslation();
@@ -125,6 +126,7 @@ export default function App() {
                 element={<ExpenseCategoryList />}
               />
               <Route path="unit" element={<UnitList />} />
+              <Route path="users" element={<UsersList />} />
               <Route path="/partners" element={<PartnersList />} />
               <Route path="currency" element={<CurrencyList />} />
               <Route path="funds" element={<FundList />} />
