@@ -1,6 +1,7 @@
 import {
   Barcode,
   Edit2,
+  FileSpreadsheet,
   History,
   Package,
   PackagePlus,
@@ -8,6 +9,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { useState } from "react";
 import ProductFormModal from "./ProductFormModal";
 import ProductMovementsModal from "./ProductMovementsModal";
 import useProductCatalog from "../hooks/useProductCatalog";
@@ -17,12 +19,15 @@ import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { formatNumber } from "../../../Global/FormatNumber";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
+import ProductImportModal from "./ProductImportModal";
 
 export default function ProductList() {
   const { t } = useTranslation();
   const catalog = useProductCatalog();
   const movementsHook = useProductMovements();
   const { money } = usePrimaryCurrency();
+
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const {
     products,
     barcodesByProduct,
@@ -70,12 +75,12 @@ export default function ProductList() {
 
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0,
+    0
   );
   const totalValue = products.reduce(
     (total, product) =>
       total + Number(product.quantity || 0) * Number(product.price || 0),
-    0,
+    0
   );
 
   return (
@@ -148,6 +153,14 @@ export default function ProductList() {
               >
                 <RefreshCw size={16} />
                 {t("common.refresh")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportModalOpen(true)}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+              >
+                <FileSpreadsheet size={16} />
+                {t("screens.products.import", "Import")}
               </button>
               <button
                 type="button"
@@ -315,6 +328,11 @@ export default function ProductList() {
         loading={movementsLoading}
         error={movementsError}
         onClose={closeMovements}
+      />
+      <ProductImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        onImported={refetch}
       />
 
       <DeleteModal

@@ -74,6 +74,13 @@ contextBridge.exposeInMainWorld("api", {
   deleteProduct: (id) => ipcRenderer.invoke("delete-product", id),
   getProductByBarcode: (barcode) =>
     ipcRenderer.invoke("get-product-by-barcode", barcode),
+  downloadProductImportTemplate: () =>
+    ipcRenderer.invoke("download-product-import-template"),
+  importProducts: () => ipcRenderer.invoke("import-products"),
+  getProductImports: () => ipcRenderer.invoke("get-product-imports"),
+  getProductImportItems: (importId) =>
+    ipcRenderer.invoke("get-product-import-items", importId),
+
   /* ================= PURCHASE INVOICE ITEM ================= */
   getPurchaseInvoiceItems: () =>
     ipcRenderer.invoke("get-purchase-invoice-items"),

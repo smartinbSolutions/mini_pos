@@ -1,6 +1,12 @@
-import { ipcMain } from "electron";
+import { ipcMain, dialog } from "electron";
+import fs from "fs";
 import db from "../db";
 import createProductMovement from "../utils/createPorductMovment";
+import {
+  generateImportSummaryReport,
+  generateProductImportTemplate,
+  parseProductImport,
+} from "../utils/productImport";
 
 export default function registerProductIPC() {
   ipcMain.handle("get-products", () => {
@@ -17,6 +23,7 @@ export default function registerProductIPC() {
       )
       .all();
   });
+
   ipcMain.handle("get-product", (event, id) => {
     return db
       .prepare(
@@ -98,25 +105,12 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("delete-product", (event, id) => {
-    db.prepare(
-      `
-      DELETE FROM product_barcodes WHERE product_id = ?
-    `
-    ).run(id);
-
-    db.prepare(
-      `
-      DELETE FROM product_movements WHERE product_id = ?
-    `
-    ).run(id);
+    db.prepare(`DELETE FROM product_barcodes WHERE product_id = ?`).run(id);
+    db.prepare(`DELETE FROM product_movements WHERE product_id = ?`).run(id);
 
     const used = db
       .prepare(
-        `
-      SELECT COUNT(*) as count
-      FROM purchase_invoice_items
-      WHERE product_id = ?
-    `
+        `SELECT COUNT(*) as count FROM purchase_invoice_items WHERE product_id = ?`
       )
       .get(id);
 
@@ -124,11 +118,7 @@ export default function registerProductIPC() {
       throw new Error("Product is used in invoices");
     }
 
-    db.prepare(
-      `
-      DELETE FROM products WHERE id = ?
-    `
-    ).run(id);
+    db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
 
     return { success: true };
   });
@@ -181,5 +171,55 @@ export default function registerProductIPC() {
         `
       )
       .all();
+  });
+
+  ipcMain.handle("download-product-import-template", async () => {
+    const buffer = await generateProductImportTemplate(db);
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: "Save Product Import Template",
+      defaultPath: "product-import-template.xlsx",
+      filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
+    });
+    if (canceled || !filePath) return { success: false, canceled: true };
+    fs.writeFileSync(filePath, buffer);
+    return { success: true, filePath };
+  });
+  ipcMain.handle("import-products", async () => {
+    const { filePaths, canceled } = await dialog.showOpenDialog({
+      title: "Select Product Import File",
+      filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
+      properties: ["openFile"],
+    });
+    if (canceled || !filePaths[0]) return { success: false, canceled: true };
+
+    try {
+      const fileName = filePaths[0].split(/[\\/]/).pop();
+      const summary = await parseProductImport(db, filePaths[0], fileName);
+      const reportPath = await generateImportSummaryReport(
+        summary,
+        filePaths[0]
+      );
+
+      db.prepare(`UPDATE product_imports SET report_path = ? WHERE id = ?`).run(
+        reportPath,
+        summary.importId
+      );
+
+      return { success: true, ...summary, reportPath };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("get-product-imports", () => {
+    return db.prepare(`SELECT * FROM product_imports ORDER BY id DESC`).all();
+  });
+
+  ipcMain.handle("get-product-import-items", (event, importId) => {
+    return db
+      .prepare(
+        `SELECT * FROM product_import_items WHERE import_id = ? ORDER BY row_number ASC`
+      )
+      .all(importId);
   });
 }
