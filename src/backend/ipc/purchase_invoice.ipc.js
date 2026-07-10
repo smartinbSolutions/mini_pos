@@ -281,12 +281,35 @@ export default function registerPurchaseInvoicesIPC() {
     const items = db
       .prepare(
         `
-      SELECT 
-        pii.*,
-        p.name AS name
-      FROM purchase_invoice_items pii
-      LEFT JOIN products p ON p.id = pii.product_id
-      WHERE pii.invoice_id = ?
+    SELECT
+      pii.*,
+      p.name AS name,
+
+      COALESCE(r.returned_quantity, 0) AS returned_quantity,
+
+      (
+        pii.quantity - COALESCE(r.returned_quantity, 0)
+      ) AS available_quantity
+
+    FROM purchase_invoice_items pii
+
+    LEFT JOIN products p
+      ON p.id = pii.product_id
+
+    LEFT JOIN (
+      SELECT
+        pri.product_id,
+        pr.purchase_invoice_id,
+        SUM(pri.quantity) AS returned_quantity
+      FROM purchase_return_items pri
+      INNER JOIN purchase_returns pr
+        ON pr.id = pri.return_id
+      GROUP BY pr.purchase_invoice_id, pri.product_id
+    ) r
+      ON r.purchase_invoice_id = pii.invoice_id
+     AND r.product_id = pii.product_id
+
+    WHERE pii.invoice_id = ?
     `,
       )
       .all(id);

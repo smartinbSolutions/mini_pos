@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-import usePurchaseList from "../hooks/usePurchaseList";
 import {
   Edit2,
   Eye,
@@ -20,7 +19,7 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
-import PurchaseReturnModal from "../../PurchaseReturn/components/PurchaseReturnModal";
+import usePurchaseReturnList from "../hooks/usePurchaseReturnList";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -44,7 +43,7 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
       {status === "partial" && (
         <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
           <div className="flex justify-between">
-            <span>{t("ui.paid")}</span>
+            <span>{t("ui.refunded", "Refunded")}</span>
             <span className="font-bold text-emerald-600">
               {money(paidAmount)}
             </span>
@@ -60,15 +59,17 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
     </div>
   );
 };
-const PurchaseList = () => {
+
+const PurchaseReturnList = () => {
   const { t } = useTranslation();
+
   const {
-    purchaseInvoices,
+    purchaseReturns,
     loading,
     saving,
     error,
     refetch,
-    deletePurchase,
+    deletePurchaseReturn,
 
     page,
     setPage,
@@ -81,9 +82,8 @@ const PurchaseList = () => {
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
-  } = usePurchaseList();
+  } = usePurchaseReturnList();
 
-  const [openRefundModel, setOpenRefundModel] = useState(false);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
@@ -92,9 +92,9 @@ const PurchaseList = () => {
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
-    if (!term) return purchaseInvoices;
+    if (!term) return purchaseReturns;
 
-    return purchaseInvoices.filter((inv) => {
+    return purchaseReturns.filter((inv) => {
       return [
         inv.id,
         inv.supplier_name,
@@ -106,27 +106,27 @@ const PurchaseList = () => {
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term));
     });
-  }, [purchaseInvoices, search]);
+  }, [purchaseReturns, search]);
 
   const handleDelete = async (id) => {
     try {
       setActionError("");
-      await deletePurchase(id);
+      await deletePurchaseReturn(id);
     } catch (err) {
       console.log(err.message);
       setActionError(t("screens.invoices.deleteFailed"));
     }
   };
 
-  const totalNet = purchaseInvoices.reduce(
+  const totalNet = purchaseReturns?.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
     0,
   );
-  const totalTax = purchaseInvoices.reduce(
+  const totalTax = purchaseReturns?.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
     0,
   );
-  const unpaidCount = purchaseInvoices.filter(
+  const unpaidCount = purchaseReturns?.filter(
     (inv) => inv.status !== "paid",
   ).length;
 
@@ -134,20 +134,23 @@ const PurchaseList = () => {
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
         <InvoiceListHeader
-          badgeLabel={t("ui.purchase")}
-          badgeIcon={Receipt}
-          title={t("screens.invoices.purchaseInvoice")}
-          subtitle={t("screens.invoices.purchaseSubtitle")}
+          badgeLabel={t("ui.purchaseReturn", "Purchase Return")}
+          badgeIcon={Undo2}
+          title={t("screens.invoices.purchaseReturn", "Purchase Returns")}
+          subtitle={t(
+            "screens.invoices.purchaseReturnSubtitle",
+            "Manage your purchase returns and credit notes",
+          )}
           stats={[
             {
-              icon: Receipt,
-              value: purchaseInvoices.length,
-              label: t("ui.invoices"),
+              icon: Undo2,
+              value: purchaseReturns?.length,
+              label: t("ui.returns", "Returns"),
             },
             {
               icon: HandCoins,
               value: unpaidCount,
-              label: t("ui.open"),
+              label: t("ui.open", "Open"),
               variant: "amber",
             },
             {
@@ -157,6 +160,7 @@ const PurchaseList = () => {
               variant: "violet",
             },
             {
+              icon: Undo2,
               eyebrow: "NET",
               value: money(totalNet),
               label: t("ui.total"),
@@ -167,9 +171,9 @@ const PurchaseList = () => {
           onSearchChange={setSearch}
           searchPlaceholder={t("screens.invoices.search")}
           onRefresh={refetch}
-          addLabel={t("screens.invoices.addInvoice")}
+          addLabel={t("screens.invoices.addReturn", "New Return")}
           addIcon={PackagePlus}
-          onAdd={() => navigate("/add-purchase")}
+          onAdd={() => navigate("/add-purchase-return")}
         />
 
         {(error || actionError) && (
@@ -183,7 +187,10 @@ const PurchaseList = () => {
             <table className="w-full min-w-[1050px] text-left text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4">{t("ui.invoice")}</th>
+                  <th className="px-5 py-4">{t("ui.returnId", "Return #")}</th>
+                  <th className="px-5 py-4">
+                    {t("ui.originalInvoice", "Orig. Invoice")}
+                  </th>
                   <th className="px-5 py-4">{t("ui.supplier")}</th>
                   <th className="px-5 py-4">{t("ui.date")}</th>
                   <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
@@ -203,18 +210,26 @@ const PurchaseList = () => {
                       {t("common.loading")}
                     </td>
                   </tr>
-                ) : filtered.length === 0 ? (
+                ) : filtered?.length === 0 ? (
                   <tr>
                     <td colSpan="9" className="p-8 text-center text-slate-500">
                       {t("screens.invoices.empty")}
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((inv) => (
+                  filtered?.map((inv) => (
                     <tr key={inv.id} className="transition hover:bg-[#f8faff]">
                       <td className="px-5 py-4">
-                        <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs  text-[#4663ff]">
+                        <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4663ff]">
                           #{inv.id}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-slate-600 font-medium">
+                        {inv.original_invoice_name
+                          ? `${inv.original_invoice_name} `
+                          : ""}
+                        <span className="text-xs text-slate-400 font-normal">
+                          (#{inv.purchase_invoice_id})
                         </span>
                       </td>
                       <td className="px-5 py-4 font-bold text-slate-900">
@@ -231,7 +246,6 @@ const PurchaseList = () => {
                           </div>
                         )}
                       </td>
-                      {console.log(inv)}
 
                       <td className="px-5 py-4 text-right tabular-nums">
                         {Number(inv.taxValue || 0) > 0 ? (
@@ -247,14 +261,14 @@ const PurchaseList = () => {
                           <span className="text-slate-400">{money(0)}</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-right  tabular-nums text-emerald-700">
+                      <td className="px-5 py-4 text-right tabular-nums text-emerald-700 font-semibold">
                         {money(inv.net_total || 0)}
                       </td>
                       <td className="px-5 py-4 text-center">
                         <StatusBadge
                           status={inv.status}
-                          paidAmount={inv.paid_amount}
-                          remainingAmount={inv.remaining_amount}
+                          paidAmount={inv.refunded_amount}
+                          remainingAmount={inv.remaining_credit}
                           money={money}
                           t={t}
                         />
@@ -262,7 +276,9 @@ const PurchaseList = () => {
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-1">
                           <button
-                            onClick={() => navigate(`/view-purchase/${inv.id}`)}
+                            onClick={() =>
+                              navigate(`/view-purchase-return/${inv.id}`)
+                            }
                             className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                           >
                             <Eye size={16} />
@@ -279,20 +295,12 @@ const PurchaseList = () => {
                               <HandCoins size={16} />
                             </button>
                           )}
-                          <button
-                            onClick={() => {
-                              setSelecteInvoice(inv);
-                              setOpenRefundModel(true);
-                            }}
-                            className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                          >
-                            <Undo2 size={16} />
-                          </button>
+
                           {inv.status === "unpaid" && (
                             <>
                               <button
                                 onClick={() =>
-                                  navigate(`/edit-purchase/${inv.id}`)
+                                  navigate(`/edit-purchase-return/${inv.id}`)
                                 }
                                 className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               >
@@ -328,19 +336,13 @@ const PurchaseList = () => {
         </section>
       </div>
 
-      <PurchaseReturnModal
-        isOpen={openRefundModel}
-        onClose={() => setOpenRefundModel(false)}
-        id={selecteInvoice?.id}
-      />
-
       <AddPayment
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={selecteInvoice}
         party={selecteInvoice?.supplier_id}
         partyName={selecteInvoice?.supplier_name}
-        mode="purchase"
+        mode="purchase_return"
         refetchList={refetch}
       />
       <DeleteModal
@@ -357,4 +359,4 @@ const PurchaseList = () => {
   );
 };
 
-export default PurchaseList;
+export default PurchaseReturnList;

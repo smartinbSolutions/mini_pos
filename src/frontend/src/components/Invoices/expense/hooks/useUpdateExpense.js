@@ -80,9 +80,9 @@ const useUpdateExpense = () => {
   const supplierOptions = useMemo(
     () => [
       { id: NO_SUPPLIER, name: t("ui.noSupplier") },
-      ...suppliers,
+      ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
     ],
-    [suppliers, t]
+    [suppliers, t],
   );
 
   useEffect(() => {
@@ -154,7 +154,7 @@ const useUpdateExpense = () => {
         setSaving(false);
       }
     },
-    [api, id, invoice, items, subtotal, netTotal, navigate, t]
+    [api, id, invoice, items, subtotal, netTotal, navigate, t],
   );
 
   const reset = () => {

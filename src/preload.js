@@ -112,6 +112,13 @@ contextBridge.exposeInMainWorld("api", {
   deletePurchaseInvoice: (id) =>
     ipcRenderer.invoke("delete-purchase-invoice", id),
 
+  /* ================= PURCHASE RETURN ================= */
+  getPurchaseReturns: (params) =>
+    ipcRenderer.invoke("get-purchase-returns", params),
+  getPurchaseReturnById: (id) => ipcRenderer.invoke("get-purchase-return", id),
+  createPurchaseReturn: (data) =>
+    ipcRenderer.invoke("create-purchase-return", data),
+
   /* ================= SALES INVOICE ITEM ================= */
   getSalesInvoiceItems: () => ipcRenderer.invoke("get-sales-invoice-items"),
   getSalesInvoiceItem: (id) => ipcRenderer.invoke("get-sales-invoice-item", id),

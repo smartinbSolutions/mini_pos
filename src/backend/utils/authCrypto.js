@@ -1,4 +1,4 @@
-import crypto from "crypto";
+const crypto = require("crypto");
 
 export function hashPin(pin) {
   const salt = crypto.randomBytes(16).toString("hex");
@@ -23,6 +23,6 @@ export function isPinTaken(db, pin, excludeUserId = null) {
     .prepare("SELECT id, pin_hash FROM users WHERE is_active = 1")
     .all();
   return users.some(
-    (u) => u.id !== excludeUserId && verifyPin(pin, u.pin_hash)
+    (u) => u.id !== excludeUserId && verifyPin(pin, u.pin_hash),
   );
 }

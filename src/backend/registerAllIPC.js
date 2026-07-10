@@ -19,6 +19,7 @@ import registerExpenceCategoryIPC from "./ipc/expence_category.ipc";
 import registerPartyHistoryIPC from "./ipc/party_history.ipc";
 import registerCustomerDisplayIPC from "./ipc/customer_display.ipc";
 import registerAuthHandlersIPC from "./ipc/Auth.ipc";
+import registerPurchaseReturnIPC from "./ipc/purchase_returns.ipc";
 
 export default function registerAllIPC() {
   registerAuthHandlersIPC();
@@ -42,4 +43,5 @@ export default function registerAllIPC() {
   registerExpenseIPC();
   registerExpenceCategoryIPC();
   registerPartyHistoryIPC();
+  registerPurchaseReturnIPC();
 }

@@ -59,6 +59,8 @@ import UnitList from "./components/Unit/components/UnitList";
 import TaxList from "./components/Tax/components/TaxList";
 import CompanySettings from "./components/CompanySettings/components/CompanySettings";
 import UsersList from "./components/users/components/UsersList";
+import PurchaseReturnList from "./components/Invoices/PurchaseReturn/components/PurchaseReturnList";
+import PurchaseReturnView from "./components/Invoices/PurchaseReturn/components/PurchaseRefundView";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -176,6 +178,13 @@ export default function App() {
               />
               <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
               <Route path="supplier" element={<SuppliersList />} />
+
+              {/* ================= PURCHASE RETURN ================= */}
+              <Route path="/purchase-return" element={<PurchaseReturnList />} />
+              <Route
+                path="view-purchase-return/:id"
+                element={<PurchaseReturnView />}
+              />
 
               {/* ================= EXPENSES ================= */}
               <Route path="expense" element={<ExpenseList />} />
