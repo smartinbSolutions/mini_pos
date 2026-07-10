@@ -62,7 +62,7 @@ export default function UpdateExpense() {
     if (!canSave) return;
     const res = await submit();
     if (res?.success) {
-      toast.success(t("screens.expenses.savedUnpaid") || "Expense updated");
+      toast.success(t("screens.expenses.savedUnpaid"));
     }
   };
 
@@ -77,9 +77,7 @@ export default function UpdateExpense() {
   const handlePaymentCollected = async (paymentData) => {
     const res = await submit(paymentData);
     if (res?.success) {
-      toast.success(
-        t("screens.expenses.savedPaid") || "Expense updated & paid",
-      );
+      toast.success(t("screens.expenses.savedPaid"));
       setPaymentModalOpen(false);
     }
   };
@@ -139,10 +137,7 @@ export default function UpdateExpense() {
         {isLocked && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             <Lock size={18} className="mt-0.5 shrink-0" />
-            <span>
-              {t("screens.expenses.lockedAfterPayment") ||
-                "This expense has a payment recorded and can no longer be edited."}
-            </span>
+            <span>{t("screens.expenses.lockedAfterPayment")}</span>
           </div>
         )}
 
@@ -163,7 +158,7 @@ export default function UpdateExpense() {
                 <input
                   type="text"
                   className={inputClass}
-                  placeholder={t("ui.expenseName") || "Expense name"}
+                  placeholder={t("ui.expenseName")}
                   value={invoice.invoice_name || ""}
                   onChange={(e) =>
                     setInvoice({ ...invoice, invoice_name: e.target.value })
@@ -174,7 +169,7 @@ export default function UpdateExpense() {
 
               <textarea
                 className={`${inputClass} mt-4 h-24 resize-none py-3`}
-                placeholder={t("ui.description") || "Description (optional)"}
+                placeholder={t("ui.description")}
                 value={invoice.description || ""}
                 onChange={(e) =>
                   setInvoice({ ...invoice, description: e.target.value })
@@ -305,8 +300,7 @@ export default function UpdateExpense() {
                 <div>
                   <h3 className="font-black">{t("ui.payment")}</h3>
                   <p className="text-xs text-slate-500">
-                    {t("screens.expenses.paymentHelper") ||
-                      "Save your edits and settle later, or pay right away."}
+                    {t("screens.expenses.paymentHelper")}
                   </p>
                 </div>
 
@@ -329,7 +323,7 @@ export default function UpdateExpense() {
                     className="flex items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <HandCoins size={16} />
-                    {t("screens.invoices.saveAndPay") || "Save & Pay"}
+                    {t("screens.invoices.saveAndPay")}
                   </button>
                 </div>
 

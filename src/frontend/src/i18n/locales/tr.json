@@ -21,7 +21,8 @@
     "cancel": "İptal",
     "language": "Dil",
     "perPage": "Sayfa Başına",
-    "create": "Oluştur"
+    "create": "Oluştur",
+    "print": "Yazdır"
   },
   "ui": {
     "setup": "Kurulum",
@@ -114,7 +115,14 @@
     "totalAmount": "Toplam tutar",
     "selectFundRequired": "Lütfen önce bir kasa seçin",
     "noSupplier": "Tedarikçi yok",
-    "partners": "Ortaklar"
+    "category": "Kategori",
+    "expenseName": "Gider adı",
+    "expenses": "Giderler",
+    "partial": "Kısmi",
+    "selectExpense": "Gider seçin",
+    "unpaid": "Ödenmedi",
+    "partners": "Ortaklar",
+    "partner": "Ortak"
   },
   "screens": {
     "units": {
@@ -161,7 +169,9 @@
       "namePlaceholder": "Kasa adı",
       "initialBalance": "Başlangıç bakiyesi",
       "createButton": "Kasa Oluştur",
-      "fund_transfer": "Kasalar Arası Transfer"
+      "fund_transfer": "Kasalar Arası Transfer",
+      "transfer_Flow": "Transfer Akışı",
+      "transfer_rate": "Transfer Kuru"
     },
     "contacts": {
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
@@ -252,6 +262,8 @@
       "noPaymentNow": "Ödenmedi",
       "payInFull": "Ödendi",
       "saveInvoice": "Faturayı Kaydet",
+      "expensesTitle": "Giderler",
+      "expenseSubtitle": "Giderleri, ödemeleri ve açık bakiyeleri takip edin.",
       "save_now_settle_later": "Şimdi kaydet sonra öde veya hemen ödeme yap",
       "saveUnpaid": "Ödenmemiş Olarak Kaydet",
       "saveAndPay": "Kaydet ve Öde",
@@ -262,7 +274,14 @@
       "partial": "Kısmen Ödendi",
       "paid": "Ödendi",
       "taxCollected": "Tahsil Edilen Vergi",
-      "paymentHelper": "Şimdi kaydet, daha sonra öde veya hemen öde."
+      "paymentHelper": "Şimdi kaydet, daha sonra öde veya hemen öde.",
+      "addExpense": "Gider Ekle",
+      "addItemToStart": "Bu faturayı başlatmak için bir ürün ekleyin.",
+      "keepOneItem": "En az bir kalem gereklidir",
+      "lockedAfterPayment": "Ödenmiş veya kısmen ödenmiş faturalar düzenlenemez.",
+      "noItemsYet": "Henüz kalem yok",
+      "savedPaid": "Fatura kaydedildi ve ödendi",
+      "savedUnpaid": "Fatura kaydedildi"
     },
     "company": {
       "title": "Şirket Ayarları",
@@ -400,7 +419,14 @@
       "free_cash_in_receipt": "Serbest Tahsilat Makbuzu",
       "free_cash_out_payment": "Serbest Tediye Makbuzu",
       "payment_expense": "Ödeme / Gider",
-      "receipt_deposit": "Tahsilat / Para Yatırma"
+      "receipt_deposit": "Tahsilat / Para Yatırma",
+      "expensePayment": "Gider Ödemesi",
+      "paymentForExpense": "Gider Faturası #{{id}} için ödeme",
+      "please_select_fund_first": "Lütfen önce bir kasa seçin.",
+      "please_select_linked_account": "Lütfen bağlantılı hesabı seçin.",
+      "please_enter_valid_amount": "Lütfen geçerli bir tutar girin.",
+      "receipt_saved_successfully": "Makbuz başarıyla kaydedildi ve işlendi.",
+      "unexpected_error_posting": "Kayıt işlenirken beklenmeyen bir hata oluştu."
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
@@ -427,12 +453,23 @@
       "categoryTitle": "Gider Kategorisi",
       "emptyCategories": "Masraf Kategorileri Yok",
       "createCategory": "Gider kategorisi oluştur",
-      "categoryName": "Gider kategorisi adı"
+      "categoryName": "Gider kategorisi adı",
+      "addButton": "Gider kategorisi ekle",
+      "createCategoryDesc": "Şirket harcamalarınızı daha iyi takip edebilmek için gider kategorilerinizi oluşturun ve düzenleyin."
     },
     "expenses": {
       "createExpense": "Gider Oluştur",
       "manageItemsPayments": "Öğeleri Yönet",
-      "expensesTotal": "Toplam Giderler"
+      "expensesTotal": "Toplam Giderler",
+      "addItemToStart": "Bu gideri başlatmak için bir gider kategorisi ekleyin.",
+      "categoriesOnExpense": "Bu giderdeki kategoriler",
+      "deleteFailed": "Gider silinemedi",
+      "lockedAfterPayment": "Ödenmiş veya kısmen ödenmiş giderler düzenlenemez.",
+      "noItemsYet": "Henüz gider kalemi yok",
+      "paymentHelper": "Şimdi kaydedip daha sonra ödeyin veya hemen ödeme yapın.",
+      "savedPaid": "Gider kaydedildi ve ödendi",
+      "savedUnpaid": "Gider kaydedildi",
+      "saveUnpaid": "Ödenmeyen gider kaydet"
     },
     "transfer": {
       "internal_fund_transfer": "Dahili Fon Transferi",
@@ -480,7 +517,8 @@
     "expense": "Giderler",
     "partner": "Ortak",
     "partners": "Ortaklar",
-    "payment": "Ödemeler"
+    "payment": "Ödemeler",
+    "transfers": "Transferler"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",

@@ -62,7 +62,7 @@ const useAddExpense = () => {
 
   const supplierOptions = useMemo(
     () => [
-      { id: NO_SUPPLIER, name: t("ui.noSupplier") || "No supplier" },
+      { id: NO_SUPPLIER, name: t("ui.noSupplier") },
       ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
     ],
     [suppliers, t],

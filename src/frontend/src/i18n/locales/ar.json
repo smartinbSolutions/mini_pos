@@ -21,7 +21,8 @@
     "cancel": "إلغاء",
     "language": "اللغة",
     "perPage": "لكل صفحة",
-    "create": "إنشاء"
+    "create": "إنشاء",
+    "print": "طباعة"
   },
   "ui": {
     "setup": "الإعداد",
@@ -113,7 +114,15 @@
     "totalPaymentsCount": "عدد الدفعات",
     "totalAmount": "المبلغ الإجمالي",
     "selectFundRequired": "يرجى اختيار صندوق أولاً",
-    "noSupplier": "بدون مورد"
+    "noSupplier": "بدون مورد",
+    "category": "الفئة",
+    "expenseName": "اسم المصروف",
+    "expenses": "المصروفات",
+    "partial": "جزئي",
+    "selectExpense": "اختر مصروفاً",
+    "unpaid": "غير مدفوع",
+    "partner": "الشريك",
+    "partners": "الشركاء"
   },
   "screens": {
     "units": {
@@ -253,6 +262,8 @@
       "noPaymentNow": "غير مدفوعة",
       "payInFull": "مدفوعة",
       "saveInvoice": "حفظ الفاتورة",
+      "expensesTitle": "المصروفات",
+      "expenseSubtitle": "تتبع المصروفات والمدفوعات والأرصدة المستحقة.",
       "save_now_settle_later": "احفظ الآن وسدد لاحقاً، أو ادفع على الفور",
       "saveUnpaid": "حفظ غير مدفوع",
       "saveAndPay": "حفظ ودفع",
@@ -263,7 +274,14 @@
       "partial": "مدفوع جزئياً",
       "paid": "مدفوع",
       "taxCollected": "الضرائب المحصلة",
-      "paymentHelper": "احفظ الآن وادفع لاحقاً، أو ادفع على الفور."
+      "paymentHelper": "احفظ الآن وادفع لاحقاً، أو ادفع على الفور.",
+      "addExpense": "إضافة مصروف",
+      "addItemToStart": "أضف منتجاً لبدء هذه الفاتورة.",
+      "keepOneItem": "يجب الإبقاء على عنصر واحد على الأقل",
+      "lockedAfterPayment": "لا يمكن تعديل الفواتير المدفوعة أو المدفوعة جزئياً.",
+      "noItemsYet": "لا توجد عناصر بعد",
+      "savedPaid": "تم حفظ الفاتورة ودفعها",
+      "savedUnpaid": "تم حفظ الفاتورة"
     },
     "company": {
       "title": "إعدادات الشركة",
@@ -406,7 +424,9 @@
       "please_select_linked_account": "الرجاء تحديد الحساب المرتبط بالحركة المالية",
       "please_enter_valid_amount": "الرجاء إدخال قيمة مالية صحيحة",
       "payment_expense": "دفع / صرف مالي",
-      "receipt_deposit": "قبض / إيداع مالي"
+      "receipt_deposit": "قبض / إيداع مالي",
+      "expensePayment": "دفعة مصروف",
+      "paymentForExpense": "دفعة لفاتورة المصروف #{{id}}"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
@@ -434,12 +454,22 @@
       "emptyCategories": "لا يوجد تصنيف مصاريف",
       "createCategory": "انشاء تصنيف مصروف",
       "createCategoryDesc": "Create and organize your expense categories to better track your company spending.",
-      "categoryName": "اسم تصنيف المصروفات"
+      "categoryName": "اسم تصنيف المصروفات",
+      "addButton": "إضافة تصنيف مصروف"
     },
     "expenses": {
       "createExpense": "انشاء مصروف",
       "manageItemsPayments": "إدارة العناصر",
-      "expensesTotal": "إجمالي المصروفات"
+      "expensesTotal": "إجمالي المصروفات",
+      "addItemToStart": "أضف تصنيف مصروف لبدء هذا المصروف.",
+      "categoriesOnExpense": "التصنيفات في هذا المصروف",
+      "deleteFailed": "فشل حذف المصروف",
+      "lockedAfterPayment": "لا يمكن تعديل المصروفات المدفوعة أو المدفوعة جزئياً.",
+      "noItemsYet": "لا توجد بنود مصروف بعد",
+      "paymentHelper": "احفظ الآن وسدد لاحقاً، أو ادفع مباشرة.",
+      "savedPaid": "تم حفظ المصروف ودفعه",
+      "savedUnpaid": "تم حفظ المصروف",
+      "saveUnpaid": "حفظ غير مدفوع"
     },
     "transfer": {
       "internal_fund_transfer": "تحويل مالي داخلي",
@@ -490,7 +520,6 @@
     "payment": "المدفوعات",
     "transfers": "التحويلات"
   },
-
   "dashboard": {
     "loading": "جار تحميل لوحة التحكم...",
     "totalSales": "إجمالي المبيعات",

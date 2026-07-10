@@ -220,10 +220,7 @@ export default function SalesInvoiceView() {
 
                 {allocations.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400">
-                    {t(
-                      "screens.invoices.noPaymentsRecordedYet",
-                      "No payments recorded yet.",
-                    )}
+                    {t("screens.invoices.noPaymentsRecordedYet")}
                   </div>
                 ) : (
                   <div className="space-y-2">

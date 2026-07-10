@@ -23,7 +23,7 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
     paid: { label: t("ui.paid"), className: "bg-emerald-50 text-emerald-600" },
     partial: {
-      label: t("ui.partial") || "Partial",
+      label: t("ui.partial"),
       className: "bg-amber-50 text-amber-600",
     },
     unpaid: { label: t("ui.unpaid"), className: "bg-red-50 text-red-500" },
@@ -48,7 +48,7 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
             </span>
           </div>
           <div className="mt-1 flex justify-between">
-            <span>{t("ui.remaining", "Remaining")}</span>
+            <span>{t("ui.remaining")}</span>
             <span className="font-bold text-amber-600">
               {money(remainingAmount)}
             </span>
@@ -125,7 +125,7 @@ const ExpenseList = () => {
 
   const totalNet = expenses.reduce(
     (sum, inv) => sum + Number(inv?.net_total || 0),
-    0
+    0,
   );
 
   const unpaidCount = expenses.filter((inv) => inv.status !== "paid").length;

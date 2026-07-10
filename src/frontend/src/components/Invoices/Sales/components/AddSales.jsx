@@ -61,7 +61,7 @@ export default function AddSales() {
     if (!canSave) return;
     const res = await submit();
     if (res?.success) {
-      toast.success(t("screens.invoices.savedUnpaid") || "Invoice saved");
+      toast.success(t("screens.invoices.savedUnpaid"));
     }
   };
 
@@ -80,7 +80,7 @@ export default function AddSales() {
   const handlePaymentCollected = async (paymentData) => {
     const res = await submit(paymentData);
     if (res?.success) {
-      toast.success(t("screens.invoices.savedPaid") || "Invoice saved & paid");
+      toast.success(t("screens.invoices.savedPaid"));
     }
   };
 
@@ -170,9 +170,7 @@ export default function AddSales() {
                 <input
                   type="text"
                   className={inputClass}
-                  placeholder={
-                    t("screens.invoices.invoiceName") || "Invoice name"
-                  }
+                  placeholder={t("screens.invoices.invoiceName")}
                   value={invoice.invoice_name || ""}
                   onChange={(e) =>
                     setInvoice((p) => ({ ...p, invoice_name: e.target.value }))
@@ -182,7 +180,7 @@ export default function AddSales() {
 
               <textarea
                 className={`${inputClass} mt-3 h-24 resize-none py-3`}
-                placeholder={t("ui.description") || "Description (optional)"}
+                placeholder={t("ui.description")}
                 value={invoice.description || ""}
                 onChange={(e) =>
                   setInvoice((p) => ({ ...p, description: e.target.value }))
@@ -229,11 +227,10 @@ export default function AddSales() {
                   </span>
                   <div>
                     <p className="font-bold text-slate-700">
-                      {t("screens.invoices.noItemsYet") || "No items yet"}
+                      {t("screens.invoices.noItemsYet")}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {t("screens.invoices.addItemToStart") ||
-                        "Add a product to start this invoice."}
+                      {t("screens.invoices.addItemToStart")}
                     </p>
                   </div>
                   <button
@@ -305,8 +302,7 @@ export default function AddSales() {
                                 disabled={items.length === 1}
                                 title={
                                   items.length === 1
-                                    ? t("screens.invoices.keepOneItem") ||
-                                      "At least one item is required"
+                                    ? t("screens.invoices.keepOneItem")
                                     : undefined
                                 }
                                 className="rounded-xl p-2 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
@@ -496,8 +492,7 @@ export default function AddSales() {
               <div>
                 <h3 className="font-black">{t("ui.payment")}</h3>
                 <p className="text-xs text-slate-500">
-                  {t("screens.invoices.save_now_settle_later") ||
-                    "Save now and settle later, or pay right away."}
+                  {t("screens.invoices.save_now_settle_later")}
                 </p>
               </div>
 
@@ -511,7 +506,7 @@ export default function AddSales() {
                   {saving ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : null}
-                  {t("screens.invoices.saveUnpaid") || "Save (unpaid)"}
+                  {t("screens.invoices.saveUnpaid")}
                 </button>
                 <button
                   type="button"
@@ -520,7 +515,7 @@ export default function AddSales() {
                   className="flex items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Save size={16} />
-                  {t("screens.invoices.saveAndPay") || "Save & Pay"}
+                  {t("screens.invoices.saveAndPay")}
                 </button>
               </div>
 

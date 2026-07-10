@@ -21,7 +21,8 @@
     "cancel": "Cancel",
     "language": "Language",
     "perPage": "Per Page",
-    "create": "Create"
+    "create": "Create",
+    "print": "Print"
   },
   "ui": {
     "setup": "Setup",
@@ -115,7 +116,13 @@
     "totalPaymentsCount": "Number of payments",
     "totalAmount": "Total amount",
     "selectFundRequired": "Please select a fund first",
-    "noSupplier": "No supplier"
+    "noSupplier": "No supplier",
+    "category": "Category",
+    "expenseName": "Expense name",
+    "expenses": "Expenses",
+    "partial": "Partial",
+    "selectExpense": "Select expense",
+    "unpaid": "Unpaid"
   },
   "screens": {
     "units": {
@@ -267,7 +274,14 @@
       "partial": "Partial",
       "paid": "Paid",
       "taxCollected": "Tax Collected",
-      "paymentHelper": "Save now and settle later, or pay right away."
+      "paymentHelper": "Save now and settle later, or pay right away.",
+      "addExpense": "Add Expense",
+      "addItemToStart": "Add a product to start this invoice.",
+      "keepOneItem": "At least one item is required",
+      "lockedAfterPayment": "Paid or partially paid invoices cannot be edited.",
+      "noItemsYet": "No items yet",
+      "savedPaid": "Invoice saved and paid",
+      "savedUnpaid": "Invoice saved"
     },
     "company": {
       "title": "Company Settings",
@@ -407,7 +421,12 @@
       "free_cash_in_receipt": "Free Cash Receipt",
       "free_cash_out_payment": "Free Cash Payment",
       "payment_expense": "Payment / Expense",
-      "receipt_deposit": "Receipt / Deposit"
+      "receipt_deposit": "Receipt / Deposit",
+      "please_enter_valid_amount": "Please enter a valid amount.",
+      "please_select_fund_first": "Please select a fund first.",
+      "please_select_linked_account": "Please select the linked account.",
+      "receipt_saved_successfully": "Voucher saved and posted successfully.",
+      "unexpected_error_posting": "An unexpected error occurred while posting the entry."
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",
@@ -441,7 +460,16 @@
     "expenses": {
       "createExpense": "Create Expense",
       "manageItemsPayments": "Manage Items",
-      "expensesTotal": "Expenses Total"
+      "expensesTotal": "Expenses Total",
+      "addItemToStart": "Add an expense category to start this expense.",
+      "categoriesOnExpense": "Categories on this expense",
+      "deleteFailed": "Failed to delete expense",
+      "lockedAfterPayment": "Paid or partially paid expenses cannot be edited.",
+      "noItemsYet": "No expense items yet",
+      "paymentHelper": "Save now and settle later, or pay right away.",
+      "savedPaid": "Expense saved and paid",
+      "savedUnpaid": "Expense saved",
+      "saveUnpaid": "Save unpaid"
     },
     "transfer": {
       "internal_fund_transfer": "Internal Fund Transfer",
@@ -489,7 +517,8 @@
     "expense": "Expenses",
     "partners": "Partners",
     "payment": "Payments",
-    "transfers": "transfers"
+    "transfers": "transfers",
+    "partner": "Partners"
   },
   "dashboard": {
     "loading": "Loading dashboard...",
@@ -523,7 +552,20 @@
     "today": "Today",
     "unpaid": "Unpaid",
     "partial": "Partial",
-    "paid": "Paid"
+    "paid": "Paid",
+    "analytics": "Analytics",
+    "inventoryValue": "Inventory Value",
+    "invoiceStatus": "Invoice Status",
+    "invoices": "Invoices",
+    "paidInvoices": "Paid Invoices",
+    "profit": "Profit",
+    "purchases": "Purchases",
+    "sales": "Sales",
+    "salesPurchasesTrend": "Sales & Purchases Trend",
+    "todayPurchases": "Today's Purchases",
+    "todaySales": "Today's Sales",
+    "totalSales": "Total Sales",
+    "unpaidInvoices": "Unpaid Invoices"
   },
   "activation": {
     "title": "Activate POS License",

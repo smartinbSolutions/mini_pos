@@ -65,7 +65,7 @@ export default function UpdateSales() {
     if (!canSave) return;
     const res = await submit();
     if (res?.success) {
-      toast.success(t("screens.invoices.savedUnpaid") || "Invoice updated");
+      toast.success(t("screens.invoices.savedUnpaid"));
     }
   };
 
@@ -80,9 +80,7 @@ export default function UpdateSales() {
   const handlePaymentCollected = async (paymentData) => {
     const res = await submit(paymentData);
     if (res?.success) {
-      toast.success(
-        t("screens.invoices.savedPaid") || "Invoice updated & paid",
-      );
+      toast.success(t("screens.invoices.savedPaid"));
       setPaymentModalOpen(false);
     }
   };
@@ -149,10 +147,7 @@ export default function UpdateSales() {
         {isLocked && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             <Lock size={18} className="mt-0.5 shrink-0" />
-            <span>
-              {t("screens.invoices.lockedAfterPayment") ||
-                "This invoice has a payment recorded and can no longer be edited."}
-            </span>
+            <span>{t("screens.invoices.lockedAfterPayment")}</span>
           </div>
         )}
 
@@ -184,9 +179,7 @@ export default function UpdateSales() {
                 <input
                   type="text"
                   className={inputClass}
-                  placeholder={
-                    t("screens.invoices.invoiceName") || "Invoice name"
-                  }
+                  placeholder={t("screens.invoices.invoiceName")}
                   value={invoice.invoice_name || ""}
                   disabled={isLocked}
                   onChange={(e) =>
@@ -197,7 +190,7 @@ export default function UpdateSales() {
 
               <textarea
                 className={`${inputClass} mt-3 h-24 resize-none py-3`}
-                placeholder={t("ui.description") || "Description (optional)"}
+                placeholder={t("ui.description")}
                 value={invoice.description || ""}
                 disabled={isLocked}
                 onChange={(e) =>
@@ -372,8 +365,7 @@ export default function UpdateSales() {
                 <div>
                   <h3 className="font-black">{t("ui.payment")}</h3>
                   <p className="text-xs text-slate-500">
-                    {t("screens.invoices.save_now_settle_later") ||
-                      "Save your edits and settle later, or pay right away."}
+                    {t("screens.invoices.save_now_settle_later")}
                   </p>
                 </div>
 

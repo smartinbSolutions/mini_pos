@@ -67,8 +67,8 @@ export default function PurchaseInvoiceView() {
     status === "paid"
       ? t("ui.paidStatus")
       : status === "partial"
-        ? t("ui.partial", "Partial")
-        : t("ui.unpaidStatus", "Unpaid");
+        ? t("ui.partial")
+        : t("ui.unpaidStatus");
 
   if (loading) {
     return (
@@ -177,15 +177,12 @@ export default function PurchaseInvoiceView() {
               <div className="flex-1">
                 <h3 className="mb-3 flex items-center gap-2 text-sm f text-slate-700">
                   <HandCoins size={16} className="text-[#4663ff]" />
-                  {t("screens.invoices.paymentHistory", "Payment History")}
+                  {t("screens.invoices.paymentHistory")}
                 </h3>
 
                 {allocations.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400">
-                    {t(
-                      "screens.invoices.noPayments",
-                      "No payments recorded yet."
-                    )}
+                    {t("screens.invoices.noPayments")}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -252,7 +249,7 @@ export default function PurchaseInvoiceView() {
                     {status === "partial" && (
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-500">
-                          {t("ui.remaining", "Remaining")}
+                          {t("ui.remaining")}
                         </span>
                         <span className="font-bold text-amber-600">
                           {money(invoice.remaining_amount)}

@@ -80,7 +80,7 @@ const PurchaseList = () => {
     openPaymentModel,
     setOpenPaymentModel,
   } = usePurchaseList();
-  console.log(purchaseInvoices);
+
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");

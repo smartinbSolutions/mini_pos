@@ -30,7 +30,6 @@ export default function ExpenseView() {
       try {
         setLoading(true);
         const res = await api.getExpense(id);
-        console.log(res);
         if (!cancelled) setExpense(res);
       } catch (err) {
         if (!cancelled) setError(err.message);
@@ -118,7 +117,7 @@ export default function ExpenseView() {
 
             <div className="text-left md:text-right">
               <p className="text-lg font-black text-slate-950">
-                {expense.supplier_name || t("ui.noSupplier", "No supplier")}
+                {expense.supplier_name || t("ui.noSupplier")}
               </p>
               <p className="text-sm text-slate-500">{t("ui.supplier")}</p>
               <span
@@ -189,10 +188,7 @@ export default function ExpenseView() {
 
                 {allocations.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400">
-                    {t(
-                      "screens.invoices.noPayments",
-                      "No payments recorded yet."
-                    )}
+                    {t("screens.invoices.noPaymentsRecordedYet")}
                   </div>
                 ) : (
                   <div className="space-y-2">

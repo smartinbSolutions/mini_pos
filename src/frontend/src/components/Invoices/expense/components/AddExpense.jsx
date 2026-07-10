@@ -60,7 +60,7 @@ export default function AddExpense() {
     if (!canSave) return;
     const res = await submit();
     if (res?.success) {
-      toast.success(t("screens.expenses.savedUnpaid") || "Expense saved");
+      toast.success(t("screens.expenses.savedUnpaid"));
     }
   };
 
@@ -75,7 +75,7 @@ export default function AddExpense() {
   const handlePaymentCollected = async (paymentData) => {
     const res = await submit(paymentData);
     if (res?.success) {
-      toast.success(t("screens.expenses.savedPaid") || "Expense saved & paid");
+      toast.success(t("screens.expenses.savedPaid"));
     }
   };
 
@@ -146,7 +146,7 @@ export default function AddExpense() {
                 <input
                   type="text"
                   className={inputClass}
-                  placeholder={t("ui.expenseName") || "Expense name"}
+                  placeholder={t("ui.expenseName")}
                   value={invoice.invoice_name || ""}
                   onChange={(e) =>
                     setInvoice({ ...invoice, invoice_name: e.target.value })
@@ -156,7 +156,7 @@ export default function AddExpense() {
 
               <textarea
                 className={`${inputClass} mt-4 h-24 resize-none py-3`}
-                placeholder={t("ui.description") || "Description (optional)"}
+                placeholder={t("ui.description")}
                 value={invoice.description || ""}
                 onChange={(e) =>
                   setInvoice({ ...invoice, description: e.target.value })
@@ -177,8 +177,7 @@ export default function AddExpense() {
                     )}
                   </h2>
                   <p className="text-sm text-slate-500">
-                    {t("screens.expenses.categoriesOnExpense") ||
-                      "Categories on this expense"}
+                    {t("screens.expenses.categoriesOnExpense")}
                   </p>
                 </div>
 
@@ -204,11 +203,10 @@ export default function AddExpense() {
                   </span>
                   <div>
                     <p className="font-bold text-slate-700">
-                      {t("screens.expenses.noItemsYet") || "No items yet"}
+                      {t("screens.expenses.noItemsYet")}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {t("screens.expenses.addItemToStart") ||
-                        "Add a category to start this expense."}
+                      {t("screens.expenses.addItemToStart")}
                     </p>
                   </div>
                   <button
@@ -271,8 +269,7 @@ export default function AddExpense() {
                                 disabled={items.length === 1}
                                 title={
                                   items.length === 1
-                                    ? t("screens.invoices.keepOneItem") ||
-                                      "At least one item is required"
+                                    ? t("screens.invoices.keepOneItem")
                                     : undefined
                                 }
                                 className="rounded-xl p-2 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
@@ -384,8 +381,7 @@ export default function AddExpense() {
               <div>
                 <h3 className="font-black">{t("ui.payment")}</h3>
                 <p className="text-xs text-slate-500">
-                  {t("screens.expenses.paymentHelper") ||
-                    "Save now and settle later, or pay right away."}
+                  {t("screens.expenses.paymentHelper")}
                 </p>
               </div>
 
@@ -399,7 +395,7 @@ export default function AddExpense() {
                   {saving ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : null}
-                  {t("screens.invoices.saveUnpaid") || "Save (unpaid)"}
+                  {t("screens.invoices.saveUnpaid")}
                 </button>
                 <button
                   type="button"
@@ -408,7 +404,7 @@ export default function AddExpense() {
                   className="flex items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Save size={16} />
-                  {t("screens.invoices.saveAndPay") || "Save & Pay"}
+                  {t("screens.invoices.saveAndPay")}
                 </button>
               </div>
 
