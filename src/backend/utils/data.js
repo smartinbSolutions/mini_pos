@@ -47,7 +47,7 @@ export function seedData(db) {
     VALUES (?, ?)
   `);
 
-  insertFund.run("Mine Fund", 1, 0);
+  insertFund.run("Mine Fund", 1);
 
   const insertExpenseCategory = db.prepare(`
     INSERT OR IGNORE INTO expence_category(name, latinName)
