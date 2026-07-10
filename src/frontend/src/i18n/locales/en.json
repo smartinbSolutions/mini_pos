@@ -22,7 +22,8 @@
     "language": "Language",
     "perPage": "Per Page",
     "create": "Create",
-    "print": "Print"
+    "print": "Print",
+    "filters": "Filters"
   },
   "ui": {
     "setup": "Setup",
@@ -122,7 +123,8 @@
     "expenses": "Expenses",
     "partial": "Partial",
     "selectExpense": "Select expense",
-    "unpaid": "Unpaid"
+    "unpaid": "Unpaid",
+    "other": "Other"
   },
   "screens": {
     "units": {
@@ -171,7 +173,9 @@
       "createButton": "Create Fund",
       "fund_transfer": "Transfer Between Funds",
       "transfer_Flow": "Transfer Flow",
-      "transfer_rate": "Transfer Rate"
+      "transfer_rate": "Transfer Rate",
+      "searchFunds": "Search in funds",
+      "noFunds": "No funds"
     },
     "contacts": {
       "customersSubtitle": "Manage your customers easily",
@@ -426,7 +430,34 @@
       "please_select_fund_first": "Please select a fund first.",
       "please_select_linked_account": "Please select the linked account.",
       "receipt_saved_successfully": "Voucher saved and posted successfully.",
-      "unexpected_error_posting": "An unexpected error occurred while posting the entry."
+      "customer_account_collection": "Customer Account Collection",
+      "supplier_account_collection": "Supplier Balance Settlement",
+      "partner_deposit": "Partner Deposit — Add Funds",
+      "partner_withdrawal": "Partner Withdrawal — Disburse Funds",
+      "credit_available": "Credit available",
+      "apply_credit": "Apply credit",
+      "applied": "Applied",
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "amountFromCredit": "Amount to apply from credit",
+      "amountToReceive": "Amount to Receive / Pay (Base Currency)",
+      "collected_paid_amount": "Collected / Paid Amount (Fund Currency)",
+      "partnerMovement": "Partner movement",
+      "unallocated": "Unallocated",
+      "partial": "Partial",
+      "fullyAllocated": "Fully allocated",
+      "count_income": "{{count}} income",
+      "count_expense": "{{count}} expense",
+      "all_types": "All types",
+      "all_parties": "All parties",
+      "income": "Income",
+      "expense": "Expense",
+      "flow": "Flow",
+      "rate": "Rate",
+      "allocation": "Allocation",
+      "noAllocations": "No allocations recorded for this payment.",
+      "allInvoiceTypes": "All invoice types",
+      "allFunds": "All funds"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",
@@ -487,7 +518,11 @@
       "selectBothFunds": "Please select both source and destination funds.",
       "sameFundError": "Cannot transfer to the same fund.",
       "validReceiveAmount": "Please enter a valid receive amount.",
-      "defaultNote": "Internal transfer from {{source}} to {{destination}}"
+      "defaultNote": "Internal transfer from {{source}} to {{destination}}",
+      "title": "Fund transfers",
+      "subtitle": "History of money moved between funds",
+      "newTransfer": "New transfer",
+      "noTransfers": "No transfers yet"
     }
   },
   "languages": {

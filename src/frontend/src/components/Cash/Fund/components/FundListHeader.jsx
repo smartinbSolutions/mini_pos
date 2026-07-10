@@ -163,7 +163,7 @@ const FundListHeader = ({
 
           <button onClick={openModal} className={primaryButtonClass}>
             <Plus size={15} />
-            {t("common.create") || "New"}
+            {t("common.create")}
           </button>
         </div>
       </div>

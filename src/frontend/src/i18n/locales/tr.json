@@ -22,7 +22,8 @@
     "language": "Dil",
     "perPage": "Sayfa Başına",
     "create": "Oluştur",
-    "print": "Yazdır"
+    "print": "Yazdır",
+    "filters": "Filtreler"
   },
   "ui": {
     "setup": "Kurulum",
@@ -122,7 +123,8 @@
     "selectExpense": "Gider seçin",
     "unpaid": "Ödenmedi",
     "partners": "Ortaklar",
-    "partner": "Ortak"
+    "partner": "Ortak",
+    "other": "Diğer"
   },
   "screens": {
     "units": {
@@ -171,7 +173,9 @@
       "createButton": "Kasa Oluştur",
       "fund_transfer": "Kasalar Arası Transfer",
       "transfer_Flow": "Transfer Akışı",
-      "transfer_rate": "Transfer Kuru"
+      "transfer_rate": "Transfer Kuru",
+      "searchFunds": "Kasalarda arama",
+      "noFunds": "Kasa bulunamadı"
     },
     "contacts": {
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
@@ -426,7 +430,35 @@
       "please_select_linked_account": "Lütfen bağlantılı hesabı seçin.",
       "please_enter_valid_amount": "Lütfen geçerli bir tutar girin.",
       "receipt_saved_successfully": "Makbuz başarıyla kaydedildi ve işlendi.",
-      "unexpected_error_posting": "Kayıt işlenirken beklenmeyen bir hata oluştu."
+      "unexpected_error_posting": "Kayıt işlenirken beklenmeyen bir hata oluştu.",
+      "customer_account_collection": "Müşteri Hesap Tahsilatı",
+      "supplier_account_collection": "Tedarikçi Bakiye Mutabakatı",
+      "partner_deposit": "Ortak Mevduatı — Fon Ekle",
+      "partner_withdrawal": "Ortak Çekilmesi — Fon Dağıt",
+      "credit_available": "Kredi mevcut",
+      "apply_credit": "Kredi kullan",
+      "applied": "Kullanıldı",
+      "deposit": "Yatırma",
+      "withdraw": "Çekme",
+      "amountFromCredit": "Krediden uygulanacak tutar",
+      "amountToReceive": "Alınacak / Ödenecek Tutar (Ana Para Birimi)",
+      "collected_paid_amount": "Toplanan / Ödenen Tutar (Fon Para Birimi)",
+      "partnerMovement": "Ortak hareketi",
+      "unallocated": "Tahsis edilmemiş",
+      "partial": "Kısmen tahsis edilmiş",
+      "fullyAllocated": "Tamamen tahsis edilmiş",
+      "count_income": "{{count}} gelir",
+      "count_expense": "{{count}} gider",
+      "all_types": "Tümü",
+      "all_parties": "Tüm taraflar",
+      "income": "Gelir",
+      "expense": "Gider",
+      "flow": "Akış",
+      "rate": "Oran",
+      "allocation": "Tahsis",
+      "noAllocations": "Bu ödeme için herhangi bir tahsis kaydı yok.",
+      "allInvoiceTypes": "Tüm fatura türleri",
+      "allFunds": "Tüm fonlar"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
@@ -487,7 +519,11 @@
       "selectBothFunds": "Lütfen kaynak ve hedef kasaları seçin.",
       "sameFundError": "Aynı kasaya transfer yapılamaz.",
       "validReceiveAmount": "Lütfen geçerli bir alınacak tutar girin.",
-      "defaultNote": "{{source}} kasasından {{destination}} kasasına dahili transfer"
+      "defaultNote": "{{source}} kasasından {{destination}} kasasına dahili transfer",
+      "title": "Fon transferleri",
+      "subtitle": "Fonlar arasında taşınan paranın geçmişi",
+      "newTransfer": "Yeni transfer",
+      "noTransfers": "Henüz transfer yok"
     }
   },
   "languages": {

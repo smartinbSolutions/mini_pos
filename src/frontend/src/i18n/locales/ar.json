@@ -22,7 +22,8 @@
     "language": "اللغة",
     "perPage": "لكل صفحة",
     "create": "إنشاء",
-    "print": "طباعة"
+    "print": "طباعة",
+    "filters": "التصفيات"
   },
   "ui": {
     "setup": "الإعداد",
@@ -122,7 +123,8 @@
     "selectExpense": "اختر مصروفاً",
     "unpaid": "غير مدفوع",
     "partner": "الشريك",
-    "partners": "الشركاء"
+    "partners": "الشركاء",
+    "other": "غير ذلك"
   },
   "screens": {
     "units": {
@@ -171,7 +173,9 @@
       "createButton": "إنشاء صندوق",
       "fund_transfer": "تحويل بين الصناديق",
       "transfer_Flow": "حركة التحويل",
-      "transfer_rate": "سعر التحويل"
+      "transfer_rate": "سعر التحويل",
+      "searchFunds": "بحث في الصناديق",
+      "noFunds": "لا يوجد صناديق"
     },
     "contacts": {
       "customersSubtitle": "إدارة العملاء بسهولة",
@@ -426,7 +430,35 @@
       "payment_expense": "دفع / صرف مالي",
       "receipt_deposit": "قبض / إيداع مالي",
       "expensePayment": "دفعة مصروف",
-      "paymentForExpense": "دفعة لفاتورة المصروف #{{id}}"
+      "paymentForExpense": "دفعة لفاتورة المصروف #{{id}}",
+      "customer_account_collection": "تحصيل حساب العميل",
+      "supplier_account_collection": "تسوية رصيد المورد",
+      "partner_deposit": "إيداع الشريك — إضافة أموال",
+      "partner_withdrawal": "سحب الشريك — صرف أموال",
+      "credit_available": "الرصيد متاح",
+      "apply_credit": "استخدام الرصيد",
+      "applied": "تم الاستخدام",
+      "deposit": "إيداع",
+      "withdraw": "سحب",
+      "amountFromCredit": "المبلغ المراد تطبيقه من الرصيد",
+      "amountToReceive": "المبلغ المستحق / المراد دفعه (العملة الأساسية)",
+      "collected_paid_amount": "المبلغ المحصل / المدفوع (عملة الصندوق)",
+      "partnerMovement": "حركات الشركاء",
+      "unallocated": "غير مخصص",
+      "partial": "جزئي",
+      "fullyAllocated": "مخصص بالكامل",
+      "count_income": "{{count}} دخل",
+      "count_expense": "{{count}} مصروف",
+      "all_types": "كل الأنواع",
+      "all_parties": "كل الأطراف",
+      "income": "دخل",
+      "expense": "مصروف",
+      "flow": "المسار",
+      "rate": "النسبة",
+      "allocation": "تخصيص",
+      "noAllocations": "لم يتم تسجيل أي تخصيصات لهذه الدفعة.",
+      "allInvoiceTypes": "كل أنواع الفواتير",
+      "allFunds": "كل الصناديق"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
@@ -487,7 +519,11 @@
       "selectBothFunds": "يرجى اختيار صندوقي المصدر والوجهة.",
       "sameFundError": "لا يمكن التحويل إلى الصندوق نفسه.",
       "validReceiveAmount": "يرجى إدخال مبلغ استلام صالح.",
-      "defaultNote": "تحويل داخلي من {{source}} إلى {{destination}}"
+      "defaultNote": "تحويل داخلي من {{source}} إلى {{destination}}",
+      "title": "تحويل الأموال",
+      "subtitle": "تاريخ الأموال المنقولة بين الصناديق",
+      "newTransfer": "تحويل جديد",
+      "noTransfers": "لا يوجد تحويلات بعد"
     }
   },
   "languages": {

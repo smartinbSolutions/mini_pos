@@ -61,17 +61,16 @@ const FundTransferList = () => {
                 {t("ui.setup")}
               </p>
               <h2 className="text-2xl font-black text-slate-950">
-                {t("screens.transfer.title") || "Fund Transfers"}
+                {t("screens.transfer.title")}
               </h2>
               <p className="text-sm text-slate-500">
-                {t("screens.transfer.subtitle") ||
-                  "History of money moved between funds"}
+                {t("screens.transfer.subtitle")}
               </p>
             </div>
 
             <button onClick={openCreateModal} className={primaryButtonClass}>
               <ArrowRightLeft size={16} />
-              {t("screens.transfer.newTransfer") || "New Transfer"}
+              {t("screens.transfer.newTransfer")}
             </button>
           </div>
 
@@ -87,7 +86,7 @@ const FundTransferList = () => {
             </div>
           ) : transfers.length === 0 ? (
             <div className="text-center text-gray-400 text-sm py-10">
-              {t("screens.transfer.noTransfers") || "No transfers yet"}
+              {t("screens.transfer.noTransfers")}
             </div>
           ) : (
             <div className="overflow-x-auto">

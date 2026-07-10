@@ -1,6 +1,7 @@
-import { X, Save, ArrowRightLeft, ArrowRight } from "lucide-react";
+import { X, Save, ArrowRightLeft, ArrowRight, ArrowLeft } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import useTransferFundtoFund from "../hooks/useTransferFundtoFund";
+import { useTranslation } from "react-i18next";
 
 // `transfer` is optional. Pass an existing fund_transfers row to edit it;
 // omit it (or pass null) to create a brand new transfer.
@@ -36,6 +37,8 @@ export default function FundTransferModal({
     transfer,
     lockedFromFundId,
   });
+  const { i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
 
   if (!isOpen) return null;
 
@@ -120,7 +123,7 @@ export default function FundTransferModal({
             {/* ARROW */}
             <div className="flex h-full items-center justify-center pt-8">
               <div className="rounded-full bg-indigo-100 text-indigo-600 p-2">
-                <ArrowRight size={18} />
+                {isRtl ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
               </div>
             </div>
 

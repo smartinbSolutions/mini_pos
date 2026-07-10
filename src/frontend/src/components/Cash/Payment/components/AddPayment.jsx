@@ -86,12 +86,12 @@ export default function AddPayment({
                 {isPurchase && t("screens.payments.purchasePayment")}
                 {isExpense && t("screens.payments.expensePayment")}
                 {isSales && t("screens.payments.salesPayment")}
-                {isCustomer && "Customer Account Collection"}
-                {isSupplier && "Supplier Balance Settlement"}
+                {isCustomer && t("customer_account_collection")}
+                {isSupplier && t("supplier_account_collection")}
                 {isPartner &&
                   (form.partner_transaction_type === "income"
-                    ? "Partner Deposit — Add Funds"
-                    : "Partner Withdrawal — Disburse Funds")}
+                    ? t("partner_deposit")
+                    : t("partner_withdrawal"))}
               </h2>
               {invoice && (
                 <p className="text-xs text-gray-500">
@@ -147,10 +147,7 @@ export default function AddPayment({
                   </span>
                   <div>
                     <p className="text-sm font-bold text-emerald-800">
-                      {t(
-                        "screens.payments.creditAvailable",
-                        "Credit available"
-                      )}
+                      {t("screens.payments.credit_available")}
                     </p>
                     <p className="text-xs text-emerald-600">
                       {money(availableCredit)}
@@ -169,7 +166,7 @@ export default function AddPayment({
                 >
                   {useCredit
                     ? t("common.applied", "Applied")
-                    : t("screens.payments.applyCredit", "Apply credit")}
+                    : t("screens.payments.applyCredit")}
                 </button>
               </div>
             </div>
@@ -185,7 +182,7 @@ export default function AddPayment({
                 className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${form.partner_transaction_type === "income" ? "bg-white text-emerald-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <ArrowDownLeft size={16} />
-                Deposit
+                {t("deposit")}
               </button>
               <button
                 type="button"
@@ -195,7 +192,7 @@ export default function AddPayment({
                 className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${form.partner_transaction_type === "expense" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <ArrowUpRight size={16} />
-                Withdraw
+                {t("withdraw")}
               </button>
             </div>
           )}
@@ -224,12 +221,11 @@ export default function AddPayment({
 
           <div>
             <label className="text-sm font-medium text-gray-700">
-              {useCredit
-                ? t(
-                    "screens.payments.amountFromCredit",
-                    "Amount to apply from credit"
-                  )
-                : "Amount to Receive / Pay (Base Currency)"}
+              {t(
+                useCredit
+                  ? "screens.payments.amountFromCredit"
+                  : "screens.payments.amountToReceive",
+              )}
             </label>
             <div className="relative mt-1">
               <input
@@ -265,7 +261,7 @@ export default function AddPayment({
           {!useCredit && form.fund_exchangeRate !== 1 && (
             <div>
               <label className="text-sm font-medium text-gray-700">
-                Collected / Paid Amount (Fund Currency)
+                {t("screens.payments.collected_paid_amount")}
               </label>
               <div className="relative mt-1">
                 <input
@@ -338,7 +334,7 @@ export default function AddPayment({
               ? t("common.saving")
               : confirmLabel ||
                 (isCollectorMode
-                  ? "Confirm"
+                  ? t("common.add")
                   : t("screens.payments.savePayment"))}
           </button>
         </div>

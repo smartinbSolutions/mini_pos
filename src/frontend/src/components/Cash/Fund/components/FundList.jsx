@@ -68,7 +68,7 @@ const FundList = () => {
     return (funds || []).filter((f) =>
       `${f.name} ${f.currency_code}`
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.toLowerCase()),
     );
   }, [funds, search]);
 
@@ -84,7 +84,7 @@ const FundList = () => {
             accountsLabel={t("screens.funds.accounts")}
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder={t("screens.funds.searchFund") || "Search funds"}
+            searchPlaceholder={t("screens.funds.searchFunds")}
             createTitle={t("screens.funds.createTitle")}
             createSubtitle={t("screens.funds.createSubtitle")}
             draft={draft}
@@ -100,7 +100,7 @@ const FundList = () => {
 
           {filteredFunds.length === 0 ? (
             <div className="text-center text-gray-400 text-sm py-10">
-              {t("screens.funds.noFunds") || "No funds yet"}
+              {t("screens.funds.noFunds")}
             </div>
           ) : (
             <div className="overflow-x-auto">

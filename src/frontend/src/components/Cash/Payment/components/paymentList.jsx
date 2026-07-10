@@ -28,7 +28,7 @@ const AllocationBadge = ({ payment }) => {
   if (payment.party_type === "partner") {
     return (
       <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
-        {t("screens.payments.partnerMovement", "Partner movement")}
+        {t("screens.payments.partnerMovement")}
       </span>
     );
   }
@@ -36,7 +36,7 @@ const AllocationBadge = ({ payment }) => {
   if (!payment.allocation_count || payment.allocation_count === 0) {
     return (
       <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
-        {t("screens.payments.unallocated", "Unallocated")}
+        {t("screens.payments.unallocated")}
       </span>
     );
   }
@@ -44,14 +44,14 @@ const AllocationBadge = ({ payment }) => {
   if (payment.allocated_amount < payment.amount) {
     return (
       <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
-        {t("screens.payments.partial", "Partial")}
+        {t("screens.payments.partial")}
       </span>
     );
   }
 
   return (
     <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
-      {t("screens.payments.fullyAllocated", "Fully allocated")}
+      {t("screens.payments.fullyAllocated")}
     </span>
   );
 };
@@ -181,7 +181,7 @@ const PaymentList = () => {
                   {formatMoney(summary.income_total)} {primaryCurrency?.symbol}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  {t("screens.payments.incomeCount", "{{count}} income", {
+                  {t("screens.payments.count_income", {
                     count: summary.income_count,
                   })}
                 </div>
@@ -192,7 +192,7 @@ const PaymentList = () => {
                   {formatMoney(summary.expense_total)} {primaryCurrency?.symbol}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  {t("screens.payments.expenseCount", "{{count}} expense", {
+                  {t("screens.payments.count_expense", {
                     count: summary.expense_count,
                   })}
                 </div>
@@ -222,7 +222,7 @@ const PaymentList = () => {
                 }`}
               >
                 <Filter size={16} />
-                {t("common.filters", "Filters")}
+                {t("common.filters")}
               </button>
               <button
                 onClick={refetch}
@@ -241,11 +241,9 @@ const PaymentList = () => {
                 onChange={(e) => handleFilterChange("type", e.target.value)}
                 className="h-11 rounded-xl border border-[#dbe4ff] bg-white px-3 text-sm outline-none focus:border-[#4663ff]"
               >
-                <option value="">
-                  {t("screens.payments.allTypes", "All Types")}
-                </option>
-                <option value="income">{t("ui.income", "Income")}</option>
-                <option value="expense">{t("ui.expense", "Expense")}</option>
+                <option value="">{t("screens.payments.all_types")}</option>
+                <option value="income">{t("screens.payments.income")}</option>
+                <option value="expense">{t("screens.payments.expense")}</option>
               </select>
 
               <select
@@ -255,13 +253,11 @@ const PaymentList = () => {
                 }
                 className="h-11 rounded-xl border border-[#dbe4ff] bg-white px-3 text-sm outline-none focus:border-[#4663ff]"
               >
-                <option value="">
-                  {t("screens.payments.allParties", "All Parties")}
-                </option>
-                <option value="customer">{t("ui.customer", "Customer")}</option>
-                <option value="supplier">{t("ui.supplier", "Supplier")}</option>
-                <option value="partner">{t("ui.partner", "Partner")}</option>
-                <option value="other">{t("ui.other", "Other")}</option>
+                <option value="">{t("screens.payments.all_parties")}</option>
+                <option value="customer">{t("ui.customer")}</option>
+                <option value="supplier">{t("ui.supplier")}</option>
+                <option value="partner">{t("ui.partner")}</option>
+                <option value="other">{t("ui.other")}</option>
               </select>
 
               <select
@@ -272,11 +268,11 @@ const PaymentList = () => {
                 className="h-11 rounded-xl border border-[#dbe4ff] bg-white px-3 text-sm outline-none focus:border-[#4663ff]"
               >
                 <option value="">
-                  {t("screens.payments.allInvoiceTypes", "All Invoice Types")}
+                  {t("screens.payments.allInvoiceTypes")}
                 </option>
-                <option value="sales">{t("ui.sales", "Sales")}</option>
-                <option value="purchase">{t("ui.purchase", "Purchase")}</option>
-                <option value="expense">{t("ui.expense", "Expense")}</option>
+                <option value="sales">{t("ui.sales")}</option>
+                <option value="purchase">{t("ui.purchase")}</option>
+                <option value="expense">{t("ui.expense")}</option>
               </select>
 
               <select
@@ -284,9 +280,7 @@ const PaymentList = () => {
                 onChange={(e) => handleFilterChange("fund_id", e.target.value)}
                 className="h-11 rounded-xl border border-[#dbe4ff] bg-white px-3 text-sm outline-none focus:border-[#4663ff]"
               >
-                <option value="">
-                  {t("screens.payments.allFunds", "All Funds")}
-                </option>
+                <option value="">{t("screens.payments.allFunds")}</option>
                 {funds.map((fund) => (
                   <option key={fund.id} value={fund.id}>
                     {fund.name}
@@ -319,29 +313,21 @@ const PaymentList = () => {
 
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-left text-sm">
+            <table className="w-full min-w-[1000px] text-start text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="w-10 px-5 py-4"></th>
                   <th className="px-5 py-4">
                     {t("screens.payments.paymentNo")}
                   </th>
-                  <th className="px-5 py-4">
-                    {t("screens.payments.flow", "Flow")}
-                  </th>
+                  <th className="px-5 py-4">{t("screens.payments.flow")}</th>
                   <th className="px-5 py-4">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-right">
-                    {t("ui.amount", "Amount")}
-                  </th>
-                  <th className="px-5 py-4 text-right">
-                    {t("screens.payments.rate", "Rate")}
-                  </th>
+                  <th className="px-5 py-4">{t("ui.amount")}</th>
+                  <th className="px-5 py-4">{t("screens.payments.rate")}</th>
                   <th className="px-5 py-4">
-                    {t("screens.payments.allocation", "Allocation")}
+                    {t("screens.payments.allocation")}
                   </th>
-                  <th className="px-5 py-4 text-right">
-                    {t("common.actions")}
-                  </th>
+                  <th className="px-5 py-4">{t("common.actions")}</th>
                 </tr>
               </thead>
 
@@ -477,10 +463,7 @@ const PaymentList = () => {
                                 </div>
                               ) : (
                                 <div className="text-sm text-slate-500">
-                                  {t(
-                                    "screens.payments.noAllocations",
-                                    "No allocations recorded for this payment.",
-                                  )}
+                                  {t("screens.payments.noAllocations")}
                                 </div>
                               )}
                             </td>
