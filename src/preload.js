@@ -9,6 +9,11 @@ contextBridge.exposeInMainWorld("api", {
   updateCompanySetting: (data) =>
     ipcRenderer.invoke("update-company-settings", data),
   saveLogo: (data) => ipcRenderer.invoke("save-logo", data),
+  /* ================= AUTH ================= */
+  login: (pin) => ipcRenderer.invoke("auth:login", { pin }),
+  getUsers: () => ipcRenderer.invoke("auth:get-users"),
+  createUser: (data) => ipcRenderer.invoke("auth:create-user", data),
+  updateUser: (data) => ipcRenderer.invoke("auth:update-user", data),
   /* ================= CURRENCY ================= */
   getCurrencies: () => ipcRenderer.invoke("get-currencies"),
   getCurrency: (id) => ipcRenderer.invoke("get-currency", id),

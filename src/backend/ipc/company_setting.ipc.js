@@ -1,5 +1,7 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import { hashPin, isPinTaken } from "../utils/authCrypto";
+
 import { seedData } from "../utils/data";
 
 const toAppFileUrl = (filePath) =>
@@ -188,29 +190,33 @@ export default function registerCompanySettingsIPC() {
   });
 
   ipcMain.handle("create-company-settings", (event, data) => {
+    if (!/^\d{6}$/.test(data.admin_pin || "")) {
+      return { success: false, error: "Admin PIN must be exactly 6 digits" };
+    }
+    if (!data.admin_username?.trim()) {
+      return { success: false, error: "Admin username is required" };
+    }
+    if (isPinTaken(db, data.admin_pin)) {
+      return { success: false, error: "PIN already in use" };
+    }
+
     const currencyResult = db
       .prepare(
         `
-      INSERT INTO currencies (name, latinName, code, exchangeRate, symbol,isPrimary)
-      VALUES (?,?,?,?,?,?)
-    `
+        INSERT INTO currencies (name, latinName, code, exchangeRate, symbol, isPrimary)
+        VALUES (?,?,?,?,?,?)
+      `
       )
       .run(data.currency_name, data.latinName, data.code, 1, data.symbol, 1);
+
     const result = db
       .prepare(
         `
-      INSERT INTO company_settings (
-        company_name,
-        company_latin_name,
-        phone,
-        address,
-        email,
-        logo,
-        base_currency_id,
-        language,
-        timezone
-      ) VALUES (?,?,?,?,?,?,?,?,?)
-    `
+        INSERT INTO company_settings (
+          company_name, company_latin_name, phone, address, email, logo,
+          base_currency_id, language, timezone
+        ) VALUES (?,?,?,?,?,?,?,?,?)
+      `
       )
       .run(
         data.company_name,
@@ -223,6 +229,14 @@ export default function registerCompanySettingsIPC() {
         data.language,
         data.timezone
       );
+
+    db.prepare(
+      `
+      INSERT INTO users (username, pin_hash, role, full_name, is_active)
+      VALUES (?, ?, 'admin', ?, 1)
+    `
+    ).run(data.admin_username, hashPin(data.admin_pin), data.admin_username);
+
     seedData(db);
     return { success: true, id: result.lastInsertRowid };
   });
