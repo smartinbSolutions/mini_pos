@@ -113,14 +113,14 @@ export const CustomerList = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+              <table className="w-full min-w-[720px] text-start text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-5 py-4">{t("ui.name")}</th>
-                    <th className="px-5 py-4">{t("ui.phone")}</th>
-                    <th className="px-5 py-4">{t("ui.address")}</th>
-                    <th className="px-5 py-4 text-right">{t("ui.balance")}</th>
-                    <th className="px-5 py-4 text-right">
+                    <th className="px-5 py-4 text-start">{t("ui.name")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.phone")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.address")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.balance")}</th>
+                    <th className="px-5 py-4 text-start">
                       {t("common.actions")}
                     </th>
                   </tr>
@@ -211,7 +211,7 @@ export const CustomerList = () => {
                         <td className="px-5 py-3 max-w-[200px] truncate text-slate-500">
                           {customer.address || t("ui.noAddress")}
                         </td>
-                        <td className="px-5 py-3 text-right">
+                        <td className="px-5 py-3 text-start">
                           <BalanceCell
                             total={sales}
                             paid={paid}
@@ -221,7 +221,7 @@ export const CustomerList = () => {
                           />
                         </td>
                         <td className="px-5 py-3">
-                          <div className="flex justify-end gap-1">
+                          <div className="flex justify-start gap-1">
                             <button
                               onClick={() =>
                                 navigate(`/payment/customer/${customer.id}`)

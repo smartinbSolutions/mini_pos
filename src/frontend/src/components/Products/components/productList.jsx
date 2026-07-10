@@ -67,12 +67,12 @@ export default function ProductList() {
 
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0
+    0,
   );
   const totalValue = products.reduce(
     (total, product) =>
       total + Number(product.quantity || 0) * Number(product.price || 0),
-    0
+    0,
   );
 
   return (
@@ -152,7 +152,7 @@ export default function ProductList() {
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
               >
                 <FileSpreadsheet size={16} />
-                {t("screens.products.import", "Import")}
+                {t("screens.products.import")}
               </button>
               <button
                 type="button"
@@ -189,16 +189,16 @@ export default function ProductList() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-start text-sm">
                 <thead>
                   <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
-                    <th className="px-5 py-3">{t("ui.product")}</th>
-                    <th className="px-5 py-3">{t("ui.unit")}</th>
-                    <th className="px-5 py-3 text-right">{t("ui.qty")}</th>
-                    <th className="px-5 py-3 text-right">{t("ui.cost")}</th>
-                    <th className="px-5 py-3 text-right">{t("ui.price")}</th>
-                    <th className="px-5 py-3 text-right">{t("ui.barcodes")}</th>
-                    <th className="px-5 py-3 text-right">
+                    <th className="px-5 py-3 text-start">{t("ui.product")}</th>
+                    <th className="px-5 py-3 text-start">{t("ui.unit")}</th>
+                    <th className="px-5 py-3 text-start">{t("ui.qty")}</th>
+                    <th className="px-5 py-3 text-start">{t("ui.cost")}</th>
+                    <th className="px-5 py-3 text-start">{t("ui.price")}</th>
+                    <th className="px-5 py-3 text-start">{t("ui.barcodes")}</th>
+                    <th className="px-5 py-3 text-start">
                       {t("common.actions")}
                     </th>
                   </tr>
@@ -249,20 +249,20 @@ export default function ProductList() {
                             </span>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-right font-bold tabular-nums text-slate-950">
+                        <td className="px-5 py-3 text-start font-bold tabular-nums text-slate-950">
                           {formatNumber(product.quantity || 0, 2)}
                         </td>
-                        <td className="px-5 py-3 text-right font-bold tabular-nums text-red-600">
+                        <td className="px-5 py-3 text-start font-bold tabular-nums text-red-600">
                           {money(product.costPrice || 0)}
                         </td>
-                        <td className="px-5 py-3 text-right font-bold tabular-nums text-emerald-600">
+                        <td className="px-5 py-3 text-start font-bold tabular-nums text-emerald-600">
                           {money(product.price || 0)}
                         </td>
-                        <td className="px-5 py-3 text-right text-slate-500">
+                        <td className="px-5 py-3 text-start text-slate-500">
                           {productBarcodes.length}
                         </td>
                         <td className="px-5 py-3">
-                          <div className="flex items-center justify-end gap-1.5">
+                          <div className="flex items-center justify-start gap-1.5">
                             <button
                               type="button"
                               onClick={() => openMovements(product)}

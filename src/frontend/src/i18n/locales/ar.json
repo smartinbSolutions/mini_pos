@@ -124,7 +124,8 @@
     "unpaid": "غير مدفوع",
     "partner": "الشريك",
     "partners": "الشركاء",
-    "other": "غير ذلك"
+    "other": "غير ذلك",
+    "opening_balance": "الرصيد الافتتاحي"
   },
   "screens": {
     "units": {
@@ -232,7 +233,9 @@
       "uploadFailed": "فشل رفع الصورة",
       "nameRequired": "يرجى إدخال اسم المنتج",
       "validCost": "يرجى إدخال سعر تكلفة صالح",
-      "validSale": "يرجى إدخال سعر بيع صالح"
+      "validSale": "يرجى إدخال سعر بيع صالح",
+      "import": "استيراد",
+      "movementsTitle": "حركة المنتج"
     },
     "invoices": {
       "salesTitle": "فواتير المبيعات",
@@ -317,7 +320,12 @@
       "businessIdentity": "الهوية الرسمية لنشاطك",
       "contactDetails": "تفاصيل الاتصال",
       "publicInfo": "معلومات عامة للفواتير والإيصالات",
-      "chooseCurrency": "اختر العملة الافتراضية للمعاملات"
+      "chooseCurrency": "اختر العملة الافتراضية للمعاملات",
+      "adminAccount": "حساب المسؤول",
+      "adminUsername": "اسم المستخدم",
+      "adminPin": "الرمز السري",
+      "adminPinConfirm": "تأكيد الرمز السري",
+      "adminAccountHint": "يمكنك إضافة المزيد من المستخدمين لاحقا"
     },
     "pos": {
       "loading": "جار تحميل نظام نقاط البيع...",
@@ -524,6 +532,11 @@
       "subtitle": "تاريخ الأموال المنقولة بين الصناديق",
       "newTransfer": "تحويل جديد",
       "noTransfers": "لا يوجد تحويلات بعد"
+    },
+    "login": {
+      "title": "مرحبًا بعودتك",
+      "subtitle": "سجل الدخول للبدء",
+      "hint": "لا تواصل معنا إذا نسيت الرمز السري"
     }
   },
   "languages": {
@@ -554,7 +567,9 @@
     "partners": "الشركاء",
     "partner": "الشريك",
     "payment": "المدفوعات",
-    "transfers": "التحويلات"
+    "transfers": "التحويلات",
+    "store": "المتجر",
+    "importReports": "تقارير الاستيراد"
   },
   "dashboard": {
     "loading": "جار تحميل لوحة التحكم...",

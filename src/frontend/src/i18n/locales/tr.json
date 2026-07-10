@@ -124,7 +124,8 @@
     "unpaid": "Ödenmedi",
     "partners": "Ortaklar",
     "partner": "Ortak",
-    "other": "Diğer"
+    "other": "Diğer",
+    "opening_balance": "Açılış bakiyesi"
   },
   "screens": {
     "units": {
@@ -232,7 +233,9 @@
       "uploadFailed": "Görsel yüklenemedi",
       "nameRequired": "Lütfen ürün adını girin",
       "validCost": "Lütfen geçerli bir maliyet fiyatı girin",
-      "validSale": "Lütfen geçerli bir satış fiyatı girin"
+      "validSale": "Lütfen geçerli bir satış fiyatı girin",
+      "import": "İçe aktar",
+      "movementsTitle": "Ürün hareketi"
     },
     "invoices": {
       "salesTitle": "Satış faturaları",
@@ -317,7 +320,12 @@
       "businessIdentity": "Resmi işletme kimliğiniz",
       "contactDetails": "İletişim Detayları",
       "publicInfo": "Faturalar ve fişler için genel bilgiler",
-      "chooseCurrency": "İşlemler için varsayılan para birimini seçin"
+      "chooseCurrency": "İşlemler için varsayılan para birimini seçin",
+      "adminAccount": "Admin hesabı",
+      "adminUsername": "Kullanıcı adı",
+      "adminPin": "PIN kodu",
+      "adminPinConfirm": "PIN kodunu onayla",
+      "adminAccountHint": "Diğer kullanıcıları sonradan ekleyebilirsiniz"
     },
     "pos": {
       "loading": "POS Sistemi yükleniyor...",
@@ -524,6 +532,11 @@
       "subtitle": "Fonlar arasında taşınan paranın geçmişi",
       "newTransfer": "Yeni transfer",
       "noTransfers": "Henüz transfer yok"
+    },
+    "login": {
+      "title": "Yeniden hoşgeldiniz",
+      "subtitle": "Başlamak için giriş yap",
+      "hint": "PIN kodunu unuttuysanız, bizimle iletişime geçmeyin"
     }
   },
   "languages": {
@@ -554,7 +567,9 @@
     "partner": "Ortak",
     "partners": "Ortaklar",
     "payment": "Ödemeler",
-    "transfers": "Transferler"
+    "transfers": "Transferler",
+    "store": "Mağaza",
+    "importReports": "İçe aktarma raporları"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",

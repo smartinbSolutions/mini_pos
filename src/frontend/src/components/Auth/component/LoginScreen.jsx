@@ -133,8 +133,8 @@ const LoginScreen = () => {
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-          <KeyRound size={12} />
           {t("screens.login.hint")}
+          <KeyRound size={12} />
         </div>
       </div>
     </main>

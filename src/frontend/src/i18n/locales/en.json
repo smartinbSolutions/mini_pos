@@ -124,7 +124,8 @@
     "partial": "Partial",
     "selectExpense": "Select expense",
     "unpaid": "Unpaid",
-    "other": "Other"
+    "other": "Other",
+    "opening_balance": "Opening balance"
   },
   "screens": {
     "units": {
@@ -232,7 +233,9 @@
       "uploadFailed": "Failed to upload image",
       "nameRequired": "Please enter product name",
       "validCost": "Please enter a valid cost price",
-      "validSale": "Please enter a valid sale price"
+      "validSale": "Please enter a valid sale price",
+      "import": "Import",
+      "movementsTitle": "Product movements"
     },
     "invoices": {
       "salesTitle": "Sales",
@@ -317,7 +320,12 @@
       "businessIdentity": "Your official business identity",
       "contactDetails": "Contact Details",
       "publicInfo": "Public information for invoices and receipts",
-      "chooseCurrency": "Choose the default currency for transactions"
+      "chooseCurrency": "Choose the default currency for transactions",
+      "adminAccount": "Admin account",
+      "adminUsername": "Username",
+      "adminPin": "PIN code",
+      "adminPinConfirm": "Confirm PIN code",
+      "adminAccountHint": "You can add more users later"
     },
     "pos": {
       "loading": "Loading POS System...",
@@ -523,6 +531,11 @@
       "subtitle": "History of money moved between funds",
       "newTransfer": "New transfer",
       "noTransfers": "No transfers yet"
+    },
+    "login": {
+      "title": "Welcome back",
+      "subtitle": "Log in to start",
+      "hint": "Don't contact us if you forgot your PIN code"
     }
   },
   "languages": {
@@ -553,7 +566,9 @@
     "partners": "Partners",
     "payment": "Payments",
     "transfers": "transfers",
-    "partner": "Partners"
+    "partner": "Partners",
+    "store": "Store",
+    "importReports": "Import reports"
   },
   "dashboard": {
     "loading": "Loading dashboard...",

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   AlertCircle,
-  ArrowRight,
   Banknote,
   BriefcaseBusiness,
   Check,
@@ -341,7 +340,7 @@ export default function CompanySettings({ onSetupComplete }) {
                           key={c.id}
                           type="button"
                           onClick={() => handleCurrencySelect(c)}
-                          className={`relative rounded-xl border p-2.5 text-left transition ${
+                          className={`relative rounded-xl border p-2.5 text-end transition ${
                             active
                               ? "border-[#4663ff] bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/20"
                               : "border-[#e5ebff] bg-[#f8faff] text-slate-700 hover:border-[#b9c6ff]"
@@ -377,7 +376,6 @@ export default function CompanySettings({ onSetupComplete }) {
               >
                 <Save size={16} />
                 {saving ? t("common.saving") : t("screens.setupPage.saveSetup")}
-                <ArrowRight size={15} />
               </button>
             </div>
           </section>
