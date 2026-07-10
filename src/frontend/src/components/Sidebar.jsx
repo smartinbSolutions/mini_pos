@@ -70,9 +70,12 @@ export default function Sidebar() {
       ],
     },
     {
-      title: "navigation.products",
+      title: "navigation.store",
       icon: <Package size={18} />,
-      path: "/products",
+      children: [
+        { title: "navigation.products", path: "/products" },
+        { title: "navigation.importReports", path: "/import-reports" },
+      ],
     },
     {
       title: "navigation.partners",

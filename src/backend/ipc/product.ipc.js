@@ -3,7 +3,6 @@ import fs from "fs";
 import db from "../db";
 import createProductMovement from "../utils/createPorductMovment";
 import {
-  generateImportSummaryReport,
   generateProductImportTemplate,
   parseProductImport,
 } from "../utils/productImport";
@@ -105,22 +104,36 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("delete-product", (event, id) => {
-    db.prepare(`DELETE FROM product_barcodes WHERE product_id = ?`).run(id);
-    db.prepare(`DELETE FROM product_movements WHERE product_id = ?`).run(id);
+    try {
+      const transaction = db.transaction(() => {
+        const usedInPurchase = db
+          .prepare(
+            `SELECT COUNT(*) as count FROM purchase_invoice_items WHERE product_id = ?`
+          )
+          .get(id);
 
-    const used = db
-      .prepare(
-        `SELECT COUNT(*) as count FROM purchase_invoice_items WHERE product_id = ?`
-      )
-      .get(id);
+        const usedInSales = db
+          .prepare(
+            `SELECT COUNT(*) as count FROM sales_invoice_items WHERE product_id = ?`
+          )
+          .get(id);
 
-    if (used.count > 0) {
-      throw new Error("Product is used in invoices");
+        if (usedInPurchase.count > 0 || usedInSales.count > 0) {
+          throw new Error("Product is used in invoices");
+        }
+
+        db.prepare(`DELETE FROM product_barcodes WHERE product_id = ?`).run(id);
+        db.prepare(`DELETE FROM product_movements WHERE product_id = ?`).run(
+          id
+        );
+        db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
+      });
+
+      transaction();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
     }
-
-    db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
-
-    return { success: true };
   });
 
   ipcMain.handle("get-product-by-barcode", (event, barcode) => {
@@ -184,6 +197,7 @@ export default function registerProductIPC() {
     fs.writeFileSync(filePath, buffer);
     return { success: true, filePath };
   });
+
   ipcMain.handle("import-products", async () => {
     const { filePaths, canceled } = await dialog.showOpenDialog({
       title: "Select Product Import File",
@@ -195,24 +209,41 @@ export default function registerProductIPC() {
     try {
       const fileName = filePaths[0].split(/[\\/]/).pop();
       const summary = await parseProductImport(db, filePaths[0], fileName);
-      const reportPath = await generateImportSummaryReport(
-        summary,
-        filePaths[0]
-      );
 
-      db.prepare(`UPDATE product_imports SET report_path = ? WHERE id = ?`).run(
-        reportPath,
-        summary.importId
-      );
-
-      return { success: true, ...summary, reportPath };
+      return { success: true, ...summary };
     } catch (err) {
       return { success: false, error: err.message || String(err) };
     }
   });
 
   ipcMain.handle("get-product-imports", () => {
-    return db.prepare(`SELECT * FROM product_imports ORDER BY id DESC`).all();
+    const imports = db
+      .prepare(`SELECT * FROM product_imports ORDER BY id DESC`)
+      .all();
+
+    const statsRow = db
+      .prepare(
+        `
+        SELECT
+          COUNT(*) AS total_imports,
+          COALESCE(SUM(created_count), 0) AS total_created,
+          COALESCE(SUM(skipped_products_count), 0) AS total_skipped_products,
+          COALESCE(SUM(skipped_barcodes_count), 0) AS total_skipped_barcodes
+        FROM product_imports
+      `
+      )
+      .get();
+
+    return {
+      data: imports,
+      stats: {
+        total_imports: statsRow?.total_imports || 0,
+        total_created: statsRow?.total_created || 0,
+        total_skipped:
+          (statsRow?.total_skipped_products || 0) +
+          (statsRow?.total_skipped_barcodes || 0),
+      },
+    };
   });
 
   ipcMain.handle("get-product-import-items", (event, importId) => {

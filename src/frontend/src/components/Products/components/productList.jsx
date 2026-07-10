@@ -65,14 +65,6 @@ export default function ProductList() {
     closeMovements,
   } = movementsHook;
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
-        {t("screens.products.loading")}
-      </div>
-    );
-  }
-
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
     0
@@ -181,7 +173,11 @@ export default function ProductList() {
         )}
 
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)]">
-          {filteredProducts.length === 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center p-12 text-slate-500">
+              {t("screens.products.loading")}
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="p-12 text-center">
               <Package size={42} className="mx-auto text-[#4663ff]" />
               <h2 className="mt-4 text-xl font-black text-slate-950">

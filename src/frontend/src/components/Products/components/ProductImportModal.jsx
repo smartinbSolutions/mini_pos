@@ -1,4 +1,3 @@
-// ProductImportModal.jsx
 import React, { useState } from "react";
 import {
   X,
@@ -7,7 +6,6 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   AlertCircle,
-  ExternalLink,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -41,6 +39,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
     setResult(null);
     try {
       const res = await api.importProducts();
+      console.log("[ProductImportModal] import result:", res);
       if (res.canceled) return;
       if (!res.success) {
         setError(res.error || t("errors.importFailed"));
@@ -53,17 +52,15 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
     }
   };
 
-  const handleOpenReport = () => {
-    if (result?.reportPath) {
-      api.openFileInDefaultApp(result.reportPath);
-    }
-  };
-
   const handleClose = () => {
     setResult(null);
     setError("");
     onClose();
   };
+
+  const hasIssues =
+    result &&
+    (result.skippedProducts.length > 0 || result.skippedBarcodes.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -169,15 +166,60 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                 </div>
               )}
 
-              {result.reportPath && (
-                <button
-                  type="button"
-                  onClick={handleOpenReport}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                >
-                  <ExternalLink size={16} />
-                  {t("screens.products.openFullReport", "Open Full Report")}
-                </button>
+              {hasIssues && (
+                <div className="space-y-2">
+                  {result.skippedProducts.length > 0 && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-700">
+                        {t(
+                          "screens.products.skippedProducts",
+                          "Skipped Products"
+                        )}
+                      </p>
+                      <div className="space-y-1.5">
+                        {result.skippedProducts.map((item, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between gap-3 text-xs"
+                          >
+                            <span className="font-bold text-slate-700">
+                              {t("ui.row", "Row")} {item.row} · {item.name}
+                            </span>
+                            <span className="shrink-0 text-amber-700">
+                              {item.reason}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {result.skippedBarcodes.length > 0 && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-700">
+                        {t(
+                          "screens.products.skippedBarcodes",
+                          "Skipped Barcodes"
+                        )}
+                      </p>
+                      <div className="space-y-1.5">
+                        {result.skippedBarcodes.map((item, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between gap-3 text-xs"
+                          >
+                            <span className="font-bold text-slate-700">
+                              {t("ui.row", "Row")} {item.row} · {item.barcode}
+                            </span>
+                            <span className="shrink-0 text-amber-700">
+                              {item.reason}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
 
               <button

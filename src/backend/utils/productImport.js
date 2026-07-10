@@ -60,27 +60,27 @@ export async function parseProductImport(db, filePath, fileName) {
   );
 
   const insertProduct = db.prepare(`
-      INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
+        INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
   const insertBarcode = db.prepare(`
-      INSERT INTO product_barcodes (product_id, barcode) VALUES (?, ?)
-    `);
+        INSERT INTO product_barcodes (product_id, barcode) VALUES (?, ?)
+      `);
   const getProductByName = db.prepare(`SELECT id FROM products WHERE name = ?`);
 
   const insertImport = db.prepare(`
-      INSERT INTO product_imports (file_name, total_rows, created_count, skipped_products_count, skipped_barcodes_count, report_path)
-      VALUES (?, 0, 0, 0, 0, NULL)
-    `);
+        INSERT INTO product_imports (file_name, total_rows, created_count, skipped_products_count, skipped_barcodes_count, report_path)
+        VALUES (?, 0, 0, 0, 0, NULL)
+      `);
   const insertImportItem = db.prepare(`
-      INSERT INTO product_import_items (import_id, row_number, status, product_id, product_name, barcode, reason)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
+        INSERT INTO product_import_items (import_id, row_number, status, product_id, product_name, barcode, reason)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
   const updateImportCounts = db.prepare(`
-      UPDATE product_imports
-      SET total_rows = ?, created_count = ?, skipped_products_count = ?, skipped_barcodes_count = ?
-      WHERE id = ?
-    `);
+        UPDATE product_imports
+        SET total_rows = ?, created_count = ?, skipped_products_count = ?, skipped_barcodes_count = ?
+        WHERE id = ?
+      `);
 
   const created = [];
   const skippedProducts = [];
@@ -166,15 +166,6 @@ export async function parseProductImport(db, filePath, fileName) {
       });
 
       created.push({ row: rowNumber, name, id: productId });
-      insertImportItem.run(
-        importId,
-        rowNumber,
-        "created",
-        productId,
-        name,
-        null,
-        null
-      );
     });
 
     updateImportCounts.run(
@@ -191,59 +182,4 @@ export async function parseProductImport(db, filePath, fileName) {
   const importId = transaction();
 
   return { importId, created, skippedProducts, skippedBarcodes };
-}
-
-export async function generateImportSummaryReport(summary, sourceFilePath) {
-  const workbook = new ExcelJS.Workbook();
-
-  const createdSheet = workbook.addWorksheet("Created");
-  createdSheet.columns = [
-    { header: "Row", key: "row", width: 8 },
-    { header: "Product Name", key: "name", width: 28 },
-    { header: "Product ID", key: "id", width: 12 },
-  ];
-  createdSheet.getRow(1).font = { bold: true };
-  summary.created.forEach((c) => createdSheet.addRow(c));
-
-  const skippedProductsSheet = workbook.addWorksheet("Skipped Products");
-  skippedProductsSheet.columns = [
-    { header: "Row", key: "row", width: 8 },
-    { header: "Product Name", key: "name", width: 28 },
-    { header: "Reason", key: "reason", width: 36 },
-  ];
-  skippedProductsSheet.getRow(1).font = { bold: true };
-  summary.skippedProducts.forEach((s) => skippedProductsSheet.addRow(s));
-
-  const skippedBarcodesSheet = workbook.addWorksheet("Skipped Barcodes");
-  skippedBarcodesSheet.columns = [
-    { header: "Row", key: "row", width: 8 },
-    { header: "Barcode", key: "barcode", width: 20 },
-    { header: "Reason", key: "reason", width: 36 },
-  ];
-  skippedBarcodesSheet.getRow(1).font = { bold: true };
-  summary.skippedBarcodes.forEach((s) => skippedBarcodesSheet.addRow(s));
-
-  const summarySheet = workbook.addWorksheet("Summary");
-  summarySheet.columns = [
-    { header: "Metric", key: "metric", width: 28 },
-    { header: "Count", key: "count", width: 12 },
-  ];
-  summarySheet.getRow(1).font = { bold: true };
-  summarySheet.addRow({
-    metric: "Products created",
-    count: summary.created.length,
-  });
-  summarySheet.addRow({
-    metric: "Products skipped",
-    count: summary.skippedProducts.length,
-  });
-  summarySheet.addRow({
-    metric: "Barcodes skipped",
-    count: summary.skippedBarcodes.length,
-  });
-
-  const reportPath =
-    sourceFilePath.replace(/\.xlsx$/i, "") + "-import-report.xlsx";
-  await workbook.xlsx.writeFile(reportPath);
-  return reportPath;
 }

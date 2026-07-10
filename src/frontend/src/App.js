@@ -35,6 +35,7 @@ import ExpenseView from "./components/Invoices/expense/components/ExpenseView";
 import PartnersList from "./components/Partners/components/PartnersList";
 import PaymentList from "./components/Cash/Payment/components/paymentList";
 import FundTransferList from "./components/Cash/Fund/components/FundTransferList";
+import ImportSummary from "./components/Products/components/ImportSummary";
 
 export default function App() {
   const { t } = useTranslation();
@@ -96,6 +97,7 @@ export default function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
               <Route path="products" element={<ProductList />} />
+              <Route path="import-reports" element={<ImportSummary />} />
               <Route path="sales" element={<SalesList />} />
               <Route path="add-sales" element={<AddSales />} />
               <Route path="view-sales/:id" element={<SalesInvoiceView />} />
