@@ -150,7 +150,7 @@ const PurchaseList = () => {
             {
               icon: Percent,
               value: money(totalTax),
-              label: t("ui.taxCollected"),
+              label: t("screens.invoices.taxCollected"),
               variant: "violet",
             },
             {

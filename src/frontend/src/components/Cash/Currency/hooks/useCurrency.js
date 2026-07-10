@@ -70,7 +70,9 @@ const useCurrency = () => {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || t("errors.createFailed", { field: t("ui.currency") }));
+      setError(
+        err?.message || t("errors.createFailed", { field: t("ui.currency") }),
+      );
     } finally {
       setLoading(false);
     }
@@ -127,7 +129,9 @@ const useCurrency = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Currency:", err);
-      setActionError(err?.message || t("errors.createFailed", { field: t("ui.currency") }));
+      setActionError(
+        err?.message || t("errors.createFailed", { field: t("ui.currency") }),
+      );
       return false;
     }
   };
@@ -139,7 +143,9 @@ const useCurrency = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Currency:", err);
-      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.currency") }));
+      setActionError(
+        err?.message || t("errors.updateFailed", { field: t("ui.currency") }),
+      );
       return false;
     }
   };

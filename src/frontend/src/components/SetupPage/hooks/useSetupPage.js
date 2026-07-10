@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 const currencies = [
   { id: "1", name: "Syrian Pound", code: "SYP", symbol: "\u00a3" },
@@ -11,25 +12,30 @@ const currencies = [
 
 const defaultCurrency = currencies[0];
 
-const validateSetupForm = (form) => {
+const validateSetupForm = (form, t) => {
   const nextErrors = {};
 
   if (!form.company_name?.trim()) {
-    nextErrors.company_name = "Company name is required.";
+    nextErrors.company_name = t("errors.nameRequired", {
+      field: t("screens.company.companyName"),
+    });
   }
 
   if (!form.phone?.trim()) {
-    nextErrors.phone = "Phone is required.";
+    nextErrors.phone = t("errors.valueRequired", { field: t("ui.phone") });
   }
 
   if (!form.base_currency_id) {
-    nextErrors.base_currency_id = "Base currency is required.";
+    nextErrors.base_currency_id = t("errors.valueRequired", {
+      field: t("screens.company.baseCurrency"),
+    });
   }
 
   return nextErrors;
 };
 
 const useSetupPage = ({ onSetupComplete } = {}) => {
+  const { t } = useTranslation();
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -118,7 +124,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
   };
 
   const handleSave = async () => {
-    const validationErrors = validateSetupForm(form);
+    const validationErrors = validateSetupForm(form, t);
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);

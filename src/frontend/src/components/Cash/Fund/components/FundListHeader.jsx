@@ -97,7 +97,7 @@ const FundListHeader = ({
             value={draft.currency_id || ""}
             onChange={(e) => {
               const selected = currencies.find(
-                (c) => c.id === Number(e.target.value)
+                (c) => c.id === Number(e.target.value),
               );
 
               setDraft({
@@ -163,7 +163,7 @@ const FundListHeader = ({
 
           <button onClick={openModal} className={primaryButtonClass}>
             <Plus size={15} />
-            {t("common.new") || "New"}
+            {t("common.create") || "New"}
           </button>
         </div>
       </div>

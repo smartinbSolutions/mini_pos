@@ -71,15 +71,15 @@ const useUpdateExpense = () => {
       });
       setItems(res.items || []);
     } catch (err) {
-      setError(err?.message || "Failed to load expense");
+      setError(err?.message || t("errors.loadExpenseFailed"));
     } finally {
       setLoading(false);
     }
-  }, [api, id]);
+  }, [api, id, t]);
 
   const supplierOptions = useMemo(
     () => [
-      { id: NO_SUPPLIER, name: t("ui.noSupplier") || "No supplier" },
+      { id: NO_SUPPLIER, name: t("ui.noSupplier") },
       ...suppliers,
     ],
     [suppliers, t]
@@ -144,7 +144,7 @@ const useUpdateExpense = () => {
           throw new Error(res?.error || t("errors.updateFailed"));
         }
 
-        toast.success("Expense updated successfully");
+        toast.success(t("success.updated", { field: t("ui.expense") }));
         navigate("/expense");
         return res;
       } catch (err) {

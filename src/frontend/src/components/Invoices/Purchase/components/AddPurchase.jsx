@@ -485,8 +485,7 @@ export default function AddPurchase() {
               <div>
                 <h3 className="font-black">{t("ui.payment")}</h3>
                 <p className="text-xs text-slate-500">
-                  {t("screens.invoices.paymentHelper") ||
-                    "Save now and settle later, or pay right away."}
+                  {t("screens.invoices.paymentHelper")}
                 </p>
               </div>
 

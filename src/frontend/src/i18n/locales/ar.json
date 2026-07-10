@@ -20,7 +20,8 @@
     "deleting": "جار الحذف...",
     "cancel": "إلغاء",
     "language": "اللغة",
-    "perPage": "لكل صفحة"
+    "perPage": "لكل صفحة",
+    "create": "إنشاء"
   },
   "ui": {
     "setup": "الإعداد",
@@ -110,7 +111,9 @@
     "expenseCategory": "تصنيف المصاريف",
     "totalWithOutDiscont": "الإجمالي بدون خصم",
     "totalPaymentsCount": "عدد الدفعات",
-    "totalAmount": "المبلغ الإجمالي"
+    "totalAmount": "المبلغ الإجمالي",
+    "selectFundRequired": "يرجى اختيار صندوق أولاً",
+    "noSupplier": "بدون مورد"
   },
   "screens": {
     "units": {
@@ -259,7 +262,8 @@
       "unpaid": "غير مدفوع",
       "partial": "مدفوع جزئياً",
       "paid": "مدفوع",
-      "taxCollected": "الضرائب المحصلة"
+      "taxCollected": "الضرائب المحصلة",
+      "paymentHelper": "احفظ الآن وادفع لاحقاً، أو ادفع على الفور."
     },
     "company": {
       "title": "إعدادات الشركة",
@@ -270,7 +274,8 @@
       "phoneNumber": "رقم الهاتف",
       "emailAddress": "البريد الإلكتروني",
       "companyAddress": "عنوان الشركة",
-      "saveSettings": "حفظ الإعدادات"
+      "saveSettings": "حفظ الإعدادات",
+      "baseCurrency": "العملة الأساسية"
     },
     "setupPage": {
       "title": "إعداد الشركة",
@@ -329,7 +334,8 @@
       "listScalePortsFailed": "فشل عرض منافذ الميزان",
       "changeTotal": "تغيير المجموع",
       "finalTotal": "المجموع النهائي",
-      "originalTotal": "المجموع الأصلي"
+      "originalTotal": "المجموع الأصلي",
+      "discountHint": "سيتم تطبيق الفرق كخصم"
     },
     "checkout": {
       "title": "الدفع",
@@ -447,7 +453,11 @@
       "note_placeholder": "مثال: إعادة توازن الخزائن لوردية نهاية الأسبوع...",
       "processing": "جاري المعالجة...",
       "execute_transfer": "تنفيذ التحويل",
-      "destination_receives": "الوجهة تستلم"
+      "destination_receives": "الوجهة تستلم",
+      "selectBothFunds": "يرجى اختيار صندوقي المصدر والوجهة.",
+      "sameFundError": "لا يمكن التحويل إلى الصندوق نفسه.",
+      "validReceiveAmount": "يرجى إدخال مبلغ استلام صالح.",
+      "defaultNote": "تحويل داخلي من {{source}} إلى {{destination}}"
     }
   },
   "languages": {
@@ -568,6 +578,12 @@
     "deleteFailed": "فشل حذف {{field}}.",
     "deleteHasData": "فشل حذف {{field}} لوجود بيانات مرتبطة.",
     "partialLoad": "تم تحميل {{field}}، لكن بعض الميزات غير متاحة لأن معالجات IPC غير مسجلة.",
-    "customer_required": "العميل مطلوب"
+    "customer_required": "العميل مطلوب",
+    "validAmount": "يرجى إدخال مبلغ صالح",
+    "creditExceeded": "المبلغ يتجاوز الرصيد المتاح",
+    "loadExpenseFailed": "فشل تحميل المصروف"
+  },
+  "success": {
+    "updated": "تم تحديث {{field}} بنجاح"
   }
 }

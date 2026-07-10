@@ -24,6 +24,7 @@ const POSSystemEditTotalPrice = ({
             type="button"
             onClick={() => setIsTotalModalOpen(false)}
             className="rounded-xl p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition"
+            aria-label={t("common.close")}
           >
             <X size={18} />
           </button>
@@ -54,7 +55,9 @@ const POSSystemEditTotalPrice = ({
                 autoFocus
               />
             </div>
-            <p className="text-xs text-stone-400 mt-1.5">this is a Discount </p>
+            <p className="text-xs text-stone-400 mt-1.5">
+              {t("screens.pos.discountHint")}
+            </p>
           </div>
         </div>
 

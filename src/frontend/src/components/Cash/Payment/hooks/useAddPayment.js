@@ -195,16 +195,16 @@ const useAddPayment = ({
 
   const submit = async () => {
     if (!useCredit && !form.fund_id) {
-      setMessage(t("ui.selectFundRequired") || "Please select a fund first");
+      setMessage(t("ui.selectFundRequired"));
       return;
     }
     if (Number(form.amount_in_base) <= 0) {
-      setMessage("Please enter a valid amount");
+      setMessage(t("errors.validAmount"));
       return;
     }
     if (useCredit && Number(form.amount_in_base) > availableCredit) {
       setMessage(
-        t("errors.creditExceeded") || "Amount exceeds available credit"
+        t("errors.creditExceeded")
       );
       return;
     }
@@ -260,7 +260,7 @@ const useAddPayment = ({
         if (!res.success) throw new Error(res.message);
       }
 
-      setMessage(t("screens.payments.saved") || "Saved successfully");
+      setMessage(t("screens.payments.saved"));
 
       if (refetchList) {
         await refetchList();

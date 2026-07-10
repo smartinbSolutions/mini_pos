@@ -167,7 +167,7 @@ const ContactListHeader = ({
             className={primaryButtonClass}
           >
             <Plus size={15} />
-            {t("common.new") || "New"}
+            {t("common.create") || "New"}
           </button>
         </div>
       </div>

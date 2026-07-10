@@ -20,7 +20,8 @@
     "deleting": "Siliniyor...",
     "cancel": "İptal",
     "language": "Dil",
-    "perPage": "Sayfa Başına"
+    "perPage": "Sayfa Başına",
+    "create": "Oluştur"
   },
   "ui": {
     "setup": "Kurulum",
@@ -111,6 +112,8 @@
     "totalWithOutDiscont": "Toplam (İndirim Hariç)",
     "totalPaymentsCount": "Ödeme sayısı",
     "totalAmount": "Toplam tutar",
+    "selectFundRequired": "Lütfen önce bir kasa seçin",
+    "noSupplier": "Tedarikçi yok",
     "partners": "Ortaklar"
   },
   "screens": {
@@ -258,7 +261,8 @@
       "unpaid": "Ödenmedi",
       "partial": "Kısmen Ödendi",
       "paid": "Ödendi",
-      "taxCollected": "Tahsil Edilen Vergi"
+      "taxCollected": "Tahsil Edilen Vergi",
+      "paymentHelper": "Şimdi kaydet, daha sonra öde veya hemen öde."
     },
     "company": {
       "title": "Şirket Ayarları",
@@ -269,7 +273,8 @@
       "phoneNumber": "Telefon Numarası",
       "emailAddress": "E-posta Adresi",
       "companyAddress": "Şirket Adresi",
-      "saveSettings": "Ayarları Kaydet"
+      "saveSettings": "Ayarları Kaydet",
+      "baseCurrency": "Temel para birimi"
     },
     "setupPage": {
       "title": "Şirket Kurulumu",
@@ -328,7 +333,8 @@
       "listScalePortsFailed": "Terazi portları listelenemedi",
       "changeTotal": "Toplamı Değiştir",
       "finalTotal": "Nihai Toplam",
-      "originalTotal": "Orijinal Toplam"
+      "originalTotal": "Orijinal Toplam",
+      "discountHint": "Aradaki fark indirim olarak uygulanacaktır"
     },
     "checkout": {
       "title": "Ödeme",
@@ -440,7 +446,11 @@
       "note_placeholder": "Örn: Hafta sonu vardiyası için kasa dengelemesi...",
       "processing": "İşleniyor...",
       "execute_transfer": "Transferi Gerçekleştir",
-      "destination_receives": "Alıcıya Ulaşacak Tutar"
+      "destination_receives": "Alıcıya Ulaşacak Tutar",
+      "selectBothFunds": "Lütfen kaynak ve hedef kasaları seçin.",
+      "sameFundError": "Aynı kasaya transfer yapılamaz.",
+      "validReceiveAmount": "Lütfen geçerli bir alınacak tutar girin.",
+      "defaultNote": "{{source}} kasasından {{destination}} kasasına dahili transfer"
     }
   },
   "languages": {
@@ -559,6 +569,12 @@
     "updateFailed": "{{field}} güncellenemedi.",
     "deleteFailed": "{{field}} silinemedi.",
     "deleteHasData": "İlişkili verileri olduğu için {{field}} silinemedi.",
-    "partialLoad": "{{field}} yüklendi, ancak bazı özellikler IPC işleyicileri kayıtlı olmadığı için kullanılamıyor."
+    "partialLoad": "{{field}} yüklendi, ancak bazı özellikler IPC işleyicileri kayıtlı olmadığı için kullanılamıyor.",
+    "validAmount": "Lütfen geçerli bir tutar girin",
+    "creditExceeded": "Tutar kullanılabilir bakiyeyi aşıyor",
+    "loadExpenseFailed": "Gider yüklenemedi"
+  },
+  "success": {
+    "updated": "{{field}} başarıyla güncellendi"
   }
 }

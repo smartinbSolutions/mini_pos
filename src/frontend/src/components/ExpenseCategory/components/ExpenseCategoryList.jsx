@@ -192,7 +192,7 @@ const ExpenseCategoryList = () => {
                 setDraft({ ...draft, latinName: e.target.value })
               }
               className={inputClass}
-              placeholder="Latin Name"
+              placeholder={t("ui.latinName")}
             />
             <button
               disabled={saving}

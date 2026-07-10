@@ -163,22 +163,22 @@ const useTransferFundtoFund = ({
 
   const submit = async () => {
     if (!form.from_fund_id || !form.to_fund_id) {
-      setMessage("Please select both source and destination funds.");
+      setMessage(t("screens.transfer.selectBothFunds"));
       return;
     }
 
     if (form.from_fund_id === form.to_fund_id) {
-      setMessage("Cannot transfer to the same fund.");
+      setMessage(t("screens.transfer.sameFundError"));
       return;
     }
 
     if (Number(form.amount) <= 0) {
-      setMessage("Please enter a valid amount.");
+      setMessage(t("errors.validAmount"));
       return;
     }
 
     if (Number(form.receive_amount) <= 0) {
-      setMessage("Please enter a valid receive amount.");
+      setMessage(t("screens.transfer.validReceiveAmount"));
       return;
     }
 
@@ -193,7 +193,10 @@ const useTransferFundtoFund = ({
         receive_amount: Number(form.receive_amount),
         note:
           form.note ||
-          `Internal transfer from ${sourceFund?.name} to ${targetFund?.name}`,
+          t("screens.transfer.defaultNote", {
+            source: sourceFund?.name,
+            destination: targetFund?.name,
+          }),
       };
 
       const res = isEditMode

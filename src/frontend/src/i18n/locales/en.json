@@ -20,7 +20,8 @@
     "deleting": "Deleting...",
     "cancel": "Cancel",
     "language": "Language",
-    "perPage": "Per Page"
+    "perPage": "Per Page",
+    "create": "Create"
   },
   "ui": {
     "setup": "Setup",
@@ -112,7 +113,9 @@
     "partners": "Partners",
     "totalWithOutDiscont": "total WithOut Discount",
     "totalPaymentsCount": "Number of payments",
-    "totalAmount": "Total amount"
+    "totalAmount": "Total amount",
+    "selectFundRequired": "Please select a fund first",
+    "noSupplier": "No supplier"
   },
   "screens": {
     "units": {
@@ -263,7 +266,8 @@
       "unpaid": "Unpaid",
       "partial": "Partial",
       "paid": "Paid",
-      "taxCollected": "Tax Collected"
+      "taxCollected": "Tax Collected",
+      "paymentHelper": "Save now and settle later, or pay right away."
     },
     "company": {
       "title": "Company Settings",
@@ -274,7 +278,8 @@
       "phoneNumber": "Phone Number",
       "emailAddress": "Email Address",
       "companyAddress": "Company Address",
-      "saveSettings": "Save Settings"
+      "saveSettings": "Save Settings",
+      "baseCurrency": "Base currency"
     },
     "setupPage": {
       "title": "Company Setup",
@@ -333,7 +338,8 @@
       "listScalePortsFailed": "Failed to list scale ports",
       "changeTotal": "Change Total",
       "finalTotal": "Final Total",
-      "originalTotal": "Original Total"
+      "originalTotal": "Original Total",
+      "discountHint": "The difference will be applied as a discount"
     },
     "checkout": {
       "title": "Checkout",
@@ -449,7 +455,11 @@
       "note_placeholder": "Ex: Rebalancing registers for weekend shift...",
       "processing": "Processing...",
       "execute_transfer": "Execute Transfer",
-      "destination_receives": "Destination Receives"
+      "destination_receives": "Destination Receives",
+      "selectBothFunds": "Please select both source and destination funds.",
+      "sameFundError": "Cannot transfer to the same fund.",
+      "validReceiveAmount": "Please enter a valid receive amount.",
+      "defaultNote": "Internal transfer from {{source}} to {{destination}}"
     }
   },
   "languages": {
@@ -555,6 +565,12 @@
     "deleteFailed": "Failed to delete {{field}}.",
     "deleteHasData": "Failed to delete {{field}} because it has related data.",
     "partialLoad": "{{field}} loaded, but some features are unavailable because IPC handlers are not registered.",
-    "customer_required": "Customer Required"
+    "customer_required": "Customer Required",
+    "validAmount": "Please enter a valid amount",
+    "creditExceeded": "Amount exceeds available credit",
+    "loadExpenseFailed": "Failed to load expense"
+  },
+  "success": {
+    "updated": "{{field}} updated successfully"
   }
 }

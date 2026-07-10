@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const useUpdateCompanySettings = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -82,7 +84,7 @@ const useUpdateCompanySettings = () => {
       }
     } catch (err) {
       console.error(err);
-      alert("Error while saving");
+      alert(t("errors.saveError"));
     } finally {
       setSaving(false);
     }
