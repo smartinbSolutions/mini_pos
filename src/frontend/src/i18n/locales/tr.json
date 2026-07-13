@@ -466,7 +466,11 @@
       "allocation": "Tahsis",
       "noAllocations": "Bu ödeme için herhangi bir tahsis kaydı yok.",
       "allInvoiceTypes": "Tüm fatura türleri",
-      "allFunds": "Tüm fonlar"
+      "allFunds": "Tüm fonlar",
+      "receipt_from_customer": "Müşteriden ödeme makbuzu",
+      "settlement_supplier": "Tedarikçiye ödeme mutabakatı",
+      "creditCap": "Kredi limiti",
+      "originalNetTotal": "Orijinal net toplam"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
@@ -477,7 +481,11 @@
       "noMovements": "Hareket yok",
       "transaction": "İşlem",
       "rate": "Kur: {{rate}}",
-      "balance": "Bakiye: {{balance}}"
+      "balance": "Bakiye: {{balance}}",
+      "payment": "Ödeme",
+      "invoice": "Fatura",
+      "totalInvoice": "Fatura tutarı",
+      "totalPayment": "Ödeme tutarı"
     },
     "fundMovements": {
       "title": "Kasa Hareketleri",
@@ -531,7 +539,9 @@
       "title": "Fon transferleri",
       "subtitle": "Fonlar arasında taşınan paranın geçmişi",
       "newTransfer": "Yeni transfer",
-      "noTransfers": "Henüz transfer yok"
+      "noTransfers": "Henüz transfer yok",
+      "edit_transfer": "Transfer işlemi düzenleme",
+      "save_changes": "Değişiklikleri kaydet"
     },
     "login": {
       "title": "Yeniden hoşgeldiniz",
@@ -569,7 +579,8 @@
     "payment": "Ödemeler",
     "transfers": "Transferler",
     "store": "Mağaza",
-    "importReports": "İçe aktarma raporları"
+    "importReports": "İçe aktarma raporları",
+    "purchaseReturn": "Satın alma iadeleri"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",

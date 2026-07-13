@@ -465,7 +465,11 @@
       "allocation": "Allocation",
       "noAllocations": "No allocations recorded for this payment.",
       "allInvoiceTypes": "All invoice types",
-      "allFunds": "All funds"
+      "allFunds": "All funds",
+      "receipt_from_customer": "Payment receipt from customer",
+      "settlement_supplier": "Payment settlement to supplier",
+      "creditCap": "Credit cap",
+      "originalNetTotal": "Original net total"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",
@@ -476,7 +480,11 @@
       "noMovements": "No movements",
       "transaction": "Transaction",
       "rate": "Rate: {{rate}}",
-      "balance": "Balance: {{balance}}"
+      "balance": "Balance: {{balance}}",
+      "payment": "Payment",
+      "invoice": "Invoice",
+      "totalInvoice": "Total invoice",
+      "totalPayment": "Total payment"
     },
     "fundMovements": {
       "title": "Fund Movements",
@@ -530,7 +538,9 @@
       "title": "Fund transfers",
       "subtitle": "History of money moved between funds",
       "newTransfer": "New transfer",
-      "noTransfers": "No transfers yet"
+      "noTransfers": "No transfers yet",
+      "edit_transfer": "Edit transfer",
+      "save_changes": "Save changes"
     },
     "login": {
       "title": "Welcome back",
@@ -568,7 +578,8 @@
     "transfers": "transfers",
     "partner": "Partners",
     "store": "Store",
-    "importReports": "Import reports"
+    "importReports": "Import reports",
+    "purchaseReturn": "Purchase return"
   },
   "dashboard": {
     "loading": "Loading dashboard...",

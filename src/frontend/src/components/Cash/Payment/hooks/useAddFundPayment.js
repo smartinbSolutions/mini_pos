@@ -24,7 +24,7 @@ const useAddFundPayment = ({
   const isFundLocked = Boolean(initialFundId);
 
   const [partyType, setPartyType] = useState(
-    mode === "out" ? "supplier" : "customer"
+    mode === "out" ? "supplier" : "customer",
   );
 
   const [form, setForm] = useState({
@@ -44,12 +44,12 @@ const useAddFundPayment = ({
 
   const selectedFund = useMemo(
     () => funds.find((f) => f.id === Number(form.fund_id)),
-    [funds, form.fund_id]
+    [funds, form.fund_id],
   );
 
   const selectedParty = useMemo(
     () => partiesList.find((p) => p.id === Number(form.party_id)),
-    [partiesList, form.party_id]
+    [partiesList, form.party_id],
   );
 
   const fetchFunds = useCallback(async () => {
@@ -93,7 +93,7 @@ const useAddFundPayment = ({
         note:
           mode === "in"
             ? t("screens.payments.free_cash_in_receipt")
-            : t("screens.payments.free_cash_out_receipt"),
+            : t("screens.payments.free_cash_out_payment"),
       });
       setPartyType(mode === "out" ? "supplier" : "customer");
       setMessage("");

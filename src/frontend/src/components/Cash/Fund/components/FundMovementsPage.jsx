@@ -76,13 +76,13 @@ const FundMovementsPage = () => {
         {/* TABLE */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b text-xs uppercase tracking-wide text-gray-500 font-semibold">
-            <div className="col-span-4">{t("ui.description")}</div>
-            <div className="col-span-2">{t("ui.type")}</div>
-            <div className="col-span-2 text-right">{t("ui.amount")}</div>
-            <div className="col-span-2 text-right">
+            <div className="col-span-4 text-start">{t("ui.description")}</div>
+            <div className="col-span-2 text-start">{t("ui.type")}</div>
+            <div className="col-span-2 text-start">{t("ui.amount")}</div>
+            <div className="col-span-2 text-start">
               {t("ui.runningBalance")}
             </div>
-            <div className="col-span-2 text-right">{t("ui.date")}</div>
+            <div className="col-span-2 text-start">{t("ui.date")}</div>
           </div>
 
           {loading ? (
@@ -143,7 +143,7 @@ const FundMovementsPage = () => {
                     </div>
 
                     <div
-                      className={`col-span-2 text-right text-lg font-bold ${
+                      className={`col-span-2 text-start text-lg font-bold ${
                         isIn ? "text-green-600" : "text-red-500"
                       }`}
                     >
@@ -151,8 +151,8 @@ const FundMovementsPage = () => {
                       {formatMoney(item.amount, fundCurrency)}
                     </div>
 
-                    <div className="col-span-2 text-right">
-                      <div className="inline-flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-xl">
+                    <div className="col-span-2 text-start">
+                      <div className="inline-flex items-start gap-2 bg-gray-100 px-3 py-2 rounded-xl">
                         <Wallet size={15} className="text-gray-500" />
                         <span className="font-semibold text-gray-800">
                           {formatMoney(item.running_balance, fundCurrency)}
@@ -160,7 +160,7 @@ const FundMovementsPage = () => {
                       </div>
                     </div>
 
-                    <div className="col-span-2 text-right text-sm text-gray-500 flex items-center justify-end gap-2">
+                    <div className="col-span-2 text-start text-sm text-gray-500 flex items-start justify-end gap-2">
                       <CalendarDays size={15} />
                       {item?.createdAt?.slice(0, 10)}
                     </div>

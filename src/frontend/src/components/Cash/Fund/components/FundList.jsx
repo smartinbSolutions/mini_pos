@@ -104,13 +104,13 @@ const FundList = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+              <table className="w-full min-w-[720px] text-start text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-5 py-4">{t("ui.name")}</th>
-                    <th className="px-5 py-4">{t("ui.currency")}</th>
-                    <th className="px-5 py-4 text-right">{t("ui.balance")}</th>
-                    <th className="px-5 py-4 text-right">
+                    <th className="px-5 py-4 text-start">{t("ui.name")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.currency")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.balance")}</th>
+                    <th className="px-5 py-4 text-start">
                       {t("common.actions")}
                     </th>
                   </tr>
@@ -121,7 +121,7 @@ const FundList = () => {
                     if (editingId === fund.id) {
                       return (
                         <tr key={fund.id} className="bg-[#f8faff]">
-                          <td className="px-5 py-3" colSpan={4}>
+                          <td className="px-5 py-3 text-start" colSpan={4}>
                             <form
                               onSubmit={submitEdit}
                               className="flex flex-wrap items-center gap-2"
@@ -195,7 +195,7 @@ const FundList = () => {
                         key={fund.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-3 text-start">
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4663ff] text-xs font-bold text-white shadow-md shadow-[#4663ff]/20">
                               {fund.name?.charAt(0)?.toUpperCase() || "F"}
@@ -205,16 +205,16 @@ const FundList = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-500">
+                        <td className="px-5 py-3 text-start text-slate-500">
                           {fund.currency_code}
                         </td>
-                        <td className="px-5 py-3 text-right">
+                        <td className="px-5 py-3 text-start">
                           <span className="font-black tabular-nums text-emerald-600">
                             {formatMoney(fund.balance || 0, fund)}
                           </span>
                         </td>
-                        <td className="px-5 py-3">
-                          <div className="flex justify-end gap-1">
+                        <td className="px-5 py-3 text-start">
+                          <div className="flex justify-start gap-1">
                             <button
                               onClick={() => navigate(`/fund/${fund.id}`)}
                               className="rounded-xl p-2 text-[#4663ff] transition hover:bg-[#eef3ff]"

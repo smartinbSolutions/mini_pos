@@ -209,14 +209,14 @@ const SalesList = () => {
             <table className="w-full min-w-[1000px] text-left text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4">{t("ui.invoice")}</th>
-                  <th className="px-5 py-4">{t("ui.customer")}</th>
-                  <th className="px-5 py-4">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.tax")}</th>{" "}
-                  <th className="px-5 py-4 text-right">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.status")}</th>
-                  <th className="px-5 py-4 text-right">
+                  <th className="px-5 py-4 text-start">{t("ui.invoice")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.customer")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.date")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.subtotal")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.tax")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.net")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.status")}</th>
+                  <th className="px-5 py-4 text-start">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -225,13 +225,13 @@ const SalesList = () => {
               <tbody className="divide-y divide-[#e5ebff]">
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="p-8 text-center text-slate-500">
+                    <td colSpan="8" className="p-8 text-start text-slate-500">
                       {t("common.loading")}
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="p-8 text-center text-slate-500">
+                    <td colSpan="8" className="p-8 text-start text-slate-500">
                       {t("screens.invoices.empty")}
                     </td>
                   </tr>
@@ -244,13 +244,13 @@ const SalesList = () => {
                         key={inv.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-5 py-4">
+                        <td className="px-5 py-4 text-start">
                           <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff]">
                             #{inv.id}
                           </span>
                         </td>
 
-                        <td className="px-5 py-4">
+                        <td className="px-5 py-4 text-start">
                           <div className="group relative flex items-center gap-1.5">
                             <span className="font-bold text-slate-900">
                               {inv.customer_name || "-"}
@@ -269,9 +269,11 @@ const SalesList = () => {
                           </div>
                         </td>
 
-                        <td className="px-5 py-4 text-slate-500">{inv.date}</td>
+                        <td className="px-5 py-4 text-slate-500 text-start">
+                          {inv.date}
+                        </td>
 
-                        <td className="px-5 py-4 text-right">
+                        <td className="px-5 py-4 text-start">
                           <div className="font-semibold tabular-nums text-slate-700">
                             {money(inv.subtotal || 0)}
                           </div>
@@ -283,7 +285,7 @@ const SalesList = () => {
                           )}
                         </td>
                         {console.log(inv)}
-                        <td className="px-5 py-4 text-right tabular-nums">
+                        <td className="px-5 py-4 text-start tabular-nums">
                           {Number(inv.taxValue || 0) > 0 ? (
                             <div>
                               <div className="font-bold text-slate-700">
@@ -298,11 +300,11 @@ const SalesList = () => {
                             <span className="text-slate-400">{money(0)}</span>
                           )}
                         </td>
-                        <td className="px-5 py-4 text-right tabular-nums text-emerald-700">
+                        <td className="px-5 py-4 text-start tabular-nums text-emerald-700">
                           {money(inv.net_total || 0)}
                         </td>
 
-                        <td className="px-5 py-4 text-center">
+                        <td className="px-5 py-4 text-center text-start">
                           <StatusBadge
                             status={inv.status}
                             paidAmount={inv.paid_amount}
@@ -313,7 +315,7 @@ const SalesList = () => {
                         </td>
 
                         <td className="px-5 py-4">
-                          <div className="flex justify-end gap-1">
+                          <div className="flex justify-start gap-1">
                             <button
                               onClick={() => navigate(`/view-sales/${inv.id}`)}
                               className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"

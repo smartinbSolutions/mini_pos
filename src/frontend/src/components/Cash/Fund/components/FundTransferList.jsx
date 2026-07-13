@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { ArrowRight, ArrowRightLeft, Trash2, Edit2, Plus } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowRightLeft,
+  Trash2,
+  Edit2,
+  Plus,
+  ArrowLeft,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useFundTransfersList from "../hooks/useFundTransfersList";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -9,7 +16,8 @@ import FundTransferModal from "./FundTransferModal";
 import { formatMoney } from "../../../../Global/FormatNumber";
 
 const FundTransferList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
   const { money } = usePrimaryCurrency();
 
   const {
@@ -93,15 +101,17 @@ const FundTransferList = () => {
               <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-5 py-4">{t("ui.date")}</th>
-                    <th className="px-5 py-4">
+                    <th className="px-5 py-4 text-start">{t("ui.date")}</th>
+                    <th className="px-5 py-4 text-start">
                       {t("screens.funds.transfer_Flow") || "Transfer"}
                     </th>
-                    <th className="px-5 py-4 text-right">
+                    <th className="px-5 py-4 text-start">
                       {t("screens.funds.transfer_rate") || "Rate"}
                     </th>
-                    <th className="px-5 py-4">{t("ui.note")}</th>
-                    <th className="px-5 py-4 text-right">
+                    <th className="px-5 py-4 text-start">
+                      {t("screens.transfer.internal_remarks")}
+                    </th>
+                    <th className="px-5 py-4 text-start">
                       {t("common.actions")}
                     </th>
                   </tr>
@@ -114,13 +124,17 @@ const FundTransferList = () => {
 
                     return (
                       <tr key={tr.id} className="transition hover:bg-[#f8faff]">
-                        <td className="px-5 py-3 text-slate-500 whitespace-nowrap">
+                        <td className="px-5 py-3 text-start text-slate-500 whitespace-nowrap">
                           {tr.date ? new Date(tr.date).toLocaleString() : "-"}
                         </td>
 
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
+                        <td className="px-5 py-3 text-start">
+                          <div
+                            className={`flex items-center gap-2 ${
+                              isRtl ? "flex-row" : ""
+                            }`}
+                          >
+                            <div className="text-start">
                               <div className="font-bold text-slate-900 text-sm">
                                 {tr.from_fund_name}
                               </div>
@@ -130,12 +144,19 @@ const FundTransferList = () => {
                               </div>
                             </div>
 
-                            <ArrowRight
-                              className="text-indigo-400 shrink-0"
-                              size={16}
-                            />
+                            {isRtl ? (
+                              <ArrowLeft
+                                className="text-indigo-400 shrink-0"
+                                size={16}
+                              />
+                            ) : (
+                              <ArrowRight
+                                className="text-indigo-400 shrink-0"
+                                size={16}
+                              />
+                            )}
 
-                            <div>
+                            <div className="text-start">
                               <div className="font-bold text-slate-900 text-sm">
                                 {tr.to_fund_name}
                               </div>
@@ -147,7 +168,7 @@ const FundTransferList = () => {
                           </div>
                         </td>
 
-                        <td className="px-5 py-3 text-right">
+                        <td className="px-5 py-3 text-start">
                           {isCrossCurrency ? (
                             <div className="text-xs text-gray-500">
                               <div>
@@ -171,12 +192,12 @@ const FundTransferList = () => {
                           )}
                         </td>
 
-                        <td className="px-5 py-3 max-w-[220px] truncate text-slate-500">
+                        <td className="px-5 py-3 text-start max-w-[220px] truncate text-slate-500">
                           {tr.note || "-"}
                         </td>
 
-                        <td className="px-5 py-3">
-                          <div className="flex justify-end gap-1">
+                        <td className="px-5 py-3 text-start">
+                          <div className="flex justify-start gap-1">
                             <button
                               onClick={() => openEditModal(tr)}
                               className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"

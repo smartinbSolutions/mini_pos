@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Eye, Search, Trash2, Wallet2 } from "lucide-react";
+import { Eye, Pen, Search, Trash2, Wallet2 } from "lucide-react";
 import useSuppliersList from "../hooks/useSuppliersList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
@@ -83,7 +83,7 @@ export const SuppliersList = () => {
     return (suppliers || []).filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.toLowerCase()),
     );
   }, [suppliers, search]);
 
@@ -118,11 +118,11 @@ export const SuppliersList = () => {
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-5 py-4">{t("ui.name")}</th>
-                    <th className="px-5 py-4">{t("ui.phone")}</th>
-                    <th className="px-5 py-4">{t("ui.address")}</th>
-                    <th className="px-5 py-4 text-right">{t("ui.balance")}</th>
-                    <th className="px-5 py-4 text-right">
+                    <th className="px-5 py-4 text-start">{t("ui.name")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.phone")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.address")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.balance")}</th>
+                    <th className="px-5 py-4 text-start">
                       {t("common.actions")}
                     </th>
                   </tr>
@@ -197,7 +197,7 @@ export const SuppliersList = () => {
                         key={supplier.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-3 text-start">
                           <div className="flex items-center gap-3">
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4663ff] text-xs font-bold text-white shadow-md shadow-[#4663ff]/20">
                               {supplier.name?.charAt(0)?.toUpperCase() || "S"}
@@ -207,13 +207,13 @@ export const SuppliersList = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-5 py-3 text-slate-500">
+                        <td className="px-5 py-3 text-start text-slate-500">
                           {supplier.phone || t("ui.noPhone")}
                         </td>
-                        <td className="px-5 py-3 max-w-[200px] truncate text-slate-500">
+                        <td className="px-5 py-3 text-start max-w-[200px] truncate text-slate-500">
                           {supplier.address || t("ui.noAddress")}
                         </td>
-                        <td className="px-5 py-3 text-right">
+                        <td className="px-5 py-3 text-start">
                           <BalanceCell
                             total={supplierTotal}
                             paid={paid}
@@ -223,7 +223,7 @@ export const SuppliersList = () => {
                           />
                         </td>
                         <td className="px-5 py-3">
-                          <div className="flex justify-end gap-1">
+                          <div className="flex justify-start gap-1">
                             <button
                               onClick={() =>
                                 navigate(`/payment/supplier/${supplier.id}`)
@@ -247,7 +247,9 @@ export const SuppliersList = () => {
                               onClick={() => startEdit(supplier)}
                               className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               title={t("common.edit")}
-                            />
+                            >
+                              <Pen size={16} />
+                            </button>
                             <button
                               onClick={() => setDeleteSupplier(supplier)}
                               className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"

@@ -102,9 +102,9 @@ const useAddPayment = ({
           id: invoice?.id,
         });
       } else if (isCustomer) {
-        defaultNote = `Payment receipt from customer: ${partyName}`;
+        defaultNote = `${t("screens.payments.receipt_from_customer")}: ${partyName}`;
       } else if (isSupplier) {
-        defaultNote = `Payment settlement to supplier: ${partyName}`;
+        defaultNote = `${t("screens.payments.settlement_supplier")}: ${partyName}`;
       } else {
         defaultNote = t("screens.payments.partnerTransaction", {
           name: partyName,
@@ -175,7 +175,7 @@ const useAddPayment = ({
       if (next) {
         const capped = Math.min(
           availableCredit,
-          initialBaseAmount || availableCredit
+          initialBaseAmount || availableCredit,
         );
         setForm((f) => ({
           ...f,
@@ -203,9 +203,7 @@ const useAddPayment = ({
       return;
     }
     if (useCredit && Number(form.amount_in_base) > availableCredit) {
-      setMessage(
-        t("errors.creditExceeded")
-      );
+      setMessage(t("errors.creditExceeded"));
       return;
     }
 

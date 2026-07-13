@@ -281,7 +281,9 @@ export default function AddFundPayment({
             className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 font-medium transition-all ${theme.btn} shadow-md disabled:opacity-50`}
           >
             <Save size={18} />
-            {loading ? t("posting_and_saving") : t("save_and_post_receipt")}
+            {loading
+              ? t("screens.payments.posting_and_saving")
+              : t("screens.payments.save_and_post_receipt")}
           </button>
         </div>
       </div>

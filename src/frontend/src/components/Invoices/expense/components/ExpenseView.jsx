@@ -145,19 +145,16 @@ export default function ExpenseView() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="p-3 text-left">{t("ui.category")}</th>
-                    <th className="p-3 text-center">{t("ui.price")}</th>
-                    <th className="p-3 text-center">{t("ui.total")}</th>
+                    <th className="p-3 text-start">{t("ui.category")}</th>
+                    <th className="p-3 text-start">{t("ui.price")}</th>
+                    <th className="p-3 text-start">{t("ui.total")}</th>
                   </tr>
                 </thead>
 
                 <tbody className="divide-y divide-[#e5ebff]">
                   {items.length === 0 ? (
                     <tr>
-                      <td
-                        className="p-5 text-center text-slate-500"
-                        colSpan={3}
-                      >
+                      <td className="p-5 text-start text-slate-500" colSpan={3}>
                         {t("screens.invoices.noItems")}
                       </td>
                     </tr>
@@ -167,8 +164,8 @@ export default function ExpenseView() {
                         <td className="p-3 font-bold text-slate-900">
                           {item.category_name || item.name || "-"}
                         </td>
-                        <td className="p-3 text-center">{money(item.price)}</td>
-                        <td className="p-3 text-center font-black">
+                        <td className="p-3 text-start">{money(item.price)}</td>
+                        <td className="p-3 text-start font-black">
                           {money(item.total || item.price)}
                         </td>
                       </tr>
@@ -181,13 +178,13 @@ export default function ExpenseView() {
             <div className="mt-6 flex flex-col-reverse gap-6 lg:flex-row lg:justify-between">
               {/* PAYMENT HISTORY */}
               <div className="flex-1">
-                <h3 className="mb-3 flex items-center gap-2 text-sm font-black text-slate-700">
+                <h3 className="mb-3 flex items-start gap-2 text-sm font-black text-slate-700">
                   <HandCoins size={16} className="text-[#4663ff]" />
                   {t("screens.invoices.paymentHistory", "Payment History")}
                 </h3>
 
                 {allocations.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400">
+                  <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-start text-sm text-slate-400">
                     {t("screens.invoices.noPaymentsRecordedYet")}
                   </div>
                 ) : (
@@ -195,7 +192,7 @@ export default function ExpenseView() {
                     {allocations.map((alloc) => (
                       <div
                         key={alloc.id}
-                        className="flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
+                        className="flex items-start justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
                       >
                         <div>
                           <div className="font-bold text-slate-800">

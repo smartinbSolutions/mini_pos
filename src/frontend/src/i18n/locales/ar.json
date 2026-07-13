@@ -466,7 +466,11 @@
       "allocation": "تخصيص",
       "noAllocations": "لم يتم تسجيل أي تخصيصات لهذه الدفعة.",
       "allInvoiceTypes": "كل أنواع الفواتير",
-      "allFunds": "كل الصناديق"
+      "allFunds": "كل الصناديق",
+      "receipt_from_customer": "دفعة من العميل",
+      "settlement_supplier": "دفعة تسوية للمورد",
+      "creditCap": "حد الرصيد",
+      "originalNetTotal": "الإجمالي الأساسي الصافي"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
@@ -477,7 +481,11 @@
       "noMovements": "لا توجد حركات",
       "transaction": "معاملة",
       "rate": "السعر: {{rate}}",
-      "balance": "الرصيد: {{balance}}"
+      "balance": "الرصيد: {{balance}}",
+      "payment": "دفعة",
+      "invoice": "فاتورة",
+      "totalInvoice": "إجمالي الفواتير",
+      "totalPayment": "إجمالي الدفعات"
     },
     "fundMovements": {
       "title": "حركات الصندوق",
@@ -531,7 +539,9 @@
       "title": "تحويل الأموال",
       "subtitle": "تاريخ الأموال المنقولة بين الصناديق",
       "newTransfer": "تحويل جديد",
-      "noTransfers": "لا يوجد تحويلات بعد"
+      "noTransfers": "لا يوجد تحويلات بعد",
+      "edit_transfer": "تعديل عملية التحويل",
+      "save_changes": "حفظ التغييرات"
     },
     "login": {
       "title": "مرحبًا بعودتك",
@@ -562,14 +572,15 @@
     "customers": "العملاء",
     "companySettings": "الشركة",
     "settings": "الاعدادات",
-    "expensesCategory": "ـصنيف المصاريف",
+    "expensesCategory": "تصنيف المصاريف",
     "expense": "المصاريف",
     "partners": "الشركاء",
     "partner": "الشريك",
     "payment": "المدفوعات",
     "transfers": "التحويلات",
     "store": "المتجر",
-    "importReports": "تقارير الاستيراد"
+    "importReports": "تقارير الاستيراد",
+    "purchaseReturn": "إعادة المشتريات"
   },
   "dashboard": {
     "loading": "جار تحميل لوحة التحكم...",

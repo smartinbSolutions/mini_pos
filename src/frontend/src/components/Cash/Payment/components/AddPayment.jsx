@@ -86,12 +86,14 @@ export default function AddPayment({
                 {isPurchase && t("screens.payments.purchasePayment")}
                 {isExpense && t("screens.payments.expensePayment")}
                 {isSales && t("screens.payments.salesPayment")}
-                {isCustomer && t("customer_account_collection")}
-                {isSupplier && t("supplier_account_collection")}
+                {isCustomer &&
+                  t("screens.payments.customer_account_collection")}
+                {isSupplier &&
+                  t("screens.payments.supplier_account_collection")}
                 {isPartner &&
                   (form.partner_transaction_type === "income"
-                    ? t("partner_deposit")
-                    : t("partner_withdrawal"))}
+                    ? t("screens.payments.partner_deposit")
+                    : t("screens.payments.partner_withdrawal"))}
               </h2>
               {invoice && (
                 <p className="text-xs text-gray-500">
@@ -125,7 +127,7 @@ export default function AddPayment({
               <p className="text-sm text-gray-500">
                 {(isPurchase || isExpense || isSupplier) && t("ui.supplier")}
                 {(isSales || isCustomer) && t("ui.customer")}
-                {isPartner && "Partner"}
+                {isPartner && t("screens.payments.partner")}
               </p>
               <h3 className="font-medium text-gray-800">{partyName}</h3>
             </div>
@@ -165,7 +167,7 @@ export default function AddPayment({
                   }`}
                 >
                   {useCredit
-                    ? t("common.applied", "Applied")
+                    ? t("common.applied")
                     : t("screens.payments.applyCredit")}
                 </button>
               </div>
@@ -247,13 +249,13 @@ export default function AddPayment({
             </div>
             {invoice && (
               <p className="mt-1 text-xs text-gray-400">
-                Original Net Total: {money(invoice?.net_total)}
+                {t("screens.payments.originalNetTotal")}:{" "}
+                {money(invoice?.net_total)}
               </p>
             )}
             {useCredit && (
               <p className="mt-1 text-xs text-emerald-600">
-                {t("screens.payments.creditCap", "Max")}:{" "}
-                {money(availableCredit)}
+                {t("screens.payments.creditCap")}: {money(availableCredit)}
               </p>
             )}
           </div>

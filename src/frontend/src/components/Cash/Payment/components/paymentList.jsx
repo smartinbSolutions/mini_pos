@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import usePayment from "../hooks/usePayment";
@@ -27,7 +27,7 @@ const AllocationBadge = ({ payment }) => {
 
   if (payment.party_type === "partner") {
     return (
-      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
+      <span className="rounded-lg text-start bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
         {t("screens.payments.partnerMovement")}
       </span>
     );
@@ -35,7 +35,7 @@ const AllocationBadge = ({ payment }) => {
 
   if (!payment.allocation_count || payment.allocation_count === 0) {
     return (
-      <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+      <span className="rounded-lg text-start bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
         {t("screens.payments.unallocated")}
       </span>
     );
@@ -43,47 +43,69 @@ const AllocationBadge = ({ payment }) => {
 
   if (payment.allocated_amount < payment.amount) {
     return (
-      <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+      <span className="rounded-lg text-start bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
         {t("screens.payments.partial")}
       </span>
     );
   }
 
   return (
-    <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+    <span className="rounded-lg text-start bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
       {t("screens.payments.fullyAllocated")}
     </span>
   );
 };
 
-const PaymentFlow = ({ payment }) => {
+const PaymentFlow = ({ payment, dir = "ltr" }) => {
   const isIncome = payment.type === "income";
+  const isRTL = dir === "rtl";
+
   const partyLabel = payment.party_name || "-";
   const fundLabel = payment.fund_name || "-";
 
+  const Arrow = isRTL ? ArrowLeft : ArrowRight;
+
+  const from = isIncome ? partyLabel : fundLabel;
+  const to = isIncome ? fundLabel : partyLabel;
+
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className={`flex items-center gap-2 ${isRTL ? "flex-row" : ""}`}
+      dir={dir}
+    >
+      <span
+        className={`font-bold ${
+          isIncome ? "text-slate-700" : "text-slate-900"
+        }`}
+      >
+        {from}
+      </span>
+
+      <Arrow
+        size={14}
+        className={`${isIncome ? "text-emerald-500" : "text-red-500"} shrink-0`}
+      />
+
+      <span
+        className={`font-bold ${
+          isIncome ? "text-slate-900" : "text-slate-700"
+        }`}
+      >
+        {to}
+      </span>
+
       {isIncome ? (
-        <>
-          <span className="font-bold text-slate-700">{partyLabel}</span>
-          <ArrowRight size={14} className="text-emerald-500 shrink-0" />
-          <span className="font-bold text-slate-900">{fundLabel}</span>
-          <TrendingUp size={14} className="text-emerald-500 shrink-0" />
-        </>
+        <TrendingUp size={14} className="text-emerald-500 shrink-0" />
       ) : (
-        <>
-          <span className="font-bold text-slate-900">{fundLabel}</span>
-          <ArrowRight size={14} className="text-red-500 shrink-0" />
-          <span className="font-bold text-slate-700">{partyLabel}</span>
-          <TrendingDown size={14} className="text-red-500 shrink-0" />
-        </>
+        <TrendingDown size={14} className="text-red-500 shrink-0" />
       )}
     </div>
   );
 };
 
 const PaymentList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
 
   const {
     payments = [],
@@ -114,7 +136,7 @@ const PaymentList = () => {
 
   const api = window.api;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (api?.getFunds) {
       api
         .getFunds()
@@ -317,30 +339,36 @@ const PaymentList = () => {
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="w-10 px-5 py-4"></th>
-                  <th className="px-5 py-4">
+                  <th className="px-5 py-4 text-start">
                     {t("screens.payments.paymentNo")}
                   </th>
-                  <th className="px-5 py-4">{t("screens.payments.flow")}</th>
-                  <th className="px-5 py-4">{t("ui.date")}</th>
-                  <th className="px-5 py-4">{t("ui.amount")}</th>
-                  <th className="px-5 py-4">{t("screens.payments.rate")}</th>
-                  <th className="px-5 py-4">
+                  <th className="px-5 py-4 text-start">
+                    {t("screens.payments.flow")}
+                  </th>
+                  <th className="px-5 py-4 text-start">{t("ui.date")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.amount")}</th>
+                  <th className="px-5 py-4 text-start">
+                    {t("screens.payments.rate")}
+                  </th>
+                  <th className="px-5 py-4 text-start">
                     {t("screens.payments.allocation")}
                   </th>
-                  <th className="px-5 py-4">{t("common.actions")}</th>
+                  <th className="px-5 py-4 text-start">
+                    {t("common.actions")}
+                  </th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-[#e5ebff]">
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="p-8 text-center text-slate-500">
+                    <td colSpan="8" className="p-8 text-start text-slate-500">
                       {t("common.loading")}
                     </td>
                   </tr>
                 ) : filteredPayments.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="p-8 text-center text-slate-500">
+                    <td colSpan="8" className="p-8 text-start text-slate-500">
                       {t("screens.payments.empty")}
                     </td>
                   </tr>
@@ -356,7 +384,7 @@ const PaymentList = () => {
                     return (
                       <React.Fragment key={pay.id}>
                         <tr className="transition hover:bg-[#f8faff]">
-                          <td className="px-5 py-4">
+                          <td className="px-5 py-4 text-start">
                             {canExpand && (
                               <button
                                 onClick={() => toggleExpand(pay)}
@@ -371,22 +399,25 @@ const PaymentList = () => {
                             )}
                           </td>
 
-                          <td className="px-5 py-4">
+                          <td className="px-5 py-4 text-start">
                             <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff]">
                               #{pay.id}
                             </span>
                           </td>
 
                           <td className="px-5 py-4">
-                            <PaymentFlow payment={pay} />
+                            <PaymentFlow
+                              payment={pay}
+                              dir={isRtl ? "rtl" : "ltr"}
+                            />
                           </td>
 
-                          <td className="px-5 py-4 text-slate-500">
+                          <td className="px-5 py-4 text-start text-slate-500">
                             {pay?.date?.slice(0, 10) ||
                               pay?.createdAt?.slice(0, 10)}
                           </td>
 
-                          <td className="px-5 py-4 text-right">
+                          <td className="px-5 py-4 text-start">
                             <div
                               className={` ${
                                 pay.type === "income"
@@ -408,7 +439,7 @@ const PaymentList = () => {
                               )}
                           </td>
 
-                          <td className="px-5 py-4 text-right text-xs font-semibold text-slate-500">
+                          <td className="px-5 py-4 text-start text-xs font-semibold text-slate-500">
                             {rateDiffers ? (
                               <>
                                 <div>{pay.exchange_rate}</div>
@@ -426,7 +457,7 @@ const PaymentList = () => {
                           </td>
 
                           <td className="px-5 py-4">
-                            <div className="flex justify-end gap-1">
+                            <div className="flex justify-start gap-1">
                               <button
                                 onClick={() => setDeletePaymentId(pay)}
                                 className="rounded-xl p-2 text-red-500 hover:bg-red-50"
@@ -440,7 +471,7 @@ const PaymentList = () => {
 
                         {isExpanded && (
                           <tr className="bg-[#f8faff]/60">
-                            <td colSpan="8" className="px-5 py-4">
+                            <td colSpan="8" className="px-5 py-4 text-start">
                               {isLoadingAlloc ? (
                                 <div className="text-sm text-slate-500">
                                   {t("common.loading")}
