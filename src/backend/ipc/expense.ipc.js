@@ -155,11 +155,37 @@ export default function registerExpenseIPC() {
     }
   });
 
-  // GET ALL
   ipcMain.handle("get-expenses", (event, params = {}) => {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
+
+    const { startDate, endDate, supplier_id, status } = params;
+
+    const whereConditions = [];
+    const whereValues = [];
+
+    if (startDate) {
+      whereConditions.push("date(e.date) >= date(?)");
+      whereValues.push(startDate);
+    }
+    if (endDate) {
+      whereConditions.push("date(e.date) <= date(?)");
+      whereValues.push(endDate);
+    }
+    if (supplier_id === "none") {
+      whereConditions.push("e.supplier_id IS NULL");
+    } else if (supplier_id) {
+      whereConditions.push("e.supplier_id = ?");
+      whereValues.push(supplier_id);
+    }
+
+    const whereClause = whereConditions.length
+      ? `WHERE ${whereConditions.join(" AND ")}`
+      : "";
+
+    const havingClause = status ? `HAVING status = ?` : "";
+    const havingValues = status ? [status] : [];
 
     const rows = db
       .prepare(
@@ -168,36 +194,61 @@ export default function registerExpenseIPC() {
         e.*,
         s.name AS supplier_name,
         s.phone AS supplier_phone,
-
+  
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
-
+  
         e.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-
+  
         CASE
           WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
         END AS status
-
+  
       FROM expense e
-
+  
       LEFT JOIN suppliers s
         ON s.id = e.supplier_id
-
+  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = e.id
        AND pa.invoice_type = 'expense'
-
+  
+      ${whereClause}
+  
       GROUP BY e.id
-
+  
+      ${havingClause}
+  
       ORDER BY e.id DESC
-
+  
       LIMIT ? OFFSET ?
       `
       )
-      .all(limit, offset);
+      .all(...whereValues, ...havingValues, limit, offset);
 
-    const { total } = db.prepare(`SELECT COUNT(*) AS total FROM expense`).get();
+    const { total } = db
+      .prepare(
+        `
+      SELECT COUNT(*) AS total FROM (
+        SELECT
+          e.id,
+          CASE
+            WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
+            WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+            ELSE 'unpaid'
+          END AS status
+        FROM expense e
+        LEFT JOIN payment_allocations pa
+          ON pa.invoice_id = e.id
+         AND pa.invoice_type = 'expense'
+        ${whereClause}
+        GROUP BY e.id
+        ${havingClause}
+      )
+      `
+      )
+      .get(...whereValues, ...havingValues).total;
 
     return {
       data: rows,
@@ -296,6 +347,7 @@ export default function registerExpenseIPC() {
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
+    console.log("data", data);
 
     try {
       const transaction = db.transaction(() => {
@@ -310,7 +362,12 @@ export default function registerExpenseIPC() {
         // Block editing if this invoice already has a payment against it
         const existingPayment = db
           .prepare(
-            `SELECT id FROM payments WHERE invoice_id = ? AND invoice_type = 'expense'`
+            `
+          SELECT pa.id
+          FROM payment_allocations pa
+          WHERE pa.invoice_id = ? AND pa.invoice_type = 'expense'
+          LIMIT 1
+          `
           )
           .get(data.id);
 
@@ -327,7 +384,6 @@ export default function registerExpenseIPC() {
 
         const payment = data.payment || null;
         const paidAmount = payment ? Number(payment.amount || 0) : 0;
-        const remainingAmount = newNetTotal - paidAmount;
 
         const dateOnly = data.date.slice(0, 10);
         const now = new Date();

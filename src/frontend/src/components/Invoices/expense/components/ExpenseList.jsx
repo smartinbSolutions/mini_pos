@@ -9,7 +9,7 @@ import {
   // LucidePencilSparkles,
   Info,
   Clock,
-  Pen,
+  LucidePencilSparkles,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -79,23 +79,25 @@ const ExpenseList = () => {
 
   const {
     expenses,
+    suppliers,
     loading,
     saving,
     error,
     refetch,
     handleDelete,
-
     page,
     setPage,
     limit,
     setLimit,
     total,
     totalPages,
-
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
+    filters,
+    setFilters,
+    clearFilters,
   } = useExpenseList();
 
   const { money } = usePrimaryCurrency();
@@ -126,7 +128,7 @@ const ExpenseList = () => {
 
   const totalNet = expenses.reduce(
     (sum, inv) => sum + Number(inv?.net_total || 0),
-    0,
+    0
   );
 
   const unpaidCount = expenses.filter((inv) => inv.status !== "paid").length;
@@ -160,6 +162,34 @@ const ExpenseList = () => {
           addLabel={t("screens.invoices.addExpense")}
           addIcon={BanknoteArrowDown}
           onAdd={() => navigate("/add-expense")}
+          filters={filters}
+          onFilterChange={(name, value) =>
+            setFilters({ [name]: value || null })
+          }
+          onClearFilters={clearFilters}
+          filterFields={[
+            {
+              type: "select",
+              name: "status",
+              label: t("screens.invoices.allStatuses"),
+              options: [
+                { value: "paid", label: t("ui.paid") },
+                { value: "partial", label: t("ui.partial") },
+                { value: "unpaid", label: t("ui.unpaid") },
+              ],
+            },
+            {
+              type: "select",
+              name: "supplier_id",
+              label: t("screens.invoices.allSuppliers"),
+              options: [
+                { value: "none", label: t("screens.invoices.noSupplier") },
+                ...suppliers.map((s) => ({ value: s.id, label: s.name })),
+              ],
+            },
+            { type: "date", name: "startDate", label: t("ui.fromDate") },
+            { type: "date", name: "endDate", label: t("ui.toDate") },
+          ]}
         />
 
         {(error || actionError) && (
@@ -173,13 +203,13 @@ const ExpenseList = () => {
             <table className="w-full min-w-[1000px] text-left text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4 text-start">{t("ui.invoice")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.name")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.supplier")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.status")}</th>
-                  <th className="px-5 py-4 text-start">
+                  <th className="px-5 py-4">{t("ui.invoice")}</th>
+                  <th className="px-5 py-4">{t("ui.name")}</th>
+                  <th className="px-5 py-4">{t("ui.supplier")}</th>
+                  <th className="px-5 py-4">{t("ui.date")}</th>
+                  <th className="px-5 py-4 text-right">{t("ui.net")}</th>
+                  <th className="px-5 py-4 text-center">{t("ui.status")}</th>
+                  <th className="px-5 py-4 text-right">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -188,13 +218,13 @@ const ExpenseList = () => {
               <tbody className="divide-y divide-[#e5ebff]">
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="p-8 text-start text-slate-500">
+                    <td colSpan="7" className="p-8 text-center text-slate-500">
                       {t("common.loading")}
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="p-8 text-start text-slate-500">
+                    <td colSpan="7" className="p-8 text-center text-slate-500">
                       {t("screens.invoices.empty")}
                     </td>
                   </tr>
@@ -207,14 +237,14 @@ const ExpenseList = () => {
                         key={exp.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-5 py-4 text-start">
+                        <td className="px-5 py-4">
                           <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff]">
                             #{exp.id}
                           </span>
                         </td>
 
-                        <td className="px-5 py-4 text-start">
-                          <div className="group relative flex items-start gap-1.5">
+                        <td className="px-5 py-4">
+                          <div className="group relative flex items-center gap-1.5">
                             <span className="font-bold text-slate-900">
                               {exp.invoice_name || "-"}
                             </span>
@@ -232,11 +262,11 @@ const ExpenseList = () => {
                           </div>
                         </td>
 
-                        <td className="px-5 py-4 font-bold text-slate-900 text-start">
+                        <td className="px-5 py-4 font-bold text-slate-900">
                           {exp.supplier_name || "-"}
                         </td>
 
-                        <td className="px-5 py-4 text-slate-500 text-start">
+                        <td className="px-5 py-4 text-slate-500">
                           <span className="group relative inline-flex cursor-help items-center gap-1.5">
                             {dateLabel}
                             <Clock
@@ -249,11 +279,11 @@ const ExpenseList = () => {
                           </span>
                         </td>
 
-                        <td className="px-5 py-4 text-start tabular-nums text-emerald-700">
+                        <td className="px-5 py-4 text-right tabular-nums text-emerald-700">
                           {money(exp.net_total || 0)}
                         </td>
 
-                        <td className="px-5 py-4 text-start">
+                        <td className="px-5 py-4 text-center">
                           <StatusBadge
                             status={exp.status}
                             paidAmount={exp.paid_amount}
@@ -264,7 +294,7 @@ const ExpenseList = () => {
                         </td>
 
                         <td className="px-5 py-4">
-                          <div className="flex justify-start gap-1">
+                          <div className="flex justify-end gap-1">
                             <button
                               onClick={() =>
                                 navigate(`/view-expense/${exp.id}`)
@@ -297,7 +327,7 @@ const ExpenseList = () => {
                                   className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                   title={t("common.edit")}
                                 >
-                                  <Pen size={16} />
+                                  <LucidePencilSparkles size={16} />
                                 </button>
                                 <button
                                   onClick={() => setDeleteExpense(exp)}

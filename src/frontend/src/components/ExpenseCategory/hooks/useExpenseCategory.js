@@ -14,6 +14,7 @@ const useExpenseCategory = () => {
   const [draft, setDraft] = useState(emptyExpenseCategory);
   const [editingId, setEditingId] = useState(null);
   const [editing, setEditing] = useState(emptyExpenseCategory);
+  const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
 
   const api = window.api;
 
@@ -38,20 +39,23 @@ const useExpenseCategory = () => {
     try {
       setLoading(true);
 
-      let expenseCategoryResult = await api.getExpensesCategory();
+      const params = {};
+      if (dateRange.startDate) params.startDate = dateRange.startDate;
+      if (dateRange.endDate) params.endDate = dateRange.endDate;
 
+      let expenseCategoryResult = await api.getExpensesCategory(params);
       setExpenseCategory(expenseCategoryResult || []);
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
         err?.message ||
-          t("errors.createFailed", { field: t("ui.expenseCategory") }),
+          t("errors.createFailed", { field: t("ui.expenseCategory") })
       );
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, dateRange]);
 
   useEffect(() => {
     refetch();
@@ -66,7 +70,7 @@ const useExpenseCategory = () => {
     setSaving(true);
     try {
       await api.createExpenseCategory(
-        normalizeExpenseCategory(expenseCategory),
+        normalizeExpenseCategory(expenseCategory)
       );
       await refetch();
     } finally {
@@ -83,7 +87,7 @@ const useExpenseCategory = () => {
     setSaving(true);
     try {
       await api.updateExpenseCategory(
-        normalizeExpenseCategory(expenseCategory),
+        normalizeExpenseCategory(expenseCategory)
       );
       await refetch();
     } finally {
@@ -111,7 +115,7 @@ const useExpenseCategory = () => {
       console.error("Failed to create expense Category:", err);
       setActionError(
         err?.message ||
-          t("errors.createFailed", { field: t("ui.expenseCategory") }),
+          t("errors.createFailed", { field: t("ui.expenseCategory") })
       );
       return false;
     }
@@ -126,7 +130,7 @@ const useExpenseCategory = () => {
       console.error("Failed to update expense Category:", err);
       setActionError(
         err?.message ||
-          t("errors.updateFailed", { field: t("ui.expenseCategory") }),
+          t("errors.updateFailed", { field: t("ui.expenseCategory") })
       );
       return false;
     }
@@ -139,7 +143,7 @@ const useExpenseCategory = () => {
     } catch (err) {
       console.error("Failed to delete expense Category:", err);
       setActionError(
-        t("errors.deleteHasData", { field: t("ui.expenseCategory") }),
+        t("errors.deleteHasData", { field: t("ui.expenseCategory") })
       );
     }
   };
@@ -157,6 +161,7 @@ const useExpenseCategory = () => {
     setEditing({
       id: expenseCategory.id,
       name: expenseCategory.name || "",
+      latinName: expenseCategory?.latinName || "",
     });
   };
 
@@ -168,6 +173,8 @@ const useExpenseCategory = () => {
       setEditing(emptyExpenseCategory);
     }
   };
+
+  const clearDateRange = () => setDateRange({ startDate: "", endDate: "" });
 
   return {
     createExpenseCategory,
@@ -188,6 +195,9 @@ const useExpenseCategory = () => {
     setDraft,
     draft,
     actionError,
+    dateRange,
+    setDateRange,
+    clearDateRange,
   };
 };
 

@@ -6,6 +6,7 @@ const useExpenseList = () => {
   const api = window.api;
 
   const [expenses, setExpenses] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -18,6 +19,37 @@ const useExpenseList = () => {
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
 
+  const [filters, setFiltersState] = useState({
+    status: null,
+    supplier_id: null,
+    startDate: null,
+    endDate: null,
+  });
+
+  const setFilters = (patch) => {
+    setFiltersState((prev) => ({ ...prev, ...patch }));
+    setPage(1); // reset to page 1 whenever filters change, same as changing limit
+  };
+
+  const clearFilters = () => {
+    setFiltersState({
+      status: null,
+      supplier_id: null,
+      startDate: null,
+      endDate: null,
+    });
+    setPage(1);
+  };
+
+  useEffect(() => {
+    if (api?.getSuppliers) {
+      api
+        .getSuppliers()
+        .then((res) => setSuppliers(res?.data || res || []))
+        .catch(() => setSuppliers([]));
+    }
+  }, [api]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiNotAvailable"));
@@ -26,7 +58,14 @@ const useExpenseList = () => {
 
     try {
       setLoading(true);
-      const res = await api.getExpenses({ page, limit });
+      const res = await api.getExpenses({
+        page,
+        limit,
+        status: filters.status || undefined,
+        supplier_id: filters.supplier_id || undefined,
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+      });
 
       setExpenses(res?.data || []);
       setTotal(res?.total || 0);
@@ -37,7 +76,7 @@ const useExpenseList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, t]);
+  }, [api, page, limit, filters, t]);
 
   useEffect(() => {
     refetch();
@@ -55,6 +94,7 @@ const useExpenseList = () => {
 
   return {
     expenses,
+    suppliers,
     loading,
     saving,
     error,
@@ -72,6 +112,10 @@ const useExpenseList = () => {
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
+
+    filters,
+    setFilters,
+    clearFilters,
   };
 };
 

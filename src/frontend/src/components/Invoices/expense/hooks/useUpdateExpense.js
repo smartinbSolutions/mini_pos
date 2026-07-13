@@ -82,7 +82,7 @@ const useUpdateExpense = () => {
       { id: NO_SUPPLIER, name: t("ui.noSupplier") },
       ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
     ],
-    [suppliers, t],
+    [suppliers, t]
   );
 
   useEffect(() => {
@@ -139,6 +139,7 @@ const useUpdateExpense = () => {
         };
 
         const res = await api.updateExpense(payload);
+        console.log(res);
 
         if (!res?.success) {
           throw new Error(res?.error || t("errors.updateFailed"));
@@ -154,7 +155,7 @@ const useUpdateExpense = () => {
         setSaving(false);
       }
     },
-    [api, id, invoice, items, subtotal, netTotal, navigate, t],
+    [api, id, invoice, items, subtotal, netTotal, navigate, t]
   );
 
   const reset = () => {
