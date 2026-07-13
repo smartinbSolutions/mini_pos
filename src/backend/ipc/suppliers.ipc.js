@@ -86,6 +86,8 @@ export default function registerSuppliersIPC() {
                 AND ph.invoice_type = 'purchase_return'
                 THEN -ph.amount
 
+              WHEN ph.record_type = 'payment' THEN ph.amount
+
               ELSE 0
             END
           ),
@@ -106,6 +108,7 @@ export default function registerSuppliersIPC() {
               WHEN ph.record_type = 'return'
                 AND ph.invoice_type = 'purchase_return'
                 THEN -ph.amount
+
 
               ELSE 0
             END
@@ -130,6 +133,7 @@ export default function registerSuppliersIPC() {
               WHEN ph.record_type = 'payment'
                 AND ph.invoice_type = 'purchase_return'
                 THEN -ph.amount
+             WHEN ph.record_type = 'payment' THEN ph.amount
 
               ELSE 0
             END

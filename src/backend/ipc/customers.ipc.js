@@ -55,13 +55,14 @@ export default function registerCustomersIPC() {
           CASE
             WHEN ph.record_type = 'invoice' AND 
             ph.invoice_type = 'sales' THEN ph.amount
+
             WHEN ph.record_type = 'opening_balance' AND 
             ph.movement_type = 'deposit' THEN ph.amount
             
             WHEN ph.record_type = 'return' AND
-             ph.invoice_type = 'sales_return' THEN -ABS(ph.amount)
+             ph.invoice_type = 'sales_return' THEN -ph.amount
 
-            ELSE 0
+             ELSE 0
           END
         ),
         0
@@ -72,11 +73,14 @@ export default function registerCustomersIPC() {
           CASE
             WHEN ph.record_type = 'payment' AND
              ph.invoice_type = 'sales' THEN ph.amount
+
             WHEN ph.record_type = 'opening_balance' AND 
             ph.movement_type = 'withdrawal' THEN ph.amount
+
             WHEN ph.record_type = 'payment' AND 
             ph.invoice_type = 'sales_return' THEN -ph.amount
-
+            
+            WHEN ph.record_type = 'payment' THEN ph.amount
             ELSE 0
           END
         ),
@@ -88,18 +92,23 @@ export default function registerCustomersIPC() {
           CASE
             WHEN ph.record_type = 'invoice' AND
              ph.invoice_type = 'sales' THEN ph.amount
+
             WHEN ph.record_type = 'opening_balance' AND
              ph.movement_type = 'deposit' THEN ph.amount
 
             WHEN ph.record_type = 'return' AND
-             ph.invoice_type = 'sales_return' THEN -ABS(ph.amount)
+             ph.invoice_type = 'sales_return' THEN -ph.amount
+
             WHEN ph.record_type = 'payment' AND
              ph.invoice_type = 'sales' THEN -ph.amount
+
             WHEN ph.record_type = 'opening_balance' 
             AND ph.movement_type = 'withdrawal' THEN -ph.amount
             
-            WHEN ph.record_type = 'payment' AND ph.invoice_type = 'sales_return' THEN ph.amount
+            WHEN ph.record_type = 'payment' AND 
+            ph.invoice_type = 'sales_return' THEN ph.amount
 
+             WHEN ph.record_type = 'payment' THEN -ph.amount
             ELSE 0
           END
         ),
@@ -153,7 +162,7 @@ export default function registerCustomersIPC() {
              ph.movement_type = 'deposit' THEN ph.amount
             
             WHEN ph.record_type = 'return' AND 
-            ph.invoice_type = 'sales_return' THEN -ABS(ph.amount)
+            ph.invoice_type = 'sales_return' THEN -ph.amount
 
             ELSE 0
           END
@@ -189,7 +198,7 @@ export default function registerCustomersIPC() {
             ph.movement_type = 'deposit' THEN ph.amount
 
             WHEN ph.record_type = 'return' AND
-             ph.invoice_type = 'sales_return' THEN -ABS(ph.amount)
+             ph.invoice_type = 'sales_return' THEN -ph.amount
 
             WHEN ph.record_type = 'payment' AND 
             ph.invoice_type = 'sales' THEN -ph.amount
