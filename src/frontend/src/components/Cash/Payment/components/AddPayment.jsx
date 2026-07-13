@@ -50,6 +50,7 @@ export default function AddPayment({
     availableCredit,
     useCredit,
     toggleUseCredit,
+    isPurchaseReturn,
   } = useAddPayment({
     isOpen,
     onClose,
@@ -88,6 +89,8 @@ export default function AddPayment({
                 {isSales && t("screens.payments.salesPayment")}
                 {isCustomer &&
                   t("screens.payments.customer_account_collection")}
+                {isPurchaseReturn &&
+                  t("screens.payments.purchaseReturnPayment")}
                 {isSupplier &&
                   t("screens.payments.supplier_account_collection")}
                 {isPartner &&
@@ -238,7 +241,11 @@ export default function AddPayment({
                 placeholder="0.00"
                 disabled={
                   !useCredit &&
-                  (!form.fund_id || isSales || isExpense || isPurchase)
+                  (!form.fund_id ||
+                    isPurchase ||
+                    isSales ||
+                    isExpense ||
+                    isPurchase)
                 }
                 max={useCredit ? availableCredit : undefined}
               />

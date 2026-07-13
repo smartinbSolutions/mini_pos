@@ -63,7 +63,7 @@ export default function registerPurchaseReturnIPC() {
             net_total
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
           .run(
             data.purchase_invoice_id,
@@ -75,7 +75,7 @@ export default function registerPurchaseReturnIPC() {
             discount,
             tax,
             data.taxValue || 0,
-            netTotal
+            netTotal,
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -109,7 +109,7 @@ export default function registerPurchaseReturnIPC() {
             quantity,
             price,
             buyingPrice,
-            total
+            total,
           );
 
           updateStock.run(quantity, item.product_id);
@@ -131,7 +131,7 @@ export default function registerPurchaseReturnIPC() {
           party_id: data.supplier_id,
           invoice_id: returnId,
           invoice_type: "purchase_return",
-          record_type: "return",
+          record_type: "invoice",
           amount: netTotal,
           note: `Purchase Return #${returnId} for Invoice #${data.purchase_invoice_id}`,
         });
@@ -170,13 +170,13 @@ export default function registerPurchaseReturnIPC() {
               `
             INSERT INTO payment_allocations (payment_id, invoice_id, invoice_type, amount)
             VALUES (?, ?, ?, ?)
-            `
+            `,
             )
             .run(
               insertPaymentId,
               returnId,
               "purchase_return",
-              data.payment.amount
+              data.payment.amount,
             );
 
           allocationId = allocationResult.lastInsertRowid;
@@ -223,24 +223,24 @@ export default function registerPurchaseReturnIPC() {
           SUM(pa.amount),
           0
         ) AS refunded_amount,
-
+pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
 
         CASE
           WHEN COALESCE(SUM(pa.amount),0) >= pr.net_total
-            THEN 'refunded'
+            THEN 'paid'
 
           WHEN COALESCE(SUM(pa.amount),0) > 0
             THEN 'partial'
 
-          ELSE 'pending'
+          ELSE 'unpaid'
         END AS status
 
 
       FROM purchase_returns pr
 
 
-      LEFT JOIN purchase_invoices p
-        ON p.id = pr.purchase_invoice_id
+  LEFT JOIN purchase_invoices p
+  ON p.id = pr.purchase_invoice_id
 
 
       LEFT JOIN suppliers s
@@ -259,7 +259,7 @@ export default function registerPurchaseReturnIPC() {
 
 
       LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(limit, offset);
 
@@ -268,7 +268,7 @@ export default function registerPurchaseReturnIPC() {
         `
       SELECT COUNT(*) AS total
       FROM purchase_returns
-      `
+      `,
       )
       .get();
 
@@ -321,7 +321,7 @@ export default function registerPurchaseReturnIPC() {
         ON pa_sum.invoice_id = pr.id
 
       WHERE pr.id = ?
-      `
+      `,
       )
       .get(id);
 
@@ -340,7 +340,7 @@ export default function registerPurchaseReturnIPC() {
         ON p.id = pri.product_id
 
       WHERE pri.return_id = ?
-      `
+      `,
       )
       .all(id);
 
@@ -375,7 +375,7 @@ export default function registerPurchaseReturnIPC() {
         AND pa.invoice_type = 'purchase_return'
 
       ORDER BY pa.id ASC
-      `
+      `,
       )
       .all(id);
 

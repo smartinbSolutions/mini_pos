@@ -23,8 +23,12 @@ export default function registerPartyHistoryIPC() {
                 WHEN p.party_type != 'partner' AND p.record_type = 'opening_balance' AND p.movement_type = 'withdrawal' THEN -p.amount
 
                 -- customer/supplier invoices and payments
+                WHEN p.party_type != 'partner' AND p.record_type = 'return' AND invoice_type = 'purchase_return'  THEN  -p.amount
+                WHEN p.party_type != 'partner' AND p.record_type = 'payment' AND invoice_type = 'purchase_return' THEN p.amount
+
                 WHEN p.party_type != 'partner' AND p.record_type = 'invoice' THEN  p.amount
                 WHEN p.party_type != 'partner' AND p.record_type = 'payment' THEN -p.amount
+                
 
                 ELSE 0
               END
@@ -38,7 +42,7 @@ export default function registerPartyHistoryIPC() {
             AND p.party_type = ?
           ORDER BY p.id DESC
           LIMIT ? OFFSET ?
-          `
+          `,
         )
         .all(partyId, partyType, limit, offset);
 
@@ -51,15 +55,27 @@ export default function registerPartyHistoryIPC() {
                 WHEN p.party_type != 'partner'
                      AND (
                        p.record_type = 'invoice'
-                       OR (p.record_type = 'opening_balance' AND p.movement_type = 'deposit')
+                       OR (p.record_type = 'opening_balance' AND p.movement_type = 'deposit') 
+                      
                      )
                 THEN p.amount
+                 WHEN p.party_type != 'partner'
+                     AND (
+                       p.record_type = 'return'                    
+                     )
+                THEN -p.amount
                 ELSE 0
               END
             ) AS total_invoice,
 
             SUM(
               CASE
+                 WHEN p.party_type != 'partner'
+                     AND (
+                       p.record_type = 'payment'
+                       AND  p.invoice_type = 'purchase_return'
+                     )
+                THEN -p.amount
                 WHEN p.party_type != 'partner'
                      AND (
                        p.record_type = 'payment'
@@ -80,7 +96,7 @@ export default function registerPartyHistoryIPC() {
           FROM party_history p
           WHERE p.party_id = ?
             AND p.party_type = ?
-          `
+          `,
         )
         .get(partyId, partyType);
 
@@ -93,7 +109,7 @@ export default function registerPartyHistoryIPC() {
           total_withdrawal: Number(summary?.total_withdrawal || 0),
         },
       };
-    }
+    },
   );
 
   ipcMain.handle("get-customer-credit", (event, customerId) => {
@@ -120,6 +136,6 @@ export default function registerPartyHistoryIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    }
+    },
   );
 }

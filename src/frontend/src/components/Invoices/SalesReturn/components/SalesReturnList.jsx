@@ -19,7 +19,7 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
-import usePurchaseReturnList from "../hooks/usePurchaseReturnList";
+import usePurchaseReturnList from "../hooks/useSalesReturnList";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -60,7 +60,7 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   );
 };
 
-const PurchaseReturnList = () => {
+const SalesReturnList = () => {
   const { t } = useTranslation();
 
   const {
@@ -359,4 +359,4 @@ const PurchaseReturnList = () => {
   );
 };
 
-export default PurchaseReturnList;
+export default SalesReturnList;

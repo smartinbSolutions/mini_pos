@@ -6,6 +6,7 @@ import {
   Wallet,
   Landmark,
   ArrowLeft,
+  RefreshCw, // أيقونة إضافية للمرتجعات
 } from "lucide-react";
 
 import usePartyLedger from "../hooks/useGetPartyPayments";
@@ -17,8 +18,6 @@ const PartyLedgerPage = () => {
   const { id, type } = useParams();
   const navigate = useNavigate();
 
-  // route can receive "partners" (plural) while party_history stores
-  // party_type = "partner" (singular) — normalize once, here, at the boundary.
   const normalizedType = type === "partners" ? "partner" : type;
   const isPartnerParty = normalizedType === "partner";
 
@@ -38,16 +37,13 @@ const PartyLedgerPage = () => {
 
   const partyName = party?.name || `${typeLabel} #${id}`;
 
-  // Static, whole-party totals from the backend's separate summary query —
-  // single source of truth, not derived from the paginated rows.
+  // تجميع الحسابات من السورس الرئيسي بالباكيند شاملة المرتجعات
   const totalInvoice = Number(summary?.total_invoice || 0);
   const totalPayment = Number(summary?.total_payment || 0);
+  const totalReturn = Number(summary?.total_return || 0); // الحقل الجديد المضاف للمرتجعات
   const totalDeposit = Number(summary?.total_deposit || 0);
   const totalWithdrawal = Number(summary?.total_withdrawal || 0);
 
-  // The three summary cards shown, resolved per party type:
-  // customer/supplier -> invoiced / paid / balance owed
-  // partner -> deposited / withdrawn / balance owed to fund
   const primaryLabel = isPartnerParty
     ? t("screens.ledger.totalDeposit")
     : t("screens.ledger.totalInvoice");
@@ -58,21 +54,16 @@ const PartyLedgerPage = () => {
     : t("screens.ledger.totalPayment");
   const secondaryValue = isPartnerParty ? totalWithdrawal : totalPayment;
 
-  // Balance: for customer/supplier, invoice - payment (what they still owe you).
-  // For partner, deposit - withdrawal (what the fund still owes them, negative
-  // if they've withdrawn more than they've deposited).
   const partyBalance = isPartnerParty
     ? totalDeposit - totalWithdrawal
-    : totalInvoice - totalPayment;
+    : totalInvoice - totalPayment - totalReturn;
 
-  // For a given row, decide if it's cash leaving (outflow) or coming in (inflow).
-  // Supplier/customer: driven by record_type ('payment' = outflow, 'invoice' = inflow).
-  // Partner: record_type is always 'payment', so direction comes from movement_type
-  // ('withdrawal' = partner pulled cash out = outflow, 'deposit' = partner put cash in = inflow).
-  const isOutflow = (p) =>
-    p.party_type === "partner"
-      ? p.movement_type === "withdrawal"
-      : p.record_type === "payment";
+  const isOutflow = (p) => {
+    if (p.party_type === "partner") {
+      return p.movement_type === "withdrawal";
+    }
+    return p.record_type === "payment" || p.record_type === "return";
+  };
 
   const goToInvoice = (record) => {
     if (!record.invoice_id || !record.invoice_type) return;
@@ -101,6 +92,7 @@ const PartyLedgerPage = () => {
           </div>
         </div>
 
+        {/*Up Cart*/}
         <div className="flex gap-4 flex-wrap">
           <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 min-w-[140px]">
             <div className="text-xs text-blue-600 font-medium">
@@ -119,6 +111,17 @@ const PartyLedgerPage = () => {
               {money(secondaryValue)}
             </div>
           </div>
+
+          {!isPartnerParty && (
+            <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 min-w-[140px]">
+              <div className="text-xs text-amber-600 font-medium">
+                {t("ui.totalReturns", "إجمالي المرتجعات")}
+              </div>
+              <div className="text-lg font-bold text-amber-700">
+                {money(totalReturn)}
+              </div>
+            </div>
+          )}
 
           <div className="bg-gray-100 border rounded-2xl px-4 py-3 min-w-[140px]">
             <div className="text-xs text-gray-500 font-medium">
@@ -151,13 +154,15 @@ const PartyLedgerPage = () => {
                   : t("screens.ledger.deposit")
                 : p.record_type === "payment"
                   ? t("screens.ledger.payment")
-                  : t("screens.ledger.invoice");
+                  : p.record_type === "return"
+                    ? t("ui.return", "مرتجع")
+                    : t("screens.ledger.invoice");
 
             const rate = Number(p.exchange_rate || 1);
             const isForeignCurrency = rate !== 1;
             const effectiveRate = Number(p.effective_rate || rate);
             const fundAmount = Number(
-              p.amount_fund_currency ?? Number(p.amount || 0) * rate
+              p.amount_fund_currency ?? Number(p.amount || 0) * rate,
             );
 
             return (
@@ -171,12 +176,16 @@ const PartyLedgerPage = () => {
                 <div className="flex items-center gap-4">
                   <div
                     className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-                      outflow
-                        ? "bg-red-100 text-red-600"
-                        : "bg-green-100 text-green-700"
+                      p.record_type === "return"
+                        ? "bg-amber-100 text-amber-600"
+                        : outflow
+                          ? "bg-red-100 text-red-600"
+                          : "bg-green-100 text-green-700"
                     }`}
                   >
-                    {outflow ? (
+                    {p.record_type === "return" ? (
+                      <RefreshCw size={18} className="animate-spin-slow" />
+                    ) : outflow ? (
                       <ArrowUpRight size={20} />
                     ) : (
                       <ArrowDownLeft size={20} />
@@ -189,7 +198,9 @@ const PartyLedgerPage = () => {
                     </div>
 
                     <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
-                      <span className="uppercase tracking-wide font-bold">
+                      <span
+                        className={`uppercase tracking-wide font-bold ${p.record_type === "return" ? "text-amber-600" : ""}`}
+                      >
                         {kindLabel}
                       </span>
                       {p.fund_name && (
@@ -227,10 +238,14 @@ const PartyLedgerPage = () => {
                 <div className="text-right">
                   <div
                     className={`font-bold text-lg ${
-                      outflow ? "text-red-500" : "text-green-600"
+                      p.record_type === "return"
+                        ? "text-amber-600"
+                        : outflow
+                          ? "text-red-500"
+                          : "text-green-600"
                     }`}
                   >
-                    {outflow ? "-" : "+"}
+                    {p.record_type === "return" ? "" : outflow ? "-" : "+"}
                     {money(p.amount)}
                   </div>
 

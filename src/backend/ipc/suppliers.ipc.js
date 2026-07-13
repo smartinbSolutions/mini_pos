@@ -44,61 +44,110 @@ export default function registerSuppliersIPC() {
     const suppliers = db
       .prepare(
         `
-        SELECT
-          s.*,
-      
-  COALESCE(
-  SUM(
-    CASE
-      WHEN ph.record_type = 'invoice'
-        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit')
-      THEN ph.amount
-      ELSE 0
-    END
-  ),
-  0
-) AS total,
+      SELECT
+        s.*,
 
-COALESCE(
-  SUM(
-    CASE
-      WHEN ph.record_type = 'payment'
-        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal')
-      THEN ph.amount
-      ELSE 0
-    END
-  ),
-  0
-) AS total_paid,
+        COALESCE(
+          SUM(
+            CASE
+              -- purchase invoices increase supplier debt
+              WHEN ph.record_type = 'invoice'
+                THEN ph.amount
 
-COALESCE(
-  SUM(
-    CASE
-      WHEN ph.record_type = 'invoice'
-        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit')
-      THEN ph.amount
-      ELSE 0
-    END
-  ),
-  0
-)
--
-COALESCE(
-  SUM(
-    CASE
-      WHEN ph.record_type = 'payment'
-        OR (ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal')
-      THEN ph.amount
-      ELSE 0
-    END
-  ),
-  0
-) AS balance FROM suppliers s
-        LEFT JOIN party_history ph
-          ON ph.party_type = 'supplier' AND ph.party_id = s.id
-        GROUP BY s.id
-        ORDER BY s.name
-        LIMIT ? OFFSET ?
+              WHEN ph.record_type = 'opening_balance'
+                AND ph.movement_type = 'deposit'
+                THEN ph.amount
+
+              WHEN ph.record_type = 'return'
+                AND ph.invoice_type = 'purchase_return'
+                THEN -ph.amount
+
+              ELSE 0
+            END
+          ),
+          0
+        ) AS total,
+
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.record_type = 'payment'
+                AND (
+                  ph.invoice_type IS NULL
+                  OR ph.invoice_type != 'purchase_return'
+                )
+                THEN ph.amount
+
+              WHEN ph.record_type = 'opening_balance'
+                AND ph.movement_type = 'withdrawal'
+                THEN ph.amount
+
+              WHEN ph.record_type = 'payment'
+                AND ph.invoice_type = 'purchase_return'
+                THEN -ph.amount
+
+              ELSE 0
+            END
+          ),
+          0
+        ) AS total_paid,
+
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.record_type = 'invoice'
+                THEN ph.amount
+
+              WHEN ph.record_type = 'opening_balance'
+                AND ph.movement_type = 'deposit'
+                THEN ph.amount
+
+              WHEN ph.record_type = 'return'
+                AND ph.invoice_type = 'purchase_return'
+                THEN -ph.amount
+
+              ELSE 0
+            END
+          ),
+          0
+        )
+        -
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.record_type = 'payment'
+                AND (
+                  ph.invoice_type IS NULL
+                  OR ph.invoice_type != 'purchase_return'
+                )
+                THEN ph.amount
+
+              WHEN ph.record_type = 'opening_balance'
+                AND ph.movement_type = 'withdrawal'
+                THEN ph.amount
+
+              WHEN ph.record_type = 'payment'
+                AND ph.invoice_type = 'purchase_return'
+                THEN -ph.amount
+
+              ELSE 0
+            END
+          ),
+          0
+        ) AS balance
+
+      FROM suppliers s
+
+      LEFT JOIN party_history ph
+        ON ph.party_type = 'supplier'
+        AND ph.party_id = s.id
+
+      GROUP BY s.id
+      ORDER BY s.name
+
+      LIMIT ? OFFSET ?
       `,
       )
       .all(limit, offset);
@@ -120,18 +169,63 @@ COALESCE(
     const supplier = db
       .prepare(
         `
-        SELECT
-          s.*,
-          COALESCE(SUM(CASE WHEN ph.record_type = 'invoice' THEN ph.amount ELSE 0 END), 0) AS total,
-          COALESCE(SUM(CASE WHEN ph.record_type = 'payment' THEN ph.amount ELSE 0 END), 0) AS total_paid,
-          COALESCE(SUM(CASE WHEN ph.record_type = 'invoice' THEN ph.amount ELSE 0 END), 0) -
-          COALESCE(SUM(CASE WHEN ph.record_type = 'payment' THEN ph.amount ELSE 0 END), 0) AS balance
-        FROM suppliers s
-        LEFT JOIN party_history ph
-          ON ph.party_type = 'supplier' AND ph.party_id = s.id
-        WHERE s.id = ?
-        GROUP BY s.id
-      `,
+    SELECT
+      s.*,
+
+      COALESCE(
+        SUM(
+          CASE
+            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'invoice' THEN ph.amount
+            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit' THEN ph.amount
+            
+            WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'return' THEN -ABS(ph.amount)
+
+            ELSE 0
+          END
+        ),
+        0
+      ) AS total,
+
+      COALESCE(
+        SUM(
+          CASE
+            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'payment' THEN ph.amount
+            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal' THEN ph.amount
+            
+            WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'payment' THEN -ph.amount
+
+            ELSE 0
+          END
+        ),
+        0
+      ) AS total_paid,
+
+      COALESCE(
+        SUM(
+          CASE
+            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'invoice' THEN ph.amount
+            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit' THEN ph.amount
+            WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'payment' THEN ph.amount
+            WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'return' THEN -ph.amount
+            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'payment' THEN -ph.amount
+            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal' THEN -ph.amount
+
+            ELSE 0
+          END
+        ),
+        0
+      ) AS balance
+
+    FROM suppliers s
+
+    LEFT JOIN party_history ph
+      ON ph.party_type = 'supplier'
+     AND ph.party_id = s.id
+
+    WHERE s.id = ?
+
+    GROUP BY s.id;
+    `,
       )
       .get(id);
 
