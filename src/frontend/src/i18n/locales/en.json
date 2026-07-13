@@ -504,7 +504,9 @@
       "receipt_from_customer": "Payment receipt from customer",
       "settlement_supplier": "Payment settlement to supplier",
       "creditCap": "Credit cap",
-      "originalNetTotal": "Original net total"
+      "originalNetTotal": "Original net total",
+      "auto_note_in": "Received {{amount}} from {{party}} into {{fund}}",
+      "auto_note_out": "Paid {{amount}} to {{party}} from {{fund}}"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",

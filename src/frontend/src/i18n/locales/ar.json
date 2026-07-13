@@ -505,7 +505,9 @@
       "receipt_from_customer": "دفعة من العميل",
       "settlement_supplier": "دفعة تسوية للمورد",
       "creditCap": "حد الرصيد",
-      "originalNetTotal": "الإجمالي الأساسي الصافي"
+      "originalNetTotal": "الإجمالي الأساسي الصافي",
+      "auto_note_in": "تم استلام {{amount}} من {{party}} إلى {{fund}}",
+      "auto_note_out": "تم دفع {{amount}} إلى {{party}} من {{fund}}"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",

@@ -505,7 +505,9 @@
       "receipt_from_customer": "Müşteriden ödeme makbuzu",
       "settlement_supplier": "Tedarikçiye ödeme mutabakatı",
       "creditCap": "Kredi limiti",
-      "originalNetTotal": "Orijinal net toplam"
+      "originalNetTotal": "Orijinal net toplam",
+      "auto_note_in": "{{fund}} hesabına {{party}} tarafından {{amount}} tutarında tahsilat yapıldı",
+      "auto_note_out": "{{fund}} hesabından {{party}} tarafına {{amount}} tutarında ödeme yapıldı"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
