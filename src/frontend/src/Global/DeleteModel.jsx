@@ -9,6 +9,8 @@ const DeleteModal = ({
   title,
   message,
   loading = false,
+  subTitle = "common.delete",
+  btnTxt = "common.delete",
 }) => {
   const { t } = useTranslation();
   const modalTitle = title || t("deleteModal.title");
@@ -47,7 +49,7 @@ const DeleteModal = ({
                 {modalTitle}
               </h2>
               <p className="mt-1 text-xs font-semibold text-red-600">
-                {t("common.delete")}
+                {t(subTitle)}
               </p>
             </div>
           </div>
@@ -83,7 +85,7 @@ const DeleteModal = ({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-black text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Trash2 size={16} />
-            {loading ? t("common.deleting") : t("common.delete")}
+            {loading ? t("common.loading") : t(btnTxt)}
           </button>
         </div>
       </div>

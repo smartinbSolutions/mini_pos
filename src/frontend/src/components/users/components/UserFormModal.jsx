@@ -130,6 +130,7 @@ const UserFormModal = ({
             type="button"
             onClick={onClose}
             disabled={saving}
+            aria-label={t("common.close")}
             className="rounded-xl p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={18} />
@@ -209,7 +210,7 @@ const UserFormModal = ({
                   maxLength={6}
                   value={form.pin}
                   onChange={handleChange}
-                  placeholder="••••••"
+                  placeholder={t("screens.users.pinPlaceholder")}
                   className={fieldClass("pin")}
                 />
                 {errors.pin && (
@@ -232,7 +233,7 @@ const UserFormModal = ({
                   maxLength={6}
                   value={form.pin_confirm}
                   onChange={handleChange}
-                  placeholder="••••••"
+                  placeholder={t("screens.users.pinPlaceholder")}
                   className={fieldClass("pin_confirm")}
                 />
                 {errors.pin_confirm && (

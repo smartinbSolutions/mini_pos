@@ -144,7 +144,7 @@ const PartyLedgerPage = () => {
                 : p.record_type === "payment"
                   ? t("screens.ledger.payment")
                   : p.record_type === "return"
-                    ? t("ui.return", "مرتجع")
+                    ? t("screens.ledger.return")
                     : t("screens.ledger.invoice");
 
             const rate = Number(p.exchange_rate || 1);
@@ -214,9 +214,9 @@ const PartyLedgerPage = () => {
                           {fundAmount.toFixed(2)} {p.currency_code}
                         </span>
                         {effectiveRate !== rate && (
-                          <span className="ml-1 text-blue-600 font-medium">
-                            ({t("ui.effectiveRate")}: {effectiveRate.toFixed(4)}
-                            )
+                          <span className="me-1 text-blue-600 font-medium">
+                            ({t("screens.ledger.effectiveRate")}:{" "}
+                            {effectiveRate.toFixed(4)})
                           </span>
                         )}
                       </div>
@@ -224,7 +224,7 @@ const PartyLedgerPage = () => {
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="text-start">
                   <div
                     className={`font-bold text-lg ${
                       p.record_type === "return"

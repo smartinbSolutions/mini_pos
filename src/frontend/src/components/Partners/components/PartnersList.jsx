@@ -24,11 +24,15 @@ const BalanceCell = ({ deposited, withdrawn, balance, money, t }) => {
 
       <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1.5 w-48 whitespace-normal rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
         <span className="flex justify-between">
-          <span className="text-slate-300">{t("totalDeposit")}</span>
+          <span className="text-slate-300">
+            {t("screens.ledger.totalDeposit")}
+          </span>
           <span className="font-bold">{money(deposited)}</span>
         </span>
         <span className="mt-1 flex justify-between">
-          <span className="text-slate-300">{t("totalWithdrawal")}</span>
+          <span className="text-slate-300">
+            {t("screens.ledger.totalWithdrawal")}
+          </span>
           <span className="font-bold text-emerald-300">{money(withdrawn)}</span>
         </span>
       </span>
@@ -115,14 +119,14 @@ const PartnersList = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left text-sm">
+              <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="px-5 py-4">{t("ui.name")}</th>
-                    <th className="px-5 py-4">{t("ui.phone")}</th>
-                    <th className="px-5 py-4">{t("ui.address")}</th>
-                    <th className="px-5 py-4 text-right">{t("ui.balance")}</th>
-                    <th className="px-5 py-4 text-right">
+                    <th className="px-5 py-4 text-start">{t("ui.name")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.phone")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.address")}</th>
+                    <th className="px-5 py-4 text-start">{t("ui.balance")}</th>
+                    <th className="px-5 py-4 text-start">
                       {t("common.actions")}
                     </th>
                   </tr>
@@ -216,7 +220,7 @@ const PartnersList = () => {
                         <td className="px-5 py-3 max-w-[200px] truncate text-slate-500">
                           {partner.address || t("ui.noAddress")}
                         </td>
-                        <td className="px-5 py-3 text-right">
+                        <td className="px-5 py-3 text-start">
                           <BalanceCell
                             deposited={deposited}
                             withdrawn={withdrawn}
@@ -226,7 +230,7 @@ const PartnersList = () => {
                           />
                         </td>
                         <td className="px-5 py-3">
-                          <div className="flex justify-end gap-1">
+                          <div className="flex justify-start gap-1">
                             <button
                               onClick={() =>
                                 navigate(`/payment/partner/${partner.id}`)

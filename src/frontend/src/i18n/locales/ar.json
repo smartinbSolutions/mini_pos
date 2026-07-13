@@ -126,7 +126,10 @@
     "partners": "الشركاء",
     "other": "غير ذلك",
     "opening_balance": "الرصيد الافتتاحي",
-    "row": "سطر"
+    "row": "سطر",
+    "user": "المستخدم",
+    "users": "المستخدمون",
+    "username": "اسم المستخدم"
   },
   "screens": {
     "units": {
@@ -507,7 +510,12 @@
       "creditCap": "حد الرصيد",
       "originalNetTotal": "الإجمالي الأساسي الصافي",
       "auto_note_in": "تم استلام {{amount}} من {{party}} إلى {{fund}}",
-      "auto_note_out": "تم دفع {{amount}} إلى {{party}} من {{fund}}"
+      "auto_note_out": "تم دفع {{amount}} إلى {{party}} من {{fund}}",
+      "partnerTransaction": "معاملات الشريك",
+      "paymentForSalesReturn": "دفعة لمرتجع المبيعات",
+      "paymentForPurchaseReturn": "دفعة لمرتجع المشتريات",
+      "purchaseReturnPayment": "دفعة إعادة مشتريات",
+      "salesReturnPayment": "دفعة إعادة مبيعات"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
@@ -522,7 +530,15 @@
       "payment": "دفعة",
       "invoice": "فاتورة",
       "totalInvoice": "إجمالي الفواتير",
-      "totalPayment": "إجمالي الدفعات"
+      "totalPayment": "إجمالي الدفعات",
+      "totalDeposit": "إجمالي الإيداعات",
+      "totalWithdrawal": "إجمالي السحوبات",
+      "totalReturns": "إجمالي العوائد",
+      "withdrawal": "السحب",
+      "deposit": "الإيداع",
+      "return": "العائد",
+      "effectiveRate": "سعر الصرف الفعلي",
+      "fundRate": "سعر صرف الصندوق"
     },
     "fundMovements": {
       "title": "حركات الصندوق",
@@ -580,6 +596,37 @@
       "edit_transfer": "تعديل عملية التحويل",
       "save_changes": "حفظ التغييرات"
     },
+    "users": {
+      "title": "إدارة المستخدمين",
+      "subtitle": "إدارة وصول الموظفين وصلاحياتهم",
+      "addButton": "إضافة مستخدم",
+      "username": "اسم المستخدم",
+      "fullName": "الاسم الكامل",
+      "role": "الدور",
+      "status": "الحالة",
+      "role_admin": "مسؤول",
+      "role_pos": "مستخدم نقطة البيع",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "deactivate": "تعطيل",
+      "reactivate": "إعادة التنشيط",
+      "empty": "لا يوجد مستخدمون",
+      "emptyHint": "أضف أول مستخدم للبدء.",
+      "deactivateTitle": "تعطيل المستخدم",
+      "deactivateMessage": "هل أنت متأكد من تعطيل {{name}}؟",
+      "deleteTitle": "حذف المستخدم",
+      "deleteMessage": "هل أنت متأكد من حذف {{name}}؟ لا يمكن التراجع عن هذا الإجراء.",
+      "editTitle": "تعديل المستخدم",
+      "createTitle": "إنشاء مستخدم",
+      "editSubtitle": "تحديث تفاصيل الحساب والصلاحيات",
+      "createSubtitle": "إنشاء حساب جديد للموظف",
+      "newPin": "رمز PIN جديد",
+      "pin": "رمز PIN",
+      "pinConfirm": "تأكيد رمز PIN",
+      "pinPlaceholder": "••••••",
+      "notProvided": "غير متوفر",
+      "pinLeaveBlankHint": "اترك حقلي رمز PIN فارغين للاحتفاظ بالرمز الحالي."
+    },
     "login": {
       "title": "مرحبًا بعودتك",
       "subtitle": "سجل الدخول للبدء",
@@ -609,6 +656,7 @@
     "customers": "العملاء",
     "companySettings": "الشركة",
     "settings": "الاعدادات",
+    "users": "المستخدمون",
     "expensesCategory": "تصنيف المصاريف",
     "expense": "المصاريف",
     "partners": "الشركاء",
@@ -709,7 +757,13 @@
     "customer_required": "العميل مطلوب",
     "validAmount": "يرجى إدخال مبلغ صالح",
     "creditExceeded": "المبلغ يتجاوز الرصيد المتاح",
-    "loadExpenseFailed": "فشل تحميل المصروف"
+    "loadExpenseFailed": "فشل تحميل المصروف",
+    "loadFailed": "فشل تحميل {{field}}.",
+    "saveFailed": "فشل حفظ {{field}}.",
+    "lastAdmin": "يجب أن يبقى مسؤول نشط واحد على الأقل.",
+    "deactivateFailed": "فشل تعطيل المستخدم.",
+    "pinInvalid": "يجب أن يتكون رمز PIN من 6 أرقام بالضبط.",
+    "pinMismatch": "تأكيد رمز PIN غير مطابق."
   },
   "success": {
     "updated": "تم تحديث {{field}} بنجاح"

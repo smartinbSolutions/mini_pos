@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   AlertCircle,
+  Pen,
   Plus,
   RotateCcw,
   ShieldCheck,
@@ -80,14 +81,22 @@ const UsersList = () => {
       )}
 
       <div className={`${panelClass} overflow-hidden`}>
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
-              <th className="px-5 py-3">{t("screens.users.username")}</th>
-              <th className="px-5 py-3">{t("screens.users.fullName")}</th>
-              <th className="px-5 py-3">{t("screens.users.role")}</th>
-              <th className="px-5 py-3">{t("screens.users.status")}</th>
-              <th className="px-5 py-3 text-right">{t("common.actions")}</th>
+              <th className="px-5 py-3 text-start">
+                {t("screens.users.username")}
+              </th>
+              <th className="px-5 py-3 text-start">
+                {t("screens.users.fullName")}
+              </th>
+              <th className="px-5 py-3 text-start">
+                {t("screens.users.role")}
+              </th>
+              <th className="px-5 py-3 text-start">
+                {t("screens.users.status")}
+              </th>
+              <th className="px-5 py-3 text-start">{t("common.actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -96,13 +105,13 @@ const UsersList = () => {
                 key={user.id}
                 className="border-b border-[#f0f3ff] last:border-0 hover:bg-[#f8faff]"
               >
-                <td className="px-5 py-3.5 font-bold text-slate-900">
+                <td className="px-5 py-3.5 text-start font-bold text-slate-900">
                   {user.username}
                 </td>
-                <td className="px-5 py-3.5 text-slate-600">
-                  {user.full_name || "—"}
+                <td className="px-5 py-3.5 text-start text-slate-600">
+                  {user.full_name || t("screens.users.notProvided")}
                 </td>
-                <td className="px-5 py-3.5">
+                <td className="px-5 py-3.5 text-start">
                   <span
                     className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold ${
                       user.role === "admin"
@@ -114,7 +123,7 @@ const UsersList = () => {
                     {t(`screens.users.role_${user.role}`)}
                   </span>
                 </td>
-                <td className="px-5 py-3.5">
+                <td className="px-5 py-3.5 text-start">
                   <span
                     className={`inline-flex items-center rounded-lg px-2 py-1 text-xs font-bold ${
                       user.is_active
@@ -128,37 +137,38 @@ const UsersList = () => {
                   </span>
                 </td>
                 <td className="px-5 py-3.5">
-                  <div className="flex justify-end gap-1">
+                  <div className="flex justify-start gap-1">
                     <button
+                      title={t("common.edit")}
                       onClick={() => openEditModal(user)}
                       className="rounded-xl px-3 py-1.5 text-xs font-bold text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                     >
-                      {t("common.edit")}
+                      <Pen size={16} />
                     </button>
 
                     {user.is_active ? (
                       <button
+                        title={t("screens.users.deactivate")}
                         onClick={() => setDeactivateTarget(user)}
                         className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50"
                       >
-                        <UserX size={13} />
-                        {t("screens.users.deactivate")}
+                        <UserX size={16} />
                       </button>
                     ) : (
                       <>
                         <button
+                          title={t("screens.users.reactivate")}
                           onClick={() => reactivateUser(user)}
                           className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-emerald-600 hover:bg-emerald-50"
                         >
-                          <RotateCcw size={13} />
-                          {t("screens.users.reactivate")}
+                          <RotateCcw size={16} />
                         </button>
                         <button
+                          title={t("common.delete")}
                           onClick={() => setDeleteTarget(user)}
                           className="flex items-center gap-1 rounded-xl px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50"
                         >
-                          <Trash2 size={13} />
-                          {t("common.delete")}
+                          <Trash2 size={16} />
                         </button>
                       </>
                     )}
@@ -203,6 +213,8 @@ const UsersList = () => {
         message={t("screens.users.deactivateMessage", {
           name: deactivateTarget?.username,
         })}
+        subTitle="screens.users.deactivate"
+        btnTxt="screens.users.deactivate"
       />
 
       <DeleteModal

@@ -173,7 +173,7 @@ export default function AddPayment({
                 >
                   {useCredit
                     ? t("common.applied")
-                    : t("screens.payments.applyCredit")}
+                    : t("screens.payments.apply_credit")}
                 </button>
               </div>
             </div>
@@ -189,7 +189,7 @@ export default function AddPayment({
                 className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${form.partner_transaction_type === "income" ? "bg-white text-emerald-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <ArrowDownLeft size={16} />
-                {t("deposit")}
+                {t("screens.payments.deposit")}
               </button>
               <button
                 type="button"
@@ -199,7 +199,7 @@ export default function AddPayment({
                 className={`flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-lg transition-all ${form.partner_transaction_type === "expense" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 <ArrowUpRight size={16} />
-                {t("withdraw")}
+                {t("screens.payments.withdraw")}
               </button>
             </div>
           )}
@@ -294,11 +294,11 @@ export default function AddPayment({
               {form.fund_id && (
                 <div className="mt-1 flex justify-between text-xs text-gray-500 bg-slate-50 p-2 rounded-lg border border-dashed">
                   <span>
-                    {t("ui.fundRate")}:{" "}
+                    {t("screens.ledger.fundRate")}:{" "}
                     <strong>{form.fund_exchangeRate}</strong>
                   </span>
                   <span>
-                    {t("ui.effectiveRate")}:{" "}
+                    {t("screens.ledger.effectiveRate")}:{" "}
                     <strong className="text-blue-600">
                       {effectiveRate.toFixed(4)}
                     </strong>

@@ -126,7 +126,10 @@
     "unpaid": "Unpaid",
     "other": "Other",
     "opening_balance": "Opening balance",
-    "row": "Row"
+    "row": "Row",
+    "user": "User",
+    "users": "Users",
+    "username": "Username"
   },
   "screens": {
     "units": {
@@ -506,7 +509,12 @@
       "creditCap": "Credit cap",
       "originalNetTotal": "Original net total",
       "auto_note_in": "Received {{amount}} from {{party}} into {{fund}}",
-      "auto_note_out": "Paid {{amount}} to {{party}} from {{fund}}"
+      "auto_note_out": "Paid {{amount}} to {{party}} from {{fund}}",
+      "partnerTransaction": "Partner transaction",
+      "paymentForSalesReturn": "Payment for sales return",
+      "paymentForPurchaseReturn": "Payment for purchase return",
+      "purchaseReturnPayment": "Purchase return payment",
+      "salesReturnPayment": "Sales return payment"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",
@@ -521,7 +529,15 @@
       "payment": "Payment",
       "invoice": "Invoice",
       "totalInvoice": "Total invoice",
-      "totalPayment": "Total payment"
+      "totalPayment": "Total payment",
+      "totalDeposit": "Total deposit",
+      "totalWithdrawal": "Total withdrawal",
+      "totalReturns": "Total returns",
+      "withdrawal": "Withdrawal",
+      "deposit": "Deposit",
+      "return": "Return",
+      "effectiveRate": "Effective rate",
+      "fundRate": "Fund rate"
     },
     "fundMovements": {
       "title": "Fund Movements",
@@ -579,6 +595,37 @@
       "edit_transfer": "Edit transfer",
       "save_changes": "Save changes"
     },
+    "users": {
+      "title": "User Management",
+      "subtitle": "Manage staff access and permissions",
+      "addButton": "Add User",
+      "username": "Username",
+      "fullName": "Full Name",
+      "role": "Role",
+      "status": "Status",
+      "role_admin": "Administrator",
+      "role_pos": "POS User",
+      "active": "Active",
+      "inactive": "Inactive",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate",
+      "empty": "No users found",
+      "emptyHint": "Add your first user to get started.",
+      "deactivateTitle": "Deactivate User",
+      "deactivateMessage": "Are you sure you want to deactivate {{name}}?",
+      "deleteTitle": "Delete User",
+      "deleteMessage": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+      "editTitle": "Edit User",
+      "createTitle": "Create User",
+      "editSubtitle": "Update account details and permissions",
+      "createSubtitle": "Create a new staff account",
+      "newPin": "New PIN",
+      "pin": "PIN",
+      "pinConfirm": "Confirm PIN",
+      "pinPlaceholder": "••••••",
+      "notProvided": "Not provided",
+      "pinLeaveBlankHint": "Leave the PIN fields blank to keep the current PIN."
+    },
     "login": {
       "title": "Welcome back",
       "subtitle": "Log in to start",
@@ -608,6 +655,7 @@
     "customers": "Customers",
     "companySettings": "Company",
     "settings": "Settings",
+    "users": "Users",
     "expensesCategory": "Expenses Category",
     "expense": "Expenses",
     "partners": "Partners",
@@ -708,7 +756,13 @@
     "customer_required": "Customer Required",
     "validAmount": "Please enter a valid amount",
     "creditExceeded": "Amount exceeds available credit",
-    "loadExpenseFailed": "Failed to load expense"
+    "loadExpenseFailed": "Failed to load expense",
+    "loadFailed": "Failed to load {{field}}.",
+    "saveFailed": "Failed to save {{field}}.",
+    "lastAdmin": "At least one active administrator is required.",
+    "deactivateFailed": "Failed to deactivate user.",
+    "pinInvalid": "PIN must be exactly 6 digits.",
+    "pinMismatch": "PIN confirmation does not match."
   },
   "success": {
     "updated": "{{field}} updated successfully"

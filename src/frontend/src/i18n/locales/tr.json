@@ -126,7 +126,10 @@
     "partner": "Ortak",
     "other": "Diğer",
     "opening_balance": "Açılış bakiyesi",
-    "row": "Satır"
+    "row": "Satır",
+    "user": "Kullanıcı",
+    "users": "Kullanıcılar",
+    "username": "Kullanıcı adı"
   },
   "screens": {
     "units": {
@@ -507,7 +510,12 @@
       "creditCap": "Kredi limiti",
       "originalNetTotal": "Orijinal net toplam",
       "auto_note_in": "{{fund}} hesabına {{party}} tarafından {{amount}} tutarında tahsilat yapıldı",
-      "auto_note_out": "{{fund}} hesabından {{party}} tarafına {{amount}} tutarında ödeme yapıldı"
+      "auto_note_out": "{{fund}} hesabından {{party}} tarafına {{amount}} tutarında ödeme yapıldı",
+      "partnerTransaction": "Ortak işlemi",
+      "paymentForSalesReturn": "Satış iade ödemesi",
+      "paymentForPurchaseReturn": "Satın alma iade ödemesi",
+      "purchaseReturnPayment": "Satın alma iade ödemesi",
+      "salesReturnPayment": "Satış iade ödemesi"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
@@ -522,7 +530,15 @@
       "payment": "Ödeme",
       "invoice": "Fatura",
       "totalInvoice": "Fatura tutarı",
-      "totalPayment": "Ödeme tutarı"
+      "totalPayment": "Ödeme tutarı",
+      "totalDeposit": "Toplam yatırım",
+      "totalWithdrawal": "Toplam çekim",
+      "totalReturns": "Toplam getiri",
+      "withdrawal": "Çekim",
+      "deposit": "Yatırım",
+      "return": "Getiri",
+      "effectiveRate": "Etkin döviz kuru",
+      "fundRate": "Fon döviz kuru"
     },
     "fundMovements": {
       "title": "Kasa Hareketleri",
@@ -580,6 +596,37 @@
       "edit_transfer": "Transfer işlemi düzenleme",
       "save_changes": "Değişiklikleri kaydet"
     },
+    "users": {
+      "title": "Kullanıcı Yönetimi",
+      "subtitle": "Personel erişimini ve yetkilerini yönetin",
+      "addButton": "Kullanıcı Ekle",
+      "username": "Kullanıcı Adı",
+      "fullName": "Ad Soyad",
+      "role": "Rol",
+      "status": "Durum",
+      "role_admin": "Yönetici",
+      "role_pos": "POS Kullanıcısı",
+      "active": "Aktif",
+      "inactive": "Pasif",
+      "deactivate": "Devre Dışı Bırak",
+      "reactivate": "Yeniden Etkinleştir",
+      "empty": "Kullanıcı bulunamadı",
+      "emptyHint": "Başlamak için ilk kullanıcınızı ekleyin.",
+      "deactivateTitle": "Kullanıcıyı Devre Dışı Bırak",
+      "deactivateMessage": "{{name}} kullanıcısını devre dışı bırakmak istediğinizden emin misiniz?",
+      "deleteTitle": "Kullanıcıyı Sil",
+      "deleteMessage": "{{name}} kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      "editTitle": "Kullanıcıyı Düzenle",
+      "createTitle": "Kullanıcı Oluştur",
+      "editSubtitle": "Hesap bilgilerini ve yetkileri güncelleyin",
+      "createSubtitle": "Yeni bir personel hesabı oluşturun",
+      "newPin": "Yeni PIN",
+      "pin": "PIN",
+      "pinConfirm": "PIN'i Onayla",
+      "pinPlaceholder": "••••••",
+      "notProvided": "Belirtilmedi",
+      "pinLeaveBlankHint": "Mevcut PIN'i korumak için PIN alanlarını boş bırakın."
+    },
     "login": {
       "title": "Yeniden hoşgeldiniz",
       "subtitle": "Başlamak için giriş yap",
@@ -609,6 +656,7 @@
     "customers": "Müşteriler",
     "companySettings": "Şirket",
     "settings": "Ayarlar",
+    "users": "Kullanıcılar",
     "expensesCategory": "Gider Kategorisi",
     "expense": "Giderler",
     "partner": "Ortak",
@@ -709,7 +757,13 @@
     "partialLoad": "{{field}} yüklendi, ancak bazı özellikler IPC işleyicileri kayıtlı olmadığı için kullanılamıyor.",
     "validAmount": "Lütfen geçerli bir tutar girin",
     "creditExceeded": "Tutar kullanılabilir bakiyeyi aşıyor",
-    "loadExpenseFailed": "Gider yüklenemedi"
+    "loadExpenseFailed": "Gider yüklenemedi",
+    "loadFailed": "{{field}} yüklenemedi.",
+    "saveFailed": "{{field}} kaydedilemedi.",
+    "lastAdmin": "En az bir aktif yönetici bulunmalıdır.",
+    "deactivateFailed": "Kullanıcı devre dışı bırakılamadı.",
+    "pinInvalid": "PIN tam olarak 6 rakamdan oluşmalıdır.",
+    "pinMismatch": "PIN onayı eşleşmiyor."
   },
   "success": {
     "updated": "{{field}} başarıyla güncellendi"
