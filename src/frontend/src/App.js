@@ -61,6 +61,8 @@ import CompanySettings from "./components/CompanySettings/components/CompanySett
 import UsersList from "./components/users/components/UsersList";
 import PurchaseReturnList from "./components/Invoices/PurchaseReturn/components/PurchaseReturnList";
 import PurchaseReturnView from "./components/Invoices/PurchaseReturn/components/PurchaseRefundView";
+import SalesReturnList from "./components/Invoices/SalesReturn/components/SalesReturnList";
+import SalesReturnView from "./components/Invoices/SalesReturn/components/SalesReturnView";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -168,6 +170,13 @@ export default function App() {
               <Route path="view-sales/:id" element={<SalesInvoiceView />} />
               <Route path="edit-sales/:id" element={<UpdateSales />} />
               <Route path="customer" element={<CustomerList />} />
+
+              {/* ================= SALES RETURN ================= */}
+              <Route path="/sales-return" element={<SalesReturnList />} />
+              <Route
+                path="/view-sales-return/:id"
+                element={<SalesReturnView />}
+              />
 
               {/* ================= PURCHASE ================= */}
               <Route path="purchase" element={<PurchaseList />} />

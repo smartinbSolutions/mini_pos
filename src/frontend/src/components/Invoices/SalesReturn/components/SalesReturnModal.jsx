@@ -48,10 +48,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
       const itemsWithReturnQty = invoice.items.map((item) => ({
         ...item,
         returnQuantity: 0,
-        maxAvailable:
-          item.available_quantity !== undefined
-            ? item.available_quantity
-            : item.quantity,
+        maxAvailable: item.available_quantity,
       }));
 
       setReturnItems(itemsWithReturnQty);
@@ -171,7 +168,6 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
         product_id: item.product_id,
         quantity: item.returnQuantity,
         price: item.price,
-
         sellingPrice: item.sellingPrice || item.price,
       })),
       payment: null,

@@ -50,7 +50,6 @@ export default function registerSuppliersIPC() {
         COALESCE(
           SUM(
             CASE
-              -- purchase invoices increase supplier debt
               WHEN ph.record_type = 'invoice'
                 THEN ph.amount
 
@@ -175,10 +174,14 @@ export default function registerSuppliersIPC() {
       COALESCE(
         SUM(
           CASE
-            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'invoice' THEN ph.amount
-            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit' THEN ph.amount
+            WHEN ph.invoice_type = 'purchase' AND 
+            ph.record_type = 'invoice' THEN ph.amount
+
+            WHEN ph.record_type = 'opening_balance' AND
+             ph.movement_type = 'deposit' THEN ph.amount
             
-            WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'return' THEN -ABS(ph.amount)
+            WHEN ph.invoice_type = 'purchase_return' AND
+             ph.record_type = 'return' THEN -ABS(ph.amount)
 
             ELSE 0
           END
@@ -189,8 +192,11 @@ export default function registerSuppliersIPC() {
       COALESCE(
         SUM(
           CASE
-            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'payment' THEN ph.amount
-            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal' THEN ph.amount
+            WHEN ph.invoice_type = 'purchase' AND
+             ph.record_type = 'payment' THEN ph.amount
+
+            WHEN ph.record_type = 'opening_balance' AND
+             ph.movement_type = 'withdrawal' THEN ph.amount
             
             WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'payment' THEN -ph.amount
 
@@ -203,12 +209,23 @@ export default function registerSuppliersIPC() {
       COALESCE(
         SUM(
           CASE
-            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'invoice' THEN ph.amount
-            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'deposit' THEN ph.amount
-            WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'payment' THEN ph.amount
-            WHEN ph.invoice_type = 'purchase_return' AND ph.record_type = 'return' THEN -ph.amount
-            WHEN ph.invoice_type = 'purchase' AND ph.record_type = 'payment' THEN -ph.amount
-            WHEN ph.record_type = 'opening_balance' AND ph.movement_type = 'withdrawal' THEN -ph.amount
+            WHEN ph.invoice_type = 'purchase' AND 
+            ph.record_type = 'invoice' THEN ph.amount
+            
+            WHEN ph.record_type = 'opening_balance' AND 
+            ph.movement_type = 'deposit' THEN ph.amount
+
+            WHEN ph.invoice_type = 'purchase_return' AND 
+            ph.record_type = 'payment' THEN ph.amount
+
+            WHEN ph.invoice_type = 'purchase_return' AND 
+            ph.record_type = 'return' THEN -ph.amount
+
+            WHEN ph.invoice_type = 'purchase' AND
+             ph.record_type = 'payment' THEN -ph.amount
+
+            WHEN ph.record_type = 'opening_balance' AND
+             ph.movement_type = 'withdrawal' THEN -ph.amount
 
             ELSE 0
           END

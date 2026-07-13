@@ -19,7 +19,8 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
-import usePurchaseReturnList from "../hooks/useSalesReturnList";
+// تعديل الاستيراد الذكي ليقرأ الهوك الخاص بمرتجع المبيعات
+import useSalesReturnList from "../hooks/useSalesReturnList";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -63,13 +64,14 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
 const SalesReturnList = () => {
   const { t } = useTranslation();
 
+  // ضبط التسميات هنا لتطابق مخرجات الـ hook الخاص بالمبيعات
   const {
-    purchaseReturns,
+    salesReturns, // تم التعديل من purchaseReturns
     loading,
     saving,
     error,
     refetch,
-    deletePurchaseReturn,
+    deleteSalesReturn, // تم التعديل من deletePurchaseReturn
 
     page,
     setPage,
@@ -78,11 +80,11 @@ const SalesReturnList = () => {
     total,
     totalPages,
 
-    selecteInvoice,
-    setSelecteInvoice,
+    selectedInvoice,
+    setSelectedInvoice,
     openPaymentModel,
     setOpenPaymentModel,
-  } = usePurchaseReturnList();
+  } = useSalesReturnList();
 
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -90,15 +92,16 @@ const SalesReturnList = () => {
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
 
+  // الفلترة بناءً على حقول العميل والمبيعات
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
-    if (!term) return purchaseReturns;
+    if (!term) return salesReturns;
 
-    return purchaseReturns.filter((inv) => {
+    return salesReturns.filter((inv) => {
       return [
         inv.id,
-        inv.supplier_name,
-        inv.supplier_id,
+        inv.customer_name, // تعديل من supplier_name
+        inv.customer_id, // تعديل من supplier_id
         inv.date,
         inv.total,
         inv.net_total,
@@ -106,27 +109,27 @@ const SalesReturnList = () => {
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term));
     });
-  }, [purchaseReturns, search]);
+  }, [salesReturns, search]);
 
   const handleDelete = async (id) => {
     try {
       setActionError("");
-      await deletePurchaseReturn(id);
+      await deleteSalesReturn(id);
     } catch (err) {
       console.log(err.message);
       setActionError(t("screens.invoices.deleteFailed"));
     }
   };
 
-  const totalNet = purchaseReturns?.reduce(
+  const totalNet = salesReturns?.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
     0,
   );
-  const totalTax = purchaseReturns?.reduce(
+  const totalTax = salesReturns?.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
     0,
   );
-  const unpaidCount = purchaseReturns?.filter(
+  const unpaidCount = salesReturns?.filter(
     (inv) => inv.status !== "paid",
   ).length;
 
@@ -134,17 +137,17 @@ const SalesReturnList = () => {
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
         <InvoiceListHeader
-          badgeLabel={t("ui.purchaseReturn", "Purchase Return")}
+          badgeLabel={t("ui.salesReturn", "Sales Return")}
           badgeIcon={Undo2}
-          title={t("screens.invoices.purchaseReturn", "Purchase Returns")}
+          title={t("screens.invoices.salesReturn", "Sales Returns")}
           subtitle={t(
-            "screens.invoices.purchaseReturnSubtitle",
-            "Manage your purchase returns and credit notes",
+            "screens.invoices.salesReturnSubtitle",
+            "Manage your sales returns and credit notes",
           )}
           stats={[
             {
               icon: Undo2,
-              value: purchaseReturns?.length,
+              value: salesReturns?.length,
               label: t("ui.returns", "Returns"),
             },
             {
@@ -188,7 +191,7 @@ const SalesReturnList = () => {
                   <th className="px-5 py-4">
                     {t("ui.originalInvoice", "Orig. Invoice")}
                   </th>
-                  <th className="px-5 py-4">{t("ui.supplier")}</th>
+                  <th className="px-5 py-4">{t("ui.customer", "Customer")}</th>
                   <th className="px-5 py-4">{t("ui.date")}</th>
                   <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
                   <th className="px-5 py-4 text-right">{t("ui.tax")}</th>
@@ -226,11 +229,11 @@ const SalesReturnList = () => {
                           ? `${inv.original_invoice_name} `
                           : ""}
                         <span className="text-xs text-slate-400 font-normal">
-                          (#{inv.purchase_invoice_id})
+                          (#{inv.sales_invoice_id})
                         </span>
                       </td>
                       <td className="px-5 py-4 font-bold text-slate-900">
-                        {inv.supplier_name || "-"}
+                        {inv.customer_name || "-"}
                       </td>
                       <td className="px-5 py-4 text-slate-500">{inv.date}</td>
                       <td className="px-5 py-4 text-right">
@@ -262,8 +265,6 @@ const SalesReturnList = () => {
                         {money(inv.net_total || 0)}
                       </td>
 
-                      {console.log(inv)}
-
                       <td className="px-5 py-4 text-center">
                         <StatusBadge
                           status={inv.status}
@@ -277,7 +278,7 @@ const SalesReturnList = () => {
                         <div className="flex justify-end gap-1">
                           <button
                             onClick={() =>
-                              navigate(`/view-purchase-return/${inv.id}`)
+                              navigate(`/view-sales-return/${inv.id}`)
                             }
                             className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                           >
@@ -287,32 +288,13 @@ const SalesReturnList = () => {
                           {inv.status !== "paid" && (
                             <button
                               onClick={() => {
-                                setSelecteInvoice(inv);
+                                setSelectedInvoice(inv);
                                 setOpenPaymentModel(true);
                               }}
                               className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                             >
                               <HandCoins size={16} />
                             </button>
-                          )}
-
-                          {inv.status === "unpaid" && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  navigate(`/edit-purchase-return/${inv.id}`)
-                                }
-                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteInvoice(inv)}
-                                className="rounded-xl p-2 text-red-500 hover:bg-red-50"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </>
                           )}
                         </div>
                       </td>
@@ -335,14 +317,15 @@ const SalesReturnList = () => {
           />
         </section>
       </div>
+      {console.log(selectedInvoice)}
 
       <AddPayment
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
-        invoice={selecteInvoice}
-        party={selecteInvoice?.supplier_id}
-        partyName={selecteInvoice?.supplier_name}
-        mode="purchase_return"
+        invoice={selectedInvoice}
+        party={selectedInvoice?.customer_id}
+        partyName={selectedInvoice?.customer_name}
+        mode="sales_return"
         refetchList={refetch}
       />
       <DeleteModal

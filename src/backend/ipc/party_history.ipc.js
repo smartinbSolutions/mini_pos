@@ -18,16 +18,30 @@ export default function registerPartyHistoryIPC() {
                 WHEN p.party_type = 'partner' AND p.movement_type = 'withdrawal' THEN -p.amount
                 WHEN p.party_type = 'partner' AND p.movement_type = 'deposit'    THEN  p.amount
 
-                -- customer/supplier opening balances
                 WHEN p.party_type != 'partner' AND p.record_type = 'opening_balance' AND p.movement_type = 'deposit'    THEN  p.amount
                 WHEN p.party_type != 'partner' AND p.record_type = 'opening_balance' AND p.movement_type = 'withdrawal' THEN -p.amount
 
-                -- customer/supplier invoices and payments
-                WHEN p.party_type != 'partner' AND p.record_type = 'return' AND invoice_type = 'purchase_return'  THEN  -p.amount
-                WHEN p.party_type != 'partner' AND p.record_type = 'payment' AND invoice_type = 'purchase_return' THEN p.amount
+                WHEN p.party_type != 'partner' AND 
+                p.record_type = 'return' AND 
+                invoice_type = 'purchase_return'  THEN  -p.amount
 
-                WHEN p.party_type != 'partner' AND p.record_type = 'invoice' THEN  p.amount
-                WHEN p.party_type != 'partner' AND p.record_type = 'payment' THEN -p.amount
+                WHEN p.party_type != 'partner' AND 
+                p.record_type = 'payment' AND 
+                invoice_type = 'purchase_return' THEN p.amount
+
+                WHEN p.party_type != 'partner' AND 
+                p.record_type = 'return' AND
+                 invoice_type = 'sales_return'  THEN  -p.amount
+
+                WHEN p.party_type != 'partner' AND
+                 p.record_type = 'payment' AND
+                 invoice_type = 'sales_return' THEN p.amount
+
+                WHEN p.party_type != 'partner' AND
+                 p.record_type = 'invoice' THEN  p.amount
+
+                WHEN p.party_type != 'partner' AND 
+                p.record_type = 'payment' THEN -p.amount
                 
 
                 ELSE 0
@@ -55,7 +69,8 @@ export default function registerPartyHistoryIPC() {
                 WHEN p.party_type != 'partner'
                      AND (
                        p.record_type = 'invoice'
-                       OR (p.record_type = 'opening_balance' AND p.movement_type = 'deposit') 
+                       OR (p.record_type = 'opening_balance' AND 
+                       p.movement_type = 'deposit') 
                       
                      )
                 THEN p.amount
@@ -76,10 +91,19 @@ export default function registerPartyHistoryIPC() {
                        AND  p.invoice_type = 'purchase_return'
                      )
                 THEN -p.amount
+
+                  WHEN p.party_type != 'partner'
+                     AND (
+                       p.record_type = 'payment'
+                       AND  p.invoice_type = 'sales_return'
+                     )
+                THEN -p.amount
+
                 WHEN p.party_type != 'partner'
                      AND (
                        p.record_type = 'payment'
-                       OR (p.record_type = 'opening_balance' AND p.movement_type = 'withdrawal')
+                       OR (p.record_type = 'opening_balance' AND
+                        p.movement_type = 'withdrawal')
                      )
                 THEN p.amount
                 ELSE 0
@@ -87,11 +111,13 @@ export default function registerPartyHistoryIPC() {
             ) AS total_payment,
 
             SUM(
-              CASE WHEN p.party_type = 'partner' AND p.movement_type = 'deposit' THEN p.amount ELSE 0 END
+              CASE WHEN p.party_type = 'partner' AND
+               p.movement_type = 'deposit' THEN p.amount ELSE 0 END
             ) AS total_deposit,
 
             SUM(
-              CASE WHEN p.party_type = 'partner' AND p.movement_type = 'withdrawal' THEN p.amount ELSE 0 END
+              CASE WHEN p.party_type = 'partner' AND 
+              p.movement_type = 'withdrawal' THEN p.amount ELSE 0 END
             ) AS total_withdrawal
           FROM party_history p
           WHERE p.party_id = ?

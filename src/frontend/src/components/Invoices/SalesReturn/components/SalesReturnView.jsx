@@ -5,12 +5,12 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 
 const STATUS_CONFIG = {
-  paid: { bg: "bg-green-100", text: "text-green-700" },
-  partial: { bg: "bg-amber-100", text: "text-amber-700" },
-  unpaid: { bg: "bg-slate-100", text: "text-slate-600" },
+  paid: { bg: "bg-green-100", text: "text-green-700" }, // تمت إعادة النقدية للعميل بالكامل كاش
+  partial: { bg: "bg-amber-100", text: "text-amber-700" }, // تم رد كاش جزئي والباقي نزل في الحساب الجاري
+  unpaid: { bg: "bg-slate-100", text: "text-slate-600" }, // المرتجع بالكامل نزل آجل لتخفيض مديونية العميل
 };
 
-export default function SalesRefundView() {
+export default function SalesReturnView() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -25,13 +25,14 @@ export default function SalesRefundView() {
     const loadReturnInvoice = async () => {
       try {
         setLoading(true);
-        const data = await window.api.getPurchaseReturnById(id);
+        // استدعاء دالة جلب مرتجع المبيعات بالـ ID من الباكيند
+        const data = await window.api.getSalesReturnById(id);
 
         if (!cancelled) {
           setReturnInvoice(data);
         }
       } catch (error) {
-        console.error("Failed to load purchase return:", error);
+        console.error("Failed to load sales return:", error);
         if (!cancelled) {
           setReturnInvoice(null);
         }
@@ -95,14 +96,14 @@ export default function SalesRefundView() {
             {t("common.back")}
           </button>
 
-          <button
+          {/* <button
             type="button"
             onClick={() => window.print()}
             className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 hover:bg-slate-50"
           >
             <Printer size={18} />
             {t("common.print", "طباعة")}
-          </button>
+          </button> */}
         </div>
 
         <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(70,99,255,0.14)] print:rounded-none print:border-none print:shadow-none">
@@ -113,7 +114,7 @@ export default function SalesRefundView() {
               </span>
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-amber-700 font-bold">
-                  {t("ui.purchaseReturn", "مرتجع فاتورة مشتريات")}
+                  {t("ui.salesReturn", "مرتجع فاتورة مبيعات")}
                 </p>
                 <h1 className="text-3xl text-slate-950 font-bold mt-0.5">
                   #{returnInvoice.id}
@@ -126,7 +127,7 @@ export default function SalesRefundView() {
                   <p className="text-xs">
                     {t("ui.originalInvoice", "الفاتورة الأصلية")}:{" "}
                     <span className="font-semibold text-slate-700">
-                      #{returnInvoice.purchase_invoice_id}
+                      #{returnInvoice.sales_invoice_id}
                     </span>
                     {returnInvoice.original_invoice_name &&
                       ` (${returnInvoice.original_invoice_name})`}
@@ -137,9 +138,9 @@ export default function SalesRefundView() {
 
             <div className="text-left md:text-right">
               <p className="text-lg text-slate-950 font-bold">
-                {returnInvoice.supplier_name || "-"}
+                {returnInvoice.customer_name || "-"}
               </p>
-              <p className="text-sm text-slate-500">{t("ui.supplier")}</p>
+              <p className="text-sm text-slate-500">{t("ui.customer")}</p>
               <span
                 className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text}`}
               >
@@ -217,8 +218,8 @@ export default function SalesRefundView() {
                 {allocations.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400 bg-slate-50/50">
                     {t(
-                      "ui.noCashRefunded",
-                      "لم يتم استرداد مبالغ نقدية، تم ترحيلها لحساب المورد دائن",
+                      "ui.noCashRefundedSales",
+                      "لم يتم رد مبالغ نقدية، تم ترحيل المرتجع آجل لتخفيض حساب العميل الجاري",
                     )}
                   </div>
                 ) : (
@@ -237,8 +238,8 @@ export default function SalesRefundView() {
                             #{alloc.payment_id}
                           </div>
                         </div>
-                        <div className="tabular-nums font-bold text-green-700">
-                          + {money(alloc.amount)}
+                        <div className="tabular-nums font-bold text-red-600">
+                          - {money(alloc.amount)}
                         </div>
                       </div>
                     ))}
@@ -285,14 +286,14 @@ export default function SalesRefundView() {
                   <>
                     <div className="flex justify-between border-t border-dashed border-[#dbe4ff] pt-3 text-xs text-slate-500">
                       <span>{t("ui.cashRefunded", "المسترد نقداً")}</span>
-                      <span className="font-bold text-green-700">
+                      <span className="font-bold text-red-600">
                         {money(returnInvoice.refunded_amount)}
                       </span>
                     </div>
                     {status === "partial" && (
                       <div className="flex justify-between text-xs text-slate-500">
                         <span>
-                          {t("ui.remainingToAccount", "المتبقي لحساب المورد")}
+                          {t("ui.remainingToAccount", "المتبقي لحساب العميل")}
                         </span>
                         <span className="font-bold text-amber-600">
                           {money(returnInvoice.remaining_credit)}

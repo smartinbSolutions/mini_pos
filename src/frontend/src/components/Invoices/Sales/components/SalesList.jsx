@@ -11,6 +11,7 @@ import {
   Printer,
   Percent,
   Edit2,
+  Undo2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useSalesList from "../hooks/useSalesList";
@@ -20,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
+import SalesReturnModal from "../../SalesReturn/components/SalesReturnModal";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -96,6 +98,7 @@ const SalesList = () => {
     total,
     totalPages,
   } = useSalesList();
+  const [openRefundModel, setOpenRefundModel] = useState(false);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
@@ -354,6 +357,15 @@ const SalesList = () => {
                                 <HandCoins size={16} />
                               </button>
                             )}
+                            <button
+                              onClick={() => {
+                                setSelecteInvoice(inv);
+                                setOpenRefundModel(true);
+                              }}
+                              className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                            >
+                              <Undo2 size={16} />
+                            </button>
                             {inv.status === "unpaid" && (
                               <button
                                 onClick={() => setDeleteInvoice(inv)}
@@ -386,6 +398,12 @@ const SalesList = () => {
           />
         </section>
       </div>
+
+      <SalesReturnModal
+        isOpen={openRefundModel}
+        onClose={() => setOpenRefundModel(false)}
+        id={selecteInvoice?.id}
+      />
 
       <AddPayment
         isOpen={openPaymentModel}

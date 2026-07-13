@@ -4,9 +4,7 @@ import registerCurrenciesIPC from "./ipc/currencies.ipc";
 import registerCustomersIPC from "./ipc/customers.ipc";
 import registerFundIPC from "./ipc/funds.ipc";
 import registerProductBarcodeIPC from "./ipc/product_barcode.ipc";
-import registerPurchaseInvoiceItemsIPC from "./ipc/purchase_invoice_items.ipc";
 import registerPurchaseInvoicesIPC from "./ipc/purchase_invoice.ipc";
-import registerSalesInvoiceItemsIPC from "./ipc/sales_invoice_item.ipc";
 import registerSalesInvoiceIPC from "./ipc/sales_invoice.ipc";
 import registerSuppliersIPC from "./ipc/suppliers.ipc";
 import registerTaxesIPC from "./ipc/taxes.ipc";
@@ -20,6 +18,7 @@ import registerPartyHistoryIPC from "./ipc/party_history.ipc";
 import registerCustomerDisplayIPC from "./ipc/customer_display.ipc";
 import registerAuthHandlersIPC from "./ipc/Auth.ipc";
 import registerPurchaseReturnIPC from "./ipc/purchase_returns.ipc";
+import registerSalesReturnsIpc from "./ipc/sales_returns.ipc";
 
 export default function registerAllIPC() {
   registerAuthHandlersIPC();
@@ -31,10 +30,8 @@ export default function registerAllIPC() {
   registerPaymentsIPC();
   registerProductBarcodeIPC();
   registerProductIPC();
-  registerPurchaseInvoiceItemsIPC();
   registerPurchaseInvoicesIPC();
   registerSerialIPC();
-  registerSalesInvoiceItemsIPC();
   registerSalesInvoiceIPC();
   registerSuppliersIPC();
   registerTaxesIPC();
@@ -44,4 +41,5 @@ export default function registerAllIPC() {
   registerExpenceCategoryIPC();
   registerPartyHistoryIPC();
   registerPurchaseReturnIPC();
+  registerSalesReturnsIpc();
 }

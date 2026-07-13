@@ -95,14 +95,14 @@ export default function PurchaseReturnView() {
             {t("common.back")}
           </button>
 
-          <button
+          {/* <button
             type="button"
             onClick={() => window.print()}
             className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 hover:bg-slate-50"
           >
             <Printer size={18} />
             {t("common.print", "طباعة")}
-          </button>
+          </button> */}
         </div>
 
         <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(70,99,255,0.14)] print:rounded-none print:border-none print:shadow-none">

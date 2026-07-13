@@ -55,7 +55,7 @@ contextBridge.exposeInMainWorld("api", {
   createPayment: (data) => ipcRenderer.invoke("create-payment", data),
   updatePayment: (data) => ipcRenderer.invoke("update-payment", data),
   deletePayment: (id) => ipcRenderer.invoke("delete-payment", id),
-  /* ================= PAYMENTS ================= */
+
   /* ================= PARTY HISTORY ================= */
   getPartyHistoryLedger: (params) =>
     ipcRenderer.invoke("get-party-history-ledger", params),
@@ -86,20 +86,6 @@ contextBridge.exposeInMainWorld("api", {
   getProductImportItems: (importId) =>
     ipcRenderer.invoke("get-product-import-items", importId),
 
-  /* ================= PURCHASE INVOICE ITEM ================= */
-  getPurchaseInvoiceItems: () =>
-    ipcRenderer.invoke("get-purchase-invoice-items"),
-  getPurchaseInvoiceItem: (id) =>
-    ipcRenderer.invoke("get-purchase-invoice-item", id),
-  getItemByPurchaseInvoice: (invoice_id) =>
-    ipcRenderer.invoke("get-items-by-invoice", invoice_id),
-  createPurchaseInvoiceItem: (data) =>
-    ipcRenderer.invoke("create-purchase-invoice-item", data),
-  updatePurchaseInvoiceItem: (data) =>
-    ipcRenderer.invoke("update-purchase-invoice-item", data),
-  deletePurchaseInvoiceItem: (id) =>
-    ipcRenderer.invoke("delete-purchase-invoice-item", id),
-
   /* ================= PURCHASE INVOICE ================= */
   getPurchaseInvoices: (params) =>
     ipcRenderer.invoke("get-purchase-invoices", params),
@@ -119,18 +105,6 @@ contextBridge.exposeInMainWorld("api", {
   createPurchaseReturn: (data) =>
     ipcRenderer.invoke("create-purchase-return", data),
 
-  /* ================= SALES INVOICE ITEM ================= */
-  getSalesInvoiceItems: () => ipcRenderer.invoke("get-sales-invoice-items"),
-  getSalesInvoiceItem: (id) => ipcRenderer.invoke("get-sales-invoice-item", id),
-  getItemBySalesInvoice: (invoice_id) =>
-    ipcRenderer.invoke("get-items-by-sales-invoice", invoice_id),
-  createSalesInvoiceItem: (data) =>
-    ipcRenderer.invoke("create-sales-invoice-item", data),
-  updateSalesInvoiceItem: (data) =>
-    ipcRenderer.invoke("update-sales-invoice-item", data),
-  deleteSalesInvoiceItem: (id) =>
-    ipcRenderer.invoke("delete-sales-invoice-item", id),
-
   /* ================= SALES ================= */
   getSalesInvoices: (params) =>
     ipcRenderer.invoke("get-sales-invoices", params),
@@ -144,6 +118,11 @@ contextBridge.exposeInMainWorld("api", {
   printReceipt: (data) => ipcRenderer.invoke("print-receipt", data),
   applyInvoiceCredit: (data) =>
     ipcRenderer.invoke("apply-invoice-credit", data),
+
+  /* ================= SALES RETURN ================= */
+  getSalesReturns: (params) => ipcRenderer.invoke("get-sales-returns", params),
+  getSalesReturnById: (id) => ipcRenderer.invoke("get-sales-return-by-id", id),
+  createSalesReturn: (data) => ipcRenderer.invoke("create-sales-return", data),
 
   /* ================= SCALE ================= */
   listScalePorts: () => ipcRenderer.invoke("scale:list-ports"),

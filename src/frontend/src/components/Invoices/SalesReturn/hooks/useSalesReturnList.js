@@ -69,26 +69,19 @@ const useSalesReturnList = () => {
 
   return {
     salesReturns,
-
     loading,
     saving,
     error,
-
     refetch,
     deleteSalesReturn,
-
     page,
     setPage,
-
     limit,
     setLimit,
-
     total,
     totalPages,
-
     selectedInvoice,
     setSelectedInvoice,
-
     openPaymentModel,
     setOpenPaymentModel,
   };

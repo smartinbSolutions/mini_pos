@@ -45,6 +45,7 @@ export default function Sidebar() {
       icon: <ShoppingCart size={18} />,
       children: [
         { title: "navigation.sales", path: "/sales" },
+        { title: "navigation.salesReturn", path: "/sales-return" },
         { title: "navigation.customers", path: "/customer" },
       ],
     },

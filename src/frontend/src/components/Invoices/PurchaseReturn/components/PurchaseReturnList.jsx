@@ -295,25 +295,6 @@ const PurchaseReturnList = () => {
                               <HandCoins size={16} />
                             </button>
                           )}
-
-                          {inv.status === "unpaid" && (
-                            <>
-                              <button
-                                onClick={() =>
-                                  navigate(`/edit-purchase-return/${inv.id}`)
-                                }
-                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => setDeleteInvoice(inv)}
-                                className="rounded-xl p-2 text-red-500 hover:bg-red-50"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </>
-                          )}
                         </div>
                       </td>
                     </tr>

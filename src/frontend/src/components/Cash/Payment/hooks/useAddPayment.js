@@ -25,6 +25,7 @@ const useAddPayment = ({
   const isPurchase = mode === "purchase";
   const isExpense = mode === "expense";
   const isPurchaseReturn = mode === "purchase_return";
+  const isSalesReturn = mode === "sales_return";
   const isSales = mode === "sales";
   const isPartner = mode === "partner";
   const isCustomer = mode === "customer";
@@ -32,9 +33,9 @@ const useAddPayment = ({
   const isCollectorMode = !invoice;
 
   const partyType =
-    isPurchase || isExpense || isSupplier
+    isPurchase || isExpense || isSupplier || isPurchaseReturn
       ? "supplier"
-      : isSales || isCustomer
+      : isSales || isCustomer || isSalesReturn
         ? "customer"
         : "partner";
 
@@ -106,6 +107,10 @@ const useAddPayment = ({
         defaultNote = t("screens.payments.paymentForPurchaseReturn", {
           id: invoice?.id,
         });
+      } else if (isSalesReturn) {
+        defaultNote = t("screens.payments.paymentForSalesReturn", {
+          id: invoice?.id,
+        });
       } else if (isCustomer) {
         defaultNote = `${t("screens.payments.receipt_from_customer")}: ${partyName}`;
       } else if (isSupplier) {
@@ -138,6 +143,7 @@ const useAddPayment = ({
     isExpense,
     isSales,
     isPurchaseReturn,
+    isSalesReturn,
     isPartner,
     isCustomer,
     isSupplier,
@@ -214,7 +220,7 @@ const useAddPayment = ({
     }
 
     const paymentType =
-      isPurchase || isExpense || isSupplier
+      isPurchase || isExpense || isSupplier || isSalesReturn
         ? "expense"
         : isSales || isCustomer || isPurchaseReturn
           ? "income"
@@ -298,6 +304,7 @@ const useAddPayment = ({
     initialBaseAmount,
     t,
     isPurchaseReturn,
+    isSalesReturn,
     money,
     availableCredit,
     useCredit,
