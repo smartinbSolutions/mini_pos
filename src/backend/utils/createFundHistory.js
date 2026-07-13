@@ -5,8 +5,6 @@ export default function createFundHistory(db, data) {
       record_type,
       payment_id,
       date,
-      invoice_id,
-      invoice_type,
       movement_type,
       amount,
       note
@@ -16,8 +14,6 @@ export default function createFundHistory(db, data) {
       @record_type,
       @payment_id,
       @date,
-      @invoice_id,
-      @invoice_type,
       @movement_type,
       @amount,
       @note
@@ -28,8 +24,6 @@ export default function createFundHistory(db, data) {
     fund_id: data.fund_id,
     record_type: data.record_type,
     payment_id: data.payment_id ?? null,
-    invoice_id: data.invoice_id ?? null,
-    invoice_type: data.invoice_type ?? null,
     movement_type: data.movement_type,
     amount: Number(data.amount || 0),
     note: data.note ?? "",

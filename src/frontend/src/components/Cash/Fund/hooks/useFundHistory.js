@@ -36,6 +36,6 @@ export default function useFundHistory(fundId) {
   useEffect(() => {
     refetch();
   }, [refetch]);
-
+  console.log(history);
   return { history, fund, loading, error, refetch };
 }

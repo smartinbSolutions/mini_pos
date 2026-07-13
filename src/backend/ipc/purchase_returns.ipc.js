@@ -63,7 +63,7 @@ export default function registerPurchaseReturnIPC() {
             net_total
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
+          `
           )
           .run(
             data.purchase_invoice_id,
@@ -75,7 +75,7 @@ export default function registerPurchaseReturnIPC() {
             discount,
             tax,
             data.taxValue || 0,
-            netTotal,
+            netTotal
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -109,7 +109,7 @@ export default function registerPurchaseReturnIPC() {
             quantity,
             price,
             buyingPrice,
-            total,
+            total
           );
 
           updateStock.run(quantity, item.product_id);
@@ -160,8 +160,6 @@ export default function registerPurchaseReturnIPC() {
             fund_id: data.payment.fund_id,
             record_type: "payment",
             payment_id: insertPaymentId,
-            invoice_id: returnId,
-            invoice_type: "purchase_return",
             movement_type: "in",
             amount: data.payment.collected_amount,
             note: `Refund received for Purchase Return #${returnId}`,
@@ -172,13 +170,13 @@ export default function registerPurchaseReturnIPC() {
               `
             INSERT INTO payment_allocations (payment_id, invoice_id, invoice_type, amount)
             VALUES (?, ?, ?, ?)
-            `,
+            `
             )
             .run(
               insertPaymentId,
               returnId,
               "purchase_return",
-              data.payment.amount,
+              data.payment.amount
             );
 
           allocationId = allocationResult.lastInsertRowid;
@@ -261,7 +259,7 @@ export default function registerPurchaseReturnIPC() {
 
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -270,7 +268,7 @@ export default function registerPurchaseReturnIPC() {
         `
       SELECT COUNT(*) AS total
       FROM purchase_returns
-      `,
+      `
       )
       .get();
 
@@ -323,7 +321,7 @@ export default function registerPurchaseReturnIPC() {
         ON pa_sum.invoice_id = pr.id
 
       WHERE pr.id = ?
-      `,
+      `
       )
       .get(id);
 
@@ -342,7 +340,7 @@ export default function registerPurchaseReturnIPC() {
         ON p.id = pri.product_id
 
       WHERE pri.return_id = ?
-      `,
+      `
       )
       .all(id);
 
@@ -377,7 +375,7 @@ export default function registerPurchaseReturnIPC() {
         AND pa.invoice_type = 'purchase_return'
 
       ORDER BY pa.id ASC
-      `,
+      `
       )
       .all(id);
 

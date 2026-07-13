@@ -237,31 +237,25 @@ export default function registerFundIPC() {
 
         const transferId = transferResult.lastInsertRowid;
 
-        const insertHistory = db.prepare(`
-          INSERT INTO fund_history
-          (fund_id, record_type, movement_type, amount, note, date, payment_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
+        createFundHistory(db, {
+          fund_id: from_fund_id,
+          record_type: "transfer",
+          movement_type: "out",
+          payment_id: transferId,
+          amount: Number(deduct_amount),
+          note: note || `Transferred to ${toFund.name}`,
+          date: now,
+        });
 
-        insertHistory.run(
-          from_fund_id,
-          "transfer_out",
-          "out",
-          Number(deduct_amount),
-          note || `Transferred to ${toFund.name}`,
-          now,
-          transferId
-        );
-
-        insertHistory.run(
-          to_fund_id,
-          "transfer_in",
-          "in",
-          Number(receive_amount),
-          note || `Received from ${fromFund.name}`,
-          now,
-          transferId
-        );
+        createFundHistory(db, {
+          fund_id: to_fund_id,
+          record_type: "transfer",
+          movement_type: "in",
+          payment_id: transferId,
+          amount: Number(receive_amount),
+          note: note || `Received from ${fromFund.name}`,
+          date: now,
+        });
 
         return {
           success: true,
