@@ -125,7 +125,8 @@
     "selectExpense": "Select expense",
     "unpaid": "Unpaid",
     "other": "Other",
-    "opening_balance": "Opening balance"
+    "opening_balance": "Opening balance",
+    "row": "Row"
   },
   "screens": {
     "units": {
@@ -235,7 +236,39 @@
       "validCost": "Please enter a valid cost price",
       "validSale": "Please enter a valid sale price",
       "import": "Import",
-      "movementsTitle": "Product movements"
+      "importProducts": "Import products",
+      "importHelper": "Download the template, fill it in with your products, then upload it to import.",
+      "downloadTemplate": "Download template",
+      "uploadAndImport": "Upload & Import",
+      "created": "Created",
+      "skippedProducts": "Skipped products",
+      "skippedBarcodes": "Skipped barcodes",
+      "importSuccess": "Import completed successfully",
+      "importAnother": "Import another file",
+      "movementsTitle": "Product movements",
+      "action": {
+        "create": "Create",
+        "update": "Update",
+        "edit": "Edit"
+      },
+      "refType": {
+        "sales_invoice": "Sales invoice",
+        "purchase_invoice": "Purchase invoice",
+        "products": "Products"
+      },
+      "importHistory": {
+        "title": "Import History",
+        "subtitle": "Every product import you've run, with what was created and what needs attention.",
+        "totalImports": "Total imports",
+        "totalCreated": "Total created",
+        "totalSkipped": "Total skipped",
+        "productsCreated": "Products created",
+        "rowsSkipped": "Rows skipped",
+        "noImports": "No imports yet",
+        "noImportsHint": "Products you import will show up here.",
+        "untitledImport": "Untitled import",
+        "noIssuesInImport": "Every row in this import was created successfully."
+      }
     },
     "invoices": {
       "salesTitle": "Sales",

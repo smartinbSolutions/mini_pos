@@ -39,7 +39,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
     setResult(null);
     try {
       const res = await api.importProducts();
-      console.log("[ProductImportModal] import result:", res);
+
       if (res.canceled) return;
       if (!res.success) {
         setError(res.error || t("errors.importFailed"));
@@ -71,7 +71,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
               <FileSpreadsheet size={20} />
             </div>
             <h2 className="font-black text-slate-900">
-              {t("screens.products.importTitle", "Import Products")}
+              {t("screens.products.importProducts")}
             </h2>
           </div>
           <button
@@ -87,10 +87,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
             <>
               <div className="rounded-2xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <p className="mb-3 text-sm text-slate-600">
-                  {t(
-                    "screens.products.importHelper",
-                    "Download the template, fill it in with your products, then upload it to import."
-                  )}
+                  {t("screens.products.importHelper")}
                 </p>
                 <button
                   type="button"
@@ -101,10 +98,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                   <Download size={16} />
                   {downloading
                     ? t("common.saving")
-                    : t(
-                        "screens.products.downloadTemplate",
-                        "Download Template"
-                      )}
+                    : t("screens.products.downloadTemplate")}
                 </button>
               </div>
 
@@ -117,7 +111,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                 <Upload size={16} />
                 {importing
                   ? t("common.loading")
-                  : t("screens.products.uploadAndImport", "Upload & Import")}
+                  : t("screens.products.uploadAndImport")}
               </button>
 
               {error && (
@@ -135,7 +129,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                     {result.created.length}
                   </p>
                   <p className="text-xs font-semibold text-emerald-600">
-                    {t("screens.products.created", "Created")}
+                    {t("screens.products.created")}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-amber-50 p-4 text-center">
@@ -143,7 +137,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                     {result.skippedProducts.length}
                   </p>
                   <p className="text-xs font-semibold text-amber-600">
-                    {t("screens.products.skippedProducts", "Skipped Products")}
+                    {t("screens.products.skippedProducts")}
                   </p>
                 </div>
                 <div className="rounded-2xl bg-amber-50 p-4 text-center">
@@ -151,7 +145,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                     {result.skippedBarcodes.length}
                   </p>
                   <p className="text-xs font-semibold text-amber-600">
-                    {t("screens.products.skippedBarcodes", "Skipped Barcodes")}
+                    {t("screens.products.skippedBarcodes")}
                   </p>
                 </div>
               </div>
@@ -159,10 +153,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
               {result.created.length > 0 && (
                 <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">
                   <CheckCircle2 size={16} />
-                  {t(
-                    "screens.products.importSuccess",
-                    "Import completed successfully."
-                  )}
+                  {t("screens.products.importSuccess")}
                 </div>
               )}
 
@@ -171,10 +162,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                   {result.skippedProducts.length > 0 && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
                       <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-700">
-                        {t(
-                          "screens.products.skippedProducts",
-                          "Skipped Products"
-                        )}
+                        {t("screens.products.skippedProducts")}
                       </p>
                       <div className="space-y-1.5">
                         {result.skippedProducts.map((item, i) => (
@@ -183,7 +171,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                             className="flex items-center justify-between gap-3 text-xs"
                           >
                             <span className="font-bold text-slate-700">
-                              {t("ui.row", "Row")} {item.row} · {item.name}
+                              {t("ui.row")} {item.row} · {item.name}
                             </span>
                             <span className="shrink-0 text-amber-700">
                               {item.reason}
@@ -197,10 +185,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                   {result.skippedBarcodes.length > 0 && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
                       <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-700">
-                        {t(
-                          "screens.products.skippedBarcodes",
-                          "Skipped Barcodes"
-                        )}
+                        {t("screens.products.skippedBarcodes")}
                       </p>
                       <div className="space-y-1.5">
                         {result.skippedBarcodes.map((item, i) => (
@@ -209,7 +194,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                             className="flex items-center justify-between gap-3 text-xs"
                           >
                             <span className="font-bold text-slate-700">
-                              {t("ui.row", "Row")} {item.row} · {item.barcode}
+                              {t("ui.row")} {item.row} · {item.barcode}
                             </span>
                             <span className="shrink-0 text-amber-700">
                               {item.reason}
@@ -228,7 +213,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] text-sm font-black text-white"
               >
                 <Upload size={16} />
-                {t("screens.products.importAnother", "Import Another File")}
+                {t("screens.products.importAnother")}
               </button>
             </>
           )}

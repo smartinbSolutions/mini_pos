@@ -94,7 +94,7 @@ export default function ProductMovementsModal({
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-start">
                       <div
                         className={`text-sm font-black ${isIn ? "text-emerald-600" : "text-red-600"}`}
                       >

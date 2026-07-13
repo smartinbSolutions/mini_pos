@@ -125,7 +125,8 @@
     "partner": "الشريك",
     "partners": "الشركاء",
     "other": "غير ذلك",
-    "opening_balance": "الرصيد الافتتاحي"
+    "opening_balance": "الرصيد الافتتاحي",
+    "row": "سطر"
   },
   "screens": {
     "units": {
@@ -235,7 +236,39 @@
       "validCost": "يرجى إدخال سعر تكلفة صالح",
       "validSale": "يرجى إدخال سعر بيع صالح",
       "import": "استيراد",
-      "movementsTitle": "حركة المنتج"
+      "importProducts": "استيراد المنتجات",
+      "importHelper": "قم بتنزيل القالب, واملأه بمنتجاتك, ثم قم بتحميله للاستيراد.",
+      "downloadTemplate": "تنزيل القالب",
+      "uploadAndImport": "تحميل واستيراد",
+      "created": "تم إنشاؤه",
+      "skippedProducts": "المنتجات المتخطاة",
+      "skippedBarcodes": "الباركودات المتخطاة",
+      "importSuccess": "اكتمل الاستيراد",
+      "importAnother": "استورد ملف آخر",
+      "movementsTitle": "حركة المنتج",
+      "action": {
+        "create": "إنشاء",
+        "update": "تحديث",
+        "edit": "تعديل"
+      },
+      "refType": {
+        "sales_invoice": "فاتورة مبيعات",
+        "purchase_invoice": "فاتورة مشتريات",
+        "products": "المنتجات"
+      },
+      "importHistory": {
+        "title": "سجل الاستيراد",
+        "subtitle": "جميع عمليات استيراد المنتجات التي قمت بها، مع توضيح المنتجات التي تم إنشاؤها والمنتجات التي تحتاج إلى تعديل.",
+        "totalImports": "إجمالي عمليات الاستيراد",
+        "totalCreated": "المنتجات المضافة",
+        "totalSkipped": "المنتجات المتخطاة",
+        "productsCreated": "المنتجات التي تم إنشاؤها",
+        "rowsSkipped": "الصفوف التي تم تخطيها",
+        "noImports": "لا توجد عمليات استيراد حتى الآن",
+        "noImportsHint": "ستظهر المنتجات التي تستوردها هنا.",
+        "untitledImport": "عملية استيراد بدون عنوان",
+        "noIssuesInImport": "تم إنشاء جميع الصفوف في هذه العملية بنجاح."
+      }
     },
     "invoices": {
       "salesTitle": "فواتير المبيعات",

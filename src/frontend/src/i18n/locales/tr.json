@@ -125,7 +125,8 @@
     "partners": "Ortaklar",
     "partner": "Ortak",
     "other": "Diğer",
-    "opening_balance": "Açılış bakiyesi"
+    "opening_balance": "Açılış bakiyesi",
+    "row": "Satır"
   },
   "screens": {
     "units": {
@@ -235,7 +236,39 @@
       "validCost": "Lütfen geçerli bir maliyet fiyatı girin",
       "validSale": "Lütfen geçerli bir satış fiyatı girin",
       "import": "İçe aktar",
-      "movementsTitle": "Ürün hareketi"
+      "importProducts": "Ürünleri İçe Aktar",
+      "importHelper": "Şablonu indirin, ürünlerinizi ekleyin ve ardından içe aktarmak için yükleyin.",
+      "downloadTemplate": "Şablonu İndir",
+      "uploadAndImport": "Yükle ve İçe Aktar",
+      "created": "Oluşturuldu",
+      "skippedProducts": "Atlanan Ürünler",
+      "skippedBarcodes": "Atlanan Barkodlar",
+      "importSuccess": "İçe Aktarma Başarıyla Tamamlandı",
+      "importAnother": "Başka Bir Dosya İçe Aktar",
+      "movementsTitle": "Ürün hareketi",
+      "action": {
+        "create": "Oluşturma",
+        "update": "Güncelleme",
+        "edit": "Düzenleme"
+      },
+      "refType": {
+        "sales_invoice": "Satış faturası",
+        "purchase_invoice": "Satın alma faturası",
+        "products": "Ürünler"
+      },
+      "importHistory": {
+        "title": "İçe Aktarma Geçmişi",
+        "subtitle": "Oluşturduğunuz her ürün içe aktarma işlemi, oluşturulanlar ve dikkat gerektirenler.",
+        "totalImports": "Toplam içe aktarma",
+        "totalCreated": "Toplam oluşturulan",
+        "totalSkipped": "Toplam atlanan",
+        "productsCreated": "Oluşturulan ürünler",
+        "rowsSkipped": "Atlanan satırlar",
+        "noImports": "Henüz içe aktarma yok",
+        "noImportsHint": "İçe aktardığınız ürünler burada görünecektir.",
+        "untitledImport": "Başlıksız içe aktarma",
+        "noIssuesInImport": "Bu içe aktarmadaki her satır başarıyla oluşturuldu."
+      }
     },
     "invoices": {
       "salesTitle": "Satış faturaları",

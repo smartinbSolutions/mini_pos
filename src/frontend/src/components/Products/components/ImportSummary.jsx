@@ -38,7 +38,7 @@ export default function ImportHistoryList() {
               total_imports: 0,
               total_created: 0,
               total_skipped: 0,
-            }
+            },
           );
         }
       } finally {
@@ -88,13 +88,10 @@ export default function ImportHistoryList() {
                 {t("ui.inventory")}
               </p>
               <h1 className="max-w-2xl text-4xl font-black leading-tight text-slate-950">
-                {t("screens.products.importHistoryTitle", "Import History")}
+                {t("screens.products.importHistory.title")}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                {t(
-                  "screens.products.importHistorySubtitle",
-                  "Every product import you've run, with what was created and what needs attention."
-                )}
+                {t("screens.products.importHistory.subtitle")}
               </p>
             </div>
 
@@ -105,7 +102,7 @@ export default function ImportHistoryList() {
                   {stats.total_imports}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  {t("screens.products.totalImports", "Imports")}
+                  {t("screens.products.importHistory.totalImports")}
                 </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
@@ -114,7 +111,7 @@ export default function ImportHistoryList() {
                   {stats.total_created}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  {t("screens.products.totalCreated", "Products Created")}
+                  {t("screens.products.importHistory.totalCreated")}
                 </div>
               </div>
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
@@ -123,7 +120,7 @@ export default function ImportHistoryList() {
                   {stats.total_skipped}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
-                  {t("screens.products.totalSkipped", "Rows Skipped")}
+                  {t("screens.products.importHistory.totalSkipped")}
                 </div>
               </div>
             </div>
@@ -140,13 +137,10 @@ export default function ImportHistoryList() {
             <div className="p-12 text-center">
               <FileSpreadsheet size={42} className="mx-auto text-[#4663ff]" />
               <h2 className="mt-4 text-xl font-black text-slate-950">
-                {t("screens.products.noImports", "No imports yet.")}
+                {t("screens.products.importHistory.noImports")}
               </h2>
               <p className="mt-2 text-sm text-slate-500">
-                {t(
-                  "screens.products.noImportsHint",
-                  "Products you import will show up here."
-                )}
+                {t("screens.products.importHistory.noImportsHint")}
               </p>
             </div>
           ) : (
@@ -180,7 +174,9 @@ export default function ImportHistoryList() {
                         <div>
                           <p className="font-bold text-slate-900">
                             {imp.file_name ||
-                              t("screens.products.untitledImport", "Import")}
+                              t(
+                                "screens.products.importHistory.untitledImport",
+                              )}
                           </p>
                           <p className="text-xs text-slate-400">
                             {formatDate(imp.createdAt)}
@@ -217,7 +213,7 @@ export default function ImportHistoryList() {
                                 className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs"
                               >
                                 <span className="font-bold text-slate-700">
-                                  {t("ui.row", "Row")} {item.row_number} ·{" "}
+                                  {t("ui.row")} {item.row_number} ·{" "}
                                   {item.product_name || item.barcode}
                                 </span>
                                 <span className="shrink-0 text-amber-700">
@@ -229,10 +225,7 @@ export default function ImportHistoryList() {
                         ) : (
                           <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
                             <CheckCircle2 size={14} />
-                            {t(
-                              "screens.products.noIssuesInImport",
-                              "Every row in this import was created successfully."
-                            )}
+                            {t("screens.products.noIssuesInImport")}
                           </div>
                         )}
                       </div>
