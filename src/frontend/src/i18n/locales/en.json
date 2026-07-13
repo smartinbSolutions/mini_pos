@@ -288,7 +288,9 @@
       "lockedAfterPayment": "Paid or partially paid invoices cannot be edited.",
       "noItemsYet": "No items yet",
       "savedPaid": "Invoice saved and paid",
-      "savedUnpaid": "Invoice saved"
+      "savedUnpaid": "Invoice saved",
+      "allStatuses": "All statuses",
+      "allSuppliers": "All suppliers"
     },
     "company": {
       "title": "Company Settings",

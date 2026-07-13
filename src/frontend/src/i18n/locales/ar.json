@@ -288,7 +288,9 @@
       "lockedAfterPayment": "لا يمكن تعديل الفواتير المدفوعة أو المدفوعة جزئياً.",
       "noItemsYet": "لا توجد عناصر بعد",
       "savedPaid": "تم حفظ الفاتورة ودفعها",
-      "savedUnpaid": "تم حفظ الفاتورة"
+      "savedUnpaid": "تم حفظ الفاتورة",
+      "allStatuses": "كل الحالات",
+      "allSuppliers": "كل الموردين"
     },
     "company": {
       "title": "إعدادات الشركة",

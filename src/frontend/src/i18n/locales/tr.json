@@ -288,7 +288,9 @@
       "lockedAfterPayment": "Ödenmiş veya kısmen ödenmiş faturalar düzenlenemez.",
       "noItemsYet": "Henüz kalem yok",
       "savedPaid": "Fatura kaydedildi ve ödendi",
-      "savedUnpaid": "Fatura kaydedildi"
+      "savedUnpaid": "Fatura kaydedildi",
+      "allStatuses": "Tüm durumlar",
+      "allSuppliers": "Tüm tedarikçiler"
     },
     "company": {
       "title": "Şirket Ayarları",
