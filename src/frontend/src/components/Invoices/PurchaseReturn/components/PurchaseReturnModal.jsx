@@ -225,8 +225,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
                     className="hover:bg-slate-50/50 transition"
                   >
                     <td className="px-4 py-3 text-start font-semibold text-slate-800">
-                      {item.product_name ||
-                        `${t("ui.product")} #${item.product_id}`}
+                      {item.name || `${t("ui.product")} #${item.product_id}`}
                     </td>
                     <td className="px-4 py-3 text-start text-slate-500 font-medium">
                       {item.maxAvailable}
