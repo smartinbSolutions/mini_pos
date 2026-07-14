@@ -187,7 +187,7 @@ const useAddPayment = ({
       if (next) {
         const capped = Math.min(
           availableCredit,
-          initialBaseAmount || availableCredit,
+          initialBaseAmount || availableCredit
         );
         setForm((f) => ({
           ...f,
@@ -252,7 +252,7 @@ const useAddPayment = ({
     setMessage("");
     try {
       let res;
-
+      console.log(mode);
       if (useCredit) {
         res = await api.applyInvoiceCredit({
           partyId: party,

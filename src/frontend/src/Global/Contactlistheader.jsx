@@ -39,7 +39,6 @@ const ContactListHeader = ({
   t,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
-  console.log(title);
 
   const inputClass =
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
@@ -57,7 +56,7 @@ const ContactListHeader = ({
   const modal = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 p-4"
-      onClick={() => setModalOpen(false)}
+      // onClick={() => setModalOpen(false)}
     >
       <div
         className="relative w-full max-w-lg rounded-[28px] border border-white/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.25)] backdrop-blur"
@@ -122,8 +121,8 @@ const ContactListHeader = ({
                 }
                 className={inputClass}
               >
-                <option value="deposit">{t("ui.debit")}</option>
-                <option value="withdrawal">{t("ui.credit")}</option>
+                <option value="increase">{t("ui.debit")}</option>
+                <option value="decrease">{t("ui.credit")}</option>
               </select>
             )}
           </div>

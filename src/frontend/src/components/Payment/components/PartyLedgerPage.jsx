@@ -27,6 +27,7 @@ const PartyLedgerPage = () => {
     loading,
     party,
   } = usePartyLedger(id, normalizedType);
+  console.log(data);
   const { money } = usePrimaryCurrency();
 
   const typeLabel = isPartnerParty
@@ -151,7 +152,7 @@ const PartyLedgerPage = () => {
             const isForeignCurrency = rate !== 1;
             const effectiveRate = Number(p.effective_rate || rate);
             const fundAmount = Number(
-              p.amount_fund_currency ?? Number(p.amount || 0) * rate,
+              p.amount_fund_currency ?? Number(p.amount || 0) * rate
             );
 
             return (

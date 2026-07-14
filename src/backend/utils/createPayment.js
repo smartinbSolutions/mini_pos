@@ -61,7 +61,7 @@ export default function createPayment(db, data) {
       party_id: data.party_id,
       record_type: "payment",
       invoice_id: data.invoice_id,
-      invoice_type: data.invoice_type,
+      invoice_type: "payment",
       amount: data.amount,
       movement_type: data.type === "income" ? "increase" : "decrease",
       note: data.note,

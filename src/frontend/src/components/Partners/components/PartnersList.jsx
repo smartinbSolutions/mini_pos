@@ -86,7 +86,7 @@ const PartnersList = () => {
     return partners.filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total_deposit} ${s.total_withdrawal}`
         .toLowerCase()
-        .includes(search.toLowerCase()),
+        .includes(search.toLowerCase())
     );
   }, [partners, search]);
 

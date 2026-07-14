@@ -22,14 +22,17 @@ export default function usePartyLedger(partyId, partyType, page = 1) {
 
     try {
       const offset = (page - 1) * LIMIT;
-
-      const { rows, summary } = await api.getPartyHistoryLedger({
+      const {
+        data: rows,
+        total,
+        totalPages,
+        summary,
+      } = await api.getPartyHistoryLedger({
         partyId,
         partyType,
+        page,
         limit: LIMIT,
-        offset,
       });
-
       if (partyType === "customer") {
         const customer = await api.getCustomer(partyId);
         setParty(customer);

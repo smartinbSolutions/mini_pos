@@ -5,137 +5,114 @@ import { getPartyCredit, applyPartyCredit } from "../utils/partyCredit";
 export default function registerPartyHistoryIPC() {
   ipcMain.handle(
     "get-party-history-ledger",
-    (event, { partyId, partyType, limit = 50, offset = 0 }) => {
+    (event, { partyId, partyType, page = 1, limit = 50 }) => {
+      const currentPage = Math.max(1, Number(page) || 1);
+      const perPage = Math.max(1, Number(limit) || 50);
+      const offset = (currentPage - 1) * perPage;
+
       const rows = db
         .prepare(
           `
           SELECT
             p.*,
+  
+            -- invoice-side info, resolved by invoice_type
+            COALESCE(si.invoice_name, pi.invoice_name, ex.invoice_name) AS invoice_name,
+  
+            -- payment-side info, resolved via payment_id
+            pay.note AS payment_note,
+            pay.fund_id AS payment_fund_id,
             f.name AS fund_name,
+  
             SUM(
               CASE
-                -- partner movements
-                WHEN p.party_type = 'partner' AND p.movement_type = 'withdrawal' THEN -p.amount
-                WHEN p.party_type = 'partner' AND p.movement_type = 'deposit'    THEN  p.amount
-
-                WHEN p.party_type != 'partner' AND p.record_type = 'opening_balance' AND p.movement_type = 'deposit'    THEN  p.amount
-                WHEN p.party_type != 'partner' AND p.record_type = 'opening_balance' AND p.movement_type = 'withdrawal' THEN -p.amount
-
-                WHEN p.party_type != 'partner' AND 
-                p.record_type = 'return' AND 
-                invoice_type = 'purchase_return'  THEN  -p.amount
-
-                WHEN p.party_type != 'partner' AND 
-                p.record_type = 'payment' AND 
-                invoice_type = 'purchase_return' THEN p.amount
-
-                WHEN p.party_type != 'partner' AND 
-                p.record_type = 'return' AND
-                 invoice_type = 'sales_return'  THEN  -p.amount
-
-                WHEN p.party_type != 'partner' AND
-                 p.record_type = 'payment' AND
-                 invoice_type = 'sales_return' THEN p.amount
-
-                WHEN p.party_type != 'partner' AND
-                 p.record_type = 'invoice' THEN  p.amount
-
-                WHEN p.party_type != 'partner' AND 
-                p.record_type = 'payment' THEN -p.amount
-                
-
+                WHEN p.movement_type = 'increase' THEN p.amount
+                WHEN p.movement_type = 'decrease' THEN -p.amount
                 ELSE 0
               END
             ) OVER (
               PARTITION BY p.party_type, p.party_id
               ORDER BY p.id
             ) AS running_balance
+  
           FROM party_history p
-          LEFT JOIN funds f ON f.id = p.fund_id
+  
+          LEFT JOIN sales_invoices si
+            ON p.record_type IN ('invoice','return')
+            AND p.invoice_type IN ('sales','sales_return')
+            AND si.id = p.invoice_id
+  
+          LEFT JOIN purchase_invoices pi
+            ON p.record_type IN ('invoice','return')
+            AND p.invoice_type IN ('purchase','purchase_return')
+            AND pi.id = p.invoice_id
+  
+          LEFT JOIN expense ex
+            ON p.record_type = 'invoice'
+            AND p.invoice_type = 'expense'
+            AND ex.id = p.invoice_id
+  
+          LEFT JOIN payments pay
+            ON p.record_type = 'payment'
+            AND pay.id = p.payment_id
+  
+          LEFT JOIN funds f
+            ON f.id = pay.fund_id
+  
           WHERE p.party_id = ?
             AND p.party_type = ?
           ORDER BY p.id DESC
           LIMIT ? OFFSET ?
-          `,
+          `
         )
-        .all(partyId, partyType, limit, offset);
+        .all(partyId, partyType, perPage, offset);
+
+      const { total } = db
+        .prepare(
+          `
+          SELECT COUNT(*) AS total
+          FROM party_history
+          WHERE party_id = ?
+            AND party_type = ?
+          `
+        )
+        .get(partyId, partyType);
 
       const summary = db
         .prepare(
           `
           SELECT
-            SUM(
-              CASE
-                WHEN p.party_type != 'partner'
-                     AND (
-                       p.record_type = 'invoice'
-                       OR (p.record_type = 'opening_balance' AND 
-                       p.movement_type = 'deposit') 
-                      
-                     )
-                THEN p.amount
-                 WHEN p.party_type != 'partner'
-                     AND (
-                       p.record_type = 'return'                    
-                     )
-                THEN -p.amount
-                ELSE 0
-              END
-            ) AS total_invoice,
-
-            SUM(
-              CASE
-                 WHEN p.party_type != 'partner'
-                     AND (
-                       p.record_type = 'payment'
-                       AND  p.invoice_type = 'purchase_return'
-                     )
-                THEN -p.amount
-
-                  WHEN p.party_type != 'partner'
-                     AND (
-                       p.record_type = 'payment'
-                       AND  p.invoice_type = 'sales_return'
-                     )
-                THEN -p.amount
-
-                WHEN p.party_type != 'partner'
-                     AND (
-                       p.record_type = 'payment'
-                       OR (p.record_type = 'opening_balance' AND
-                        p.movement_type = 'withdrawal')
-                     )
-                THEN p.amount
-                ELSE 0
-              END
-            ) AS total_payment,
-
-            SUM(
-              CASE WHEN p.party_type = 'partner' AND
-               p.movement_type = 'deposit' THEN p.amount ELSE 0 END
-            ) AS total_deposit,
-
-            SUM(
-              CASE WHEN p.party_type = 'partner' AND 
-              p.movement_type = 'withdrawal' THEN p.amount ELSE 0 END
-            ) AS total_withdrawal
-          FROM party_history p
-          WHERE p.party_id = ?
-            AND p.party_type = ?
-          `,
+            COALESCE(SUM(CASE WHEN movement_type = 'increase' THEN amount ELSE 0 END), 0) AS total_increase,
+            COALESCE(SUM(CASE WHEN movement_type = 'decrease' THEN amount ELSE 0 END), 0) AS total_decrease,
+            COALESCE(SUM(CASE WHEN record_type = 'invoice' THEN amount ELSE 0 END), 0) AS total_invoice,
+            COALESCE(SUM(CASE WHEN record_type = 'return' THEN amount ELSE 0 END), 0) AS total_return,
+            COALESCE(SUM(CASE WHEN record_type = 'payment' THEN amount ELSE 0 END), 0) AS total_payment,
+            COALESCE(SUM(CASE WHEN record_type = 'opening_balance' THEN
+              CASE WHEN movement_type = 'increase' THEN amount ELSE -amount END
+            ELSE 0 END), 0) AS opening_balance
+          FROM party_history
+          WHERE party_id = ?
+            AND party_type = ?
+          `
         )
         .get(partyId, partyType);
 
       return {
-        rows,
+        data: rows,
+        page: currentPage,
+        limit: perPage,
+        total,
+        totalPages: Math.ceil(total / perPage),
         summary: {
+          total_increase: Number(summary?.total_increase || 0),
+          total_decrease: Number(summary?.total_decrease || 0),
           total_invoice: Number(summary?.total_invoice || 0),
+          total_return: Number(summary?.total_return || 0),
           total_payment: Number(summary?.total_payment || 0),
-          total_deposit: Number(summary?.total_deposit || 0),
-          total_withdrawal: Number(summary?.total_withdrawal || 0),
+          opening_balance: Number(summary?.opening_balance || 0),
         },
       };
-    },
+    }
   );
 
   ipcMain.handle("get-customer-credit", (event, customerId) => {
@@ -162,6 +139,6 @@ export default function registerPartyHistoryIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    },
+    }
   );
 }
