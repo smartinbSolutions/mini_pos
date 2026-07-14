@@ -140,6 +140,7 @@
     "returnAllPrompt": "هل تريد إرجاع جميع الأصناف دفعة واحدة؟",
     "returnAll": "إرجاع الكل",
     "soldQty": "الكمية المباعة",
+    "boughtQty": "الكمية المشتراة",
     "returnQty": "كمية الإرجاع"
   },
   "screens": {
@@ -658,6 +659,24 @@
       "tax": "الضريبة",
       "returnTotal": "إجمالي المرتجع",
       "confirmReturn": "تأكيد المرتجع"
+    },
+    "purchaseReturn": {
+      "fullyRefunded": "تم رد المبلغ بالكامل",
+      "partialRefund": "تم رد جزء من المبلغ",
+      "onAccount": "على الحساب",
+      "purchaseReturn": "مرتجع مشتريات",
+      "returnDate": "تاريخ المرتجع",
+      "originalInvoice": "الفاتورة الأصلية",
+      "reasonOfReturn": "سبب الإرجاع / ملاحظات",
+      "returnPrice": "سعر الإرجاع",
+      "returnQty": "كمية الإرجاع",
+      "refundHistory": "سجل المبالغ النقدية المستردة",
+      "noCashRefunded": "لم يتم رد أي مبالغ نقدية؛ وتم إضافة المبلغ إلى حساب المورد.",
+      "receipt": "الإيصال",
+      "cashRefunded": "المبلغ النقدي المسترد",
+      "remainingToAccount": "المتبقي إلى حساب المورد",
+      "subtitle": "إدارة مرتجعات المشتريات وإشعارات الدائن",
+      "createPurchaseReturn": "إنشاء مرتجع مشتريات"
     }
   },
   "languages": {

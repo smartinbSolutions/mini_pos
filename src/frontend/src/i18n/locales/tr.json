@@ -140,6 +140,7 @@
     "returnAllPrompt": "Tüm ürünleri tek seferde iade etmek istiyor musunuz?",
     "returnAll": "Tümünü iade et",
     "soldQty": "Satılan miktar",
+    "boughtQty": "Satın alınan miktar",
     "returnQty": "İade miktarı"
   },
   "screens": {
@@ -658,6 +659,24 @@
       "tax": "Vergi",
       "returnTotal": "İade toplamı",
       "confirmReturn": "İadeyi onayla"
+    },
+    "purchaseReturn": {
+      "fullyRefunded": "Tamamen iade edildi",
+      "partialRefund": "Kısmen iade edildi",
+      "onAccount": "Cari hesaba",
+      "purchaseReturn": "Alış iadesi",
+      "returnDate": "İade tarihi",
+      "originalInvoice": "Orijinal Fatura",
+      "reasonOfReturn": "İade nedeni / Notlar",
+      "returnPrice": "İade fiyatı",
+      "returnQty": "İade miktarı",
+      "refundHistory": "Nakit iade kayıtları",
+      "noCashRefunded": "Nakit iadesi yapılmadı; tutar tedarikçinin cari hesabına aktarıldı.",
+      "receipt": "Makbuz",
+      "cashRefunded": "İade edilen nakit",
+      "remainingToAccount": "Tedarikçi hesabına aktarılan bakiye",
+      "subtitle": "Alış iadelerinizi ve alacak dekontlarınızı yönetin",
+      "createPurchaseReturn": "Alış iadesi oluştur"
     }
   },
   "languages": {

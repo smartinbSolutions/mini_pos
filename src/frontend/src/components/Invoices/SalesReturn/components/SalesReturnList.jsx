@@ -136,7 +136,7 @@ const SalesReturnList = () => {
         <InvoiceListHeader
           badgeLabel={t("ui.salesReturn")}
           badgeIcon={Undo2}
-          title={t("screens.invoices.salesReturn")}
+          title={t("ui.salesReturn")}
           subtitle={t("screens.invoices.salesReturnSubtitle")}
           stats={[
             {

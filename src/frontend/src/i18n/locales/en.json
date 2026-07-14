@@ -140,6 +140,7 @@
     "returnAllPrompt": "Return all items at once?",
     "returnAll": "Return all",
     "soldQty": "Sold quantity",
+    "boughtQty": "Bought quantity",
     "returnQty": "Return quantity"
   },
   "screens": {
@@ -657,6 +658,24 @@
       "tax": "Tax",
       "returnTotal": "Return total",
       "confirmReturn": "Confirm return"
+    },
+    "purchaseReturn": {
+      "fullyRefunded": "Fully refunded",
+      "partialRefund": "Partially refunded",
+      "onAccount": "On account",
+      "purchaseReturn": "Purchase return",
+      "returnDate": "Return date",
+      "originalInvoice": "Original Inv.",
+      "reasonOfReturn": "Reason of return / Notes",
+      "returnPrice": "Return price",
+      "returnQty": "Return quantity",
+      "refundHistory": "Refunded cash amounts log",
+      "noCashRefunded": "No cash refunds were issued; the funds were credited to the supplier's account.",
+      "receipt": "Receipt",
+      "cashRefunded": "Cash refunded",
+      "remainingToAccount": "Remaining to supplier account",
+      "subtitle": "Manage your purchase returns and credit notes",
+      "createPurchaseReturn": "Create purchase return"
     }
   },
   "languages": {

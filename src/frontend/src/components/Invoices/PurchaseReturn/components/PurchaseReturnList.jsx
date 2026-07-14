@@ -25,7 +25,7 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
     paid: { label: t("ui.paid"), classes: "bg-emerald-50 text-emerald-600" },
     partial: {
-      label: t("ui.partial", "Partial"),
+      label: t("ui.partial"),
       classes: "bg-amber-50 text-amber-600",
     },
     unpaid: { label: t("ui.unpaid"), classes: "bg-slate-100 text-slate-500" },
@@ -43,13 +43,13 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
       {status === "partial" && (
         <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
           <div className="flex justify-between">
-            <span>{t("ui.refunded", "Refunded")}</span>
+            <span>{t("ui.refunded")}</span>
             <span className="font-bold text-emerald-600">
               {money(paidAmount)}
             </span>
           </div>
           <div className="mt-1 flex justify-between">
-            <span>{t("ui.remaining", "Remaining")}</span>
+            <span>{t("ui.remaining")}</span>
             <span className="font-bold text-amber-600">
               {money(remainingAmount)}
             </span>
@@ -134,23 +134,20 @@ const PurchaseReturnList = () => {
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
         <InvoiceListHeader
-          badgeLabel={t("ui.purchaseReturn", "Purchase Return")}
+          badgeLabel={t("screens.purchaseReturn.purchaseReturn")}
           badgeIcon={Undo2}
-          title={t("screens.invoices.purchaseReturn", "Purchase Returns")}
-          subtitle={t(
-            "screens.invoices.purchaseReturnSubtitle",
-            "Manage your purchase returns and credit notes",
-          )}
+          title={t("screens.purchaseReturn.purchaseReturn")}
+          subtitle={t("screens.purchaseReturn.subtitle")}
           stats={[
             {
               icon: Undo2,
               value: purchaseReturns?.length,
-              label: t("ui.returns", "Returns"),
+              label: t("ui.returns"),
             },
             {
               icon: HandCoins,
               value: unpaidCount,
-              label: t("ui.open", "Open"),
+              label: t("ui.open"),
               variant: "amber",
             },
             {
@@ -181,20 +178,20 @@ const PurchaseReturnList = () => {
 
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1050px] text-left text-sm">
+            <table className="w-full min-w-[1050px] text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4">{t("ui.returnId", "Return #")}</th>
-                  <th className="px-5 py-4">
-                    {t("ui.originalInvoice", "Orig. Invoice")}
+                  <th className="px-5 py-4 text-start">{t("ui.returnId")}</th>
+                  <th className="px-5 py-4 text-start">
+                    {t("ui.originalInvoice")}
                   </th>
-                  <th className="px-5 py-4">{t("ui.supplier")}</th>
-                  <th className="px-5 py-4">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.tax")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.status")}</th>
-                  <th className="px-5 py-4 text-right">
+                  <th className="px-5 py-4 text-start">{t("ui.supplier")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.date")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.subtotal")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.tax")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.net")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.status")}</th>
+                  <th className="px-5 py-4 text-start">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -274,7 +271,7 @@ const PurchaseReturnList = () => {
                         />
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-start gap-1">
                           <button
                             onClick={() =>
                               navigate(`/view-purchase-return/${inv.id}`)

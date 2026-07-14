@@ -63,10 +63,10 @@ export default function PurchaseReturnView() {
 
   const statusLabel =
     status === "paid"
-      ? t("ui.fullyRefunded", "مسترد بالكامل")
+      ? t("ui.fullyRefunded")
       : status === "partial"
-        ? t("ui.partialRefund", "مسترد جزئي")
-        : t("ui.onAccount", "على الحساب الآجل");
+        ? t("ui.partialRefund")
+        : t("ui.onAccount");
 
   if (loading) {
     return (
@@ -113,18 +113,18 @@ export default function PurchaseReturnView() {
               </span>
               <div>
                 <p className="text-xs uppercase tracking-[0.22em] text-amber-700 font-bold">
-                  {t("ui.purchaseReturn", "مرتجع فاتورة مشتريات")}
+                  {t("screens.purchaseReturn.purchaseReturn")}
                 </p>
                 <h1 className="text-3xl text-slate-950 font-bold mt-0.5">
                   #{returnInvoice.id}
                 </h1>
                 <div className="text-sm text-slate-500 mt-1 space-y-0.5">
                   <p>
-                    {t("ui.returnDate", "تاريخ الإرجاع")}:{" "}
+                    {t("screens.purchaseReturn.returnDate")}:{" "}
                     {formatDate(returnInvoice.date)}
                   </p>
                   <p className="text-xs">
-                    {t("ui.originalInvoice", "الفاتورة الأصلية")}:{" "}
+                    {t("screens.purchaseReturn.originalInvoice")}:{" "}
                     <span className="font-semibold text-slate-700">
                       #{returnInvoice.purchase_invoice_id}
                     </span>
@@ -152,7 +152,7 @@ export default function PurchaseReturnView() {
             {returnInvoice.description && (
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-sm">
                 <span className="font-bold text-slate-500 block mb-1">
-                  {t("ui.reasonOfReturn", "سبب الإرجاع / الملاحظات")}
+                  {t("screens.purchaseReturn.reasonOfReturn")}
                 </span>
                 <p className="text-slate-700 font-medium">
                   {returnInvoice.description}
@@ -164,14 +164,14 @@ export default function PurchaseReturnView() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th className="p-3 text-left">{t("ui.product")}</th>
-                    <th className="p-3 text-center">
-                      {t("ui.returnPrice", "سعر الإرجاع")}
+                    <th className="p-3 text-start">{t("ui.product")}</th>
+                    <th className="p-3 text-start">
+                      {t("screens.purchaseReturn.returnPrice")}
                     </th>
-                    <th className="p-3 text-center">
-                      {t("ui.returnQty", "الكمية المرجعة")}
+                    <th className="p-3 text-start">
+                      {t("screens.purchaseReturn.returnQty")}
                     </th>
-                    <th className="p-3 text-center">{t("ui.total")}</th>
+                    <th className="p-3 text-start">{t("ui.total")}</th>
                   </tr>
                 </thead>
 
@@ -188,16 +188,16 @@ export default function PurchaseReturnView() {
                   ) : (
                     items.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50/40">
-                        <td className="p-3 font-bold text-slate-900">
+                        <td className="p-3 text-start font-bold text-slate-900">
                           {item.product_name || item.name || "-"}
                         </td>
-                        <td className="p-3 text-center tabular-nums">
+                        <td className="p-3 text-start tabular-nums">
                           {money(item.price)}
                         </td>
-                        <td className="p-3 text-center font-semibold text-amber-700">
+                        <td className="p-3 text-start font-semibold text-amber-700">
                           {Number(item.quantity || 0)}
                         </td>
-                        <td className="p-3 text-center font-bold text-slate-800 tabular-nums">
+                        <td className="p-3 text-start font-bold text-slate-800 tabular-nums">
                           {money(item.total)}
                         </td>
                       </tr>
@@ -211,15 +211,12 @@ export default function PurchaseReturnView() {
               <div className="flex-1">
                 <h3 className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-700">
                   <HandCoins size={16} className="text-amber-600" />
-                  {t("ui.refundHistory", "سجل المبالغ المستردة كاش")}
+                  {t("screens.purchaseReturn.refundHistory")}
                 </h3>
 
                 {allocations.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400 bg-slate-50/50">
-                    {t(
-                      "ui.noCashRefunded",
-                      "لم يتم استرداد مبالغ نقدية، تم ترحيلها لحساب المورد دائن",
-                    )}
+                    {t("screens.purchaseReturn.noCashRefunded")}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -233,8 +230,9 @@ export default function PurchaseReturnView() {
                             {alloc.fund_name || "-"}
                           </div>
                           <div className="text-xs text-slate-400 mt-0.5">
-                            {formatDate(alloc.date)} · {t("ui.receipt", "سند")}{" "}
-                            #{alloc.payment_id}
+                            {formatDate(alloc.date)} ·{" "}
+                            {t("screens.purchaseReturn.receipt")} #
+                            {alloc.payment_id}
                           </div>
                         </div>
                         <div className="tabular-nums font-bold text-green-700">
@@ -284,16 +282,14 @@ export default function PurchaseReturnView() {
                 {status !== "unpaid" && (
                   <>
                     <div className="flex justify-between border-t border-dashed border-[#dbe4ff] pt-3 text-xs text-slate-500">
-                      <span>{t("ui.cashRefunded", "المسترد نقداً")}</span>
+                      <span>{t("ui.cashRefunded")}</span>
                       <span className="font-bold text-green-700">
                         {money(returnInvoice.refunded_amount)}
                       </span>
                     </div>
                     {status === "partial" && (
                       <div className="flex justify-between text-xs text-slate-500">
-                        <span>
-                          {t("ui.remainingToAccount", "المتبقي لحساب المورد")}
-                        </span>
+                        <span>{t("ui.remainingToAccount")}</span>
                         <span className="font-bold text-amber-600">
                           {money(returnInvoice.remaining_credit)}
                         </span>
