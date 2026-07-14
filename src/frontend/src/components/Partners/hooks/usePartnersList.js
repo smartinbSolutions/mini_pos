@@ -32,7 +32,7 @@ const usePartnersList = () => {
     name: String(cust.name || "").trim(),
     phone: String(cust.phone || "").trim(),
     address: String(cust.address || "").trim(),
-    balance_type: cust.balance_type || "deposit",
+    balance_type: cust.balance_type || "increase",
   });
 
   const validatePartner = (cust) => {
