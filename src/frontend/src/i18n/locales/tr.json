@@ -556,7 +556,10 @@
       "createCategory": "Gider kategorisi oluştur",
       "categoryName": "Gider kategorisi adı",
       "addButton": "Gider kategorisi ekle",
-      "createCategoryDesc": "Şirket harcamalarınızı daha iyi takip edebilmek için gider kategorilerinizi oluşturun ve düzenleyin."
+      "createCategoryDesc": "Şirket harcamalarınızı daha iyi takip edebilmek için gider kategorilerinizi oluşturun ve düzenleyin.",
+      "totalSpent": "Total spent",
+      "itemsCount": "Items count",
+      "inUseHint": "This category is in use and can't be deleted"
     },
     "expenses": {
       "createExpense": "Gider Oluştur",

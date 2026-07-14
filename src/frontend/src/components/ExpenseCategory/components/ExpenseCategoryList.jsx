@@ -58,7 +58,7 @@ const ExpenseCategoryList = () => {
     if (!term) return expenseCategory || [];
 
     return (expenseCategory || []).filter((c) =>
-      `${c.name}`.toLowerCase().includes(term)
+      `${c.name}`.toLowerCase().includes(term),
     );
   }, [expenseCategory, search]);
 
@@ -66,9 +66,9 @@ const ExpenseCategoryList = () => {
     () =>
       (expenseCategory || []).reduce(
         (sum, c) => sum + Number(c.total_spent || 0),
-        0
+        0,
       ),
-    [expenseCategory]
+    [expenseCategory],
   );
 
   const hasDateFilter = Boolean(dateRange.startDate || dateRange.endDate);
@@ -156,13 +156,13 @@ const ExpenseCategoryList = () => {
           >
             <span>{t("ui.name")}</span>
             <span>{t("ui.latinName")}</span>
-            <span className="text-right">
+            <span className="text-start">
               {t("screens.expensesCategory.totalSpent")}
             </span>
-            <span className="text-right">
+            <span className="text-start">
               {t("screens.expensesCategory.itemsCount")}
             </span>
-            <span className="text-right">{t("common.actions")}</span>
+            <span className="text-start">{t("common.actions")}</span>
           </div>
 
           {/* LIST ITEMS */}
@@ -188,9 +188,9 @@ const ExpenseCategoryList = () => {
                     }
                     className={inputClass}
                   />
-                  <div className="text-right text-sm text-slate-400">—</div>
-                  <div className="text-right text-sm text-slate-400">—</div>
-                  <div className="flex justify-end gap-2">
+                  <div className="text-start text-sm text-slate-400">—</div>
+                  <div className="text-start text-sm text-slate-400">—</div>
+                  <div className="flex justify-start gap-2">
                     <button
                       type="submit"
                       className="rounded-xl bg-[#4663ff] p-2 text-white hover:bg-[#3854e8]"
@@ -218,11 +218,11 @@ const ExpenseCategoryList = () => {
                     {cat.latinName || "-"}
                   </div>
 
-                  <div className="text-right font-black text-slate-900">
+                  <div className="text-start font-black text-slate-900">
                     {money(cat.total_spent || 0)}
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-start">
                     <span className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-xs font-bold text-slate-600">
                       <Layers size={11} />
                       {cat.items_count || 0}
@@ -254,7 +254,7 @@ const ExpenseCategoryList = () => {
                     )}
                   </div>
                 </div>
-              )
+              ),
             )}
 
             {filtered.length === 0 && (

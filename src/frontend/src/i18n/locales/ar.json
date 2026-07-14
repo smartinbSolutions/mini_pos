@@ -554,9 +554,12 @@
       "categoryTitle": "تصنيف المصاريف",
       "emptyCategories": "لا يوجد تصنيف مصاريف",
       "createCategory": "انشاء تصنيف مصروف",
-      "createCategoryDesc": "Create and organize your expense categories to better track your company spending.",
+      "createCategoryDesc": "قم بإنشاء وتنظيم فئات المصروفات الخاصة بك لتتبع إنفاق شركتك بشكل أفضل.",
       "categoryName": "اسم تصنيف المصروفات",
-      "addButton": "إضافة تصنيف مصروف"
+      "addButton": "إضافة تصنيف مصروف",
+      "totalSpent": "إجمالي المصروف",
+      "itemsCount": "عدد العناصر",
+      "inUseHint": "هذا التصنيف مستخدم ولا يمكن حذفه"
     },
     "expenses": {
       "createExpense": "انشاء مصروف",

@@ -555,7 +555,10 @@
       "createCategory": "Create expense category",
       "createCategoryDesc": "Create and organize your expense categories to better track your company spending.",
       "categoryName": "Expense category Name",
-      "addButton": "Add expense category"
+      "addButton": "Add expense category",
+      "totalSpent": "Total spent",
+      "itemsCount": "Items count",
+      "inUseHint": "This category is in use and can't be deleted"
     },
     "expenses": {
       "createExpense": "Create Expense",
