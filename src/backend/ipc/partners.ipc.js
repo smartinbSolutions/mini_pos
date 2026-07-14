@@ -45,74 +45,36 @@ export default function registerPartnersIPC() {
         `
       SELECT
         p.*,
-
+  
         COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'deposit'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'deposit'
-                )
-              THEN ph.amount
-              ELSE 0
-            END
-          ),
+          SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
           0
         ) AS total_deposit,
-
+  
         COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'withdrawal'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'withdrawal'
-                )
-              THEN ph.amount
-              ELSE 0
-            END
-          ),
+          SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END),
           0
         ) AS total_withdrawal,
-
+  
         COALESCE(
           SUM(
             CASE
-              WHEN ph.movement_type = 'deposit'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'deposit'
-                )
-              THEN ph.amount
-              ELSE 0
-            END
-          ),
-          0
-        )
-        -
-        COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'withdrawal'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'withdrawal'
-                )
-              THEN ph.amount
+              WHEN ph.movement_type = 'increase' THEN ph.amount
+              WHEN ph.movement_type = 'decrease' THEN -ph.amount
               ELSE 0
             END
           ),
           0
         ) AS balance
-
+  
       FROM partners p
       LEFT JOIN party_history ph
         ON ph.party_type = 'partner'
        AND ph.party_id = p.id
-
+  
       GROUP BY p.id
       ORDER BY p.name
+  
       LIMIT ? OFFSET ?
       `
       )

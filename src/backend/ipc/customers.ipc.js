@@ -47,94 +47,45 @@ export default function registerCustomersIPC() {
     const customers = db
       .prepare(
         `
-    SELECT
-      c.*,
-
-      COALESCE(
-        SUM(
-          CASE
-            WHEN ph.record_type = 'invoice' AND 
-            ph.invoice_type = 'sales' THEN ph.amount
-
-            WHEN ph.record_type = 'opening_balance' AND 
-            ph.movement_type = 'deposit' THEN ph.amount
-            
-            WHEN ph.record_type = 'return' AND
-             ph.invoice_type = 'sales_return' THEN -ph.amount
-
-             ELSE 0
-          END
-        ),
-        0
-      ) AS total,
-
-      COALESCE(
-        SUM(
-          CASE
-            WHEN ph.record_type = 'payment' AND
-             ph.invoice_type = 'sales' THEN ph.amount
-
-            WHEN ph.record_type = 'opening_balance' AND 
-            ph.movement_type = 'withdrawal' THEN ph.amount
-
-            WHEN ph.record_type = 'payment' AND 
-            ph.invoice_type = 'sales_return' THEN -ph.amount
-            
-            WHEN ph.record_type = 'payment' THEN ph.amount
-            ELSE 0
-          END
-        ),
-        0
-      ) AS total_paid,
-
-      COALESCE(
-        SUM(
-          CASE
-            WHEN ph.record_type = 'invoice' AND
-             ph.invoice_type = 'sales' THEN ph.amount
-
-            WHEN ph.record_type = 'opening_balance' AND
-             ph.movement_type = 'deposit' THEN ph.amount
-
-            WHEN ph.record_type = 'return' AND
-             ph.invoice_type = 'sales_return' THEN -ph.amount
-
-            WHEN ph.record_type = 'payment' AND
-             ph.invoice_type = 'sales' THEN -ph.amount
-
-            WHEN ph.record_type = 'opening_balance' 
-            AND ph.movement_type = 'withdrawal' THEN -ph.amount
-            
-            WHEN ph.record_type = 'payment' AND 
-            ph.invoice_type = 'sales_return' THEN ph.amount
-
-             WHEN ph.record_type = 'payment' THEN -ph.amount
-            ELSE 0
-          END
-        ),
-        0
-      ) AS balance
-
-    FROM customers c
-    LEFT JOIN party_history ph
-      ON ph.party_type = 'customer'
-     AND ph.party_id = c.id
-
-    GROUP BY c.id
-    ORDER BY c.name
-
-    LIMIT ? OFFSET ?
-    `
+      SELECT
+        c.*,
+  
+        COALESCE(
+          SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
+          0
+        ) AS total,
+  
+        COALESCE(
+          SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END),
+          0
+        ) AS total_paid,
+  
+        COALESCE(
+          SUM(
+            CASE
+              WHEN ph.movement_type = 'increase' THEN ph.amount
+              WHEN ph.movement_type = 'decrease' THEN -ph.amount
+              ELSE 0
+            END
+          ),
+          0
+        ) AS balance
+  
+      FROM customers c
+      LEFT JOIN party_history ph
+        ON ph.party_type = 'customer'
+       AND ph.party_id = c.id
+  
+      GROUP BY c.id
+      ORDER BY c.name
+  
+      LIMIT ? OFFSET ?
+      `
       )
       .all(limit, offset);
 
     const { total } = db
-      .prepare(
-        `
-    SELECT COUNT(*) AS total
-    FROM customers
-    `
-      )
+      .prepare(`SELECT COUNT(*) AS total FROM customers`)
       .get();
 
     return {

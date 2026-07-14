@@ -120,7 +120,6 @@ export default function registerPartyHistoryIPC() {
   });
 
   ipcMain.handle("get-supplier-credit", (event, supplierId) => {
-    console.log("here");
     return getPartyCredit(db, { partyId: supplierId, partyType: "supplier" });
   });
 

@@ -2,18 +2,24 @@ import { useEffect, useState } from "react";
 
 const LIMIT = 50;
 
-export default function usePartyLedger(partyId, partyType, page = 1) {
+export default function usePartyLedger(partyId, partyType) {
   const api = window.api;
 
   const [data, setData] = useState([]);
   const [summary, setSummary] = useState({
+    total_increase: 0,
+    total_decrease: 0,
     total_invoice: 0,
+    total_return: 0,
     total_payment: 0,
-    total_deposit: 0,
-    total_withdrawal: 0,
+    opening_balance: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [party, setParty] = useState("");
+  const [party, setParty] = useState(null);
+
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchData = async () => {
     if (!partyId || !partyType) return;
@@ -21,18 +27,18 @@ export default function usePartyLedger(partyId, partyType, page = 1) {
     setLoading(true);
 
     try {
-      const offset = (page - 1) * LIMIT;
       const {
         data: rows,
-        total,
-        totalPages,
-        summary,
+        total: totalCount,
+        totalPages: pages,
+        summary: summaryData,
       } = await api.getPartyHistoryLedger({
         partyId,
         partyType,
         page,
         limit: LIMIT,
       });
+
       if (partyType === "customer") {
         const customer = await api.getCustomer(partyId);
         setParty(customer);
@@ -45,9 +51,11 @@ export default function usePartyLedger(partyId, partyType, page = 1) {
       }
 
       setData(rows);
-      setSummary(summary);
+      setTotal(totalCount);
+      setTotalPages(pages);
+      setSummary(summaryData);
     } catch (err) {
-      console.log("Ledger Error:", err);
+      console.error("Ledger Error:", err);
       setData([]);
     } finally {
       setLoading(false);
@@ -56,7 +64,23 @@ export default function usePartyLedger(partyId, partyType, page = 1) {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partyId, partyType, page]);
 
-  return { data, summary, loading, refetch: fetchData, party };
+  useEffect(() => {
+    setPage(1);
+  }, [partyId, partyType]);
+
+  return {
+    data,
+    summary,
+    loading,
+    refetch: fetchData,
+    party,
+    page,
+    setPage,
+    total,
+    totalPages,
+    limit: LIMIT,
+  };
 }

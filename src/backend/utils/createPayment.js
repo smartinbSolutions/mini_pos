@@ -55,7 +55,11 @@ export default function createPayment(db, data) {
       amount: data.amount || 0,
     });
   }
-  if (data.party_type !== "walk-in") {
+  const isReturnRefund =
+    data.invoice_type === "purchase_return" ||
+    data.invoice_type === "sales_return";
+
+  if (data.party_type !== "walk-in" && !isReturnRefund) {
     createPartyHistory(db, {
       party_type: data.party_type,
       party_id: data.party_id,
