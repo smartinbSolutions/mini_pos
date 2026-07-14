@@ -77,29 +77,33 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
     setValidationError("");
   };
 
-  const handleQtyChange = (productId, val) => {
+  const handleQtyChange = (itemId, val) => {
     const qty = Math.max(0, Number(val) || 0);
 
     const updated = returnItems.map((item) => {
-      if (item.product_id === productId) {
+      if (item.id === itemId) {
         if (qty > item.maxAvailable) {
           setValidationError(
             t(
               "errors.returnQtyExceeded",
-              `لا يمكن إرجاع كمية أكبر من المشتراة (${item.maxAvailable})`,
+              `لا يمكن إرجاع كمية أكبر من المسموح (${item.maxAvailable})`,
             ),
           );
-          return { ...item, returnQuantity: item.maxAvailable };
+
+          return {
+            ...item,
+            returnQuantity: item.maxAvailable,
+          };
         }
-        return { ...item, returnQuantity: qty };
+
+        return {
+          ...item,
+          returnQuantity: qty,
+        };
       }
+
       return item;
     });
-
-    const hasError = updated.some(
-      (item) => item.returnQuantity > item.maxAvailable,
-    );
-    if (!hasError) setValidationError("");
 
     setReturnItems(updated);
   };
@@ -157,6 +161,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
       taxValue,
       net_total: netTotal,
       items: itemsToReturn.map((item) => ({
+        purchase_invoice_item_id: item.id,
         product_id: item.product_id,
         quantity: item.returnQuantity,
         price: item.price,
@@ -261,7 +266,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
                         }
                         placeholder="0"
                         onChange={(e) =>
-                          handleQtyChange(item.product_id, e.target.value)
+                          handleQtyChange(item.id, e.target.value)
                         }
                         className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-center font-bold text-slate-800 shadow-sm focus:border-[#4663ff] focus:outline-none focus:ring-1 focus:ring-[#4663ff]"
                       />
