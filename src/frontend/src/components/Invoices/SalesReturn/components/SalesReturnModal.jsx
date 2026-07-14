@@ -72,11 +72,11 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
     setValidationError("");
   };
 
-  const handleQtyChange = (productId, val) => {
+  const handleQtyChange = (itemId, val) => {
     const qty = Math.max(0, Number(val) || 0);
 
     const updated = returnItems.map((item) => {
-      if (item.product_id === productId) {
+      if (item.id === itemId) {
         if (qty > item.maxAvailable) {
           setValidationError(t("errors.returnQtyExceeded"));
 
@@ -95,11 +95,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
       return item;
     });
 
-    const hasError = updated.some(
-      (item) => item.returnQuantity > item.maxAvailable,
-    );
-
-    if (!hasError) {
+    if (updated.every((item) => item.returnQuantity <= item.maxAvailable)) {
       setValidationError("");
     }
 
@@ -153,6 +149,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
       taxValue,
       net_total: netTotal,
       items: itemsToReturn.map((item) => ({
+        sales_invoice_item_id: item.id,
         product_id: item.product_id,
         quantity: item.returnQuantity,
         price: item.price,
@@ -223,13 +220,9 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {returnItems.map((item) => (
-                  <tr
-                    key={item.product_id}
-                    className="hover:bg-slate-50/50 transition"
-                  >
+                  <tr key={item.id} className="hover:bg-slate-50/50 transition">
                     <td className="px-4 py-3 text-start font-semibold text-slate-800">
-                      {item.product_name ||
-                        `${t("ui.product")} #${item.product_id}`}
+                      {item.name || `${t("ui.product")} #${item.product_id}`}
                     </td>
                     <td className="px-4 py-3 text-start text-slate-500 font-medium">
                       {item.maxAvailable}
@@ -247,7 +240,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
                         }
                         placeholder="0"
                         onChange={(e) =>
-                          handleQtyChange(item.product_id, e.target.value)
+                          handleQtyChange(item.id, e.target.value)
                         }
                         className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-start font-bold text-slate-800 shadow-sm focus:border-[#4663ff] focus:outline-none focus:ring-1 focus:ring-[#4663ff]"
                       />
