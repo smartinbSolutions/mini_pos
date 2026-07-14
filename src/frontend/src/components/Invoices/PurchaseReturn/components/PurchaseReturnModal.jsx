@@ -261,15 +261,13 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wide text-slate-500 block mb-1.5">
-                  {t("salesReturn.returnNotes.notes")}
+                  {t("screens.salesReturn.returnNotes")}
                 </label>
                 <textarea
                   rows={3}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder={t(
-                    "salesReturn.returnNotes.returnNotePlaceholder",
-                  )}
+                  placeholder={t("screens.salesReturn.returnNotePlaceholder")}
                   className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 placeholder-slate-400 shadow-sm focus:border-[#4663ff] focus:outline-none focus:ring-1 focus:ring-[#4663ff]"
                 />
               </div>
@@ -314,7 +312,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
 
               <div className="border-t border-slate-200/80 my-2 pt-2 flex justify-between items-center text-base font-bold text-slate-900">
                 <span className="text-[#4663ff]">
-                  {t("salesReturn.returnNotes.returnTotal")}
+                  {t("screens.salesReturn.returnTotal")}
                 </span>
                 <span className="text-emerald-700 text-lg tabular-nums">
                   {money(netTotal)}
@@ -337,7 +335,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
             onClick={handleSubmit}
             className="rounded-xl bg-[#4663ff] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#354fd4] transition"
           >
-            {t("salesReturn.returnNotes.confirmReturn")}
+            {t("screens.salesReturn.confirmReturn")}
           </button>
         </div>
       </div>

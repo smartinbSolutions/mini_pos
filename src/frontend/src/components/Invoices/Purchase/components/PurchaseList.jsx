@@ -136,7 +136,7 @@ const PurchaseList = () => {
         <InvoiceListHeader
           badgeLabel={t("ui.purchase")}
           badgeIcon={Receipt}
-          title={t("screens.invoices.purchaseInvoice")}
+          title={t("screens.invoices.purchaseTitle")}
           subtitle={t("screens.invoices.purchaseSubtitle")}
           stats={[
             {
@@ -231,7 +231,6 @@ const PurchaseList = () => {
                           </div>
                         )}
                       </td>
-                      {console.log(inv)}
 
                       <td className="px-5 py-4 text-right tabular-nums">
                         {Number(inv.taxValue || 0) > 0 ? (
@@ -260,7 +259,7 @@ const PurchaseList = () => {
                         />
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-start gap-1">
                           <button
                             onClick={() => navigate(`/view-purchase/${inv.id}`)}
                             className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
