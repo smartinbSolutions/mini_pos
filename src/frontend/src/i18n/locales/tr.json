@@ -141,7 +141,8 @@
     "returnAll": "Tümünü iade et",
     "soldQty": "Satılan miktar",
     "boughtQty": "Satın alınan miktar",
-    "returnQty": "İade miktarı"
+    "returnQty": "İade miktarı",
+    "primaryCurrency": "Ana para birimi"
   },
   "screens": {
     "units": {
@@ -445,7 +446,14 @@
       "failed": "Ödeme başarısız.",
       "completeSale": "Satışı tamamla",
       "splitPayment": "Parçalı Ödeme",
-      "singleFund": "Tek Kasa"
+      "singleFund": "Tek Kasa",
+      "stillNeeds": "Hâlâ gerekli",
+      "paymentComplete": "Tamamlandı!",
+      "portionOfTotal": "Toplamın payı",
+      "allocated": "Tahsis edildi",
+      "remainingToAllocate": "Tahsis edilecek kalan",
+      "overAllocatedBy": "{{amount}} kadar fazla tahsis edildi",
+      "fullyAllocated": "Tamamen tahsis edildi"
     },
     "payments": {
       "purchasePayment": "Satın Alma Ödemesi",
@@ -677,6 +685,10 @@
       "remainingToAccount": "Tedarikçi hesabına aktarılan bakiye",
       "subtitle": "Alış iadelerinizi ve alacak dekontlarınızı yönetin",
       "createPurchaseReturn": "Alış iadesi oluştur"
+    },
+    "customerDisplay": {
+      "welcome": "Hoşgeldiniz",
+      "thanks": "Bizimle alışveriş yaptığınız için teşekkür ederiz"
     }
   },
   "languages": {

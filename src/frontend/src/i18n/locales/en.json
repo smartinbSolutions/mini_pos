@@ -141,7 +141,8 @@
     "returnAll": "Return all",
     "soldQty": "Sold quantity",
     "boughtQty": "Bought quantity",
-    "returnQty": "Return quantity"
+    "returnQty": "Return quantity",
+    "primaryCurrency": "Primary currency"
   },
   "screens": {
     "units": {
@@ -445,7 +446,14 @@
       "failed": "Checkout failed.",
       "completeSale": "Complete sale",
       "splitPayment": "Split Payment",
-      "singleFund": "Single Fund"
+      "singleFund": "Single Fund",
+      "stillNeeds": "Still need",
+      "paymentComplete": "All set!",
+      "portionOfTotal": "Portion of total",
+      "allocated": "Allocated",
+      "remainingToAllocate": "Remaining to allocate",
+      "overAllocatedBy": "Over allocated by {{amount}}",
+      "fullyAllocated": "Fully allocated"
     },
     "payments": {
       "purchasePayment": "Purchase Payment",
@@ -676,6 +684,10 @@
       "remainingToAccount": "Remaining to supplier account",
       "subtitle": "Manage your purchase returns and credit notes",
       "createPurchaseReturn": "Create purchase return"
+    },
+    "customerDisplay": {
+      "welcome": "Welcome",
+      "thanks": "Thank you for shopping with us"
     }
   },
   "languages": {

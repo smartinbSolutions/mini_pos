@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function CustomerDisplayApp() {
+  const { t } = useTranslation();
   const [cart, setCart] = useState([]);
   const [total, setTotal] = useState(0);
   const [currencyCode, setCurrencyCode] = useState("");
@@ -23,8 +25,12 @@ export default function CustomerDisplayApp() {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-stone-950 text-white">
         <ShoppingBag size={56} className="text-teal-500" />
-        <h1 className="text-3xl font-black">Welcome</h1>
-        <p className="text-stone-400">Thank you for shopping with us</p>
+        <h1 className="text-3xl font-black">
+          {t("screens.customerDisplay.welcome", "Welcome")}
+        </h1>
+        <p className="text-stone-400">
+          {t("screens.customerDisplay.thanks", "Thanks")}
+        </p>
       </div>
     );
   }
@@ -54,7 +60,9 @@ export default function CustomerDisplayApp() {
 
       <div className="bg-stone-950 p-6 text-white">
         <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-stone-300">Total</span>
+          <span className="text-lg font-bold text-stone-300">
+            {t("ui.total", "Total")}
+          </span>
           <span className="text-4xl font-black">{money(total)}</span>
         </div>
       </div>

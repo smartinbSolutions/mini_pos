@@ -34,7 +34,7 @@ export default function CheckoutModal({
     setAllocations((current) => {
       const fundIds = new Set(funds.map((fund) => String(fund.id)));
       return Object.fromEntries(
-        Object.entries(current).filter(([fundId]) => fundIds.has(fundId))
+        Object.entries(current).filter(([fundId]) => fundIds.has(fundId)),
       );
     });
   }, [funds]);
@@ -117,13 +117,13 @@ export default function CheckoutModal({
 
   const allocatedTotal = useMemo(
     () => cents(rows.reduce((sum, row) => sum + row.portion, 0)),
-    [rows]
+    [rows],
   );
 
   // positive = still unallocated, negative = over-allocated, 0 = exact
   const allocationDiff = useMemo(
     () => cents(total - allocatedTotal),
-    [total, allocatedTotal]
+    [total, allocatedTotal],
   );
 
   const isFullyAllocated = Math.abs(allocationDiff) < 0.01;
@@ -152,7 +152,7 @@ export default function CheckoutModal({
           ? t("screens.checkout.remainingToAllocate", {
               amount: money(allocationDiff),
             })
-          : t("screens.checkout.overAllocatedBy", {
+          : t("screens.payments.overAllocatedBy", {
               amount: money(-allocationDiff),
             });
       setError(message);
@@ -313,7 +313,7 @@ export default function CheckoutModal({
                       </div>
                     )}
                   </div>
-                )
+                ),
               )}
             </div>
           </section>

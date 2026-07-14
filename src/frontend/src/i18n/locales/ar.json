@@ -141,7 +141,8 @@
     "returnAll": "إرجاع الكل",
     "soldQty": "الكمية المباعة",
     "boughtQty": "الكمية المشتراة",
-    "returnQty": "كمية الإرجاع"
+    "returnQty": "كمية الإرجاع",
+    "primaryCurrency": "العملة الرئيسية"
   },
   "screens": {
     "units": {
@@ -445,7 +446,14 @@
       "failed": "فشل الدفع.",
       "completeSale": "إكمال البيع",
       "splitPayment": "توزيع الدفع",
-      "singleFund": "صندوق واحد"
+      "singleFund": "صندوق واحد",
+      "stillNeeds": "مازلت تحتاج",
+      "paymentComplete": "كله تمام",
+      "portionOfTotal": "نسبة من الإجمالي",
+      "allocated": "مخصص",
+      "remainingToAllocate": "متبقي للتخصيص",
+      "overAllocatedBy": "مخصص زائد بـ {{amount}}",
+      "fullyAllocated": "تم التخصيص بشكل كامل"
     },
     "payments": {
       "purchasePayment": "دفعة شراء",
@@ -677,6 +685,10 @@
       "remainingToAccount": "المتبقي إلى حساب المورد",
       "subtitle": "إدارة مرتجعات المشتريات وإشعارات الدائن",
       "createPurchaseReturn": "إنشاء مرتجع مشتريات"
+    },
+    "customerDisplay": {
+      "welcome": "أهلًا وسهلًا",
+      "thanks": "شكرًا لتسوقكم معنا"
     }
   },
   "languages": {
