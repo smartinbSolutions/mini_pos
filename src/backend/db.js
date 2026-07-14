@@ -248,11 +248,14 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS sales_return_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sales_invoice_item_id INTEGER NOT NULL,
   return_id INTEGER,
   product_id INTEGER,
   quantity REAL,
   price REAL,
   total REAL,
+  FOREIGN KEY (sales_invoice_item_id)
+    REFERENCES sales_invoice_items(id),
   FOREIGN KEY (return_id) REFERENCES sales_returns(id),
   FOREIGN KEY (product_id) REFERENCES products(id)
 );
@@ -311,12 +314,15 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS purchase_return_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  purchase_invoice_item_id INTEGER NOT NULL,
   return_id INTEGER,
   product_id INTEGER,
   quantity REAL NOT NULL,
   price REAL NOT NULL,
   buyingPrice REAL DEFAULT 0,
   total REAL NOT NULL,
+    FOREIGN KEY (purchase_invoice_item_id)
+    REFERENCES purchase_invoice_items(id),
   FOREIGN KEY (return_id)
     REFERENCES purchase_returns(id)
     ON DELETE CASCADE,
