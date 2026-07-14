@@ -3,12 +3,14 @@ import { Delete, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../Global/AuthContext";
 import appLogo from "../../../assets/logo.png";
+import AdminRecoveryModal from "./AdminRecoveryModal";
 
 const LoginScreen = () => {
   const { t } = useTranslation();
   const { login, error, loggingIn } = useAuth();
   const [pin, setPin] = useState("");
   const [shake, setShake] = useState(false);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
 
   const submitPin = async (value) => {
     const ok = await login(value);
@@ -34,7 +36,7 @@ const LoginScreen = () => {
   // Keyboard support: digits, backspace, delete, enter
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (loggingIn) return;
+      if (loggingIn || recoveryOpen) return;
 
       if (/^[0-9]$/.test(e.key)) {
         e.preventDefault();
@@ -136,7 +138,18 @@ const LoginScreen = () => {
           {t("screens.login.hint")}
           <KeyRound size={12} />
         </div>
+        <button
+          type="button"
+          onClick={() => setRecoveryOpen(true)}
+          className="mt-3 w-full text-center text-sm font-bold text-[#4663ff]"
+        >
+          {t("screens.login.forgotPin")}
+        </button>
       </div>
+      <AdminRecoveryModal
+        open={recoveryOpen}
+        onClose={() => setRecoveryOpen(false)}
+      />
     </main>
   );
 };

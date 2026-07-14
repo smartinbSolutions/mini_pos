@@ -651,12 +651,39 @@
       "pinConfirm": "Confirm PIN",
       "pinPlaceholder": "••••••",
       "notProvided": "Not provided",
-      "pinLeaveBlankHint": "Leave the PIN fields blank to keep the current PIN."
+      "pinLeaveBlankHint": "Leave the PIN fields blank to keep the current PIN.",
+      "resetPin": "Reset PIN",
+      "resetPinTitle": "Reset PIN for {{name}}",
+      "resetPinNotice": "Confirm your Administrator PIN before assigning the new PIN.",
+      "yourPin": "Your Administrator PIN"
     },
     "login": {
       "title": "Welcome back",
       "subtitle": "Log in to start",
-      "hint": "Don't contact us if you forgot your PIN code"
+      "hint": "Enter your 6-digit PIN",
+      "forgotPin": "Forgot PIN?"
+    },
+    "recovery": {
+      "title": "Administrator PIN recovery",
+      "regularUserNotice": "Regular users must ask an Administrator to reset their PIN from User Management.",
+      "adminUsername": "Administrator username",
+      "recoveryKey": "Recovery Key",
+      "newPin": "New 6-digit PIN",
+      "confirmPin": "Confirm new PIN",
+      "resetPin": "Reset PIN",
+      "pinError": "Enter matching 6-digit PINs.",
+      "genericError": "Recovery could not be completed.",
+      "success": "Your PIN was reset. Log in with the new PIN.",
+      "returnToLogin": "Return to login",
+      "noOfflineRecovery": "If both the Administrator PIN and Recovery Key are lost, contact support. There is no offline recovery method.",
+      "keyManagement": "Recovery Key",
+      "keyManagementHint": "Regenerating permanently invalidates the previous key.",
+      "regenerate": "Generate new Recovery Key",
+      "displayOnce": "Store this Recovery Key securely. It will only be displayed once.",
+      "newKeyTitle": "Your new Recovery Key",
+      "copyKey": "Copy Recovery Key",
+      "copied": "Recovery Key copied",
+      "copyConfirmation": "I confirm that I copied and securely stored this Recovery Key."
     },
     "salesReturn": {
       "returnNotes": "Return notes",

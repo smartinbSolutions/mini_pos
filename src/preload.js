@@ -15,6 +15,11 @@ contextBridge.exposeInMainWorld("api", {
   createUser: (data) => ipcRenderer.invoke("auth:create-user", data),
   updateUser: (data) => ipcRenderer.invoke("auth:update-user", data),
   deleteUser: (data) => ipcRenderer.invoke("auth:delete-user", data),
+  resetUserPin: (data) => ipcRenderer.invoke("auth:reset-user-pin", data),
+  recoverAdminPin: (data) => ipcRenderer.invoke("auth:recover-admin-pin", data),
+  regenerateRecoveryKey: (data) =>
+    ipcRenderer.invoke("auth:regenerate-recovery-key", data),
+  getPinResetAudit: () => ipcRenderer.invoke("auth:get-pin-reset-audit"),
   /* ================= CURRENCY ================= */
   getCurrencies: () => ipcRenderer.invoke("get-currencies"),
   getCurrency: (id) => ipcRenderer.invoke("get-currency", id),

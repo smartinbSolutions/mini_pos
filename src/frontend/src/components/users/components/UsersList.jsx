@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   AlertCircle,
+  KeyRound,
   Pen,
   Plus,
   RotateCcw,
@@ -12,9 +13,13 @@ import { useTranslation } from "react-i18next";
 import useUsers from "../hooks/useUsers";
 import UserFormModal from "./UserFormModal";
 import DeleteModal from "../../../Global/DeleteModel";
+import ResetPinModal from "./ResetPinModal";
+import { useAuth } from "../../../Global/AuthContext";
+import RecoveryKeyModal from "../../Auth/component/RecoveryKeyModal";
 
 const UsersList = () => {
   const { t } = useTranslation();
+  const { user: administrator } = useAuth();
   const {
     users,
     loading,
@@ -34,6 +39,8 @@ const UsersList = () => {
 
   const [deactivateTarget, setDeactivateTarget] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [resetTarget, setResetTarget] = useState(null);
+  const [recoveryKey, setRecoveryKey] = useState("");
 
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
@@ -145,6 +152,13 @@ const UsersList = () => {
                     >
                       <Pen size={16} />
                     </button>
+                    <button
+                      title={t("screens.users.resetPin")}
+                      onClick={() => setResetTarget(user)}
+                      className="rounded-xl px-3 py-1.5 text-[#4663ff] hover:bg-[#eef3ff]"
+                    >
+                      <KeyRound size={16} />
+                    </button>
 
                     {user.is_active ? (
                       <button
@@ -200,6 +214,39 @@ const UsersList = () => {
         user={editingUser}
         saving={saving}
         actionError={actionError}
+      />
+      <ResetPinModal
+        user={resetTarget}
+        administratorId={administrator?.id}
+        onClose={() => setResetTarget(null)}
+        onSuccess={() => setResetTarget(null)}
+      />
+
+      <div className={`${panelClass} mt-5 p-5`}>
+        <h3 className="font-black">{t("screens.recovery.keyManagement")}</h3>
+        <p className="mt-1 text-sm text-slate-500">
+          {t("screens.recovery.keyManagementHint")}
+        </p>
+        <button
+          className="mt-3 rounded-xl border border-[#4663ff] px-4 py-2 text-sm font-bold text-[#4663ff]"
+          onClick={async () => {
+            const administratorPin = window.prompt(t("screens.users.yourPin"));
+            if (!administratorPin) return;
+            const result = await window.api.regenerateRecoveryKey({
+              administratorId: administrator.id,
+              administratorPin,
+            });
+            if (result?.success) setRecoveryKey(result.recoveryKey);
+            else
+              window.alert(result?.error || t("screens.recovery.genericError"));
+          }}
+        >
+          {t("screens.recovery.regenerate")}
+        </button>
+      </div>
+      <RecoveryKeyModal
+        recoveryKey={recoveryKey}
+        onClose={() => setRecoveryKey("")}
       />
 
       <DeleteModal

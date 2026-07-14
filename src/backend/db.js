@@ -24,6 +24,27 @@ db.prepare(
 ).run();
 
 db.prepare(
+  `CREATE TABLE IF NOT EXISTS security_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    recovery_key_hash TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );`,
+).run();
+
+db.prepare(
+  `CREATE TABLE IF NOT EXISTS pin_reset_audit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    performed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    administrator_id INTEGER NOT NULL,
+    target_user_id INTEGER NOT NULL,
+    device TEXT,
+    reset_type TEXT NOT NULL CHECK(reset_type IN ('admin_reset','recovery_key')),
+    FOREIGN KEY (administrator_id) REFERENCES users(id),
+    FOREIGN KEY (target_user_id) REFERENCES users(id)
+  );`,
+).run();
+
+db.prepare(
   `
 CREATE TABLE IF NOT EXISTS unit (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

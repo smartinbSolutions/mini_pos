@@ -54,6 +54,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [recoveryKey, setRecoveryKey] = useState("");
   const [errors, setErrors] = useState({});
 
   const [form, setForm] = useState({
@@ -169,6 +170,10 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
       });
 
       if (res?.success) {
+        if (res.recoveryKey) {
+          setRecoveryKey(res.recoveryKey);
+          return;
+        }
         onSetupComplete?.();
         navigate("/", { replace: true });
       } else if (res?.error) {
@@ -193,6 +198,12 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
     saving,
     form,
     setForm,
+    recoveryKey,
+    completeRecoveryKeyDisplay: () => {
+      setRecoveryKey("");
+      onSetupComplete?.();
+      navigate("/", { replace: true });
+    },
   };
 };
 

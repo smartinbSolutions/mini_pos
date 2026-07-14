@@ -1,6 +1,32 @@
 import { ipcMain } from "electron";
+import os from "os";
 import db from "../db";
-import { hashPin, isPinTaken, verifyPin } from "../utils/authCrypto";
+import {
+  generateRecoveryKey,
+  hashPin,
+  hashSecret,
+  isPinTaken,
+  verifyPin,
+} from "../utils/authCrypto";
+
+const validPin = (pin) => /^\d{6}$/.test(pin || "");
+const genericRecoveryError = "Recovery could not be completed";
+
+function activeAdmin(id) {
+  return db
+    .prepare(
+      "SELECT * FROM users WHERE id = ? AND role = 'admin' AND is_active = 1",
+    )
+    .get(id);
+}
+
+function auditPinReset(administratorId, targetUserId, resetType) {
+  db.prepare(
+    `INSERT INTO pin_reset_audit
+      (administrator_id, target_user_id, device, reset_type)
+     VALUES (?, ?, ?, ?)`,
+  ).run(administratorId, targetUserId, os.hostname(), resetType);
+}
 
 export default function registerAuthHandlersIPC() {
   ipcMain.handle("auth:login", (event, { pin }) => {
@@ -69,12 +95,8 @@ export default function registerAuthHandlersIPC() {
         .get(data.id);
       if (!current) return { success: false, error: "User not found" };
 
-      if (data.pin) {
-        if (!/^\d{6}$/.test(data.pin))
-          return { success: false, error: "PIN must be exactly 6 digits" };
-        if (isPinTaken(db, data.pin, data.id))
-          return { success: false, error: "PIN already in use" };
-      }
+      if (data.pin)
+        return { success: false, error: "Use Reset PIN to change a PIN" };
       if (data.username) {
         const existing = db
           .prepare("SELECT id FROM users WHERE username = ? AND id != ?")
@@ -118,10 +140,109 @@ export default function registerAuthHandlersIPC() {
         data.full_name ?? null,
         data.role ?? null,
         data.is_active ?? null,
-        data.pin ? hashPin(data.pin) : null,
+        null,
         data.id,
       );
       return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("auth:reset-user-pin", (event, data) => {
+    try {
+      const admin = activeAdmin(data.administratorId);
+      const target = db
+        .prepare("SELECT * FROM users WHERE id = ?")
+        .get(data.userId);
+      if (
+        !admin ||
+        !target ||
+        !verifyPin(data.administratorPin, admin.pin_hash)
+      )
+        return { success: false, error: "Administrator authentication failed" };
+      if (!validPin(data.newPin))
+        return { success: false, error: "PIN must be exactly 6 digits" };
+      if (isPinTaken(db, data.newPin, target.id))
+        return { success: false, error: "PIN already in use" };
+
+      db.transaction(() => {
+        db.prepare("UPDATE users SET pin_hash = ? WHERE id = ?").run(
+          hashPin(data.newPin),
+          target.id,
+        );
+        auditPinReset(admin.id, target.id, "admin_reset");
+      })();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("auth:recover-admin-pin", (event, data) => {
+    try {
+      const admin = db
+        .prepare(
+          "SELECT * FROM users WHERE username = ? AND role = 'admin' AND is_active = 1",
+        )
+        .get(data.username);
+      const setting = db
+        .prepare("SELECT recovery_key_hash FROM security_settings WHERE id = 1")
+        .get();
+      if (
+        !admin ||
+        !setting ||
+        !verifyPin(data.recoveryKey, setting.recovery_key_hash)
+      )
+        return { success: false, error: genericRecoveryError };
+      if (!validPin(data.newPin) || isPinTaken(db, data.newPin, admin.id))
+        return { success: false, error: genericRecoveryError };
+
+      db.transaction(() => {
+        db.prepare("UPDATE users SET pin_hash = ? WHERE id = ?").run(
+          hashPin(data.newPin),
+          admin.id,
+        );
+        auditPinReset(admin.id, admin.id, "recovery_key");
+      })();
+      return { success: true };
+    } catch (_err) {
+      return { success: false, error: genericRecoveryError };
+    }
+  });
+
+  ipcMain.handle("auth:regenerate-recovery-key", (event, data) => {
+    try {
+      const admin = activeAdmin(data.administratorId);
+      if (!admin || !verifyPin(data.administratorPin, admin.pin_hash))
+        return { success: false, error: "Administrator authentication failed" };
+      const recoveryKey = generateRecoveryKey();
+      db.prepare(
+        `INSERT INTO security_settings (id, recovery_key_hash, updated_at)
+         VALUES (1, ?, datetime('now'))
+         ON CONFLICT(id) DO UPDATE SET recovery_key_hash = excluded.recovery_key_hash,
+           updated_at = datetime('now')`,
+      ).run(hashSecret(recoveryKey));
+      return { success: true, recoveryKey };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("auth:get-pin-reset-audit", () => {
+    try {
+      const records = db
+        .prepare(
+          `SELECT a.id, a.performed_at, a.device, a.reset_type,
+          administrator.username AS administrator,
+          target.username AS target_user
+         FROM pin_reset_audit a
+         JOIN users administrator ON administrator.id = a.administrator_id
+         JOIN users target ON target.id = a.target_user_id
+         ORDER BY a.performed_at DESC`,
+        )
+        .all();
+      return { success: true, records };
     } catch (err) {
       return { success: false, error: err.message || String(err) };
     }

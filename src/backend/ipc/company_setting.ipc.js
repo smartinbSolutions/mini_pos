@@ -1,6 +1,11 @@
 import { ipcMain } from "electron";
 import db from "../db";
-import { hashPin, isPinTaken } from "../utils/authCrypto";
+import {
+  generateRecoveryKey,
+  hashPin,
+  hashSecret,
+  isPinTaken,
+} from "../utils/authCrypto";
 import { seedData } from "../utils/data";
 const toAppFileUrl = (filePath) =>
   `app-file://local/${encodeURIComponent(filePath)}`;
@@ -22,7 +27,7 @@ function getModuleStats(db, { table, invoiceType, dateColumn = "date" }) {
         SELECT COALESCE(SUM(net_total), 0) AS value
         FROM ${table}
         WHERE date(${dateColumn}) = date('now')
-      `
+      `,
       )
       .get()?.value || 0;
 
@@ -44,7 +49,7 @@ function getModuleStats(db, { table, invoiceType, dateColumn = "date" }) {
       LEFT JOIN ${table} t ON date(t.${dateColumn}) = days.day
       GROUP BY days.day
       ORDER BY days.day
-    `
+    `,
     )
     .all();
 
@@ -62,7 +67,7 @@ function getModuleStats(db, { table, invoiceType, dateColumn = "date" }) {
         WHERE invoice_type = ?
         GROUP BY invoice_id
       ) pa ON pa.invoice_id = t.id
-    `
+    `,
     )
     .get(invoiceType);
 
@@ -85,14 +90,14 @@ function getProfitLoss(db) {
         SELECT COALESCE(SUM(quantity * buyingPrice), 0) AS value
         FROM sales_invoice_items
         WHERE buyingPrice IS NOT NULL
-      `
+      `,
       )
       .get()?.value || 0;
 
   const salesTotal =
     db
       .prepare(
-        `SELECT COALESCE(SUM(net_total), 0) AS value FROM sales_invoices`
+        `SELECT COALESCE(SUM(net_total), 0) AS value FROM sales_invoices`,
       )
       .get()?.value || 0;
 
@@ -119,7 +124,7 @@ function getCashFlow(db) {
         COALESCE(SUM(CASE WHEN type = 'income' AND party_type = 'partner' THEN amount END), 0) AS financingIncome,
         COALESCE(SUM(CASE WHEN type = 'expense' AND party_type = 'partner' THEN amount END), 0) AS financingExpense
       FROM payments
-    `
+    `,
     )
     .get();
 
@@ -182,7 +187,7 @@ function getFundBalances(db) {
       LEFT JOIN fund_history fh ON fh.fund_id = f.id
       GROUP BY f.id
       ORDER BY f.id
-    `
+    `,
     )
     .all();
 }
@@ -201,7 +206,7 @@ function getTopExpenseCategories(db, limit = 5) {
       GROUP BY ei.category_id
       ORDER BY total_spent DESC
       LIMIT ?
-    `
+    `,
     )
     .all(limit);
 }
@@ -214,7 +219,7 @@ export default function registerCompanySettingsIPC() {
       .prepare(
         `
       SELECT * FROM company_settings LIMIT 1
-    `
+    `,
       )
       .get();
 
@@ -241,7 +246,7 @@ export default function registerCompanySettingsIPC() {
         `
         INSERT INTO currencies (name, latinName, code, exchangeRate, symbol, isPrimary)
         VALUES (?,?,?,?,?,?)
-      `
+      `,
       )
       .run(data.currency_name, data.latinName, data.code, 1, data.symbol, 1);
 
@@ -252,7 +257,7 @@ export default function registerCompanySettingsIPC() {
           company_name, company_latin_name, phone, address, email, logo,
           base_currency_id, language, timezone
         ) VALUES (?,?,?,?,?,?,?,?,?)
-      `
+      `,
       )
       .run(
         data.company_name,
@@ -263,18 +268,26 @@ export default function registerCompanySettingsIPC() {
         data.logo,
         currencyResult.lastInsertRowid,
         data.language,
-        data.timezone
+        data.timezone,
       );
 
     db.prepare(
       `
       INSERT INTO users (username, pin_hash, role, full_name, is_active)
       VALUES (?, ?, 'admin', ?, 1)
-    `
+    `,
     ).run(data.admin_username, hashPin(data.admin_pin), data.admin_username);
 
+    const recoveryKey = generateRecoveryKey();
+    db.prepare(
+      `INSERT INTO security_settings (id, recovery_key_hash, updated_at)
+       VALUES (1, ?, datetime('now'))
+       ON CONFLICT(id) DO UPDATE SET recovery_key_hash = excluded.recovery_key_hash,
+         updated_at = datetime('now')`,
+    ).run(hashSecret(recoveryKey));
+
     seedData(db);
-    return { success: true, id: result.lastInsertRowid };
+    return { success: true, id: result.lastInsertRowid, recoveryKey };
   });
 
   ipcMain.handle("save-logo", (event, { base64, name }) => {
@@ -312,7 +325,7 @@ export default function registerCompanySettingsIPC() {
         timezone = ?,
         updatedAt = datetime('now')
       WHERE id = ?
-    `
+    `,
     ).run(
       data.company_name,
       data.company_latin_name,
@@ -323,7 +336,7 @@ export default function registerCompanySettingsIPC() {
       data.base_currency_id,
       data.language,
       data.timezone,
-      data.id
+      data.id,
     );
 
     return { success: true };
@@ -355,13 +368,13 @@ export default function registerCompanySettingsIPC() {
     const inventoryValue =
       db
         .prepare(
-          `SELECT COALESCE(SUM(quantity * costPrice), 0) AS value FROM products`
+          `SELECT COALESCE(SUM(quantity * costPrice), 0) AS value FROM products`,
         )
         .get()?.value || 0;
     const lowStockProducts =
       db
         .prepare(
-          `SELECT COUNT(*) AS value FROM products WHERE COALESCE(quantity, 0) <= 5`
+          `SELECT COUNT(*) AS value FROM products WHERE COALESCE(quantity, 0) <= 5`,
         )
         .get()?.value || 0;
 

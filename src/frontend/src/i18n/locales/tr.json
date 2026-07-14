@@ -652,12 +652,39 @@
       "pinConfirm": "PIN'i Onayla",
       "pinPlaceholder": "••••••",
       "notProvided": "Belirtilmedi",
-      "pinLeaveBlankHint": "Mevcut PIN'i korumak için PIN alanlarını boş bırakın."
+      "pinLeaveBlankHint": "Mevcut PIN'i korumak için PIN alanlarını boş bırakın.",
+      "resetPin": "PIN'i Sıfırla",
+      "resetPinTitle": "{{name}} için PIN'i sıfırla",
+      "resetPinNotice": "Yeni PIN'i atamadan önce Yönetici PIN'inizi doğrulayın.",
+      "yourPin": "Yönetici PIN'iniz"
     },
     "login": {
       "title": "Yeniden hoşgeldiniz",
       "subtitle": "Başlamak için giriş yap",
-      "hint": "PIN kodunu unuttuysanız, bizimle iletişime geçmeyin"
+      "hint": "6 haneli PIN'inizi girin",
+      "forgotPin": "PIN'i unuttunuz mu?"
+    },
+    "recovery": {
+      "title": "Yönetici PIN kurtarma",
+      "regularUserNotice": "Normal kullanıcılar PIN sıfırlama için Kullanıcı Yönetimi üzerinden bir Yöneticiye başvurmalıdır.",
+      "adminUsername": "Yönetici kullanıcı adı",
+      "recoveryKey": "Kurtarma Anahtarı",
+      "newPin": "Yeni 6 haneli PIN",
+      "confirmPin": "Yeni PIN'i doğrulayın",
+      "resetPin": "PIN'i Sıfırla",
+      "pinError": "Eşleşen 6 haneli PIN'ler girin.",
+      "genericError": "Kurtarma tamamlanamadı.",
+      "success": "PIN'iniz sıfırlandı. Yeni PIN ile giriş yapın.",
+      "returnToLogin": "Girişe dön",
+      "noOfflineRecovery": "Yönetici PIN'i ve Kurtarma Anahtarı kaybolursa destek ekibine ulaşın. Çevrimdışı kurtarma yöntemi yoktur.",
+      "keyManagement": "Kurtarma Anahtarı",
+      "keyManagementHint": "Yeni anahtar oluşturmak önceki anahtarı kalıcı olarak geçersiz kılar.",
+      "regenerate": "Yeni Kurtarma Anahtarı oluştur",
+      "displayOnce": "Bu Kurtarma Anahtarını güvenli saklayın. Yalnızca bir kez gösterilecektir.",
+      "newKeyTitle": "Yeni Kurtarma Anahtarınız",
+      "copyKey": "Kurtarma Anahtarını Kopyala",
+      "copied": "Kurtarma Anahtarı kopyalandı",
+      "copyConfirmation": "Bu Kurtarma Anahtarını kopyalayıp güvenli bir yerde sakladığımı onaylıyorum."
     },
     "salesReturn": {
       "returnNotes": "İade notları",

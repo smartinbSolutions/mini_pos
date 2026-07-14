@@ -34,7 +34,7 @@ const UserFormModal = ({
               pin: "",
               pin_confirm: "",
             }
-          : emptyForm
+          : emptyForm,
       );
       setErrors({});
     }
@@ -197,57 +197,56 @@ const UserFormModal = ({
               </div>
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label>
-                <span className={labelClass}>
-                  <KeyRound size={12} />
-                  {isEdit ? t("screens.users.newPin") : t("screens.users.pin")}
-                </span>
-                <input
-                  name="pin"
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={form.pin}
-                  onChange={handleChange}
-                  placeholder={t("screens.users.pinPlaceholder")}
-                  className={fieldClass("pin")}
-                />
-                {errors.pin && (
-                  <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
-                    <AlertCircle size={12} />
-                    {errors.pin}
-                  </p>
-                )}
-              </label>
+            {!isEdit && (
+              <div className="grid grid-cols-2 gap-3">
+                <label>
+                  <span className={labelClass}>
+                    <KeyRound size={12} />
+                    {isEdit
+                      ? t("screens.users.newPin")
+                      : t("screens.users.pin")}
+                  </span>
+                  <input
+                    name="pin"
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={form.pin}
+                    onChange={handleChange}
+                    placeholder={t("screens.users.pinPlaceholder")}
+                    className={fieldClass("pin")}
+                  />
+                  {errors.pin && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                      <AlertCircle size={12} />
+                      {errors.pin}
+                    </p>
+                  )}
+                </label>
 
-              <label>
-                <span className={labelClass}>
-                  <KeyRound size={12} />
-                  {t("screens.users.pinConfirm")}
-                </span>
-                <input
-                  name="pin_confirm"
-                  type="password"
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={form.pin_confirm}
-                  onChange={handleChange}
-                  placeholder={t("screens.users.pinPlaceholder")}
-                  className={fieldClass("pin_confirm")}
-                />
-                {errors.pin_confirm && (
-                  <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
-                    <AlertCircle size={12} />
-                    {errors.pin_confirm}
-                  </p>
-                )}
-              </label>
-            </div>
-            {isEdit && (
-              <p className="text-xs text-slate-400">
-                {t("screens.users.pinLeaveBlankHint")}
-              </p>
+                <label>
+                  <span className={labelClass}>
+                    <KeyRound size={12} />
+                    {t("screens.users.pinConfirm")}
+                  </span>
+                  <input
+                    name="pin_confirm"
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={form.pin_confirm}
+                    onChange={handleChange}
+                    placeholder={t("screens.users.pinPlaceholder")}
+                    className={fieldClass("pin_confirm")}
+                  />
+                  {errors.pin_confirm && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-red-600">
+                      <AlertCircle size={12} />
+                      {errors.pin_confirm}
+                    </p>
+                  )}
+                </label>
+              </div>
             )}
           </div>
 

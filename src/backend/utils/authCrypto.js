@@ -6,8 +6,17 @@ export function hashPin(pin) {
   return `${salt}:${hash}`;
 }
 
+export const hashSecret = hashPin;
+
+export function generateRecoveryKey() {
+  const value = crypto.randomBytes(24).toString("hex").toUpperCase();
+  return value.match(/.{1,8}/g).join("-");
+}
+
 export function verifyPin(pin, stored) {
+  if (typeof pin !== "string" || typeof stored !== "string") return false;
   const [salt, hash] = stored.split(":");
+  if (!salt || !hash || !/^[a-f0-9]+$/i.test(hash)) return false;
   const hashBuffer = Buffer.from(hash, "hex");
   const suppliedHashBuffer = crypto.scryptSync(pin, salt, 64);
   return (
