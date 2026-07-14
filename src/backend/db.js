@@ -321,7 +321,7 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
   price REAL NOT NULL,
   buyingPrice REAL DEFAULT 0,
   total REAL NOT NULL,
-    FOREIGN KEY (purchase_invoice_item_id)
+  FOREIGN KEY (purchase_invoice_item_id)
     REFERENCES purchase_invoice_items(id),
   FOREIGN KEY (return_id)
     REFERENCES purchase_returns(id)
