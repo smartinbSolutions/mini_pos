@@ -436,12 +436,10 @@ CREATE TABLE IF NOT EXISTS payments (
   note TEXT,
   date TEXT,
     created_by INTEGER,
-updated_by INTEGER,
   invoice_type TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id),
-  FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id)
 )
 `,
 ).run();
@@ -510,10 +508,9 @@ db.prepare(
     note TEXT,
     date TEXT,
     created_by INTEGER,
-    updated_by INTEGER,
     createdAt TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (created_by) REFERENCES users(id),
-    FOREIGN KEY (updated_by) REFERENCES users(id)
+    FOREIGN KEY (created_by) REFERENCES users(id)
+
   );
   `,
 ).run();
