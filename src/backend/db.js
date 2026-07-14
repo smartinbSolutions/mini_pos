@@ -434,13 +434,13 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS party_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  party_type TEXT NOT NULL CHECK(party_type IN ('customer','supplier','partner')),     
+  party_type TEXT NOT NULL CHECK(party_type IN ('customer','supplier','partner')),
   party_id INTEGER,
-  record_type TEXT NOT NULL CHECK(record_type IN ('opening_balance','invoice','return','payment')),    
+  record_type TEXT NOT NULL CHECK(record_type IN ('opening_balance','invoice','return','payment')),
   invoice_id INTEGER,
-  invoice_type TEXT NOT NULL CHECK(invoice_type IN ('opening_balance','expense','purchase','purchase_return','sales','sales_return','payment')),     
+  invoice_type TEXT NOT NULL CHECK(invoice_type IN ('opening_balance','expense','purchase','purchase_return','sales','sales_return','payment')),
   payment_id INTEGER,
-  movement_type TEXT NOT NULL CHECK(movement_type IN ('increase','decrease')),   
+  movement_type TEXT NOT NULL CHECK(movement_type IN ('increase','decrease')),
   amount REAL,
   date TEXT,
   note TEXT,
