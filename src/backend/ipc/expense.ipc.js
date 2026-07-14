@@ -80,6 +80,7 @@ export default function registerExpenseIPC() {
             invoice_id: invoiceId,
             invoice_type: "expense",
             record_type: "invoice",
+            movement_type: "increase",
             amount: netTotal,
             note: data.note || `Expense Invoice #${invoiceId}`,
           });
@@ -472,6 +473,7 @@ export default function registerExpenseIPC() {
               invoice_id: data.id,
               invoice_type: "expense",
               record_type: "invoice",
+              movement_type: "increase",
               amount: newNetTotal,
               note: data.note || `Expense Invoice #${data.id}`,
             });

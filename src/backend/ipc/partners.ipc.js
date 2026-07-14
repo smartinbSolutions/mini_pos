@@ -12,7 +12,7 @@ export default function registerPartnersIPC() {
         `
       INSERT INTO partners (name, phone, address)
       VALUES (?,?,?)
-    `,
+    `
       )
       .run(data.name, data.phone, data.address);
 
@@ -114,7 +114,7 @@ export default function registerPartnersIPC() {
       GROUP BY p.id
       ORDER BY p.name
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -206,7 +206,7 @@ export default function registerPartnersIPC() {
       WHERE p.id = ?
 
       GROUP BY p.id
-      `,
+      `
       )
       .get(id);
 
@@ -222,7 +222,7 @@ export default function registerPartnersIPC() {
       UPDATE partners
       SET name = ?, phone = ?, address = ?
       WHERE id = ?
-    `,
+    `
     ).run(data.name, data.phone, data.address, data.id);
 
     return { success: true };
@@ -234,20 +234,20 @@ export default function registerPartnersIPC() {
         `
       SELECT COUNT(*) AS count FROM party_history
       WHERE party_type = 'partner' AND party_id = ?
-    `,
+    `
       )
       .get(id);
 
     if (count > 0) {
       throw new Error(
-        "Cannot delete a partner that already has transaction history.",
+        "Cannot delete a partner that already has transaction history."
       );
     }
 
     db.prepare(
       `
       DELETE FROM partners WHERE id = ?
-    `,
+    `
     ).run(id);
 
     return { success: true };

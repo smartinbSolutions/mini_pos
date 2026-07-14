@@ -32,12 +32,7 @@ export default function createPartyHistory(db, data) {
     invoice_type: data.invoice_type ?? null,
     payment_id: data.payment_id ?? null,
     movement_type: data.movement_type,
-    fund_id: data.fund_id ?? null,
     amount: Number(data.amount || 0),
     note: data.note ?? "",
-    currency_code: data.currency_code ?? "",
-    exchange_rate: Number(data.exchange_rate || 0),
-    effective_rate: Number(data.effective_rate || 0),
-    amount_fund_currency: Number(data.amount_fund_currency || 0),
   });
 }

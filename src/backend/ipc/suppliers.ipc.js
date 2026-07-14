@@ -12,7 +12,7 @@ export default function registerSuppliersIPC() {
         `
       INSERT INTO suppliers (name, phone, address)
       VALUES (?,?,?)
-    `,
+    `
       )
       .run(data.name, data.phone, data.address);
 
@@ -24,7 +24,7 @@ export default function registerSuppliersIPC() {
         invoice_id: null,
         invoice_type: "opening_balance",
         record_type: "opening_balance",
-        movement_type: "withdrawal",
+        movement_type: "increase",
         amount: openingBalance,
         note: "Opening Balance",
         date: new Date().toISOString(),
@@ -151,7 +151,7 @@ export default function registerSuppliersIPC() {
       ORDER BY s.name
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -246,7 +246,7 @@ export default function registerSuppliersIPC() {
     WHERE s.id = ?
 
     GROUP BY s.id;
-    `,
+    `
       )
       .get(id);
 
@@ -262,7 +262,7 @@ export default function registerSuppliersIPC() {
       UPDATE suppliers
       SET name = ?, phone = ?, address = ?
       WHERE id = ?
-    `,
+    `
     ).run(data.name, data.phone, data.address, data.id);
 
     return { success: true };
@@ -277,7 +277,7 @@ export default function registerSuppliersIPC() {
       WHERE party_type = 'supplier'
         AND party_id = ?
       LIMIT 1
-    `,
+    `
       )
       .get(id);
 
@@ -291,7 +291,7 @@ export default function registerSuppliersIPC() {
     db.prepare(
       `
       DELETE FROM suppliers WHERE id = ?
-    `,
+    `
     ).run(id);
 
     return { success: true };

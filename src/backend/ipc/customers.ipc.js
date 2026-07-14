@@ -13,7 +13,7 @@ export default function registerCustomersIPC() {
         `
       INSERT INTO customers (name, phone, address)
       VALUES (?,?,?)
-    `,
+    `
       )
       .run(data.name, data.phone, data.address);
 
@@ -26,7 +26,7 @@ export default function registerCustomersIPC() {
         invoice_id: null,
         invoice_type: "opening_balance",
         record_type: "opening_balance",
-        movement_type: "deposit",
+        movement_type: "increase",
         amount: openingBalance,
         note: "Opening Balance",
         date: new Date().toISOString(),
@@ -124,7 +124,7 @@ export default function registerCustomersIPC() {
     ORDER BY c.name
 
     LIMIT ? OFFSET ?
-    `,
+    `
       )
       .all(limit, offset);
 
@@ -133,7 +133,7 @@ export default function registerCustomersIPC() {
         `
     SELECT COUNT(*) AS total
     FROM customers
-    `,
+    `
       )
       .get();
 
@@ -223,7 +223,7 @@ export default function registerCustomersIPC() {
     WHERE c.id = ?
 
     GROUP BY c.id;
-    `,
+    `
       )
       .get(id);
 
@@ -239,7 +239,7 @@ export default function registerCustomersIPC() {
       UPDATE customers
       SET name = ?, phone = ?, address = ?
       WHERE id = ?
-    `,
+    `
     ).run(data.name, data.phone, data.address, data.id);
 
     return { success: true };
@@ -254,7 +254,7 @@ export default function registerCustomersIPC() {
       WHERE party_type = 'customer'
         AND party_id = ?
       LIMIT 1
-    `,
+    `
       )
       .get(id);
 
@@ -269,7 +269,7 @@ export default function registerCustomersIPC() {
       `
     DELETE FROM customers
     WHERE id = ?
-  `,
+  `
     ).run(id);
 
     return { success: true };

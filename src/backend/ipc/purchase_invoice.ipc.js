@@ -125,6 +125,7 @@ export default function registerPurchaseInvoicesIPC() {
           invoice_id: invoiceId,
           invoice_type: "purchase",
           record_type: "invoice",
+          movement_type: "increase",
           amount: netTotal,
           note: `Purchase Invoice #${invoiceId}`,
         });

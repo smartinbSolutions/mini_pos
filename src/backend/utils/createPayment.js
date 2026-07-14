@@ -63,14 +63,9 @@ export default function createPayment(db, data) {
     invoice_id: data.invoice_id,
     invoice_type: data.invoice_type,
     amount: data.amount,
-    movement_type: data.type === "income" ? "deposit" : "withdrawal",
+    movement_type: data.type === "income" ? "increase" : "decrease",
     note: data.note,
     payment_id: result.lastInsertRowid,
-    fund_id: data.fund_id,
-    currency_code: data.currency_code ?? "",
-    exchange_rate: Number(data.exchange_rate || 0),
-    effective_rate: Number(data.effective_rate || 0),
-    amount_fund_currency: Number(data.amount_fund_currency || 0),
   });
 
   return result.lastInsertRowid;

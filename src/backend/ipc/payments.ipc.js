@@ -1,9 +1,8 @@
 const { ipcMain } = require("electron");
 import db from "../db";
 import reversePayment from "../services/payment/invoice/reversePayment.service";
-import applyCustomerPayment from "../services/payment/party/applyCustomerPayment.service";
-import applyPartnerPayment from "../services/payment/party/applyPartnerPayment.service";
-import applySupplierPayment from "../services/payment/party/applySupplierPayment.service";
+import allocateCustomerPayment from "../services/payment/party/allocateCustomerPayment.service";
+import allocateSupplierPayment from "../services/payment/party/allocateSupplierPayment.service";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 
@@ -57,35 +56,31 @@ export default function registerPaymentIPC() {
         const paymentId = result;
 
         if (data.party_type === "supplier") {
-          applySupplierPayment(db, {
-            party_id: data.party_id,
-            invoiceId: data.invoiceId,
+          allocateSupplierPayment(db, {
+            supplierId: data.party_id,
             paymentId,
-            fund_id: data.fund_id,
             amount,
             mode: data.mode,
+            fund_id: data.fund_id,
             note: data.note,
             currency_code: data.currency_code,
             exchange_rate: data.exchange_rate,
             effective_rate: data.effective_rate,
-            collected_amount: data.collected_amount,
-            date: data.date || new Date().toISOString(),
+            amount_fund_currency: data.collected_amount,
           });
         }
 
         if (data.party_type === "customer") {
-          applyCustomerPayment(db, {
-            party_id: data.party_id,
-            invoiceId: data.invoiceId,
+          allocateCustomerPayment(db, {
+            customerId: data.party_id,
             paymentId,
-            fund_id: data.fund_id,
             amount,
-            mode: data.mode,
+            fund_id: data.fund_id,
             note: data.note,
             currency_code: data.currency_code,
             exchange_rate: data.exchange_rate,
             effective_rate: data.effective_rate,
-            collected_amount: data.collected_amount,
+            amount_fund_currency: data.collected_amount,
             date: data.date || new Date().toISOString(),
           });
         }
