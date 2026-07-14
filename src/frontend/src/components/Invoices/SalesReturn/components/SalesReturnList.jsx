@@ -19,14 +19,13 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
-// تعديل الاستيراد الذكي ليقرأ الهوك الخاص بمرتجع المبيعات
 import useSalesReturnList from "../hooks/useSalesReturnList";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
     paid: { label: t("ui.paid"), classes: "bg-emerald-50 text-emerald-600" },
     partial: {
-      label: t("ui.partial", "Partial"),
+      label: t("ui.partial"),
       classes: "bg-amber-50 text-amber-600",
     },
     unpaid: { label: t("ui.unpaid"), classes: "bg-slate-100 text-slate-500" },
@@ -44,13 +43,13 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
       {status === "partial" && (
         <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
           <div className="flex justify-between">
-            <span>{t("ui.refunded", "Refunded")}</span>
+            <span>{t("ui.refunded")}</span>
             <span className="font-bold text-emerald-600">
               {money(paidAmount)}
             </span>
           </div>
           <div className="mt-1 flex justify-between">
-            <span>{t("ui.remaining", "Remaining")}</span>
+            <span>{t("ui.remaining")}</span>
             <span className="font-bold text-amber-600">
               {money(remainingAmount)}
             </span>
@@ -64,14 +63,13 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
 const SalesReturnList = () => {
   const { t } = useTranslation();
 
-  // ضبط التسميات هنا لتطابق مخرجات الـ hook الخاص بالمبيعات
   const {
-    salesReturns, // تم التعديل من purchaseReturns
+    salesReturns,
     loading,
     saving,
     error,
     refetch,
-    deleteSalesReturn, // تم التعديل من deletePurchaseReturn
+    deleteSalesReturn,
 
     page,
     setPage,
@@ -92,7 +90,6 @@ const SalesReturnList = () => {
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
 
-  // الفلترة بناءً على حقول العميل والمبيعات
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
     if (!term) return salesReturns;
@@ -100,8 +97,8 @@ const SalesReturnList = () => {
     return salesReturns.filter((inv) => {
       return [
         inv.id,
-        inv.customer_name, // تعديل من supplier_name
-        inv.customer_id, // تعديل من supplier_id
+        inv.customer_name,
+        inv.customer_id,
         inv.date,
         inv.total,
         inv.net_total,
@@ -137,23 +134,20 @@ const SalesReturnList = () => {
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <div className="mx-auto max-w-7xl space-y-6">
         <InvoiceListHeader
-          badgeLabel={t("ui.salesReturn", "Sales Return")}
+          badgeLabel={t("ui.salesReturn")}
           badgeIcon={Undo2}
-          title={t("screens.invoices.salesReturn", "Sales Returns")}
-          subtitle={t(
-            "screens.invoices.salesReturnSubtitle",
-            "Manage your sales returns and credit notes",
-          )}
+          title={t("screens.invoices.salesReturn")}
+          subtitle={t("screens.invoices.salesReturnSubtitle")}
           stats={[
             {
               icon: Undo2,
               value: salesReturns?.length,
-              label: t("ui.returns", "Returns"),
+              label: t("ui.returns"),
             },
             {
               icon: HandCoins,
               value: unpaidCount,
-              label: t("ui.open", "Open"),
+              label: t("ui.open"),
               variant: "amber",
             },
             {
@@ -184,20 +178,20 @@ const SalesReturnList = () => {
 
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1050px] text-left text-sm">
+            <table className="w-full min-w-[1050px] text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-5 py-4">{t("ui.returnId", "Return #")}</th>
-                  <th className="px-5 py-4">
-                    {t("ui.originalInvoice", "Orig. Invoice")}
+                  <th className="px-5 py-4 text-start">{t("ui.returnId")}</th>
+                  <th className="px-5 py-4 text-start">
+                    {t("ui.originalInvoice")}
                   </th>
-                  <th className="px-5 py-4">{t("ui.customer", "Customer")}</th>
-                  <th className="px-5 py-4">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.subtotal")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.tax")}</th>
-                  <th className="px-5 py-4 text-right">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.status")}</th>
-                  <th className="px-5 py-4 text-right">
+                  <th className="px-5 py-4 text-start">{t("ui.customer")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.date")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.subtotal")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.tax")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.net")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.status")}</th>
+                  <th className="px-5 py-4 text-start">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -206,25 +200,25 @@ const SalesReturnList = () => {
               <tbody className="divide-y divide-[#e5ebff]">
                 {loading ? (
                   <tr>
-                    <td colSpan="9" className="p-8 text-center text-slate-500">
+                    <td colSpan="9" className="p-8 text-start text-slate-500">
                       {t("common.loading")}
                     </td>
                   </tr>
                 ) : filtered?.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="p-8 text-center text-slate-500">
+                    <td colSpan="9" className="p-8 text-start text-slate-500">
                       {t("screens.invoices.empty")}
                     </td>
                   </tr>
                 ) : (
                   filtered?.map((inv) => (
                     <tr key={inv.id} className="transition hover:bg-[#f8faff]">
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-4 text-start">
                         <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4663ff]">
                           #{inv.id}
                         </span>
                       </td>
-                      <td className="px-5 py-4 text-slate-600 font-medium">
+                      <td className="px-5 py-4 text-start text-slate-600 font-medium">
                         {inv.original_invoice_name
                           ? `${inv.original_invoice_name} `
                           : ""}
@@ -232,11 +226,13 @@ const SalesReturnList = () => {
                           (#{inv.sales_invoice_id})
                         </span>
                       </td>
-                      <td className="px-5 py-4 font-bold text-slate-900">
+                      <td className="px-5 py-4 text-start font-bold text-slate-900">
                         {inv.customer_name || "-"}
                       </td>
-                      <td className="px-5 py-4 text-slate-500">{inv.date}</td>
-                      <td className="px-5 py-4 text-right">
+                      <td className="px-5 py-4 text-start text-slate-500">
+                        {inv.date}
+                      </td>
+                      <td className="px-5 py-4 text-start">
                         <div className="font-semibold tabular-nums text-slate-700">
                           {money(inv.subtotal || 0)}
                         </div>
@@ -247,7 +243,7 @@ const SalesReturnList = () => {
                         )}
                       </td>
 
-                      <td className="px-5 py-4 text-right tabular-nums">
+                      <td className="px-5 py-4 text-start tabular-nums">
                         {Number(inv.taxValue || 0) > 0 ? (
                           <div>
                             <div className="font-bold text-slate-700">
@@ -261,7 +257,7 @@ const SalesReturnList = () => {
                           <span className="text-slate-400">{money(0)}</span>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-right tabular-nums text-emerald-700 font-semibold">
+                      <td className="px-5 py-4 text-start tabular-nums text-emerald-700 font-semibold">
                         {money(inv.net_total || 0)}
                       </td>
 
@@ -275,7 +271,7 @@ const SalesReturnList = () => {
                         />
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-start gap-1">
                           <button
                             onClick={() =>
                               navigate(`/view-sales-return/${inv.id}`)
@@ -317,7 +313,6 @@ const SalesReturnList = () => {
           />
         </section>
       </div>
-      {console.log(selectedInvoice)}
 
       <AddPayment
         isOpen={openPaymentModel}

@@ -129,7 +129,18 @@
     "row": "سطر",
     "user": "المستخدم",
     "users": "المستخدمون",
-    "username": "اسم المستخدم"
+    "username": "اسم المستخدم",
+    "refunded": "مرتجع",
+    "salesReturn": "مرتجع مبيعات",
+    "returns": "المرتجعات",
+    "returnId": "مرتجع #",
+    "originalInvoice": "الفاتورة الأصلية",
+    "createSalesReturn": "إنشاء مرتجع مبيعات",
+    "referencingInvoice": "مرتجع من الفاتورة الأصلية",
+    "returnAllPrompt": "هل تريد إرجاع جميع الأصناف دفعة واحدة؟",
+    "returnAll": "إرجاع الكل",
+    "soldQty": "الكمية المباعة",
+    "returnQty": "كمية الإرجاع"
   },
   "screens": {
     "units": {
@@ -326,7 +337,9 @@
       "savedPaid": "تم حفظ الفاتورة ودفعها",
       "savedUnpaid": "تم حفظ الفاتورة",
       "allStatuses": "كل الحالات",
-      "allSuppliers": "كل الموردين"
+      "allSuppliers": "كل الموردين",
+      "salesReturns": "مرتجعات المبيعات",
+      "salesReturnSubtitle": "إدارة مرتجعات المبيعات وملاحظات الرصيد"
     },
     "company": {
       "title": "إعدادات الشركة",
@@ -636,6 +649,15 @@
       "title": "مرحبًا بعودتك",
       "subtitle": "سجل الدخول للبدء",
       "hint": "لا تواصل معنا إذا نسيت الرمز السري"
+    },
+    "salesReturn": {
+      "returnNotes": "ملاحظات المرتجع",
+      "returnNotePlaceholder": "أدخل ملاحظات المرتجع هنا",
+      "subtotal": "الإجمالي الفرعي",
+      "discount": "الخصم",
+      "tax": "الضريبة",
+      "returnTotal": "إجمالي المرتجع",
+      "confirmReturn": "تأكيد المرتجع"
     }
   },
   "languages": {
@@ -670,7 +692,8 @@
     "transfers": "التحويلات",
     "store": "المتجر",
     "importReports": "تقارير الاستيراد",
-    "purchaseReturn": "إعادة المشتريات"
+    "purchaseReturn": "مرتجع المشتريات",
+    "salesReturn": "مرتجع المبيعات"
   },
   "dashboard": {
     "loading": "جار تحميل لوحة التحكم...",
@@ -768,7 +791,10 @@
     "lastAdmin": "يجب أن يبقى مسؤول نشط واحد على الأقل.",
     "deactivateFailed": "فشل تعطيل المستخدم.",
     "pinInvalid": "يجب أن يتكون رمز PIN من 6 أرقام بالضبط.",
-    "pinMismatch": "تأكيد رمز PIN غير مطابق."
+    "pinMismatch": "تأكيد رمز PIN غير مطابق.",
+    "returnQtyExceeded": "لا يمكن إرجاع كمية أكبر من الكمية المباعة",
+    "noItemsSelected": "يرجى تحديد منتج واحد على الأقل للإرجاع",
+    "invalidReturnTotal": "قيمة المرتجع الإجمالية غير صالحة"
   },
   "success": {
     "updated": "تم تحديث {{field}} بنجاح"

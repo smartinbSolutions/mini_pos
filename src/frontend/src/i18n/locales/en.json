@@ -129,7 +129,18 @@
     "row": "Row",
     "user": "User",
     "users": "Users",
-    "username": "Username"
+    "username": "Username",
+    "refunded": "Refunded",
+    "salesReturn": "Sales return",
+    "returns": "returns",
+    "returnId": "Return #",
+    "originalInvoice": "Original Inv.",
+    "createSalesReturn": "Create sales return",
+    "referencingInvoice": "Return from original invoice",
+    "returnAllPrompt": "Return all items at once?",
+    "returnAll": "Return all",
+    "soldQty": "Sold quantity",
+    "returnQty": "Return quantity"
   },
   "screens": {
     "units": {
@@ -326,7 +337,9 @@
       "savedPaid": "Invoice saved and paid",
       "savedUnpaid": "Invoice saved",
       "allStatuses": "All statuses",
-      "allSuppliers": "All suppliers"
+      "allSuppliers": "All suppliers",
+      "salesReturns": "Sales returns",
+      "salesReturnSubtitle": "Manage your sales returns and credit notes"
     },
     "company": {
       "title": "Company Settings",
@@ -635,6 +648,15 @@
       "title": "Welcome back",
       "subtitle": "Log in to start",
       "hint": "Don't contact us if you forgot your PIN code"
+    },
+    "salesReturn": {
+      "returnNotes": "Return notes",
+      "returnNotePlaceholder": "Enter return notes here",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "tax": "Tax",
+      "returnTotal": "Return total",
+      "confirmReturn": "Confirm return"
     }
   },
   "languages": {
@@ -669,7 +691,8 @@
     "partner": "Partners",
     "store": "Store",
     "importReports": "Import reports",
-    "purchaseReturn": "Purchase return"
+    "purchaseReturn": "Purchase return",
+    "salesReturn": "Sales return"
   },
   "dashboard": {
     "loading": "Loading dashboard...",
@@ -767,7 +790,10 @@
     "lastAdmin": "At least one active administrator is required.",
     "deactivateFailed": "Failed to deactivate user.",
     "pinInvalid": "PIN must be exactly 6 digits.",
-    "pinMismatch": "PIN confirmation does not match."
+    "pinMismatch": "PIN confirmation does not match.",
+    "returnQtyExceeded": "Cannot return more than amount sold",
+    "noItemsSelected": "Please specify at least one product to return",
+    "invalidReturnTotal": "Total return value is invalid"
   },
   "success": {
     "updated": "{{field}} updated successfully"

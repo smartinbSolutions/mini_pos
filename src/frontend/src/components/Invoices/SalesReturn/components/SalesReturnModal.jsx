@@ -78,12 +78,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
     const updated = returnItems.map((item) => {
       if (item.product_id === productId) {
         if (qty > item.maxAvailable) {
-          setValidationError(
-            t(
-              "errors.returnQtyExceeded",
-              `لا يمكن إرجاع كمية أكبر من المباعة (${item.maxAvailable})`,
-            ),
-          );
+          setValidationError(t("errors.returnQtyExceeded"));
 
           return {
             ...item,
@@ -137,19 +132,12 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
     const itemsToReturn = returnItems.filter((item) => item.returnQuantity > 0);
 
     if (itemsToReturn.length === 0) {
-      setValidationError(
-        t(
-          "errors.noItemsSelected",
-          "يرجى تحديد كمية منتج واحد على الأقل لإرجاعه",
-        ),
-      );
+      setValidationError(t("errors.noItemsSelected"));
       return;
     }
 
     if (netTotal <= 0) {
-      setValidationError(
-        t("errors.invalidReturnTotal", "إجمالي قيمة المرتجع غير صالحة"),
-      );
+      setValidationError(t("errors.invalidReturnTotal"));
       return;
     }
 
@@ -182,10 +170,10 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
           <div>
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Undo2 className="text-[#4663ff]" size={20} />
-              {t("ui.createSalesReturn", "إنشاء مرتجع مبيعات")}
+              {t("ui.createSalesReturn")}
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              {t("ui.referencingInvoice", "إرجاع من الفاتورة الأصلية")}{" "}
+              {t("ui.referencingInvoice")}{" "}
               <span className="font-semibold text-slate-700">
                 #{invoice.id}
               </span>
@@ -202,17 +190,14 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
         <div className="flex-1 p-6 overflow-y-auto space-y-6">
           <div className="flex items-center justify-between p-4 rounded-2xl bg-amber-50 border border-amber-200/60">
             <div className="text-sm font-medium text-amber-900">
-              {t(
-                "ui.returnAllPrompt",
-                "هل ترغب في إرجاع كافة محتويات الفاتورة دفعة واحدة؟",
-              )}
+              {t("ui.returnAllPrompt")}
             </div>
             <button
               type="button"
               onClick={handleReturnAll}
               className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700 transition"
             >
-              {t("ui.returnAll", "إرجاع كامل الفاتورة")}
+              {t("ui.returnAll")}
             </button>
           </div>
 
@@ -224,22 +209,16 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
           )}
 
           <div className="rounded-2xl border border-slate-100 overflow-hidden">
-            <table className="w-full text-left text-sm">
+            <table className="w-full text-sm">
               <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-100">
                 <tr>
-                  <th className="px-4 py-3">{t("ui.product", "المنتج")}</th>
-                  <th className="px-4 py-3 text-center">
-                    {t("ui.soldQty", "الكمية المباعة")}
+                  <th className="px-4 py-3 text-start">{t("ui.product")}</th>
+                  <th className="px-4 py-3 text-start">{t("ui.soldQty")}</th>
+                  <th className="px-4 py-3 text-start">{t("ui.price")}</th>
+                  <th className="px-4 py-3 text-start w-36">
+                    {t("ui.returnQty")}
                   </th>
-                  <th className="px-4 py-3 text-right">
-                    {t("ui.price", "السعر")}
-                  </th>
-                  <th className="px-4 py-3 text-center w-36">
-                    {t("ui.returnQty", "الكمية المرجعة")}
-                  </th>
-                  <th className="px-4 py-3 text-right">
-                    {t("ui.total", "الإجمالي")}
-                  </th>
+                  <th className="px-4 py-3 text-start">{t("ui.total")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -248,14 +227,14 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
                     key={item.product_id}
                     className="hover:bg-slate-50/50 transition"
                   >
-                    <td className="px-4 py-3 font-semibold text-slate-800">
+                    <td className="px-4 py-3 text-start font-semibold text-slate-800">
                       {item.product_name ||
                         `${t("ui.product")} #${item.product_id}`}
                     </td>
-                    <td className="px-4 py-3 text-center text-slate-500 font-medium">
+                    <td className="px-4 py-3 text-start text-slate-500 font-medium">
                       {item.maxAvailable}
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-600 tabular-nums">
+                    <td className="px-4 py-3 text-start text-slate-600 tabular-nums">
                       {money(item.price || 0)}
                     </td>
                     <td className="px-4 py-3">
@@ -270,10 +249,10 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
                         onChange={(e) =>
                           handleQtyChange(item.product_id, e.target.value)
                         }
-                        className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-center font-bold text-slate-800 shadow-sm focus:border-[#4663ff] focus:outline-none focus:ring-1 focus:ring-[#4663ff]"
+                        className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-start font-bold text-slate-800 shadow-sm focus:border-[#4663ff] focus:outline-none focus:ring-1 focus:ring-[#4663ff]"
                       />
                     </td>
-                    <td className="px-4 py-3 text-right text-slate-900 font-bold tabular-nums">
+                    <td className="px-4 py-3 text-start text-slate-900 font-bold tabular-nums">
                       {money(item.returnQuantity * (item.price || 0))}
                     </td>
                   </tr>
@@ -286,16 +265,13 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-bold uppercase tracking-wide text-slate-500 block mb-1.5">
-                  {t("ui.notes", "ملاحظات المرتجع")}
+                  {t("screens.salesReturn.returnNotes")}
                 </label>
                 <textarea
                   rows={3}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  placeholder={t(
-                    "ui.returnNotePlaceholder",
-                    "اكتب سبب الإرجاع هنا...",
-                  )}
+                  placeholder={t("screens.salesReturn.returnNotePlaceholder")}
                   className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 placeholder-slate-400 shadow-sm focus:border-[#4663ff] focus:outline-none focus:ring-1 focus:ring-[#4663ff]"
                 />
               </div>
@@ -303,14 +279,14 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
 
             <div className="rounded-2xl bg-[#f8faff] p-4 space-y-2.5 border border-slate-100 text-sm font-medium text-slate-600">
               <div className="flex justify-between">
-                <span>{t("ui.subtotal", "المجموع الفرعي للمرتجع")}</span>
+                <span>{t("screens.salesReturn.subtotal")}</span>
                 <span className="font-bold text-slate-800 tabular-nums">
                   {money(subtotal)}
                 </span>
               </div>
 
               <div className="flex justify-between items-center">
-                <span>{t("ui.discount", "خصم المرتجع")}</span>
+                <span>{t("screens.salesReturn.discount")}</span>
                 <input
                   type="number"
                   min="0"
@@ -325,13 +301,13 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
                       ),
                     )
                   }
-                  className="w-24 text-right font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-0.5"
+                  className="w-24 text-start font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-0.5"
                 />
               </div>
 
               <div className="flex justify-between">
                 <span>
-                  {t("ui.tax", "الضريبة")} ({taxPercent}%)
+                  {t("screens.salesReturn.tax")} ({taxPercent}%)
                 </span>
                 <span className="font-bold text-slate-800 tabular-nums">
                   +{money(taxValue)}
@@ -340,7 +316,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
 
               <div className="border-t border-slate-200/80 my-2 pt-2 flex justify-between items-center text-base font-bold text-slate-900">
                 <span className="text-[#4663ff]">
-                  {t("ui.returnTotal", "صافي قيمة المرتجع")}
+                  {t("screens.salesReturn.returnTotal")}
                 </span>
                 <span className="text-emerald-700 text-lg tabular-nums">
                   {money(netTotal)}
@@ -356,14 +332,14 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
             onClick={onClose}
             className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
           >
-            {t("common.cancel", "إلغاء")}
+            {t("common.cancel")}
           </button>
           <button
             type="button"
             onClick={handleSubmit}
             className="rounded-xl bg-[#4663ff] px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-[#354fd4] transition"
           >
-            {t("ui.confirmReturn", "تأكيد وحفظ المرتجع")}
+            {t("screens.salesReturn.confirmReturn")}
           </button>
         </div>
       </div>

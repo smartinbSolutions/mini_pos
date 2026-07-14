@@ -5,9 +5,9 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 
 const STATUS_CONFIG = {
-  paid: { bg: "bg-green-100", text: "text-green-700" }, // تمت إعادة النقدية للعميل بالكامل كاش
-  partial: { bg: "bg-amber-100", text: "text-amber-700" }, // تم رد كاش جزئي والباقي نزل في الحساب الجاري
-  unpaid: { bg: "bg-slate-100", text: "text-slate-600" }, // المرتجع بالكامل نزل آجل لتخفيض مديونية العميل
+  paid: { bg: "bg-green-100", text: "text-green-700" },
+  partial: { bg: "bg-amber-100", text: "text-amber-700" },
+  unpaid: { bg: "bg-slate-100", text: "text-slate-600" },
 };
 
 export default function SalesReturnView() {
@@ -25,7 +25,6 @@ export default function SalesReturnView() {
     const loadReturnInvoice = async () => {
       try {
         setLoading(true);
-        // استدعاء دالة جلب مرتجع المبيعات بالـ ID من الباكيند
         const data = await window.api.getSalesReturnById(id);
 
         if (!cancelled) {

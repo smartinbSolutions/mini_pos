@@ -129,7 +129,18 @@
     "row": "Satır",
     "user": "Kullanıcı",
     "users": "Kullanıcılar",
-    "username": "Kullanıcı adı"
+    "username": "Kullanıcı adı",
+    "refunded": "İade edildi",
+    "salesReturn": "Satış iadesi",
+    "returns": "İadeler",
+    "returnId": "İade #",
+    "originalInvoice": "Orijinal Fatura",
+    "createSalesReturn": "Satış iadesi oluştur",
+    "referencingInvoice": "Orijinal faturadan iade",
+    "returnAllPrompt": "Tüm ürünleri tek seferde iade etmek istiyor musunuz?",
+    "returnAll": "Tümünü iade et",
+    "soldQty": "Satılan miktar",
+    "returnQty": "İade miktarı"
   },
   "screens": {
     "units": {
@@ -326,7 +337,9 @@
       "savedPaid": "Fatura kaydedildi ve ödendi",
       "savedUnpaid": "Fatura kaydedildi",
       "allStatuses": "Tüm durumlar",
-      "allSuppliers": "Tüm tedarikçiler"
+      "allSuppliers": "Tüm tedarikçiler",
+      "salesReturns": "Satış iadeleri",
+      "salesReturnSubtitle": "Satış iadelerinizi ve alacak dekontlarınızı yönetin"
     },
     "company": {
       "title": "Şirket Ayarları",
@@ -636,6 +649,15 @@
       "title": "Yeniden hoşgeldiniz",
       "subtitle": "Başlamak için giriş yap",
       "hint": "PIN kodunu unuttuysanız, bizimle iletişime geçmeyin"
+    },
+    "salesReturn": {
+      "returnNotes": "İade notları",
+      "returnNotePlaceholder": "İade notlarını buraya girin",
+      "subtotal": "Ara toplam",
+      "discount": "İndirim",
+      "tax": "Vergi",
+      "returnTotal": "İade toplamı",
+      "confirmReturn": "İadeyi onayla"
     }
   },
   "languages": {
@@ -670,7 +692,8 @@
     "transfers": "Transferler",
     "store": "Mağaza",
     "importReports": "İçe aktarma raporları",
-    "purchaseReturn": "Satın alma iadeleri"
+    "purchaseReturn": "Satın alma iadeleri",
+    "salesReturn": "Satış iadeleri"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",
@@ -768,7 +791,10 @@
     "lastAdmin": "En az bir aktif yönetici bulunmalıdır.",
     "deactivateFailed": "Kullanıcı devre dışı bırakılamadı.",
     "pinInvalid": "PIN tam olarak 6 rakamdan oluşmalıdır.",
-    "pinMismatch": "PIN onayı eşleşmiyor."
+    "pinMismatch": "PIN onayı eşleşmiyor.",
+    "returnQtyExceeded": "Satılan miktardan fazla iade yapılamaz",
+    "noItemsSelected": "Lütfen iade edilecek en az bir ürün belirtin",
+    "invalidReturnTotal": "Toplam iade tutarı geçersiz"
   },
   "success": {
     "updated": "{{field}} başarıyla güncellendi"
