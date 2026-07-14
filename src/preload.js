@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("api", {
   getUsers: () => ipcRenderer.invoke("auth:get-users"),
   createUser: (data) => ipcRenderer.invoke("auth:create-user", data),
   updateUser: (data) => ipcRenderer.invoke("auth:update-user", data),
+  deleteUser: (data) => ipcRenderer.invoke("auth:delete-user", data),
   /* ================= CURRENCY ================= */
   getCurrencies: () => ipcRenderer.invoke("get-currencies"),
   getCurrency: (id) => ipcRenderer.invoke("get-currency", id),

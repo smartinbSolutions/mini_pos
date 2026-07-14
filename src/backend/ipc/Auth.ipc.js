@@ -26,7 +26,7 @@ export default function registerAuthHandlersIPC() {
     try {
       const users = db
         .prepare(
-          "SELECT id, username, role, full_name, is_active, created_at FROM users ORDER BY created_at ASC"
+          "SELECT id, username, role, full_name, is_active, created_at FROM users ORDER BY created_at ASC",
         )
         .all();
       return { success: true, users };
@@ -48,13 +48,13 @@ export default function registerAuthHandlersIPC() {
 
       const result = db
         .prepare(
-          `INSERT INTO users (username, pin_hash, role, full_name, is_active) VALUES (?, ?, ?, ?, 1)`
+          `INSERT INTO users (username, pin_hash, role, full_name, is_active) VALUES (?, ?, ?, ?, 1)`,
         )
         .run(
           data.username,
           hashPin(data.pin),
           data.role,
-          data.full_name || null
+          data.full_name || null,
         );
       return { success: true, id: result.lastInsertRowid };
     } catch (err) {
@@ -92,7 +92,7 @@ export default function registerAuthHandlersIPC() {
       if (wasActiveAdmin && !willBeActiveAdmin) {
         const otherActiveAdmins = db
           .prepare(
-            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1 AND id != ?"
+            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1 AND id != ?",
           )
           .get(data.id).count;
         if (otherActiveAdmins === 0) {
@@ -112,14 +112,14 @@ export default function registerAuthHandlersIPC() {
           is_active = COALESCE(?, is_active),
           pin_hash = COALESCE(?, pin_hash)
         WHERE id = ?
-      `
+      `,
       ).run(
         data.username ?? null,
         data.full_name ?? null,
         data.role ?? null,
         data.is_active ?? null,
         data.pin ? hashPin(data.pin) : null,
-        data.id
+        data.id,
       );
       return { success: true };
     } catch (err) {
@@ -127,7 +127,7 @@ export default function registerAuthHandlersIPC() {
     }
   });
 
-  ipcMain.handle("auth:delete-user", (event, { id }) => {
+  ipcMain.handle("auth:delete-user", (event, id) => {
     try {
       const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
       if (!user) return { success: false, error: "User not found" };
@@ -142,7 +142,7 @@ export default function registerAuthHandlersIPC() {
       if (user.role === "admin") {
         const otherAdmins = db
           .prepare(
-            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND id != ?"
+            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND id != ?",
           )
           .get(id).count;
         if (otherAdmins === 0) {
