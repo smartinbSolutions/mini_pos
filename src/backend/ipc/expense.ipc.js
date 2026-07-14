@@ -345,7 +345,6 @@ export default function registerExpenseIPC() {
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
-    console.log("data", data);
 
     try {
       const transaction = db.transaction(() => {

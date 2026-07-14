@@ -8,13 +8,8 @@ export default function createPartyHistory(db, data) {
       invoice_type,
       payment_id,
       movement_type,
-      fund_id,
       amount,
       note,
-      currency_code,
-      exchange_rate,
-      effective_rate,
-      amount_fund_currency
     )
     VALUES (
       @party_type,
@@ -24,13 +19,8 @@ export default function createPartyHistory(db, data) {
       @invoice_type,
       @payment_id,
       @movement_type,
-      @fund_id,
       @amount,
       @note,
-      @currency_code,
-      @exchange_rate,
-      @effective_rate,
-      @amount_fund_currency
     )
   `);
 

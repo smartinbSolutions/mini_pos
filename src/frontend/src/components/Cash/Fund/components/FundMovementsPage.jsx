@@ -11,6 +11,7 @@ import {
   FileText,
   X,
   AlertCircle,
+  ArrowRight,
 } from "lucide-react";
 
 import useFundHistory from "../hooks/useFundHistory";
@@ -21,7 +22,9 @@ import Pagination from "../../../../Global/Pagination";
 import ExportModal from "../../../../Global/ExportModal";
 
 const FundMovementsPage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
+  const BackArrowIcon = isRtl ? ArrowRight : ArrowLeft;
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -51,13 +54,6 @@ const FundMovementsPage = () => {
   const hasDateFilter = Boolean(dateRange.startDate || dateRange.endDate);
   const [showExportModal, setShowExportModal] = useState(false);
 
-  const handleExport = async (type) => {
-    const res = type === "excel" ? await exportExcel() : await exportPdf();
-    if (res?.success && window.api?.openCustomerDisplay) {
-      // no-op placeholder — nothing to open here, just avoids unused var lint
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f6f8fc] to-[#eef2f7] p-6">
       <div className="max-w-7xl mx-auto space-y-5">
@@ -65,11 +61,11 @@ const FundMovementsPage = () => {
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/funds")}
+              onClick={() => navigate(-1)}
               className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 active:scale-95"
               aria-label={t("common.back")}
             >
-              <ArrowLeft size={24} strokeWidth={2.3} />
+              <BackArrowIcon size={24} strokeWidth={2.3} />
             </button>
 
             <div>

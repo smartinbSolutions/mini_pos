@@ -1,4 +1,3 @@
-import createPartyHistory from "../../../utils/createPaymentHistory";
 import allocateSupplierPayment from "./allocateSupplierPayment.service";
 
 export default function applySupplierPayment(db, data) {

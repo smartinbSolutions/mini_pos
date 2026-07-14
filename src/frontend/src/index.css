@@ -32,6 +32,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html[lang="ar"] body {
+  font-family: "DigitMono", "Almarai", sans-serif;
+}
+
 button,
 input,
 select,
