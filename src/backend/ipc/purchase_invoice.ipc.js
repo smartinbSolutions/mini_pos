@@ -68,7 +68,7 @@ export default function registerPurchaseInvoicesIPC() {
               taxValue    
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
-            `
+            `,
           )
           .run(
             data.supplier_id,
@@ -77,7 +77,7 @@ export default function registerPurchaseInvoicesIPC() {
             discount,
             tax,
             netTotal,
-            data.taxValue
+            data.taxValue,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -225,7 +225,7 @@ export default function registerPurchaseInvoicesIPC() {
       ORDER BY p.id DESC
 
       LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(limit, offset);
 
@@ -271,7 +271,7 @@ export default function registerPurchaseInvoicesIPC() {
         GROUP BY invoice_id
       ) pa_sum ON pa_sum.invoice_id = pi.id
       WHERE pi.id = ?
-    `
+    `,
       )
       .get(id);
 
@@ -297,19 +297,17 @@ export default function registerPurchaseInvoicesIPC() {
 
     LEFT JOIN (
       SELECT
-        pri.product_id,
-        pr.purchase_invoice_id,
+        pri.purchase_invoice_item_id,
         SUM(pri.quantity) AS returned_quantity
       FROM purchase_return_items pri
       INNER JOIN purchase_returns pr
         ON pr.id = pri.return_id
-      GROUP BY pr.purchase_invoice_id, pri.product_id
+      GROUP BY pri.purchase_invoice_item_id
     ) r
-      ON r.purchase_invoice_id = pii.invoice_id
-     AND r.product_id = pii.product_id
+      ON r.purchase_invoice_item_id = pii.id
 
     WHERE pii.invoice_id = ?
-    `
+    `,
       )
       .all(id);
 
@@ -332,7 +330,7 @@ export default function registerPurchaseInvoicesIPC() {
       WHERE pa.invoice_id = ?
         AND pa.invoice_type = 'purchase'
       ORDER BY pa.id ASC
-    `
+    `,
       )
       .all(id);
 
@@ -393,7 +391,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       const adjustStock = db.prepare(
-        `UPDATE products SET quantity = quantity + ? WHERE id = ?`
+        `UPDATE products SET quantity = quantity + ? WHERE id = ?`,
       );
       const updateMovement = db.prepare(`
         UPDATE product_movements
@@ -432,7 +430,7 @@ export default function registerPurchaseInvoicesIPC() {
             next.price,
             fullDateTime,
             data.id,
-            productId
+            productId,
           );
         } else {
           createProductMovement(db, {
@@ -450,7 +448,7 @@ export default function registerPurchaseInvoicesIPC() {
 
       // ---- Replace line items ----
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        data.id
+        data.id,
       );
 
       const insertItem = db.prepare(`
@@ -467,7 +465,7 @@ export default function registerPurchaseInvoicesIPC() {
           item.product_id,
           quantity,
           price,
-          quantity * price
+          quantity * price,
         );
       }
 
@@ -478,7 +476,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE purchase_invoices
         SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?
         WHERE id = ?
-      `
+      `,
       ).run(
         data.supplier_id,
         fullDateTime,
@@ -487,7 +485,7 @@ export default function registerPurchaseInvoicesIPC() {
         data.tax || 0,
         data.net_total || 0,
         data.taxValue || 0,
-        data.id
+        data.id,
       );
 
       // ---- Update the invoice ledger row in place ----
@@ -496,7 +494,7 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE party_history
         SET amount = ?, note = ?
         WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
-      `
+      `,
       ).run(data.net_total, `Purchase Invoice #${data.id}`, data.id);
     });
 
@@ -554,7 +552,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        id
+        id,
       );
       db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);

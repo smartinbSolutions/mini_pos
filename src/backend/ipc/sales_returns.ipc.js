@@ -175,7 +175,8 @@ VALUES (?, ?, ?, ?, ?, ?)
           party_id: data.customer_id || null,
           invoice_id: returnId,
           invoice_type: "sales_return",
-          record_type: "decrease",
+          record_type: "invoice",
+          movement_type: "decrease",
           amount: netTotal,
           note: `Sales Return #${returnId} for Invoice #${data.sales_invoice_id}`,
         });
