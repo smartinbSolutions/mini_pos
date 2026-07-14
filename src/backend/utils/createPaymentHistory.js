@@ -9,7 +9,7 @@ export default function createPartyHistory(db, data) {
       payment_id,
       movement_type,
       amount,
-      note,
+      note
     )
     VALUES (
       @party_type,
@@ -20,7 +20,7 @@ export default function createPartyHistory(db, data) {
       @payment_id,
       @movement_type,
       @amount,
-      @note,
+      @note
     )
   `);
 
