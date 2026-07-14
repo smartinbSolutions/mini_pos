@@ -55,18 +55,18 @@ export default function createPayment(db, data) {
       amount: data.amount || 0,
     });
   }
-
-  createPartyHistory(db, {
-    party_type: data.party_type,
-    party_id: data.party_id,
-    record_type: "payment",
-    invoice_id: data.invoice_id,
-    invoice_type: data.invoice_type,
-    amount: data.amount,
-    movement_type: data.type === "income" ? "increase" : "decrease",
-    note: data.note,
-    payment_id: result.lastInsertRowid,
-  });
-
+  if (data.party_type !== "walk-in") {
+    createPartyHistory(db, {
+      party_type: data.party_type,
+      party_id: data.party_id,
+      record_type: "payment",
+      invoice_id: data.invoice_id,
+      invoice_type: data.invoice_type,
+      amount: data.amount,
+      movement_type: data.type === "income" ? "increase" : "decrease",
+      note: data.note,
+      payment_id: result.lastInsertRowid,
+    });
+  }
   return result.lastInsertRowid;
 }
