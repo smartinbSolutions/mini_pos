@@ -9,8 +9,8 @@ export function hashPin(pin) {
 export const hashSecret = hashPin;
 
 export function generateRecoveryKey() {
-  const value = crypto.randomBytes(24).toString("hex").toUpperCase();
-  return value.match(/.{1,8}/g).join("-");
+  const value = crypto.randomBytes(8).toString("hex").toUpperCase();
+  return value.match(/.{1,4}/g).join("-");
 }
 
 export function verifyPin(pin, stored) {
