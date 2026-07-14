@@ -131,7 +131,7 @@ export default function registerPurchaseReturnIPC() {
           party_id: data.supplier_id,
           invoice_id: returnId,
           invoice_type: "purchase_return",
-          record_type: "invoice",
+          record_type: "return",
           amount: netTotal,
           note: `Purchase Return #${returnId} for Invoice #${data.purchase_invoice_id}`,
         });

@@ -10,7 +10,6 @@ export default function registerSalesReturnsIpc() {
     try {
       const transaction = db.transaction(() => {
         if (
-          !data.customer_id ||
           !data.sales_invoice_id ||
           !data.date ||
           !Array.isArray(data.items) ||
@@ -116,7 +115,7 @@ export default function registerSalesReturnsIpc() {
           )
           .run(
             data.sales_invoice_id,
-            data.customer_id,
+            data.customer_id || null,
             data.invoice_name || null,
             data.description || null,
             fullDateTime,
@@ -172,7 +171,7 @@ export default function registerSalesReturnsIpc() {
 
         createPartyHistory(db, {
           party_type: "customer",
-          party_id: data.customer_id,
+          party_id: data.customer_id || null,
           invoice_id: returnId,
           invoice_type: "sales_return",
           record_type: "return",
@@ -187,7 +186,7 @@ export default function registerSalesReturnsIpc() {
           insertPaymentId = createPayment(db, {
             type: data.payment.type,
             party_type: "customer",
-            party_id: data.customer_id,
+            party_id: data.customer_id || null,
             fund_id: data.payment.fund_id,
             amount: data.payment.amount,
             amount_fund_currency: data.payment.collected_amount,
@@ -202,7 +201,7 @@ export default function registerSalesReturnsIpc() {
 
           createPartyHistory(db, {
             party_type: "customer",
-            party_id: data.customer_id,
+            party_id: data.customer_id || null,
             invoice_id: returnId,
             invoice_type: "sales_return",
             payment_id: insertPaymentId,

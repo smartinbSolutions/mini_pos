@@ -316,7 +316,6 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
   quantity REAL NOT NULL,
   price REAL NOT NULL,
   buyingPrice REAL DEFAULT 0,
-  item_id INTEGER NOT NULL,
   total REAL NOT NULL,
   FOREIGN KEY (return_id)
     REFERENCES purchase_returns(id)
