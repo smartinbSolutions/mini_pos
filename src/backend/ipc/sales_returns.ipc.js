@@ -47,31 +47,26 @@ export default function registerSalesReturnsIpc() {
         const fullDateTime = `${dateOnly} ${time}`;
 
         const getOriginalItemQty = db.prepare(`
-        SELECT quantity 
-        FROM sales_invoice_items
-        WHERE invoice_id = ?
-        AND product_id = ?
-      `);
+  SELECT quantity
+  FROM sales_invoice_items
+  WHERE id = ?
+`);
 
         const getAlreadyReturnedQty = db.prepare(`
-        SELECT COALESCE(SUM(sri.quantity),0) AS total_returned
-        FROM sales_return_items sri
-        JOIN sales_returns sr 
-          ON sri.return_id = sr.id
-        WHERE sr.sales_invoice_id = ?
-        AND sri.product_id = ?
-      `);
+  SELECT COALESCE(SUM(quantity),0) AS total_returned
+  FROM sales_return_items
+  WHERE sales_invoice_item_id = ?
+`);
 
         for (const item of data.items) {
           const quantityToReturnNow = Number(item.quantity || 0);
 
-          if (!item.product_id || quantityToReturnNow <= 0) {
+          if (!item.sales_invoice_item_id || quantityToReturnNow <= 0) {
             throw new Error("INVALID ITEM DATA");
           }
 
           const originalRow = getOriginalItemQty.get(
-            data.sales_invoice_id,
-            item.product_id,
+            item.sales_invoice_item_id,
           );
 
           if (!originalRow) {
@@ -81,8 +76,7 @@ export default function registerSalesReturnsIpc() {
           }
 
           const returnedRow = getAlreadyReturnedQty.get(
-            data.sales_invoice_id,
-            item.product_id,
+            item.sales_invoice_item_id,
           );
 
           const alreadyReturnedQty = returnedRow?.total_returned || 0;
@@ -129,16 +123,17 @@ export default function registerSalesReturnsIpc() {
         const returnId = returnResult.lastInsertRowid;
 
         const insertItem = db.prepare(`
-        INSERT INTO sales_return_items
-        (
-          return_id,
-          product_id,
-          quantity,
-          price,
-          total
-        )
-        VALUES (?, ?, ?, ?, ?)
-      `);
+INSERT INTO sales_return_items
+(
+  return_id,
+  sales_invoice_item_id,
+  product_id,
+  quantity,
+  price,
+  total
+)
+VALUES (?, ?, ?, ?, ?, ?)
+`);
 
         const updateStock = db.prepare(`
         UPDATE products
@@ -153,8 +148,14 @@ export default function registerSalesReturnsIpc() {
 
           const total = quantity * price;
 
-          insertItem.run(returnId, item.product_id, quantity, price, total);
-
+          insertItem.run(
+            returnId,
+            item.sales_invoice_item_id,
+            item.product_id,
+            quantity,
+            price,
+            total,
+          );
           updateStock.run(quantity, item.product_id);
 
           createProductMovement(db, {
@@ -174,7 +175,7 @@ export default function registerSalesReturnsIpc() {
           party_id: data.customer_id || null,
           invoice_id: returnId,
           invoice_type: "sales_return",
-          record_type: "return",
+          record_type: "decrease",
           amount: netTotal,
           note: `Sales Return #${returnId} for Invoice #${data.sales_invoice_id}`,
         });
@@ -206,6 +207,7 @@ export default function registerSalesReturnsIpc() {
             invoice_type: "sales_return",
             payment_id: insertPaymentId,
             record_type: "payment",
+            movement_type: "increase",
             amount: data.payment.amount,
             note: `Refund Payment for Sales Return #${returnId}`,
           });

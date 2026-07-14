@@ -46,6 +46,48 @@ export default function registerPurchaseReturnIPC() {
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
 
+        const getOriginalItemQty = db.prepare(`
+  SELECT quantity
+  FROM purchase_invoice_items
+  WHERE id = ?
+`);
+
+        const getAlreadyReturnedQty = db.prepare(`
+  SELECT COALESCE(SUM(quantity), 0) AS total_returned
+  FROM purchase_return_items
+  WHERE purchase_invoice_item_id = ?
+`);
+
+        for (const item of data.items) {
+          const quantityToReturnNow = Number(item.quantity || 0);
+
+          if (!item.purchase_invoice_item_id || quantityToReturnNow <= 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
+
+          const originalRow = getOriginalItemQty.get(
+            item.purchase_invoice_item_id,
+          );
+
+          if (!originalRow) {
+            throw new Error(
+              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`,
+            );
+          }
+
+          const returnedRow = getAlreadyReturnedQty.get(
+            item.purchase_invoice_item_id,
+          );
+
+          const alreadyReturnedQty = returnedRow?.total_returned || 0;
+
+          const maxAllowedToReturn = originalRow.quantity - alreadyReturnedQty;
+
+          if (quantityToReturnNow > maxAllowedToReturn) {
+            throw new Error(`EXCEEDED_RETURN_LIMIT: ${item.product_id}`);
+          }
+        }
+
         const returnResult = db
           .prepare(
             `
@@ -82,8 +124,9 @@ export default function registerPurchaseReturnIPC() {
 
         const insertItem = db.prepare(`
         INSERT INTO purchase_return_items
-        (return_id, product_id, quantity, price, buyingPrice, total)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (return_id,  purchase_invoice_item_id,
+ product_id, quantity, price, buyingPrice, total)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
 
         const updateStock = db.prepare(`
@@ -105,6 +148,7 @@ export default function registerPurchaseReturnIPC() {
 
           insertItem.run(
             returnId,
+            item.purchase_invoice_item_id,
             item.product_id,
             quantity,
             price,
@@ -132,6 +176,7 @@ export default function registerPurchaseReturnIPC() {
           invoice_id: returnId,
           invoice_type: "purchase_return",
           record_type: "return",
+          movement_type: "decrease",
           amount: netTotal,
           note: `Purchase Return #${returnId} for Invoice #${data.purchase_invoice_id}`,
         });
