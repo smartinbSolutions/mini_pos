@@ -597,7 +597,9 @@
       "newTransfer": "Yeni transfer",
       "noTransfers": "Henüz transfer yok",
       "edit_transfer": "Transfer işlemi düzenleme",
-      "save_changes": "Değişiklikleri kaydet"
+      "save_changes": "Değişiklikleri kaydet",
+      "auto_note": "{{source}} kaynağından {{destination}} hesabına {{amount}} aktarıldı",
+      "auto_note_cross_currency": "{{source}} kaynağından {{deductAmount}} aktarıldı, {{destination}} hesabına {{receiveAmount}} olarak alındı"
     },
     "users": {
       "title": "Kullanıcı Yönetimi",

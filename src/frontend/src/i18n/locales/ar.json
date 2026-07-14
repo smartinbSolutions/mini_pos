@@ -597,7 +597,9 @@
       "newTransfer": "تحويل جديد",
       "noTransfers": "لا يوجد تحويلات بعد",
       "edit_transfer": "تعديل عملية التحويل",
-      "save_changes": "حفظ التغييرات"
+      "save_changes": "حفظ التغييرات",
+      "auto_note": "تم تحويل {{amount}} من {{source}} إلى {{destination}}",
+      "auto_note_cross_currency": "تم تحويل {{deductAmount}} من {{source}}، وتم استلام {{receiveAmount}} في {{destination}}"
     },
     "users": {
       "title": "إدارة المستخدمين",

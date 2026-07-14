@@ -596,7 +596,9 @@
       "newTransfer": "New transfer",
       "noTransfers": "No transfers yet",
       "edit_transfer": "Edit transfer",
-      "save_changes": "Save changes"
+      "save_changes": "Save changes",
+      "auto_note": "Transferred {{amount}} from {{source}} to {{destination}}",
+      "auto_note_cross_currency": "Transferred {{deductAmount}} from {{source}}, received {{receiveAmount}} in {{destination}}"
     },
     "users": {
       "title": "User Management",
