@@ -42,6 +42,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("transfer-fund-to-fund", transferData),
   getFundTransfers: (params) =>
     ipcRenderer.invoke("get-fund-transfers", params),
+  getFundTransfer: (id) => ipcRenderer.invoke("get-fund-transfer", id),
   updateFundTransfer: (data) =>
     ipcRenderer.invoke("update-fund-transfer", data),
   deleteFundTransfer: (id) => ipcRenderer.invoke("delete-fund-transfer", id),

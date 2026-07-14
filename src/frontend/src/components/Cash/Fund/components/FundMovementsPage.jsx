@@ -48,7 +48,7 @@ const FundMovementsPage = () => {
     exportExcel,
     exportPdf,
   } = useFundHistory(id);
-
+  console.log(history);
   const fundCurrency = fund || {};
   const finalBalance = history[0]?.running_balance || 0;
   const hasDateFilter = Boolean(dateRange.startDate || dateRange.endDate);

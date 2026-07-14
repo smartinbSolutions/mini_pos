@@ -74,6 +74,8 @@ import PurchaseReturnList from "./components/Invoices/PurchaseReturn/components/
 import PurchaseReturnView from "./components/Invoices/PurchaseReturn/components/PurchaseRefundView";
 import SalesReturnList from "./components/Invoices/SalesReturn/components/SalesReturnList";
 import SalesReturnView from "./components/Invoices/SalesReturn/components/SalesReturnView";
+import PaymentDocumentPage from "./components/Cash/Payment/components/PaymentDocumentPage";
+import FundTransferDocumentPage from "./components/Cash/Fund/components/FundTransferDocumentPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -223,6 +225,11 @@ export default function App() {
               <Route path="payments" element={<PaymentList />} />
               <Route path="payment/:type/:id" element={<PartyLedgerPage />} />
               <Route path="currency" element={<CurrencyList />} />
+              <Route path="/payments/:id" element={<PaymentDocumentPage />} />
+              <Route
+                path="/funds/transfers/:id"
+                element={<FundTransferDocumentPage />}
+              />
 
               {/* ================= PRODUCTS ================= */}
               <Route path="products" element={<ProductList />} />

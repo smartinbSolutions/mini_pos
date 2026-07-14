@@ -18,9 +18,11 @@ import {
   ArrowLeft,
   TrendingUp,
   TrendingDown,
+  Eye,
 } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { useNavigate } from "react-router-dom";
 
 const AllocationBadge = ({ payment }) => {
   const { t } = useTranslation();
@@ -106,6 +108,7 @@ const PaymentFlow = ({ payment, dir = "ltr" }) => {
 const PaymentList = () => {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
+  const navigate = useNavigate();
 
   const {
     payments = [],
@@ -400,7 +403,10 @@ const PaymentList = () => {
                           </td>
 
                           <td className="px-5 py-4 text-start">
-                            <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff]">
+                            <span
+                              onClick={() => navigate(`/payments/${pay.id}`)}
+                              className="cursor-pointer rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff] transition hover:bg-[#dbe4ff]"
+                            >
                               #{pay.id}
                             </span>
                           </td>
@@ -433,7 +439,7 @@ const PaymentList = () => {
                                   {formatMoney(
                                     pay.amount_fund_currency,
                                     pay.fund_currency_code,
-                                    pay.fund_currency_symbol,
+                                    pay.fund_currency_symbol
                                   )}
                                 </div>
                               )}
@@ -458,6 +464,13 @@ const PaymentList = () => {
 
                           <td className="px-5 py-4">
                             <div className="flex justify-start gap-1">
+                              <button
+                                onClick={() => navigate(`/payments/${pay.id}`)}
+                                className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
+                                title={t("common.view")}
+                              >
+                                <Eye size={16} />
+                              </button>
                               <button
                                 onClick={() => setDeletePaymentId(pay)}
                                 className="rounded-xl p-2 text-red-500 hover:bg-red-50"

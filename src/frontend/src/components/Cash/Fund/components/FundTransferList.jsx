@@ -6,6 +6,7 @@ import {
   Edit2,
   Plus,
   ArrowLeft,
+  Eye,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useFundTransfersList from "../hooks/useFundTransfersList";
@@ -14,11 +15,12 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import Pagination from "../../../../Global/Pagination";
 import FundTransferModal from "./FundTransferModal";
 import { formatMoney } from "../../../../Global/FormatNumber";
+import { useNavigate } from "react-router-dom";
 
 const FundTransferList = () => {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
-  const { money } = usePrimaryCurrency();
+  const navigate = useNavigate();
 
   const {
     transfers,
@@ -198,6 +200,15 @@ const FundTransferList = () => {
 
                         <td className="px-5 py-3 text-start">
                           <div className="flex justify-start gap-1">
+                            <button
+                              onClick={() =>
+                                navigate(`/funds/transfers/${tr.id}`)
+                              }
+                              className="rounded-xl p-2 text-[#4663ff] transition hover:bg-[#eef3ff]"
+                              title={t("common.view")}
+                            >
+                              <Eye size={16} />
+                            </button>
                             <button
                               onClick={() => openEditModal(tr)}
                               className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"

@@ -219,21 +219,35 @@ export default function registerPaymentIPC() {
   });
 
   ipcMain.handle("get-payment", (event, id) => {
-    return db
+    const payment = db
       .prepare(
         `
-      SELECT 
-        p.*,
-        f.name AS fund_name,
-        c.code AS fund_currency_code,
-        c.symbol AS fund_currency_symbol
-      FROM payments p
-      LEFT JOIN funds f ON f.id = p.fund_id
-      LEFT JOIN currencies c ON c.id = f.currency_id
-      WHERE p.id = ?
-    `
+        SELECT
+          p.*,
+          f.name AS fund_name,
+          c.code AS fund_currency_code,
+          c.symbol AS fund_currency_symbol,
+          COALESCE(cust.name, supp.name, part.name) AS party_name
+        FROM payments p
+        LEFT JOIN funds f ON f.id = p.fund_id
+        LEFT JOIN currencies c ON c.id = f.currency_id
+        LEFT JOIN customers cust ON cust.id = p.party_id AND p.party_type = 'customer'
+        LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
+        LEFT JOIN partners part ON part.id = p.party_id AND p.party_type = 'partner'
+        WHERE p.id = ?
+        `
       )
       .get(id);
+
+    if (!payment) return null;
+
+    const allocations = db
+      .prepare(
+        `SELECT * FROM payment_allocations WHERE payment_id = ? ORDER BY id ASC`
+      )
+      .all(id);
+
+    return { ...payment, allocations };
   });
 
   ipcMain.handle("get-payment-allocations", (event, paymentId) => {

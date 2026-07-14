@@ -8,6 +8,7 @@ import {
   CreditCard,
   BanknoteArrowDown,
   ArrowRightLeft,
+  Receipt,
 } from "lucide-react";
 
 // Central place for "given a type + id, where does it lead" — add new types here
@@ -22,7 +23,8 @@ const ROUTES = {
   purchase: (id) => `/view-purchase/${id}`,
   purchase_return: (id) => `/view-purchase-return/${id}`,
   expense: (id) => `/view-expense/${id}`,
-  transfer: () => `/fundTransfer`, // no single-transfer view page yet — goes to the list
+  payment: (id) => `/payments/${id}`,
+  transfer: (id) => `/funds/transfers/${id}`,
 };
 
 const ICONS = {
@@ -33,6 +35,7 @@ const ICONS = {
   sales: ShoppingCart,
   purchase: CreditCard,
   expense: BanknoteArrowDown,
+  payment: Receipt,
   transfer: ArrowRightLeft,
 };
 
