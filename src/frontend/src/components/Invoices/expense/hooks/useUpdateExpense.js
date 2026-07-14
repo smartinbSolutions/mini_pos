@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const NO_SUPPLIER = "none";
 
@@ -24,6 +25,7 @@ const useUpdateExpense = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const api = window.api;
+  const { user } = useAuth();
 
   const [invoice, setInvoice] = useState(emptyInvoice);
   const [items, setItems] = useState([emptyItem]);
@@ -82,7 +84,7 @@ const useUpdateExpense = () => {
       { id: NO_SUPPLIER, name: t("ui.noSupplier") },
       ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
     ],
-    [suppliers, t]
+    [suppliers, t],
   );
 
   useEffect(() => {
@@ -136,6 +138,7 @@ const useUpdateExpense = () => {
           net_total: netTotal,
           items,
           payment: paymentData || null,
+          updated_by: user.id,
         };
 
         const res = await api.updateExpense(payload);
@@ -155,7 +158,7 @@ const useUpdateExpense = () => {
         setSaving(false);
       }
     },
-    [api, id, invoice, items, subtotal, netTotal, navigate, t]
+    [api, id, invoice, items, subtotal, netTotal, navigate, t],
   );
 
   const reset = () => {

@@ -70,6 +70,7 @@ export default function registerSalesInvoiceIPC() {
         ) {
           throw new Error("ERROR ENTER DATA");
         }
+        console.log(data);
 
         const subtotal = Number(data.subtotal || 0);
         const netTotal = Number(data.net_total || 0);
@@ -109,8 +110,8 @@ export default function registerSalesInvoiceIPC() {
           .prepare(
             `
             INSERT INTO sales_invoices
-            (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, taxValue)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, taxValue, created_by, updated_by )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
@@ -123,6 +124,8 @@ export default function registerSalesInvoiceIPC() {
             data.tax_rate || 0,
             netTotal,
             data.taxValue || 0,
+            data.created_by || "",
+            data.created_by || "",
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -247,7 +250,8 @@ export default function registerSalesInvoiceIPC() {
         s.*,
         c.name AS customer_name,
         c.phone AS customer_phone,
-
+        creator.full_name AS created_by_name,
+        updater.full_name AS updated_by_name,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
 
         s.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
@@ -266,6 +270,12 @@ export default function registerSalesInvoiceIPC() {
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = s.id
        AND pa.invoice_type = 'sales'
+
+    LEFT JOIN users creator
+    ON creator.id = s.created_by
+    
+    LEFT JOIN users updater
+    ON updater.id = s.updated_by
 
       GROUP BY s.id
 
@@ -291,7 +301,6 @@ export default function registerSalesInvoiceIPC() {
 
   // GET ONE
   ipcMain.handle("get-sales-invoice", (event, id) => {
-    // 1. جلب رأس الفاتورة والعميل والضرائب والمدفوعات الإجمالية بالـ Subquery لضمان دقة الأرقام
     const invoice = db
       .prepare(
         `
@@ -300,7 +309,8 @@ export default function registerSalesInvoiceIPC() {
       c.name AS customer_name,
       c.phone AS customer_phone,
       t.rate AS tax_rate,
-
+      creator.full_name AS created_by_name,
+      updater.full_name AS updated_by_name,
       COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
       sa.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
 
@@ -312,6 +322,13 @@ export default function registerSalesInvoiceIPC() {
 
     FROM sales_invoices sa
     LEFT JOIN customers c ON c.id = sa.customer_id
+    
+    LEFT JOIN users creator
+    ON creator.id = sa.created_by
+    
+    LEFT JOIN users updater
+    ON updater.id = sa.updated_by
+    
     LEFT JOIN taxes t ON t.id = sa.tax
     LEFT JOIN (
       SELECT invoice_id, SUM(amount) AS paid_amount
@@ -503,7 +520,8 @@ WHERE si.invoice_id = ?
               discount = ?,
               tax = ?,
               net_total = ?,
-              taxValue = ?
+              taxValue = ?,
+              updated_by = ?
           WHERE id = ?
         `,
         ).run(
@@ -517,6 +535,7 @@ WHERE si.invoice_id = ?
           newNetTotal,
           data.taxValue || 0,
           data.id,
+          data.updated_by,
         );
 
         // Customer party_history reconciliation for the invoice amount
@@ -675,8 +694,8 @@ WHERE si.invoice_id = ?
 
     const insertInvoice = db.prepare(`
       INSERT INTO sales_invoices
-      (customer_id, date, subtotal, discount, tax, net_total)
-      VALUES (?, ?, ?, ?, ?, ?)
+      (customer_id, date, subtotal, discount, tax, net_total, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertItem = db.prepare(`
@@ -697,6 +716,7 @@ WHERE si.invoice_id = ?
         data.discount || 0,
         data.tax_rate || 0,
         data.net_total || 0,
+        data.created_by || null,
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;

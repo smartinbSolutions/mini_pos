@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const emptyItem = {
   product_id: "",
@@ -15,6 +16,7 @@ export default function useUpdateSales() {
   const { id } = useParams();
   const api = window.api;
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [invoice, setInvoice] = useState(null);
   const [items, setItems] = useState([]);
@@ -192,6 +194,7 @@ export default function useUpdateSales() {
           net_total: netTotal,
           taxValue,
           payment: paymentData,
+          updated_by: user.id,
         };
 
         const res = await api.updateSalesInvoice(payload);

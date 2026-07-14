@@ -53,8 +53,9 @@ export default function registerExpenseIPC() {
           .prepare(
             `
                 INSERT INTO expense
-                (supplier_id, invoice_name, description, date, subtotal, net_total)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (supplier_id, invoice_name,
+                 description, date, subtotal, net_total, created_by)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
               `,
           )
           .run(
@@ -64,6 +65,7 @@ export default function registerExpenseIPC() {
             fullDateTime,
             subtotal,
             netTotal,
+            data.created_by,
           );
         const invoiceId = invoiceResult.lastInsertRowid;
 
@@ -193,7 +195,9 @@ export default function registerExpenseIPC() {
         e.*,
         s.name AS supplier_name,
         s.phone AS supplier_phone,
-  
+        creator.full_name AS created_by_name,
+        updater.full_name AS updated_by_name,
+
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
   
         e.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
@@ -209,6 +213,13 @@ export default function registerExpenseIPC() {
       LEFT JOIN suppliers s
         ON s.id = e.supplier_id
   
+    LEFT JOIN users creator
+    ON creator.id = e.created_by
+    
+    LEFT JOIN users updater
+    ON updater.id = e.updated_by
+
+
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = e.id
        AND pa.invoice_type = 'expense'
@@ -267,7 +278,8 @@ export default function registerExpenseIPC() {
           e.*,
           s.name AS supplier_name,
           s.phone AS supplier_phone,
-  
+          creator.full_name AS created_by_name,
+          updater.full_name AS updated_by_name,
           COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
           e.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
   
@@ -278,6 +290,11 @@ export default function registerExpenseIPC() {
           END AS status
   
         FROM expense e
+            LEFT JOIN users creator
+    ON creator.id = e.created_by
+    
+    LEFT JOIN users updater
+    ON updater.id = e.updated_by
         LEFT JOIN suppliers s ON s.id = e.supplier_id
         LEFT JOIN (
           SELECT invoice_id, SUM(amount) AS paid_amount
@@ -397,7 +414,8 @@ export default function registerExpenseIPC() {
               description = ?,
               date = ?,
               subtotal = ?,
-              net_total = ?
+              net_total = ?,
+              updated_by = ?
           WHERE id = ?
         `,
         ).run(
@@ -408,6 +426,7 @@ export default function registerExpenseIPC() {
           newSubtotal,
           newNetTotal,
           data.id,
+          data.updated_by,
         );
         // Replace items
         db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(

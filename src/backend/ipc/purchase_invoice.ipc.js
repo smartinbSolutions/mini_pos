@@ -65,9 +65,10 @@ export default function registerPurchaseInvoicesIPC() {
               discount,
               tax,
               net_total,
-              taxValue    
+              taxValue,
+              created_by
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
@@ -78,6 +79,7 @@ export default function registerPurchaseInvoicesIPC() {
             tax,
             netTotal,
             data.taxValue,
+            data.created_by,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -200,7 +202,8 @@ export default function registerPurchaseInvoicesIPC() {
         p.*,
         s.name AS supplier_name,
         s.phone AS supplier_phone,
-
+        creator.full_name AS created_by_name,
+        updater.full_name AS updated_by_name,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
 
         p.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
@@ -219,6 +222,12 @@ export default function registerPurchaseInvoicesIPC() {
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = p.id
        AND pa.invoice_type = 'purchase'
+
+    LEFT JOIN users creator
+    ON creator.id = p.created_by
+    
+    LEFT JOIN users updater
+    ON updater.id = p.updated_by
 
       GROUP BY p.id
 
@@ -251,7 +260,8 @@ export default function registerPurchaseInvoicesIPC() {
         s.name AS supplier_name,
         s.phone AS supplier_phone,
         t.rate AS tax_rate,
-  
+        creator.full_name AS created_by_name,
+        updater.full_name AS updated_by_name,
         COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
         pi.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
   
@@ -263,6 +273,13 @@ export default function registerPurchaseInvoicesIPC() {
   
       FROM purchase_invoices pi
       LEFT JOIN suppliers s ON s.id = pi.supplier_id
+
+    LEFT JOIN users creator
+    ON creator.id = pi.created_by
+    
+    LEFT JOIN users updater
+    ON updater.id = pi.updated_by
+
       LEFT JOIN taxes t ON t.id = pi.tax
       LEFT JOIN (
         SELECT invoice_id, SUM(amount) AS paid_amount
@@ -294,6 +311,7 @@ export default function registerPurchaseInvoicesIPC() {
 
     LEFT JOIN products p
       ON p.id = pii.product_id
+
 
     LEFT JOIN (
       SELECT
@@ -474,7 +492,7 @@ export default function registerPurchaseInvoicesIPC() {
       db.prepare(
         `
         UPDATE purchase_invoices
-        SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?
+        SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?, updated_by = ?
         WHERE id = ?
       `,
       ).run(
@@ -486,6 +504,7 @@ export default function registerPurchaseInvoicesIPC() {
         data.net_total || 0,
         data.taxValue || 0,
         data.id,
+        data.updated_by,
       );
 
       // ---- Update the invoice ledger row in place ----

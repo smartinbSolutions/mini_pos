@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const emptyItem = {
   product_id: "",
@@ -21,6 +22,7 @@ export default function useAddPurchase() {
   const { t } = useTranslation();
   const navigat = useNavigate();
   const api = window.api;
+  const { user } = useAuth();
 
   const [invoice, setInvoice] = useState(emptyInvoice);
   const [items, setItems] = useState([emptyItem]);
@@ -115,7 +117,7 @@ export default function useAddPurchase() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id)
+              (i) => Number(i.product_id) === Number(product.id),
             );
 
             if (existingIndex !== -1) {
@@ -222,6 +224,7 @@ export default function useAddPurchase() {
           items,
           status: paymentData ? "paid" : "unpaid",
           payment: paymentData,
+          created_by: user.id,
         };
         console.log(payload);
         const res = await api.createPurchaseInvoice(payload);
@@ -242,7 +245,7 @@ export default function useAddPurchase() {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue]
+    [api, invoice, items, subtotal, netTotal, taxValue],
   );
 
   const reset = () => {

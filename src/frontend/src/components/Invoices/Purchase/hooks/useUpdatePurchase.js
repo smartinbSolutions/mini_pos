@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const emptyItem = {
   product_id: "",
@@ -21,6 +22,7 @@ export default function useUpdatePurchase() {
   const [products, setProducts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [taxes, setTaxes] = useState([]);
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -195,6 +197,7 @@ export default function useUpdatePurchase() {
         subtotal,
         net_total: netTotal,
         taxValue,
+        updated_by: user.id,
       });
       navigat("/purchase");
       return true;

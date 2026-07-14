@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const NO_SUPPLIER = "none";
 
@@ -20,6 +21,7 @@ const useAddExpense = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const api = window.api;
+  const { user } = useAuth();
 
   const [invoice, setInvoice] = useState(emptyInvoice);
   const [items, setItems] = useState([emptyItem]);
@@ -128,6 +130,7 @@ const useAddExpense = () => {
           net_total: netTotal,
           items,
           payment: paymentData,
+          created_by: user.id,
         };
 
         const res = await api.createExpense(payload);
