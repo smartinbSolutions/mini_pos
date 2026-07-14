@@ -1,6 +1,242 @@
-const { ipcMain } = require("electron");
+import { ipcMain, dialog, BrowserWindow } from "electron";
+import ExcelJS from "exceljs";
+import fs from "fs";
 import db from "../db";
 import createFundHistory from "../utils/createFundHistory";
+
+const EXPORT_LABELS = {
+  en: {
+    title: "Fund History",
+    date: "Date",
+    type: "Type",
+    direction: "Direction",
+    amount: "Amount",
+    partyFund: "Party/Fund",
+    transaction: "Transaction",
+    note: "Note",
+    runningBalance: "Running Balance",
+    totalIn: "Total In",
+    totalOut: "Total Out",
+    in: "In",
+    out: "Out",
+    allTime: "All time",
+    present: "Present",
+    period: "Period",
+    recordTypes: {
+      transfer: "Transfer",
+      payment: "Payment",
+      opening_balance: "Opening Balance",
+    },
+  },
+  ar: {
+    title: "سجل الصندوق",
+    date: "التاريخ",
+    type: "النوع",
+    direction: "الاتجاه",
+    amount: "المبلغ",
+    partyFund: "الطرف/الصندوق",
+    transaction: "المعاملة",
+    note: "ملاحظة",
+    runningBalance: "الرصيد الجاري",
+    totalIn: "إجمالي الوارد",
+    totalOut: "إجمالي الصادر",
+    in: "وارد",
+    out: "صادر",
+    allTime: "كل الوقت",
+    present: "الحاضر",
+    period: "الفترة",
+    recordTypes: {
+      transfer: "تحويل",
+      payment: "دفعة",
+      opening_balance: "رصيد افتتاحي",
+    },
+  },
+  tr: {
+    title: "Fon Geçmişi",
+    date: "Tarih",
+    type: "Tür",
+    direction: "Yön",
+    amount: "Tutar",
+    partyFund: "Taraf/Fon",
+    transaction: "İşlem",
+    note: "Not",
+    runningBalance: "Bakiye",
+    totalIn: "Toplam Giriş",
+    totalOut: "Toplam Çıkış",
+    in: "Giriş",
+    out: "Çıkış",
+    allTime: "Tüm zamanlar",
+    present: "Bugün",
+    period: "Dönem",
+    recordTypes: {
+      transfer: "Transfer",
+      payment: "Ödeme",
+      opening_balance: "Açılış Bakiyesi",
+    },
+  },
+};
+
+const getLabels = (language) => EXPORT_LABELS[language] || EXPORT_LABELS.en;
+
+const formatRecordType = (L, recordType) =>
+  L.recordTypes[recordType] || recordType;
+
+const formatExportDate = (value) => {
+  if (!value) return "";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value).slice(0, 10);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+function fetchFundHistory(
+  db,
+  { fundId, page = 1, limit = 50, startDate, endDate, exportAll = false }
+) {
+  const currentPage = Math.max(1, Number(page) || 1);
+  const perPage = Math.max(1, Number(limit) || 50);
+  const offset = (currentPage - 1) * perPage;
+
+  const dateConditions = [];
+  const dateValues = [];
+
+  if (startDate) {
+    dateConditions.push("date(fh.date) >= date(?)");
+    dateValues.push(startDate);
+  }
+  if (endDate) {
+    dateConditions.push("date(fh.date) <= date(?)");
+    dateValues.push(endDate);
+  }
+  const dateFilter = dateConditions.length
+    ? `AND ${dateConditions.join(" AND ")}`
+    : "";
+
+  const pagingClause = exportAll ? "" : "LIMIT ? OFFSET ?";
+  const pagingValues = exportAll ? [] : [perPage, offset];
+
+  const rows = db
+    .prepare(
+      `
+      WITH full_history AS (
+        SELECT
+          h.id,
+          h.fund_id,
+          h.record_type,
+          h.date,
+          h.movement_type,
+          h.amount,
+          h.note,
+          h.createdAt,
+
+          CASE
+            WHEN h.record_type = 'transfer' THEN 'fund'
+            ELSE p.party_type
+          END AS party_type,
+
+          CASE
+            WHEN h.record_type = 'transfer'
+              THEN (CASE WHEN h.fund_id = ft.from_fund_id THEN ft.to_fund_id ELSE ft.from_fund_id END)
+            ELSE p.party_id
+          END AS party_id,
+
+          COALESCE(
+            c.name,
+            s.name,
+            pt.name,
+            CASE WHEN h.fund_id = ft.from_fund_id THEN fTo.name ELSE fFrom.name END
+          ) AS party_name,
+
+          CASE
+            WHEN h.record_type = 'transfer' THEN 'transfer'
+            ELSE h.invoice_type
+          END AS transaction_type,
+
+          CASE
+            WHEN h.record_type = 'transfer' THEN h.payment_id
+            ELSE h.invoice_id
+          END AS transaction_id,
+
+          COALESCE(p.exchange_rate, ft.exchange_rate)   AS exchange_rate,
+          COALESCE(p.effective_rate, ft.effective_rate) AS effective_rate,
+
+          SUM(
+            CASE
+              WHEN h.movement_type = 'in' THEN h.amount
+              WHEN h.movement_type = 'out' THEN -h.amount
+              ELSE 0
+            END
+          ) OVER (
+            PARTITION BY h.fund_id
+            ORDER BY h.id
+          ) AS running_balance
+
+        FROM fund_history h
+
+        LEFT JOIN payments p
+          ON h.record_type = 'payment' AND p.id = h.payment_id
+
+        LEFT JOIN customers c
+          ON p.party_type = 'customer' AND c.id = p.party_id
+
+        LEFT JOIN suppliers s
+          ON p.party_type = 'supplier' AND s.id = p.party_id
+
+        LEFT JOIN partners pt
+          ON p.party_type = 'partner' AND pt.id = p.party_id
+
+        LEFT JOIN fund_transfers ft
+          ON h.record_type = 'transfer' AND ft.id = h.payment_id
+
+        LEFT JOIN funds fFrom
+          ON fFrom.id = ft.from_fund_id
+
+        LEFT JOIN funds fTo
+          ON fTo.id = ft.to_fund_id
+
+        WHERE h.fund_id = ?
+      )
+      SELECT * FROM full_history fh
+      WHERE 1=1 ${dateFilter}
+      ORDER BY id DESC
+      ${pagingClause}
+      `
+    )
+    .all(fundId, ...dateValues, ...pagingValues);
+
+  const plainDateFilter = dateConditions.length
+    ? `AND ${dateConditions.join(" AND ").replace(/fh\./g, "")}`
+    : "";
+
+  const { total } = db
+    .prepare(
+      `SELECT COUNT(*) AS total FROM fund_history WHERE fund_id = ? ${plainDateFilter}`
+    )
+    .get(fundId, ...dateValues);
+
+  const totals = db
+    .prepare(
+      `
+      SELECT
+        COALESCE(SUM(CASE WHEN movement_type = 'in' THEN amount ELSE 0 END), 0) AS totalIn,
+        COALESCE(SUM(CASE WHEN movement_type = 'out' THEN amount ELSE 0 END), 0) AS totalOut
+      FROM fund_history
+      WHERE fund_id = ? ${plainDateFilter}
+      `
+    )
+    .get(fundId, ...dateValues);
+
+  return {
+    data: rows,
+    page: currentPage,
+    limit: perPage,
+    total,
+    totalPages: Math.ceil(total / perPage),
+    totalIn: totals.totalIn,
+    totalOut: totals.totalOut,
+  };
+}
 
 export default function registerFundIPC() {
   ipcMain.handle("create-fund", (event, data) => {
@@ -89,32 +325,8 @@ export default function registerFundIPC() {
     return fund;
   });
 
-  ipcMain.handle(
-    "get-fund-history",
-    (event, { fundId, limit = 50, offset = 0 }) => {
-      return db
-        .prepare(
-          `
-        SELECT
-          h.*,
-          SUM(
-            CASE
-              WHEN h.movement_type = 'in' THEN h.amount
-              WHEN h.movement_type = 'out' THEN -h.amount
-              ELSE 0
-            END
-          ) OVER (
-            PARTITION BY h.fund_id
-            ORDER BY h.id
-          ) AS running_balance
-        FROM fund_history h
-        WHERE h.fund_id = ?
-        ORDER BY h.id DESC
-        LIMIT ? OFFSET ?
-        `
-        )
-        .all(fundId, limit, offset);
-    }
+  ipcMain.handle("get-fund-history", (event, params) =>
+    fetchFundHistory(db, params)
   );
 
   ipcMain.handle("update-fund", (event, data) => {
@@ -332,7 +544,7 @@ export default function registerFundIPC() {
         .prepare(
           `
         SELECT * FROM fund_history
-        WHERE payment_id = ? AND record_type = 'transfer_out' AND movement_type = 'out'
+        WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'out'
       `
         )
         .get(id);
@@ -341,7 +553,7 @@ export default function registerFundIPC() {
         .prepare(
           `
         SELECT * FROM fund_history
-        WHERE payment_id = ? AND record_type = 'transfer_in' AND movement_type = 'in'
+        WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'in'
       `
         )
         .get(id);
@@ -444,7 +656,7 @@ export default function registerFundIPC() {
         db.prepare(
           `
           DELETE FROM fund_history
-          WHERE payment_id = ? AND record_type IN ('transfer_out', 'transfer_in')
+          WHERE payment_id = ? AND record_type IN ('transfer')
         `
         ).run(id);
 
@@ -546,4 +758,180 @@ export default function registerFundIPC() {
       totalPages: Math.ceil(total / limit),
     };
   });
+
+  ipcMain.handle(
+    "export-fund-history-excel",
+    async (event, { fundId, startDate, endDate, language }) => {
+      try {
+        const L = getLabels(language);
+        const isRtl = language === "ar";
+
+        const {
+          data: rows,
+          totalIn,
+          totalOut,
+        } = fetchFundHistory(db, {
+          fundId,
+          startDate,
+          endDate,
+          exportAll: true,
+        });
+
+        const fund = db.prepare(`SELECT * FROM funds WHERE id = ?`).get(fundId);
+
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet(L.title);
+
+        if (isRtl) {
+          sheet.views = [{ rightToLeft: true }];
+        }
+
+        sheet.columns = [
+          { header: L.date, key: "date", width: 18 },
+          { header: L.type, key: "record_type", width: 12 },
+          { header: L.direction, key: "movement_type", width: 10 },
+          { header: L.amount, key: "amount", width: 14 },
+          { header: L.partyFund, key: "party_name", width: 22 },
+          { header: L.transaction, key: "transaction", width: 18 },
+          { header: L.note, key: "note", width: 30 },
+          { header: L.runningBalance, key: "running_balance", width: 16 },
+        ];
+        sheet.getRow(1).font = { bold: true };
+
+        rows.forEach((r) => {
+          sheet.addRow({
+            date: formatExportDate(r.date),
+            record_type: formatRecordType(L, r.record_type),
+            movement_type: r.movement_type === "in" ? L.in : L.out,
+            amount: r.amount,
+            party_name: r.party_name || "",
+            transaction: r.transaction_type
+              ? `${r.transaction_type} #${r.transaction_id}`
+              : "",
+            note: r.note || "",
+            running_balance: r.running_balance,
+          });
+        });
+
+        sheet.addRow({});
+        sheet.addRow({ note: L.totalIn, running_balance: totalIn });
+        sheet.addRow({ note: L.totalOut, running_balance: totalOut });
+
+        const { canceled, filePath } = await dialog.showSaveDialog({
+          title: L.title,
+          defaultPath: `${fund?.name || "fund"}-history.xlsx`,
+          filters: [{ name: "Excel Workbook", extensions: ["xlsx"] }],
+        });
+
+        if (canceled || !filePath) {
+          return { success: false, error: "Export cancelled" };
+        }
+
+        await workbook.xlsx.writeFile(filePath);
+        return { success: true, path: filePath };
+      } catch (err) {
+        return { success: false, error: err.message || String(err) };
+      }
+    }
+  );
+
+  ipcMain.handle(
+    "export-fund-history-pdf",
+    async (event, { fundId, startDate, endDate, language }) => {
+      try {
+        const L = getLabels(language);
+        const isRtl = language === "ar";
+
+        const {
+          data: rows,
+          totalIn,
+          totalOut,
+        } = fetchFundHistory(db, {
+          fundId,
+          startDate,
+          endDate,
+          exportAll: true,
+        });
+
+        const fund = db.prepare(`SELECT * FROM funds WHERE id = ?`).get(fundId);
+
+        const rowsHtml = rows
+          .map(
+            (r) => `
+        <tr>
+          <td>${formatExportDate(r.date)}</td>
+          <td>${formatRecordType(L, r.record_type)}</td>
+          <td>${r.movement_type === "in" ? L.in : L.out}</td>
+          <td class="right">${Number(r.amount).toFixed(2)}</td>
+          <td>${r.party_name || "-"}</td>
+          <td>${r.transaction_type ? `${r.transaction_type} #${r.transaction_id}` : "-"}</td>
+          <td>${r.note || ""}</td>
+          <td class="right">${Number(r.running_balance).toFixed(2)}</td>
+        </tr>
+      `
+          )
+          .join("");
+
+        const html = `
+        <html dir="${isRtl ? "rtl" : "ltr"}">
+          <head>
+            <meta charset="UTF-8" />
+            <style>
+              body { font-family: sans-serif; font-size: 12px; padding: 20px; }
+              h1 { font-size: 18px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+              th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: ${isRtl ? "right" : "left"}; }
+              th { background: #f0f0f0; }
+              .right { text-align: ${isRtl ? "left" : "right"}; }
+              .summary { margin-top: 16px; font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <h1>${fund?.name || L.title} — ${L.title}</h1>
+            <p>${L.period}: ${startDate || L.allTime} ${isRtl ? "←" : "→"} ${endDate || L.present}</p>
+            <table>
+              <thead>
+                <tr>
+                  <th>${L.date}</th><th>${L.type}</th><th>${L.direction}</th><th>${L.amount}</th>
+                  <th>${L.partyFund}</th><th>${L.transaction}</th><th>${L.note}</th><th>${L.runningBalance}</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+            <div class="summary">
+              ${L.totalIn}: ${Number(totalIn).toFixed(2)} &nbsp;&nbsp;
+              ${L.totalOut}: ${Number(totalOut).toFixed(2)}
+            </div>
+          </body>
+        </html>
+      `;
+
+        const win = new BrowserWindow({ show: false });
+        await win.loadURL(
+          "data:text/html;charset=utf-8," + encodeURIComponent(html)
+        );
+
+        const pdfBuffer = await win.webContents.printToPDF({
+          printBackground: true,
+          landscape: true,
+        });
+        win.close();
+
+        const { canceled, filePath } = await dialog.showSaveDialog({
+          title: L.title,
+          defaultPath: `${fund?.name || "fund"}-history.pdf`,
+          filters: [{ name: "PDF Document", extensions: ["pdf"] }],
+        });
+
+        if (canceled || !filePath) {
+          return { success: false, error: "Export cancelled" };
+        }
+
+        fs.writeFileSync(filePath, pdfBuffer);
+        return { success: true, path: filePath };
+      } catch (err) {
+        return { success: false, error: err.message || String(err) };
+      }
+    }
+  );
 }

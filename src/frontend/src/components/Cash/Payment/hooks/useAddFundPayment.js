@@ -24,7 +24,7 @@ const useAddFundPayment = ({
   const isFundLocked = Boolean(initialFundId);
 
   const [partyType, setPartyType] = useState(
-    mode === "out" ? "supplier" : "customer",
+    mode === "out" ? "supplier" : "customer"
   );
 
   const [form, setForm] = useState({
@@ -38,18 +38,23 @@ const useAddFundPayment = ({
     note: "",
   });
 
+  // Tracks whether the person has manually typed their own note — once they
+  // have, auto-generation stops overwriting it on every field change.
+  const [noteEdited, setNoteEdited] = useState(false);
+
   const handleChange = (key, value) => {
+    if (key === "note") setNoteEdited(true);
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const selectedFund = useMemo(
     () => funds.find((f) => f.id === Number(form.fund_id)),
-    [funds, form.fund_id],
+    [funds, form.fund_id]
   );
 
   const selectedParty = useMemo(
     () => partiesList.find((p) => p.id === Number(form.party_id)),
-    [partiesList, form.party_id],
+    [partiesList, form.party_id]
   );
 
   const fetchFunds = useCallback(async () => {
@@ -90,12 +95,10 @@ const useAddFundPayment = ({
         collected_amount: "",
         currency_code: "",
         currency_symbol: "",
-        note:
-          mode === "in"
-            ? t("screens.payments.free_cash_in_receipt")
-            : t("screens.payments.free_cash_out_payment"),
+        note: "",
       });
       setPartyType(mode === "out" ? "supplier" : "customer");
+      setNoteEdited(false);
       setMessage("");
     }
   }, [isOpen, fetchFunds, initialFundId, mode]);
@@ -158,6 +161,50 @@ const useAddFundPayment = ({
     return Number(form.collected_amount || 0) / Number(form.amount_in_base);
   }, [form.collected_amount, form.amount_in_base, form.fund_exchangeRate]);
 
+  // Auto-generated note: "[Income/Expense] of [amount] [currency] [from/to]
+  // [party name] via [fund name]" — regenerates whenever the underlying facts
+  // change, unless the person has taken over the field themselves.
+  const autoNote = useMemo(() => {
+    if (!form.amount_in_base || !selectedFund) return "";
+
+    const amountLabel = money
+      ? money(Number(form.amount_in_base))
+      : `${form.amount_in_base} ${form.currency_symbol || form.currency_code || ""}`.trim();
+
+    const partyLabel = selectedParty?.name || t(`ui.${partyType}`);
+    const fundLabel = selectedFund?.name || "";
+
+    return mode === "in"
+      ? t("screens.payments.auto_note_in", {
+          amount: amountLabel,
+          party: partyLabel,
+          fund: fundLabel,
+          defaultValue: `Received ${amountLabel} from ${partyLabel} into ${fundLabel}`,
+        })
+      : t("screens.payments.auto_note_out", {
+          amount: amountLabel,
+          party: partyLabel,
+          fund: fundLabel,
+          defaultValue: `Paid ${amountLabel} to ${partyLabel} from ${fundLabel}`,
+        });
+  }, [
+    form.amount_in_base,
+    form.currency_symbol,
+    form.currency_code,
+    selectedFund,
+    selectedParty,
+    partyType,
+    mode,
+    money,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (!noteEdited && autoNote) {
+      setForm((prev) => ({ ...prev, note: autoNote }));
+    }
+  }, [autoNote, noteEdited]);
+
   const submit = async () => {
     if (!form.fund_id) {
       setMessage(t("screens.payments.please_select_fund_first"));
@@ -183,7 +230,7 @@ const useAddFundPayment = ({
       effective_rate: effectiveRate,
       currency_code: form.currency_code,
       currency_symbol: form.currency_symbol,
-      note: form.note,
+      note: form.note || autoNote,
       mode: partyType,
     };
 

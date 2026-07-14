@@ -1,46 +1,85 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Wallet,
   CalendarDays,
+  ArrowLeft,
+  FileSpreadsheet,
+  FileText,
+  X,
+  AlertCircle,
 } from "lucide-react";
 
 import useFundHistory from "../hooks/useFundHistory";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { useTranslation } from "react-i18next";
+import GoTo from "../../../../Global/GoTo";
+import Pagination from "../../../../Global/Pagination";
+import ExportModal from "../../../../Global/ExportModal";
 
 const FundMovementsPage = () => {
   const { t } = useTranslation();
   const { id } = useParams();
+  const navigate = useNavigate();
 
-  const { history, fund, loading } = useFundHistory(id);
+  const {
+    history,
+    fund,
+    loading,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+    totalIn,
+    totalOut,
+    dateRange,
+    updateDateRange,
+    clearDateRange,
+    exporting,
+    exportError,
+    exportExcel,
+    exportPdf,
+  } = useFundHistory(id);
 
   const fundCurrency = fund || {};
-
   const finalBalance = history[0]?.running_balance || 0;
+  const hasDateFilter = Boolean(dateRange.startDate || dateRange.endDate);
+  const [showExportModal, setShowExportModal] = useState(false);
 
-  const totalIn = history
-    .filter((h) => h.movement_type === "in")
-    .reduce((acc, item) => acc + Number(item.amount || 0), 0);
-
-  const totalOut = history
-    .filter((h) => h.movement_type === "out")
-    .reduce((acc, item) => acc + Number(item.amount || 0), 0);
+  const handleExport = async (type) => {
+    const res = type === "excel" ? await exportExcel() : await exportPdf();
+    if (res?.success && window.api?.openCustomerDisplay) {
+      // no-op placeholder — nothing to open here, just avoids unused var lint
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f6f8fc] to-[#eef2f7] p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-5">
         {/* HEADER */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              {fund?.name || t("screens.fundMovements.title")}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {t("screens.fundMovements.subtitle")}
-            </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/funds")}
+              className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900 active:scale-95"
+              aria-label={t("common.back")}
+            >
+              <ArrowLeft size={24} strokeWidth={2.3} />
+            </button>
+
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {fund?.name || t("screens.fundMovements.title")}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                {t("screens.fundMovements.subtitle")}
+              </p>
+            </div>
           </div>
 
           <div className="flex gap-4">
@@ -73,6 +112,53 @@ const FundMovementsPage = () => {
           </div>
         </div>
 
+        {/* DATE FILTER + EXPORT BAR */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+              <CalendarDays size={15} className="text-[#4663ff]" />
+              <input
+                type="date"
+                value={dateRange.startDate}
+                onChange={(e) => updateDateRange({ startDate: e.target.value })}
+                className="bg-transparent text-sm text-gray-700 outline-none"
+              />
+              <span className="text-gray-400">–</span>
+              <input
+                type="date"
+                value={dateRange.endDate}
+                onChange={(e) => updateDateRange({ endDate: e.target.value })}
+                className="bg-transparent text-sm text-gray-700 outline-none"
+              />
+              {hasDateFilter && (
+                <button
+                  onClick={clearDateRange}
+                  className="ml-1 rounded-lg p-1 text-gray-400 hover:bg-white hover:text-gray-600"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {exportError && (
+              <span className="flex items-center gap-1 text-xs font-semibold text-red-600">
+                <AlertCircle size={13} />
+                {exportError}
+              </span>
+            )}
+
+            <button
+              onClick={() => setShowExportModal(true)}
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold text-gray-700 transition hover:bg-gray-100"
+            >
+              <FileSpreadsheet size={16} />
+              {t("common.export", "Export")}
+            </button>
+          </div>
+        </div>
+
         {/* TABLE */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b text-xs uppercase tracking-wide text-gray-500 font-semibold">
@@ -97,6 +183,10 @@ const FundMovementsPage = () => {
             <div className="divide-y">
               {history.map((item) => {
                 const isIn = item.movement_type === "in";
+                const rateDiffers =
+                  item.exchange_rate != null &&
+                  item.effective_rate != null &&
+                  item.exchange_rate !== item.effective_rate;
 
                 return (
                   <div
@@ -118,15 +208,34 @@ const FundMovementsPage = () => {
                         )}
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <div className="font-semibold text-gray-900">
                           {item.note || t("screens.fundMovements.fundMovement")}
                         </div>
-                        {item.invoice_type && (
-                          <div className="text-xs text-gray-400 mt-1">
-                            {item.invoice_type} #{item.invoice_id}
-                          </div>
-                        )}
+
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-400">
+                          {item.party_name && (
+                            <GoTo type={item.party_type} id={item.party_id}>
+                              {item.party_name}
+                            </GoTo>
+                          )}
+
+                          {item.transaction_type && (
+                            <GoTo
+                              type={item.transaction_type}
+                              id={item.transaction_id}
+                            >
+                              {item.transaction_type} #{item.transaction_id}
+                            </GoTo>
+                          )}
+
+                          {rateDiffers && (
+                            <span className="text-gray-300">
+                              {t("ui.rate")}: {item.exchange_rate} (
+                              {item.effective_rate})
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -160,7 +269,7 @@ const FundMovementsPage = () => {
                       </div>
                     </div>
 
-                    <div className="col-span-2 text-start text-sm text-gray-500 flex items-start justify-end gap-2">
+                    <div className="col-span-2 text-start text-sm text-gray-500 flex items-start gap-2">
                       <CalendarDays size={15} />
                       {item?.createdAt?.slice(0, 10)}
                     </div>
@@ -169,8 +278,28 @@ const FundMovementsPage = () => {
               })}
             </div>
           )}
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
         </div>
       </div>
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExportExcel={(range) => exportExcel(range)}
+        onExportPdf={(range) => exportPdf(range)}
+        exporting={exporting}
+        exportError={exportError}
+        title={t("screens.fundMovements.exportTitle", "Export Fund Movements")}
+      />
     </div>
   );
 };

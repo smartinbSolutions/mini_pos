@@ -111,17 +111,36 @@ function getCashFlow(db) {
     .prepare(
       `
       SELECT
-        COALESCE(SUM(CASE WHEN type = 'income' THEN amount END), 0) AS totalIncome,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount END), 0) AS totalExpense
+        -- Operating: cash from normal business activity (customers, suppliers, other)
+        COALESCE(SUM(CASE WHEN type = 'income' AND party_type != 'partner' THEN amount END), 0) AS operatingIncome,
+        COALESCE(SUM(CASE WHEN type = 'expense' AND party_type != 'partner' THEN amount END), 0) AS operatingExpense,
+
+        -- Financing: cash from partner deposits/withdrawals
+        COALESCE(SUM(CASE WHEN type = 'income' AND party_type = 'partner' THEN amount END), 0) AS financingIncome,
+        COALESCE(SUM(CASE WHEN type = 'expense' AND party_type = 'partner' THEN amount END), 0) AS financingExpense
       FROM payments
     `
     )
     .get();
 
+  const operating = {
+    income: row.operatingIncome,
+    expense: row.operatingExpense,
+    net: row.operatingIncome - row.operatingExpense,
+  };
+
+  const financing = {
+    income: row.financingIncome,
+    expense: row.financingExpense,
+    net: row.financingIncome - row.financingExpense,
+  };
+
   return {
-    totalIncome: row.totalIncome,
-    totalExpense: row.totalExpense,
-    net: row.totalIncome - row.totalExpense,
+    operating,
+    financing,
+    totalIncome: row.operatingIncome + row.financingIncome,
+    totalExpense: row.operatingExpense + row.financingExpense,
+    net: operating.net + financing.net,
   };
 }
 
@@ -166,6 +185,25 @@ function getFundBalances(db) {
     `
     )
     .all();
+}
+
+function getTopExpenseCategories(db, limit = 5) {
+  return db
+    .prepare(
+      `
+      SELECT
+        ec.id AS category_id,
+        COALESCE(ec.name, 'Unknown') AS name,
+        COALESCE(SUM(ei.price), 0) AS total_spent,
+        COUNT(ei.id) AS items_count
+      FROM expense_items ei
+      LEFT JOIN expence_category ec ON ec.id = ei.category_id
+      GROUP BY ei.category_id
+      ORDER BY total_spent DESC
+      LIMIT ?
+    `
+    )
+    .all(limit);
 }
 
 // ---------------------------------------------------------------------------
@@ -307,6 +345,7 @@ export default function registerCompanySettingsIPC() {
     const profitLoss = getProfitLoss(db);
     const cashFlow = getCashFlow(db);
     const topProducts = getTopSellingProducts(db);
+    const topExpenseCategories = getTopExpenseCategories(db);
     const fundBalances = getFundBalances(db);
 
     const products =
@@ -333,6 +372,7 @@ export default function registerCompanySettingsIPC() {
       profitLoss,
       cashFlow,
       topProducts,
+      topExpenseCategories,
       fundBalances,
       products,
       customers,

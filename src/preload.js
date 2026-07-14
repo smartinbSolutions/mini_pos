@@ -44,6 +44,10 @@ contextBridge.exposeInMainWorld("api", {
   updateFundTransfer: (data) =>
     ipcRenderer.invoke("update-fund-transfer", data),
   deleteFundTransfer: (id) => ipcRenderer.invoke("delete-fund-transfer", id),
+  exportFundHistoryExcel: (params) =>
+    ipcRenderer.invoke("export-fund-history-excel", params),
+  exportFundHistoryPdf: (params) =>
+    ipcRenderer.invoke("export-fund-history-pdf", params),
 
   /* ================= PAYMENTS ================= */
   getPayments: (params) => ipcRenderer.invoke("get-payments", params),

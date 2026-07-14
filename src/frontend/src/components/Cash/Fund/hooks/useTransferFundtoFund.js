@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
 const emptyForm = {
   from_fund_id: "",
@@ -24,6 +25,7 @@ const useTransferFundtoFund = ({
 }) => {
   const api = window.api;
   const { t } = useTranslation();
+  const { money } = usePrimaryCurrency();
 
   const isEditMode = Boolean(transfer?.id);
   const isSourceLocked = Boolean(lockedFromFundId) && !isEditMode;
@@ -33,6 +35,11 @@ const useTransferFundtoFund = ({
   const [funds, setFunds] = useState([]);
 
   const [form, setForm] = useState(emptyForm);
+
+  // Tracks whether the person has manually typed their own note — once they
+  // have, auto-generation stops overwriting it. Editing an existing transfer
+  // starts with noteEdited = true, since that note was already deliberate.
+  const [noteEdited, setNoteEdited] = useState(false);
 
   const sourceFund = useMemo(
     () => funds.find((f) => f.id === Number(form.from_fund_id)),
@@ -68,10 +75,13 @@ const useTransferFundtoFund = ({
         receive_amount: transfer.receive_amount,
         note: transfer.note || "",
       });
+      setNoteEdited(true); // existing note is deliberate, don't auto-overwrite it
     } else if (isSourceLocked) {
       setForm({ ...emptyForm, from_fund_id: lockedFromFundId });
+      setNoteEdited(false);
     } else {
       setForm(emptyForm);
+      setNoteEdited(false);
     }
 
     setMessage("");
@@ -93,6 +103,11 @@ const useTransferFundtoFund = ({
       from_fund_id: id,
       to_fund_id: prev.to_fund_id === id ? "" : prev.to_fund_id,
     }));
+  };
+
+  const handleNoteChange = (val) => {
+    setNoteEdited(true);
+    setForm((prev) => ({ ...prev, note: val }));
   };
 
   const sourceRate = Number(sourceFund?.currency_exchangeRate || 1);
@@ -161,6 +176,51 @@ const useTransferFundtoFund = ({
     return receive / amount;
   }, [form.amount, form.receive_amount, nominalRate]);
 
+  // Live-generated note: "Transferred [amount] from [source] to
+  // [destination]" — includes the receive amount too when cross-currency,
+  // so the note itself documents any conversion that happened.
+  const autoNote = useMemo(() => {
+    if (!form.amount || !sourceFund || !targetFund) return "";
+
+    const deductLabel = `${form.amount} ${
+      sourceFund.currency_symbol || sourceFund.currency_code || ""
+    }`.trim();
+
+    if (isCrossCurrency && form.receive_amount) {
+      const receiveLabel = `${form.receive_amount} ${
+        targetFund.currency_symbol || targetFund.currency_code || ""
+      }`.trim();
+
+      return t("screens.transfer.auto_note_cross_currency", {
+        deductAmount: deductLabel,
+        receiveAmount: receiveLabel,
+        source: sourceFund.name,
+        destination: targetFund.name,
+        defaultValue: `Transferred ${deductLabel} from ${sourceFund.name}, received ${receiveLabel} in ${targetFund.name}`,
+      });
+    }
+
+    return t("screens.transfer.auto_note", {
+      amount: deductLabel,
+      source: sourceFund.name,
+      destination: targetFund.name,
+      defaultValue: `Transferred ${deductLabel} from ${sourceFund.name} to ${targetFund.name}`,
+    });
+  }, [
+    form.amount,
+    form.receive_amount,
+    sourceFund,
+    targetFund,
+    isCrossCurrency,
+    t,
+  ]);
+
+  useEffect(() => {
+    if (!noteEdited && autoNote) {
+      setForm((prev) => ({ ...prev, note: autoNote }));
+    }
+  }, [autoNote, noteEdited]);
+
   const submit = async () => {
     if (!form.from_fund_id || !form.to_fund_id) {
       setMessage(t("screens.transfer.selectBothFunds"));
@@ -191,12 +251,7 @@ const useTransferFundtoFund = ({
         to_fund_id: Number(form.to_fund_id),
         deduct_amount: Number(form.amount),
         receive_amount: Number(form.receive_amount),
-        note:
-          form.note ||
-          t("screens.transfer.defaultNote", {
-            source: sourceFund?.name,
-            destination: targetFund?.name,
-          }),
+        note: form.note || autoNote,
       };
 
       const res = isEditMode
@@ -237,6 +292,7 @@ const useTransferFundtoFund = ({
     handleSourceFundChange,
     handleAmountChange,
     handleReceiveAmountChange,
+    handleNoteChange,
     submit,
     t,
   };
