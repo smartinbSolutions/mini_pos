@@ -12,6 +12,7 @@ export default function SalesInvoiceView() {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const { money } = usePrimaryCurrency();
+  console.log(invoice);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +69,7 @@ export default function SalesInvoiceView() {
   };
 
   const items = invoice?.items || [];
-  const allocations = invoice?.payments || [];
+  const allocations = invoice?.allocations || [];
   const status = invoice?.status || "unpaid";
 
   const statusStyle = {

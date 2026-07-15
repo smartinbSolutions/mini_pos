@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const useAddFundPayment = ({
   isOpen,
@@ -24,8 +25,9 @@ const useAddFundPayment = ({
   const isFundLocked = Boolean(initialFundId);
 
   const [partyType, setPartyType] = useState(
-    mode === "out" ? "supplier" : "customer"
+    mode === "out" ? "supplier" : "customer",
   );
+  const { user } = useAuth();
 
   const [form, setForm] = useState({
     fund_id: "",
@@ -49,12 +51,12 @@ const useAddFundPayment = ({
 
   const selectedFund = useMemo(
     () => funds.find((f) => f.id === Number(form.fund_id)),
-    [funds, form.fund_id]
+    [funds, form.fund_id],
   );
 
   const selectedParty = useMemo(
     () => partiesList.find((p) => p.id === Number(form.party_id)),
-    [partiesList, form.party_id]
+    [partiesList, form.party_id],
   );
 
   const fetchFunds = useCallback(async () => {
@@ -232,6 +234,7 @@ const useAddFundPayment = ({
       currency_symbol: form.currency_symbol,
       note: form.note || autoNote,
       mode: partyType,
+      created_by: user.id,
     };
 
     setLoading(true);

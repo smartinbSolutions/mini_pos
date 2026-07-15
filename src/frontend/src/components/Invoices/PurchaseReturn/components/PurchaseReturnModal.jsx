@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { X, Undo2, ChevronRight, AlertCircle } from "lucide-react";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
   const { t } = useTranslation();
   const { money } = usePrimaryCurrency();
+  const { user } = useAuth();
 
   const [returnItems, setReturnItems] = useState([]);
   const [discount, setDiscount] = useState(0);
@@ -147,6 +149,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
       tax: taxPercent,
       taxValue,
       net_total: netTotal,
+      created_by: user.id,
       items: itemsToReturn.map((item) => ({
         purchase_invoice_item_id: item.id,
         product_id: item.product_id,

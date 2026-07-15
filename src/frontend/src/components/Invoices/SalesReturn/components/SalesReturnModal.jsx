@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Undo2, AlertCircle } from "lucide-react";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
-
+import { useAuth } from "../../../../Global/AuthContext";
 const SalesReturnModal = ({ isOpen, onClose, id }) => {
   const { t } = useTranslation();
   const { money } = usePrimaryCurrency();
@@ -14,6 +14,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
   const [validationError, setValidationError] = useState("");
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!isOpen || !id) return;
@@ -148,6 +149,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
       tax: taxPercent,
       taxValue,
       net_total: netTotal,
+      created_by: user.id,
       items: itemsToReturn.map((item) => ({
         sales_invoice_item_id: item.id,
         product_id: item.product_id,

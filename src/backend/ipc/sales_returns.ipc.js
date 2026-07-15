@@ -102,9 +102,10 @@ export default function registerSalesReturnsIpc() {
           discount,
           tax,
           taxValue,
-          net_total
+          net_total,
+          created_by
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `,
           )
           .run(
@@ -118,6 +119,7 @@ export default function registerSalesReturnsIpc() {
             tax,
             data.taxValue || 0,
             netTotal,
+            data.created_by,
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -280,6 +282,7 @@ VALUES (?, ?, ?, ?, ?, ?)
           c.name AS customer_name,
           c.phone AS customer_phone,
           si.invoice_name AS original_invoice_name,
+          creator.full_name AS created_by_name,
 
           COALESCE(SUM(pa.amount), 0) AS refunded_amount, 
 
@@ -293,6 +296,8 @@ VALUES (?, ?, ?, ?, ?, ?)
 
         FROM sales_returns sr
         LEFT JOIN customers c ON c.id = sr.customer_id
+            LEFT JOIN users creator
+    ON creator.id = sr.created_by
         LEFT JOIN sales_invoices si ON si.id = sr.sales_invoice_id
         LEFT JOIN payment_allocations pa 
           ON pa.invoice_id = sr.id 
@@ -329,6 +334,7 @@ VALUES (?, ?, ?, ?, ?, ?)
 
         c.name AS customer_name,
         c.phone AS customer_phone,
+        creator.full_name AS created_by_name,
 
         t.rate AS tax_rate,
 
@@ -348,6 +354,9 @@ VALUES (?, ?, ?, ?, ?, ?)
 
       LEFT JOIN customers c
         ON c.id = sr.customer_id
+
+    LEFT JOIN users creator
+    ON creator.id = sr.created_by
 
       LEFT JOIN taxes t
         ON t.id = sr.tax

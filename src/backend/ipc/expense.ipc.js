@@ -125,6 +125,7 @@ export default function registerExpenseIPC() {
             note: `${payment.note} #${invoiceId}`,
             fundOperation: "subtract",
             date: data.date || new Date().toISOString(),
+            created_by: data.created_by,
           });
 
           createFundHistory(db, {
@@ -505,6 +506,7 @@ export default function registerExpenseIPC() {
             invoice_type: payment.mode,
             note: `${payment.note} #${data.id}`,
             fundOperation: "subtract",
+            created_by: data.created_by,
           });
 
           createFundHistory(db, {

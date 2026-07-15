@@ -85,7 +85,6 @@ CREATE TABLE IF NOT EXISTS product_movements (
   date REAL DEFAULT 0,
   outPrice REAL DEFAULT 0,
   quantity REAL DEFAULT 0,
-  created_by INTEGER,
     createdAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (product_id) REFERENCES products(id),
   FOREIGN KEY (created_by) REFERENCES users(id)
@@ -266,12 +265,11 @@ CREATE TABLE IF NOT EXISTS sales_returns (
   net_total REAL DEFAULT 0,
   description TEXT,
     created_by INTEGER,
-updated_by INTEGER,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (sales_invoice_id) REFERENCES sales_invoices(id),
   FOREIGN KEY (customer_id) REFERENCES customers(id),
-  FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id)
+
 );
 `,
 ).run();
@@ -334,7 +332,6 @@ CREATE TABLE IF NOT EXISTS purchase_returns (
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
     created_by INTEGER,
-updated_by INTEGER,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (purchase_invoice_id)
     REFERENCES purchase_invoices(id)
@@ -344,8 +341,7 @@ updated_by INTEGER,
     REFERENCES suppliers(id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id)
+    FOREIGN KEY (created_by) REFERENCES users(id)
     
 );
 `,
@@ -491,9 +487,7 @@ CREATE TABLE IF NOT EXISTS party_history (
   amount REAL,
   date TEXT,
   note TEXT,
-  created_by INTEGER,
-  createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  createdAt TEXT DEFAULT (datetime('now'))
   
 )
 `,

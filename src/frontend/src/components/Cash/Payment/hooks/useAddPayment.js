@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const useAddPayment = ({
   isOpen,
@@ -21,6 +22,7 @@ const useAddPayment = ({
   const [message, setMessage] = useState("");
   const [funds, setFunds] = useState([]);
   const { money } = usePrimaryCurrency();
+  const { user } = useAuth();
 
   const isPurchase = mode === "purchase";
   const isExpense = mode === "expense";
@@ -187,7 +189,7 @@ const useAddPayment = ({
       if (next) {
         const capped = Math.min(
           availableCredit,
-          initialBaseAmount || availableCredit
+          initialBaseAmount || availableCredit,
         );
         setForm((f) => ({
           ...f,
@@ -240,6 +242,7 @@ const useAddPayment = ({
       note: form.note,
       mode,
       source: useCredit ? "credit" : "new",
+      created_by: user.id,
     };
 
     if (isCollectorMode && onSubmit) {
@@ -260,6 +263,7 @@ const useAddPayment = ({
           invoiceId: invoice?.id,
           invoiceType: mode,
           amount: Number(form.amount_in_base),
+          created_by: user.id,
         });
         if (!res.success) throw new Error(res.error);
       } else {

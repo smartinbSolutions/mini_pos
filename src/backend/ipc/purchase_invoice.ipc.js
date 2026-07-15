@@ -158,6 +158,7 @@ export default function registerPurchaseInvoicesIPC() {
             invoice_type: data.payment.mode,
             note: `${data.payment.note} #${invoiceId}`,
             fundOperation: "subtract",
+            created_by: data.created_by,
           });
           createFundHistory(db, {
             fund_id: data.payment.fund_id,
