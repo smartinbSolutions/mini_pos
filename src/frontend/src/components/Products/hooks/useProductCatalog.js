@@ -249,6 +249,7 @@ export default function useProductCatalog() {
       setIsFormOpen(false);
       setActiveProduct(null);
       setActionError("");
+      await refetch();
     } catch (err) {
       console.error("Failed to save product:", err);
       setActionError(err?.message || t("errors.saveError"));

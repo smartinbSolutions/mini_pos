@@ -19,14 +19,16 @@ import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
+import ProductFormModal from "../../../Products/components/ProductFormModal";
+import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 
 export default function AddPurchase() {
   const { t } = useTranslation();
+  const catalog = useProductCatalog();
   const {
     invoice,
     setInvoice,
     items,
-    products,
     suppliers,
     taxes,
     addItem,
@@ -42,6 +44,20 @@ export default function AddPurchase() {
     error,
     reset,
   } = useAddPurchase();
+  const {
+    products,
+    barcodesByProduct,
+    saving: productSaving,
+    openCreate,
+    activeProduct,
+    canManageBarcodes,
+    canUseUnits,
+    isFormOpen,
+    setIsFormOpen,
+    submitProduct,
+    units,
+    handleLogo,
+  } = catalog;
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -185,14 +201,24 @@ export default function AddPurchase() {
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
-                >
-                  <Plus size={16} />
-                  {t("screens.invoices.addItem")}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                  >
+                    <Plus size={16} />
+                    {t("screens.invoices.addItem")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsFormOpen(true)}
+                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                  >
+                    <Plus size={16} />
+                    {t("screens.products.create")}
+                  </button>
+                </div>
               </div>
 
               {loading ? (
@@ -545,6 +571,22 @@ export default function AddPurchase() {
         onSubmit={handlePaymentCollected}
         confirmLabel={t("screens.invoices.saveInvoice")}
       />
+
+      {isFormOpen && (
+        <ProductFormModal
+          product={activeProduct}
+          units={units}
+          barcodes={
+            activeProduct ? barcodesByProduct[activeProduct.id] || [] : []
+          }
+          canManageBarcodes={canManageBarcodes}
+          canUseUnits={canUseUnits}
+          saving={productSaving}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={submitProduct}
+          handleLogo={handleLogo}
+        />
+      )}
 
       <ToastContainer />
     </div>
