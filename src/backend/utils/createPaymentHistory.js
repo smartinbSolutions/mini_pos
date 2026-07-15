@@ -9,6 +9,7 @@ export default function createPartyHistory(db, data) {
       payment_id,
       movement_type,
       amount,
+      date,
       note
     )
     VALUES (
@@ -20,6 +21,7 @@ export default function createPartyHistory(db, data) {
       @payment_id,
       @movement_type,
       @amount,
+      @date,
       @note
     )
   `);
@@ -33,6 +35,7 @@ export default function createPartyHistory(db, data) {
     payment_id: data.payment_id ?? null,
     movement_type: data.movement_type,
     amount: Number(data.amount || 0),
+    date: data.date || new Date().toISOString(),
     note: data.note ?? "",
   });
 }

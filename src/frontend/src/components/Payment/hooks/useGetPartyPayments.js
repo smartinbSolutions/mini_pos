@@ -21,6 +21,10 @@ export default function usePartyLedger(partyId, partyType) {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Page-level date filter — independent of the export modal's own range.
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
   const fetchData = async () => {
     if (!partyId || !partyType) return;
 
@@ -37,6 +41,8 @@ export default function usePartyLedger(partyId, partyType) {
         partyType,
         page,
         limit: LIMIT,
+        startDate: dateFrom || undefined,
+        endDate: dateTo || undefined,
       });
 
       if (partyType === "customer") {
@@ -65,11 +71,17 @@ export default function usePartyLedger(partyId, partyType) {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partyId, partyType, page]);
+  }, [partyId, partyType, page, dateFrom, dateTo]);
 
   useEffect(() => {
     setPage(1);
   }, [partyId, partyType]);
+
+  // Changing the date filter should reset back to page 1 too.
+  useEffect(() => {
+    setPage(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateFrom, dateTo]);
 
   return {
     data,
@@ -82,5 +94,9 @@ export default function usePartyLedger(partyId, partyType) {
     total,
     totalPages,
     limit: LIMIT,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
   };
 }

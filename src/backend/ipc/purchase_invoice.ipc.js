@@ -49,7 +49,7 @@ export default function registerPurchaseInvoicesIPC() {
           throw new Error("INVALID_CREDIT_AMOUNT");
         }
 
-        const dateOnly = data.date;
+        const dateOnly = data.date.slice(0, 10);
         const now = new Date();
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
@@ -69,7 +69,7 @@ export default function registerPurchaseInvoicesIPC() {
               created_by
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `,
+            `
           )
           .run(
             data.supplier_id,
@@ -79,7 +79,7 @@ export default function registerPurchaseInvoicesIPC() {
             tax,
             netTotal,
             data.taxValue,
-            data.created_by,
+            data.created_by
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -129,6 +129,7 @@ export default function registerPurchaseInvoicesIPC() {
           record_type: "invoice",
           movement_type: "increase",
           amount: netTotal,
+          date: fullDateTime,
           note: `Purchase Invoice #${invoiceId}`,
         });
 
@@ -137,35 +138,37 @@ export default function registerPurchaseInvoicesIPC() {
 
         if (isPaid && isCredit) {
           creditApplied = applyPartyCredit(db, {
-            partyId: data.payment.party_id,
-            partyType: data.payment.party_type,
+            partyId: payment.party_id,
+            partyType: payment.party_type,
             invoiceId,
             invoiceType: "purchase",
-            amount: data.payment.amount,
+            amount: payment.amount,
           });
         } else if (isPaid) {
           insertPaymentId = createPayment(db, {
-            type: data.payment.type,
-            party_type: data.payment.party_type,
-            party_id: data.payment.party_id,
-            fund_id: data.payment.fund_id,
-            amount: data.payment.amount,
-            amount_fund_currency: data.payment.collected_amount,
-            currency_code: data.payment.currency_code,
-            exchange_rate: data.payment.exchange_rate,
-            effective_rate: data.payment.effective_rate,
+            type: payment.type,
+            party_type: payment.party_type,
+            party_id: payment.party_id,
+            fund_id: payment.fund_id,
+            amount: payment.amount,
+            amount_fund_currency: payment.collected_amount,
+            currency_code: payment.currency_code,
+            exchange_rate: payment.exchange_rate,
+            effective_rate: payment.effective_rate,
             invoice_id: invoiceId,
-            invoice_type: data.payment.mode,
-            note: `${data.payment.note} #${invoiceId}`,
+            invoice_type: payment.mode,
+            note: `${payment.note} #${invoiceId}`,
             fundOperation: "subtract",
+            date: fullDateTime,
             created_by: data.created_by,
           });
           createFundHistory(db, {
-            fund_id: data.payment.fund_id,
+            fund_id: payment.fund_id,
             record_type: "payment",
             payment_id: insertPaymentId,
             movement_type: "out",
-            amount: data.payment.collected_amount,
+            amount: payment.collected_amount,
+            date: fullDateTime,
             note: `Payment for Purchase Invoice #${invoiceId}`,
           });
         }
@@ -235,7 +238,7 @@ export default function registerPurchaseInvoicesIPC() {
       ORDER BY p.id DESC
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -289,7 +292,7 @@ export default function registerPurchaseInvoicesIPC() {
         GROUP BY invoice_id
       ) pa_sum ON pa_sum.invoice_id = pi.id
       WHERE pi.id = ?
-    `,
+    `
       )
       .get(id);
 
@@ -326,7 +329,7 @@ export default function registerPurchaseInvoicesIPC() {
       ON r.purchase_invoice_item_id = pii.id
 
     WHERE pii.invoice_id = ?
-    `,
+    `
       )
       .all(id);
 
@@ -349,7 +352,7 @@ export default function registerPurchaseInvoicesIPC() {
       WHERE pa.invoice_id = ?
         AND pa.invoice_type = 'purchase'
       ORDER BY pa.id ASC
-    `,
+    `
       )
       .all(id);
 
@@ -362,12 +365,15 @@ export default function registerPurchaseInvoicesIPC() {
   // UPDATE
   ipcMain.handle("update-purchase-invoice", (event, data) => {
     if (
+      !data.id ||
       !data.supplier_id ||
       !data.date ||
-      data.subtotal <= 0 ||
-      data.net_total <= 0
+      !Array.isArray(data.items) ||
+      data.items.length === 0 ||
+      Number(data.subtotal) <= 0 ||
+      Number(data.net_total) <= 0
     ) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
 
     const oldInvoice = db
@@ -377,6 +383,9 @@ export default function registerPurchaseInvoicesIPC() {
     if (!oldInvoice) {
       return { success: false, error: "Invoice not found" };
     }
+
+    const oldSupplierId = oldInvoice.supplier_id || null;
+    const newSupplierId = data.supplier_id || null;
 
     const transaction = db.transaction(() => {
       const oldItems = db
@@ -410,7 +419,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       const adjustStock = db.prepare(
-        `UPDATE products SET quantity = quantity + ? WHERE id = ?`,
+        `UPDATE products SET quantity = quantity + ? WHERE id = ?`
       );
       const updateMovement = db.prepare(`
         UPDATE product_movements
@@ -429,10 +438,11 @@ export default function registerPurchaseInvoicesIPC() {
           deleteMovement.run(data.id, productId);
         }
       }
-      console.log(data);
+
       const dateOnly = data.date.slice(0, 10);
       const time = new Date().toTimeString().slice(0, 8);
       const fullDateTime = `${dateOnly} ${time}`;
+
       // ---- Present in new set: adjust stock by delta, update movement in place ----
       for (const [productId, next] of newByProduct) {
         const old = oldByProduct.get(productId);
@@ -449,7 +459,7 @@ export default function registerPurchaseInvoicesIPC() {
             next.price,
             fullDateTime,
             data.id,
-            productId,
+            productId
           );
         } else {
           createProductMovement(db, {
@@ -467,7 +477,7 @@ export default function registerPurchaseInvoicesIPC() {
 
       // ---- Replace line items ----
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        data.id,
+        data.id
       );
 
       const insertItem = db.prepare(`
@@ -484,20 +494,19 @@ export default function registerPurchaseInvoicesIPC() {
           item.product_id,
           quantity,
           price,
-          quantity * price,
+          quantity * price
         );
       }
 
       // ---- Update the invoice row ----
-
       db.prepare(
         `
         UPDATE purchase_invoices
         SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?, updated_by = ?
         WHERE id = ?
-      `,
+      `
       ).run(
-        data.supplier_id,
+        newSupplierId,
         fullDateTime,
         data.subtotal || 0,
         data.discount || 0,
@@ -505,17 +514,47 @@ export default function registerPurchaseInvoicesIPC() {
         data.net_total || 0,
         data.taxValue || 0,
         data.id,
-        data.updated_by,
+        data.updated_by
       );
 
-      // ---- Update the invoice ledger row in place ----
-      db.prepare(
+      // ---- Supplier party_history reconciliation for the invoice amount ----
+      if (oldSupplierId && oldSupplierId === newSupplierId) {
+        db.prepare(
+          `
+          UPDATE party_history
+          SET amount = ?, date = ?, note = ?
+          WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
         `
-        UPDATE party_history
-        SET amount = ?, note = ?
-        WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
-      `,
-      ).run(data.net_total, `Purchase Invoice #${data.id}`, data.id);
+        ).run(
+          data.net_total,
+          fullDateTime,
+          `Purchase Invoice #${data.id}`,
+          data.id
+        );
+      } else {
+        if (oldSupplierId) {
+          db.prepare(
+            `
+            DELETE FROM party_history
+            WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
+          `
+          ).run(data.id);
+        }
+
+        if (newSupplierId) {
+          createPartyHistory(db, {
+            party_type: "supplier",
+            party_id: newSupplierId,
+            invoice_id: data.id,
+            invoice_type: "purchase",
+            record_type: "invoice",
+            movement_type: "increase",
+            amount: data.net_total,
+            date: fullDateTime,
+            note: `Purchase Invoice #${data.id}`,
+          });
+        }
+      }
     });
 
     try {
@@ -523,7 +562,7 @@ export default function registerPurchaseInvoicesIPC() {
       return { success: true };
     } catch (err) {
       console.error(err);
-      return { success: false, error: err.message };
+      return { success: false, error: err.message || String(err) };
     }
   });
 
@@ -572,7 +611,7 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        id,
+        id
       );
       db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);

@@ -34,7 +34,8 @@ export default function createPayment(db, data) {
       @created_by
     )
   `);
-  console.log(data);
+
+  const paymentDate = data.date || new Date().toISOString();
 
   const result = insertPayment.run({
     type: data.type,
@@ -48,17 +49,19 @@ export default function createPayment(db, data) {
     effective_rate: Number(data.effective_rate || 1),
     amount_fund_currency: Number(data.amount_fund_currency || 0),
     invoice_type: data.invoice_type || null,
-    date: data.date || new Date().toISOString(),
+    date: paymentDate,
     created_by: data.created_by,
   });
-  if (data.invoice_id !== null) {
+
+  if (data.invoice_id != null) {
     createPaymentAllocation(db, {
       payment_id: result.lastInsertRowid,
-      invoice_id: data.invoice_id || null,
+      invoice_id: data.invoice_id,
       invoice_type: data.invoice_type || null,
       amount: data.amount || 0,
     });
   }
+
   const isReturnRefund =
     data.invoice_type === "purchase_return" ||
     data.invoice_type === "sales_return";
@@ -74,7 +77,9 @@ export default function createPayment(db, data) {
       movement_type: data.type === "income" ? "increase" : "decrease",
       note: data.note,
       payment_id: result.lastInsertRowid,
+      date: paymentDate,
     });
   }
+
   return result.lastInsertRowid;
 }

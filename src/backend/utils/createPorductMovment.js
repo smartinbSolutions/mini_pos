@@ -30,7 +30,7 @@ export default function createProductMovement(db, data) {
     reference_type: data.reference_type ?? null,
     type: data.type,
     action: data.action,
-    date: data.date,
+    date: data.date || new Date().toISOString(),
     enterPrice: Number(data.enterPrice || 0),
     outPrice: Number(data.outPrice || 0),
     quantity: Number(data.quantity || 0),

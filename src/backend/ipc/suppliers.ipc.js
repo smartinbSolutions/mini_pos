@@ -5,7 +5,7 @@ export default function registerSuppliersIPC() {
   // CREATE
   ipcMain.handle("create-supplier", (event, data) => {
     if (!data.name) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
     const result = db
       .prepare(
@@ -18,6 +18,8 @@ export default function registerSuppliersIPC() {
 
     const openingBalance = Number(data.opening_balance || 0);
     if (openingBalance !== 0) {
+      const openingBalanceDate = `${data.opening_balance_year || new Date().getFullYear()}-01-01 00:00:00`;
+
       createPartyHistory(db, {
         party_type: "supplier",
         party_id: result.lastInsertRowid,
@@ -27,7 +29,7 @@ export default function registerSuppliersIPC() {
         movement_type: "increase",
         amount: openingBalance,
         note: "Opening Balance",
-        date: new Date().toISOString(),
+        date: openingBalanceDate,
       });
     }
     return {

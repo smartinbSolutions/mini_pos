@@ -70,6 +70,10 @@ contextBridge.exposeInMainWorld("api", {
   /* ================= PARTY HISTORY ================= */
   getPartyHistoryLedger: (params) =>
     ipcRenderer.invoke("get-party-history-ledger", params),
+  exportPartyHistoryExcel: (params) =>
+    ipcRenderer.invoke("export-party-history-excel", params),
+  exportPartyHistoryPdf: (params) =>
+    ipcRenderer.invoke("export-party-history-pdf", params),
 
   /* ================= PRODUCT BARCODE ================= */
   getProductBarcodes: () => ipcRenderer.invoke("get-product-barcodes"),

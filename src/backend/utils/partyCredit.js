@@ -21,7 +21,7 @@ export function getPartyCredit(db, { partyId, partyType }) {
       GROUP BY p.id
       HAVING available > 0
       ORDER BY p.date ASC
-    `,
+    `
     )
     .all(partyId, partyType);
 
@@ -35,7 +35,7 @@ export function getPartyCredit(db, { partyId, partyType }) {
 
 export function applyPartyCredit(
   db,
-  { partyId, partyType, invoiceId, invoiceType, amount },
+  { partyId, partyType, invoiceId, invoiceType, amount }
 ) {
   const unallocated = db
     .prepare(
@@ -50,11 +50,12 @@ export function applyPartyCredit(
       GROUP BY p.id
       HAVING available > 0
       ORDER BY p.date ASC
-    `,
+    `
     )
     .all(partyId, partyType);
 
-  let remaining = Number(amount || 0);
+  const requested = Number(amount || 0);
+  let remaining = requested;
   let totalApplied = 0;
 
   for (const payment of unallocated) {
@@ -71,6 +72,10 @@ export function applyPartyCredit(
 
     remaining -= take;
     totalApplied += take;
+  }
+
+  if (totalApplied < requested) {
+    throw new Error("INSUFFICIENT_CREDIT");
   }
 
   return totalApplied;

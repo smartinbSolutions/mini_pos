@@ -5,7 +5,7 @@ export default function registerPartnersIPC() {
   // CREATE
   ipcMain.handle("create-partner", (event, data) => {
     if (!data.name) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
     const result = db
       .prepare(
@@ -18,6 +18,8 @@ export default function registerPartnersIPC() {
 
     const openingBalance = Number(data.opening_balance || 0);
     if (openingBalance !== 0) {
+      const openingBalanceDate = `${data.opening_balance_year || new Date().getFullYear()}-01-01 00:00:00`;
+
       createPartyHistory(db, {
         party_type: "partner",
         party_id: result.lastInsertRowid,
@@ -27,7 +29,7 @@ export default function registerPartnersIPC() {
         movement_type: data.balance_type,
         amount: openingBalance,
         note: "Opening Balance",
-        date: new Date().toISOString(),
+        date: openingBalanceDate,
       });
     }
     return {
@@ -35,6 +37,7 @@ export default function registerPartnersIPC() {
       id: result.lastInsertRowid,
     };
   });
+
   ipcMain.handle("get-partners", (event, params = {}) => {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);

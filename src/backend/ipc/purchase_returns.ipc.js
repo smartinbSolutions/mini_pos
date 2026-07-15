@@ -41,22 +41,22 @@ export default function registerPurchaseReturnIPC() {
           }
         }
 
-        const dateOnly = data.date;
+        const dateOnly = data.date.slice(0, 10);
         const now = new Date();
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
 
         const getOriginalItemQty = db.prepare(`
-  SELECT quantity
-  FROM purchase_invoice_items
-  WHERE id = ?
-`);
+          SELECT quantity
+          FROM purchase_invoice_items
+          WHERE id = ?
+        `);
 
         const getAlreadyReturnedQty = db.prepare(`
-  SELECT COALESCE(SUM(quantity), 0) AS total_returned
-  FROM purchase_return_items
-  WHERE purchase_invoice_item_id = ?
-`);
+          SELECT COALESCE(SUM(quantity), 0) AS total_returned
+          FROM purchase_return_items
+          WHERE purchase_invoice_item_id = ?
+        `);
 
         for (const item of data.items) {
           const quantityToReturnNow = Number(item.quantity || 0);
@@ -66,21 +66,19 @@ export default function registerPurchaseReturnIPC() {
           }
 
           const originalRow = getOriginalItemQty.get(
-            item.purchase_invoice_item_id,
+            item.purchase_invoice_item_id
           );
 
           if (!originalRow) {
             throw new Error(
-              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`,
+              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`
             );
           }
 
           const returnedRow = getAlreadyReturnedQty.get(
-            item.purchase_invoice_item_id,
+            item.purchase_invoice_item_id
           );
-
           const alreadyReturnedQty = returnedRow?.total_returned || 0;
-
           const maxAllowedToReturn = originalRow.quantity - alreadyReturnedQty;
 
           if (quantityToReturnNow > maxAllowedToReturn) {
@@ -91,22 +89,22 @@ export default function registerPurchaseReturnIPC() {
         const returnResult = db
           .prepare(
             `
-          INSERT INTO purchase_returns
-          (
-            purchase_invoice_id,
-            supplier_id,
-            invoice_name,
-            description,
-            date,
-            subtotal,
-            discount,
-            tax,
-            taxValue,
-            net_total,
-            created_by
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
+            INSERT INTO purchase_returns
+            (
+              purchase_invoice_id,
+              supplier_id,
+              invoice_name,
+              description,
+              date,
+              subtotal,
+              discount,
+              tax,
+              taxValue,
+              net_total,
+              created_by
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `
           )
           .run(
             data.purchase_invoice_id,
@@ -119,23 +117,22 @@ export default function registerPurchaseReturnIPC() {
             tax,
             data.taxValue || 0,
             netTotal,
-            data.created_by,
+            data.created_by
           );
 
         const returnId = returnResult.lastInsertRowid;
 
         const insertItem = db.prepare(`
-        INSERT INTO purchase_return_items
-        (return_id,  purchase_invoice_item_id,
- product_id, quantity, price, buyingPrice, total)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
+          INSERT INTO purchase_return_items
+          (return_id, purchase_invoice_item_id, product_id, quantity, price, buyingPrice, total)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
 
         const updateStock = db.prepare(`
-        UPDATE products
-        SET quantity = quantity - ?
-        WHERE id = ?
-      `);
+          UPDATE products
+          SET quantity = quantity - ?
+          WHERE id = ?
+        `);
 
         for (const item of data.items) {
           const quantity = Number(item.quantity || 0);
@@ -155,7 +152,7 @@ export default function registerPurchaseReturnIPC() {
             quantity,
             price,
             buyingPrice,
-            total,
+            total
           );
 
           updateStock.run(quantity, item.product_id);
@@ -180,59 +177,44 @@ export default function registerPurchaseReturnIPC() {
           record_type: "return",
           movement_type: "decrease",
           amount: netTotal,
+          date: fullDateTime,
           note: `Purchase Return #${returnId} for Invoice #${data.purchase_invoice_id}`,
         });
 
         let insertPaymentId = null;
-        let allocationId = null;
 
         if (isRefunded) {
           insertPaymentId = createPayment(db, {
-            type: data.payment.type,
-            party_type: data.payment.party_type,
-            party_id: data.payment.party_id,
-            fund_id: data.payment.fund_id,
-            amount: data.payment.amount,
-            amount_fund_currency: data.payment.collected_amount,
-            currency_code: data.payment.currency_code,
-            exchange_rate: data.payment.exchange_rate,
-            effective_rate: data.payment.effective_rate,
+            type: payment.type,
+            party_type: payment.party_type,
+            party_id: payment.party_id,
+            fund_id: payment.fund_id,
+            amount: payment.amount,
+            amount_fund_currency: payment.collected_amount,
+            currency_code: payment.currency_code,
+            exchange_rate: payment.exchange_rate,
+            effective_rate: payment.effective_rate,
             invoice_id: returnId,
             invoice_type: "purchase_return",
-            note: `${data.payment.note || "Refund"} #${returnId}`,
+            note: `${payment.note || "Refund"} #${returnId}`,
             fundOperation: "add",
+            date: fullDateTime,
           });
 
           createFundHistory(db, {
-            fund_id: data.payment.fund_id,
+            fund_id: payment.fund_id,
             record_type: "payment",
             payment_id: insertPaymentId,
             movement_type: "in",
-            amount: data.payment.collected_amount,
+            amount: payment.collected_amount,
+            date: fullDateTime,
             note: `Refund received for Purchase Return #${returnId}`,
           });
-
-          const allocationResult = db
-            .prepare(
-              `
-            INSERT INTO payment_allocations (payment_id, invoice_id, invoice_type, amount)
-            VALUES (?, ?, ?, ?)
-            `,
-            )
-            .run(
-              insertPaymentId,
-              returnId,
-              "purchase_return",
-              data.payment.amount,
-            );
-
-          allocationId = allocationResult.lastInsertRowid;
         }
 
         return {
           returnId,
           paymentId: insertPaymentId,
-          allocationId,
         };
       });
 
@@ -309,7 +291,7 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
 
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(limit, offset);
 
@@ -318,7 +300,7 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
         `
       SELECT COUNT(*) AS total
       FROM purchase_returns
-      `,
+      `
       )
       .get();
 
@@ -375,7 +357,7 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
         ON pa_sum.invoice_id = pr.id
 
       WHERE pr.id = ?
-      `,
+      `
       )
       .get(id);
 
@@ -394,7 +376,7 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
         ON p.id = pri.product_id
 
       WHERE pri.return_id = ?
-      `,
+      `
       )
       .all(id);
 
@@ -429,7 +411,7 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
         AND pa.invoice_type = 'purchase_return'
 
       ORDER BY pa.id ASC
-      `,
+      `
       )
       .all(id);
 
