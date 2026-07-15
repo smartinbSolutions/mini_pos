@@ -452,7 +452,7 @@
       "portionOfTotal": "نسبة من الإجمالي",
       "allocated": "مخصص",
       "remainingToAllocate": "متبقي للتخصيص",
-      "overAllocatedBy": "مخصص زائد بـ {{amount}}",
+      "overAllocatedBy": "مخصص زائد بـ",
       "fullyAllocated": "تم التخصيص بشكل كامل",
       "fundRateShort": "سعر الصندوق"
     },

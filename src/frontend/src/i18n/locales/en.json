@@ -452,7 +452,7 @@
       "portionOfTotal": "Portion of total",
       "allocated": "Allocated",
       "remainingToAllocate": "Remaining to allocate",
-      "overAllocatedBy": "Over allocated by {{amount}}",
+      "overAllocatedBy": "Over allocated by",
       "fullyAllocated": "Fully allocated",
       "fundRateShort": "Fund rate"
     },

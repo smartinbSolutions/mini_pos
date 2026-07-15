@@ -452,7 +452,7 @@
       "portionOfTotal": "Toplamın payı",
       "allocated": "Tahsis edildi",
       "remainingToAllocate": "Tahsis edilecek kalan",
-      "overAllocatedBy": "{{amount}} kadar fazla tahsis edildi",
+      "overAllocatedBy": "kadar fazla tahsis edildi",
       "fullyAllocated": "Tamamen tahsis edildi",
       "fundRateShort": "Fon kuru"
     },
