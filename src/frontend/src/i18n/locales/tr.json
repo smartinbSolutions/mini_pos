@@ -453,7 +453,8 @@
       "allocated": "Tahsis edildi",
       "remainingToAllocate": "Tahsis edilecek kalan",
       "overAllocatedBy": "{{amount}} kadar fazla tahsis edildi",
-      "fullyAllocated": "Tamamen tahsis edildi"
+      "fullyAllocated": "Tamamen tahsis edildi",
+      "fundRateShort": "Fon kuru"
     },
     "payments": {
       "purchasePayment": "Satın Alma Ödemesi",

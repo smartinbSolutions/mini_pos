@@ -453,7 +453,8 @@
       "allocated": "Allocated",
       "remainingToAllocate": "Remaining to allocate",
       "overAllocatedBy": "Over allocated by {{amount}}",
-      "fullyAllocated": "Fully allocated"
+      "fullyAllocated": "Fully allocated",
+      "fundRateShort": "Fund rate"
     },
     "payments": {
       "purchasePayment": "Purchase Payment",

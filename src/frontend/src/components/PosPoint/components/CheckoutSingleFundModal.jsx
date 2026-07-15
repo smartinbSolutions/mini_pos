@@ -267,9 +267,8 @@ export default function CheckoutSingleFundModal({
               )}
 
               <span>
-                {t("screens.checkout.effectiveRate")}: 1{" "}
-                {t("ui.primaryCurrency")} = {effectiveRate.toFixed(2)}{" "}
-                {selectedFund?.currency_code}
+                {t("screens.ledger.effectiveRate")}: 1 {t("ui.primaryCurrency")}{" "}
+                = {effectiveRate.toFixed(2)} {selectedFund?.currency_code}
               </span>
 
               {rateDeviationPct > 5 && (

@@ -453,7 +453,8 @@
       "allocated": "مخصص",
       "remainingToAllocate": "متبقي للتخصيص",
       "overAllocatedBy": "مخصص زائد بـ {{amount}}",
-      "fullyAllocated": "تم التخصيص بشكل كامل"
+      "fullyAllocated": "تم التخصيص بشكل كامل",
+      "fundRateShort": "سعر الصندوق"
     },
     "payments": {
       "purchasePayment": "دفعة شراء",

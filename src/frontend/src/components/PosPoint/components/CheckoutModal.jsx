@@ -300,7 +300,7 @@ export default function CheckoutModal({
                           <CheckCircle2 size={13} className="shrink-0" />
                         )}
                         <span>
-                          {t("screens.checkout.effectiveRate")}: 1{" "}
+                          {t("screens.ledger.effectiveRate")}: 1{" "}
                           {t("ui.primaryCurrency")} = {effectiveRate.toFixed(2)}{" "}
                           {fund.currency_code}
                         </span>
