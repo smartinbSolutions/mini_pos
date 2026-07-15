@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -12,50 +12,25 @@ const currencies = [
 
 const defaultCurrency = currencies[0];
 
-const validateSetupForm = (form, t) => {
-  const nextErrors = {};
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!form.company_name?.trim()) {
-    nextErrors.company_name = t("errors.nameRequired", {
-      field: t("screens.company.companyName"),
-    });
-  }
-
-  if (!form.phone?.trim()) {
-    nextErrors.phone = t("errors.valueRequired", { field: t("ui.phone") });
-  }
-
-  if (!form.base_currency_id) {
-    nextErrors.base_currency_id = t("errors.valueRequired", {
-      field: t("screens.company.baseCurrency"),
-    });
-  }
-
-  if (!form.admin_username?.trim()) {
-    nextErrors.admin_username = t("errors.valueRequired", {
-      field: t("screens.setupPage.adminUsername"),
-    });
-  }
-
-  if (!/^\d{6}$/.test(form.admin_pin || "")) {
-    nextErrors.admin_pin = t("errors.pinInvalid");
-  }
-
-  if (form.admin_pin !== form.admin_pin_confirm) {
-    nextErrors.admin_pin_confirm = t("errors.pinMismatch");
-  }
-
-  return nextErrors;
-};
+export const STEPS = ["language", "profile", "contact", "admin", "currency"];
 
 const useSetupPage = ({ onSetupComplete } = {}) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState("");
   const [errors, setErrors] = useState({});
+  const [step, setStep] = useState(0);
+  const [furthestStep, setFurthestStep] = useState(0);
+  const [showPin, setShowPin] = useState(false);
+  const [showPinConfirm, setShowPinConfirm] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [currencyQuery, setCurrencyQuery] = useState("");
 
   const [form, setForm] = useState({
     company_name: "",
@@ -64,7 +39,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
     phone: "",
     address: "",
     email: "",
-    language: "en",
+    language: "ar",
     timezone: "UTC",
     base_currency_id: defaultCurrency.id,
     logo: "",
@@ -79,7 +54,6 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
     const load = async () => {
       try {
         const res = await window.api.getCompanySetting();
-
         if (res?.exists) {
           setForm((prev) => ({ ...prev, ...res.settings }));
         }
@@ -89,14 +63,19 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
         setLoading(false);
       }
     };
-
     load();
   }, []);
 
+  useEffect(() => {
+    if (form.language && i18n.language !== form.language) {
+      i18n.changeLanguage(form.language);
+    }
+    document.documentElement.dir = form.language === "ar" ? "rtl" : "ltr";
+  }, [form.language, i18n]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
   };
 
@@ -108,50 +87,143 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
       reader.onerror = (err) => reject(err);
     });
 
-  const handleLogo = async (e) => {
+  const applyLogoFile = async (file) => {
+    if (!file || !file.type?.startsWith("image/")) return;
     try {
-      const file = e.target.files[0];
-
-      if (!file) return;
-
       const base64 = await toBase64(file);
-
       const savedPath = await window.api.saveLogo({
         base64,
         name: `${Date.now()}-${file.name}`,
       });
-
-      setForm((prev) => ({
-        ...prev,
-        logo: savedPath,
-      }));
+      setForm((prev) => ({ ...prev, logo: savedPath }));
     } catch (err) {
       console.error(err);
     }
   };
 
+  const handleLogo = (e) => applyLogoFile(e.target.files?.[0]);
+
+  const handleLogoDrop = (e) => {
+    e.preventDefault();
+    setDragActive(false);
+    applyLogoFile(e.dataTransfer.files?.[0]);
+  };
+
+  const removeLogo = (e) => {
+    e.stopPropagation();
+    setForm((prev) => ({ ...prev, logo: "" }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleCurrencySelect = (currency) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       base_currency_id: currency.id,
       currency_name: currency.name,
       code: currency.code,
       symbol: currency.symbol,
-    });
+    }));
     setErrors((current) => ({ ...current, base_currency_id: "" }));
   };
 
-  const handleSave = async () => {
-    const validationErrors = validateSetupForm(form, t);
+  const handleLanguageSelect = (langCode) => {
+    setForm((prev) => ({ ...prev, language: langCode }));
+  };
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
+  const filteredCurrencies = useMemo(() => {
+    const q = currencyQuery.trim().toLowerCase();
+    if (!q) return currencies;
+    return currencies.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q)
+    );
+  }, [currencyQuery]);
+
+  // Per-step validation so "Next" can be gated without validating
+  // fields the user hasn't reached yet.
+  const validateStep = (index) => {
+    const nextErrors = {};
+    const key = STEPS[index];
+
+    if (key === "profile" && !form.company_name?.trim()) {
+      nextErrors.company_name = t("errors.nameRequired", {
+        field: t("screens.company.companyName"),
+      });
+    }
+
+    if (key === "contact") {
+      if (!form.phone?.trim()) {
+        nextErrors.phone = t("errors.valueRequired", { field: t("ui.phone") });
+      }
+      if (form.email?.trim() && !EMAIL_RE.test(form.email.trim())) {
+        nextErrors.email = t("errors.emailInvalid");
+      }
+    }
+
+    if (key === "admin") {
+      if (!form.admin_username?.trim()) {
+        nextErrors.admin_username = t("errors.valueRequired", {
+          field: t("screens.setupPage.adminUsername"),
+        });
+      }
+      if (!/^\d{6}$/.test(form.admin_pin || "")) {
+        nextErrors.admin_pin = t("errors.pinInvalid");
+      }
+      if (form.admin_pin !== form.admin_pin_confirm) {
+        nextErrors.admin_pin_confirm = t("errors.pinMismatch");
+      }
+    }
+
+    if (key === "currency" && !form.base_currency_id) {
+      nextErrors.base_currency_id = t("errors.valueRequired", {
+        field: t("screens.company.baseCurrency"),
+      });
+    }
+
+    return nextErrors;
+  };
+
+  const goNext = () => {
+    const stepErrors = validateStep(step);
+    if (Object.keys(stepErrors).length > 0) {
+      setErrors((current) => ({ ...current, ...stepErrors }));
+      return false;
+    }
+    const next = Math.min(step + 1, STEPS.length - 1);
+    setStep(next);
+    setFurthestStep((f) => Math.max(f, next));
+    return true;
+  };
+
+  const goBack = () => setStep((s) => Math.max(s - 1, 0));
+
+  // Only lets users jump to steps they've already reached/completed.
+  const goToStep = (index) => {
+    if (index <= furthestStep) setStep(index);
+  };
+
+  const handleSave = async () => {
+    // Validate every step in case the user edited an earlier field
+    // after having already moved on.
+    let allErrors = {};
+    for (let i = 0; i < STEPS.length; i++) {
+      allErrors = { ...allErrors, ...validateStep(i) };
+    }
+
+    if (Object.keys(allErrors).length > 0) {
+      setErrors(allErrors);
+      const firstBadStep = STEPS.findIndex(
+        (_, i) => Object.keys(validateStep(i)).length > 0
+      );
+      if (firstBadStep !== -1) {
+        setStep(firstBadStep);
+        setFurthestStep((f) => Math.max(f, firstBadStep));
+      }
       return;
     }
 
     try {
       setSaving(true);
-
       const res = await window.api.createCompanySetting({
         company_name: form.company_name,
         company_latin_name: form.company_latin_name,
@@ -159,7 +231,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
         address: form.address,
         email: form.email,
         logo: form.logo,
-
+        language: form.language,
         timezone: form.timezone,
         base_currency_id: form.base_currency_id,
         currency_name: form.currency_name,
@@ -178,6 +250,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
         navigate("/", { replace: true });
       } else if (res?.error) {
         setErrors((current) => ({ ...current, admin_pin: res.error }));
+        setStep(STEPS.indexOf("admin"));
       }
     } catch (err) {
       console.error(err);
@@ -185,19 +258,35 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
       setSaving(false);
     }
   };
+
   return {
+    step,
+    furthestStep,
+    goNext,
+    goBack,
+    goToStep,
     handleSave,
-    currencies,
+    currencies: filteredCurrencies,
+    currencyQuery,
+    setCurrencyQuery,
     errors,
     loading,
     handleLogo,
+    handleLogoDrop,
+    removeLogo,
+    dragActive,
+    setDragActive,
     handleCurrencySelect,
-    toBase64,
+    handleLanguageSelect,
     handleChange,
     fileInputRef,
     saving,
     form,
     setForm,
+    showPin,
+    setShowPin,
+    showPinConfirm,
+    setShowPinConfirm,
     recoveryKey,
     completeRecoveryKeyDisplay: () => {
       setRecoveryKey("");

@@ -10,6 +10,7 @@
     "save": "Kaydet",
     "refresh": "Yenile",
     "back": "Geri",
+    "next": "İleri",
     "add": "Ekle",
     "edit": "Düzenle",
     "view": "Görüntüle",
@@ -357,6 +358,7 @@
     },
     "setupPage": {
       "title": "Şirket Kurulumu",
+      "language": "Dil",
       "firstTime": "İlk kurulum",
       "headline": "Çalışma alanınızı sakince kurun.",
       "description": "Faturalarda, fişlerde ve günlük POS kayıtlarında görünecek şirket bilgilerini ekleyin.",
@@ -365,6 +367,7 @@
       "baseCurrency": "Temel para birimi",
       "logo": "Şirket Logosu",
       "logoHint": "Marka görseli gerekli",
+      "logoDropHint": "Bir görseli buraya tıklayın veya sürükleyin",
       "details": "Kurulum detayları",
       "tellUs": "Bize şirketinizi anlatın",
       "fieldsHint": "Latin adı hariç tüm alanlar zorunludur. Bu bilgileri daha sonra şirket ayarlarından düzenleyebilirsiniz.",
@@ -378,7 +381,21 @@
       "adminUsername": "Kullanıcı adı",
       "adminPin": "PIN kodu",
       "adminPinConfirm": "PIN kodunu onayla",
-      "adminAccountHint": "Diğer kullanıcıları sonradan ekleyebilirsiniz"
+      "adminAccountHint": "Diğer kullanıcıları sonradan ekleyebilirsiniz",
+      "languagePrompt": "Kurulum dilini seçin",
+      "languageHint": "Bu, verilerinizin, fişlerinizin ve arayüzün dilini belirler. Daha sonra ayarlardan değiştirebilirsiniz.",
+      "pinsMatch": "PIN kodları eşleşiyor",
+      "searchCurrency": "Para birimi ara...",
+      "noCurrencyMatch": "Aramanızla eşleşen para birimi yok",
+      "stepOf": "Adım {{current}} / {{total}}"
+    },
+
+    "errors": {
+      "nameRequired": "{{field}} zorunludur",
+      "valueRequired": "{{field}} zorunludur",
+      "pinInvalid": "PIN tam olarak 6 haneli olmalıdır",
+      "pinMismatch": "PIN kodları eşleşmiyor",
+      "emailInvalid": "Geçerli bir e-posta adresi girin"
     },
     "pos": {
       "loading": "POS Sistemi yükleniyor...",

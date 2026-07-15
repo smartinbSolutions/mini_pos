@@ -10,6 +10,7 @@
     "save": "Save",
     "refresh": "Refresh",
     "back": "Back",
+    "next": "Next",
     "add": "Add",
     "edit": "Edit",
     "view": "View",
@@ -357,6 +358,7 @@
     },
     "setupPage": {
       "title": "Company Setup",
+      "language": "Language",
       "firstTime": "First-time configuration",
       "headline": "Set up your workspace calmly.",
       "description": "Add the company details that will appear across invoices, receipts, and daily POS records.",
@@ -365,6 +367,7 @@
       "baseCurrency": "Base currency",
       "logo": "Company Logo",
       "logoHint": "Required brand image",
+      "logoDropHint": "Click or drag an image here",
       "details": "Setup details",
       "tellUs": "Tell us about your company",
       "fieldsHint": "All fields are required except Latin name. You can refine these details later from company settings.",
@@ -378,7 +381,21 @@
       "adminUsername": "Username",
       "adminPin": "PIN code",
       "adminPinConfirm": "Confirm PIN code",
-      "adminAccountHint": "You can add more users later"
+      "adminAccountHint": "You can add more users later",
+      "languagePrompt": "Choose your setup language",
+      "languageHint": "This sets the language for your data, receipts, and interface. You can change it later in settings.",
+      "pinsMatch": "PINs match",
+      "searchCurrency": "Search currency...",
+      "noCurrencyMatch": "No currencies match your search",
+      "stepOf": "Step {{current}} of {{total}}"
+    },
+
+    "errors": {
+      "nameRequired": "{{field}} is required",
+      "valueRequired": "{{field}} is required",
+      "pinInvalid": "PIN must be exactly 6 digits",
+      "pinMismatch": "PIN codes do not match",
+      "emailInvalid": "Enter a valid email address"
     },
     "pos": {
       "loading": "Loading POS System...",
