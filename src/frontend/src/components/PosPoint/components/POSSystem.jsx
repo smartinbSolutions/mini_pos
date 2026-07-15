@@ -15,6 +15,7 @@ import {
   ArrowBigRight,
   LogOut,
   User as UserIcon,
+  Receipt,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import SearchableSelect from "../../../Global/SearchableSelect";
@@ -30,6 +31,7 @@ import POSSystemEditTotalPrice from "./POSSystemEditTotalPrice";
 import UnifiedCheckoutModal from "./CheckoutCombinedModal";
 import { useAuth } from "../../../Global/AuthContext";
 import { Link } from "react-router-dom";
+import DailySummaryModal from "./DailySummary/DailySummaryModal";
 
 export default function POSSystem() {
   const { t, i18n } = useTranslation();
@@ -76,7 +78,7 @@ export default function POSSystem() {
     checkout,
   } = usePosCheckout({ weight });
   const { money, primaryCurrency } = usePrimaryCurrency();
-
+  const [isDailySummaryOpen, setIsDailySummaryOpen] = useState(false);
   const openCustomerDisplay = () => {
     window.api?.openCustomerDisplay?.();
   };
@@ -105,7 +107,7 @@ export default function POSSystem() {
     return products.filter((product) =>
       [product.name, product.latinName, product.unit_name, product.unit_code]
         .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term))
+        .some((value) => String(value).toLowerCase().includes(term)),
     );
   }, [products, search]);
 
@@ -204,6 +206,14 @@ export default function POSSystem() {
                 </Link>
               )}
 
+              <button
+                type="button"
+                onClick={() => setIsDailySummaryOpen(true)}
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50 px-3 text-xs font-bold text-teal-700 transition hover:bg-teal-100"
+              >
+                <Receipt size={14} />
+                {t("screens.pos.todayInvoices", "today Invoices")}
+              </button>
               <div className="min-w-0 shrink-0">
                 <h1 className="truncate text-lg font-black leading-tight tracking-tight text-stone-950">
                   {t("screens.pos.title")}
@@ -292,7 +302,6 @@ export default function POSSystem() {
                 {t("screens.pos.customerDisplay")}
               </button>
 
-              {/* USER + LOGOUT */}
               <div className="ml-auto flex h-10 shrink-0 items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 pl-3 pr-1.5">
                 <UserIcon size={14} className="text-stone-500" />
                 <span className="max-w-[120px] truncate text-xs font-bold text-stone-800">
@@ -360,7 +369,7 @@ export default function POSSystem() {
                       addToCart(
                         product,
                         activeWeight || 1,
-                        Boolean(activeWeight)
+                        Boolean(activeWeight),
                       );
                       setActionError("");
                     }}
@@ -507,7 +516,7 @@ export default function POSSystem() {
                             e.stopPropagation();
                             updateQuantity(
                               item.id,
-                              item.qty === 1 ? -1 : item.qty - 1
+                              item.qty === 1 ? -1 : item.qty - 1,
                             );
                           }}
                           className="flex h-9 w-9 items-center justify-center text-stone-700 transition hover:bg-stone-100"
@@ -683,7 +692,12 @@ export default function POSSystem() {
           money={money}
         />
       )}
-
+      <DailySummaryModal
+        isOpen={isDailySummaryOpen}
+        onClose={() => setIsDailySummaryOpen(false)}
+        t={t}
+        money={money}
+      />
       <ToastContainer />
     </div>
   );

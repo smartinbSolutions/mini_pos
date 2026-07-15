@@ -326,17 +326,17 @@ export default function registerSalesReturnsIpc() {
           }
 
           const originalRow = getOriginalItemQty.get(
-            item.sales_invoice_item_id
+            item.sales_invoice_item_id,
           );
 
           if (!originalRow) {
             throw new Error(
-              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`
+              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`,
             );
           }
 
           const returnedRow = getAlreadyReturnedQty.get(
-            item.sales_invoice_item_id
+            item.sales_invoice_item_id,
           );
           const alreadyReturnedQty = returnedRow?.total_returned || 0;
           const maxAllowedToReturn = originalRow.quantity - alreadyReturnedQty;
@@ -364,7 +364,7 @@ export default function registerSalesReturnsIpc() {
             created_by
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
+        `,
           )
           .run(
             data.sales_invoice_id,
@@ -377,7 +377,7 @@ export default function registerSalesReturnsIpc() {
             tax,
             data.taxValue || 0,
             netTotal,
-            data.created_by
+            data.created_by,
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -412,7 +412,7 @@ export default function registerSalesReturnsIpc() {
             item.product_id,
             quantity,
             price,
-            total
+            total,
           );
           updateStock.run(quantity, item.product_id);
 
@@ -496,6 +496,14 @@ export default function registerSalesReturnsIpc() {
       const page = Math.max(1, Number(params.page) || 1);
       const limit = Math.max(1, Number(params.limit) || 20);
       const offset = (page - 1) * limit;
+      const date = params.date;
+      let whereClause = "";
+      let queryParams = [];
+
+      if (date) {
+        whereClause = "WHERE DATE(sr.date) = ?";
+        queryParams.push(date);
+      }
 
       const returns = db
         .prepare(
@@ -525,16 +533,21 @@ export default function registerSalesReturnsIpc() {
         LEFT JOIN payment_allocations pa 
           ON pa.invoice_id = sr.id 
          AND pa.invoice_type = 'sales_return'
+
+         ${whereClause}
+
         GROUP BY sr.id
         ORDER BY sr.id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
         )
-        .all(limit, offset);
+        .all(...queryParams, limit, offset);
 
       const { total } = db
-        .prepare(`SELECT COUNT(*) AS total FROM sales_returns`)
-        .get();
+        .prepare(
+          `SELECT COUNT(*) AS total FROM sales_returns sr     ${whereClause}`,
+        )
+        .get(...queryParams);
 
       return {
         data: returns,
@@ -598,7 +611,7 @@ export default function registerSalesReturnsIpc() {
         ON pa_sum.invoice_id = sr.id
 
       WHERE sr.id = ?
-      `
+      `,
       )
       .get(id);
 
@@ -618,7 +631,7 @@ export default function registerSalesReturnsIpc() {
         ON p.id = sri.product_id
 
       WHERE sri.return_id = ?
-      `
+      `,
       )
       .all(id);
 
@@ -653,7 +666,7 @@ export default function registerSalesReturnsIpc() {
         AND pa.invoice_type = 'sales_return'
 
       ORDER BY pa.id ASC
-      `
+      `,
       )
       .all(id);
 
