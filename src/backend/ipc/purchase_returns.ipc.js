@@ -102,9 +102,10 @@ export default function registerPurchaseReturnIPC() {
             discount,
             tax,
             taxValue,
-            net_total
+            net_total,
+            created_by
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
@@ -118,6 +119,7 @@ export default function registerPurchaseReturnIPC() {
             tax,
             data.taxValue || 0,
             netTotal,
+            data.created_by,
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -263,6 +265,7 @@ export default function registerPurchaseReturnIPC() {
 
         s.name AS supplier_name,
         s.phone AS supplier_phone,
+        creator.full_name AS created_by_name,
 
         COALESCE(
           SUM(pa.amount),
@@ -287,6 +290,8 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
   LEFT JOIN purchase_invoices p
   ON p.id = pr.purchase_invoice_id
 
+    LEFT JOIN users creator
+    ON creator.id = pr.created_by
 
       LEFT JOIN suppliers s
         ON s.id = pr.supplier_id
@@ -336,6 +341,7 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
         s.name AS supplier_name,
         s.phone AS supplier_phone,
         t.rate AS tax_rate,
+        creator.full_name AS created_by_name,
 
         COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
 
@@ -354,6 +360,9 @@ pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
 
       LEFT JOIN taxes t 
         ON t.id = pr.tax
+        
+    LEFT JOIN users creator
+    ON creator.id = pr.created_by
 
       LEFT JOIN (
         SELECT 

@@ -15,7 +15,8 @@ export default function createPayment(db, data) {
       effective_rate,
       amount_fund_currency,
       invoice_type,
-      date
+      date,
+      created_by
     )
     VALUES (
       @type,
@@ -29,9 +30,11 @@ export default function createPayment(db, data) {
       @effective_rate,
       @amount_fund_currency,
       @invoice_type,
-      @date
+      @date,
+      @created_by
     )
   `);
+  console.log(data);
 
   const result = insertPayment.run({
     type: data.type,
@@ -46,6 +49,7 @@ export default function createPayment(db, data) {
     amount_fund_currency: Number(data.amount_fund_currency || 0),
     invoice_type: data.invoice_type || null,
     date: data.date || new Date().toISOString(),
+    created_by: data.created_by,
   });
   if (data.invoice_id !== null) {
     createPaymentAllocation(db, {

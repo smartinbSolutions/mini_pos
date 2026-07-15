@@ -92,7 +92,7 @@ const formatExportDate = (value) => {
 };
 function fetchFundHistory(
   db,
-  { fundId, page = 1, limit = 50, startDate, endDate, exportAll = false }
+  { fundId, page = 1, limit = 50, startDate, endDate, exportAll = false },
 ) {
   const currentPage = Math.max(1, Number(page) || 1);
   const perPage = Math.max(1, Number(limit) || 50);
@@ -201,7 +201,7 @@ function fetchFundHistory(
       WHERE 1=1 ${dateFilter}
       ORDER BY id DESC
       ${pagingClause}
-      `
+      `,
     )
     .all(fundId, ...dateValues, ...pagingValues);
 
@@ -211,7 +211,7 @@ function fetchFundHistory(
 
   const { total } = db
     .prepare(
-      `SELECT COUNT(*) AS total FROM fund_history WHERE fund_id = ? ${plainDateFilter}`
+      `SELECT COUNT(*) AS total FROM fund_history WHERE fund_id = ? ${plainDateFilter}`,
     )
     .get(fundId, ...dateValues);
 
@@ -223,7 +223,7 @@ function fetchFundHistory(
         COALESCE(SUM(CASE WHEN movement_type = 'out' THEN amount ELSE 0 END), 0) AS totalOut
       FROM fund_history
       WHERE fund_id = ? ${plainDateFilter}
-      `
+      `,
     )
     .get(fundId, ...dateValues);
 
@@ -251,7 +251,7 @@ export default function registerFundIPC() {
         `
         INSERT INTO funds (name, currency_id)
         VALUES (?, ?)
-      `
+      `,
       )
       .run(data.name, data.currency_id);
 
@@ -295,7 +295,7 @@ export default function registerFundIPC() {
       LEFT JOIN currencies c ON c.id = f.currency_id
       LEFT JOIN fund_history fh ON fh.fund_id = f.id
       GROUP BY f.id
-    `
+    `,
       )
       .all();
 
@@ -318,7 +318,7 @@ export default function registerFundIPC() {
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE f.id = ?
-    `
+    `,
       )
       .get(id);
 
@@ -326,7 +326,7 @@ export default function registerFundIPC() {
   });
 
   ipcMain.handle("get-fund-history", (event, params) =>
-    fetchFundHistory(db, params)
+    fetchFundHistory(db, params),
   );
 
   ipcMain.handle("update-fund", (event, data) => {
@@ -338,7 +338,7 @@ export default function registerFundIPC() {
       UPDATE funds
       SET name = ?
       WHERE id = ?
-    `
+    `,
     ).run(data.name, data.id);
 
     return { success: true };
@@ -349,7 +349,7 @@ export default function registerFundIPC() {
       .prepare(
         `
       SELECT COUNT(*) AS count FROM fund_history WHERE fund_id = ?
-    `
+    `,
       )
       .get(id);
 
@@ -363,7 +363,7 @@ export default function registerFundIPC() {
     db.prepare(
       `
       DELETE FROM funds WHERE id = ?
-    `
+    `,
     ).run(id);
 
     return { success: true };
@@ -432,9 +432,10 @@ export default function registerFundIPC() {
           .prepare(
             `
           INSERT INTO fund_transfers
-          (from_fund_id, to_fund_id, deduct_amount, receive_amount, exchange_rate, effective_rate, note, date)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `
+          (from_fund_id, to_fund_id, deduct_amount, receive_amount, exchange_rate,
+           effective_rate, note, date, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
           )
           .run(
             from_fund_id,
@@ -444,7 +445,8 @@ export default function registerFundIPC() {
             nominalRate,
             effectiveRate,
             note || null,
-            now
+            now,
+            transferData.created_by,
           );
 
         const transferId = transferResult.lastInsertRowid;
@@ -545,7 +547,7 @@ export default function registerFundIPC() {
           `
         SELECT * FROM fund_history
         WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'out'
-      `
+      `,
         )
         .get(id);
 
@@ -554,7 +556,7 @@ export default function registerFundIPC() {
           `
         SELECT * FROM fund_history
         WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'in'
-      `
+      `,
         )
         .get(id);
 
@@ -584,7 +586,7 @@ export default function registerFundIPC() {
               effective_rate = ?,
               note = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           from_fund_id,
           to_fund_id,
@@ -593,7 +595,7 @@ export default function registerFundIPC() {
           nominalRate,
           effectiveRate,
           note || null,
-          id
+          id,
         );
 
         db.prepare(
@@ -603,12 +605,12 @@ export default function registerFundIPC() {
               amount = ?,
               note = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           from_fund_id,
           Number(deduct_amount),
           note || `Transferred to ${toFund.name}`,
-          outRow.id
+          outRow.id,
         );
 
         db.prepare(
@@ -618,12 +620,12 @@ export default function registerFundIPC() {
               amount = ?,
               note = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           to_fund_id,
           Number(receive_amount),
           note || `Received from ${fromFund.name}`,
-          inRow.id
+          inRow.id,
         );
 
         return { success: true, message: "Transfer updated successfully." };
@@ -657,7 +659,7 @@ export default function registerFundIPC() {
           `
           DELETE FROM fund_history
           WHERE payment_id = ? AND record_type IN ('transfer')
-        `
+        `,
         ).run(id);
 
         db.prepare("DELETE FROM fund_transfers WHERE id = ?").run(id);
@@ -723,13 +725,18 @@ export default function registerFundIPC() {
         ff.name AS from_fund_name,
         ff.currency_code AS from_fund_currency,
         tf.name AS to_fund_name,
+        creator.full_name AS created_by_name,
+
         tf.currency_code AS to_fund_currency
+
       FROM fund_transfers t
       LEFT JOIN (
         SELECT f.id, f.name, c.code AS currency_code
         FROM funds f
         LEFT JOIN currencies c ON c.id = f.currency_id
       ) ff ON ff.id = t.from_fund_id
+      LEFT JOIN users creator
+      ON creator.id = t.created_by
       LEFT JOIN (
         SELECT f.id, f.name, c.code AS currency_code
         FROM funds f
@@ -738,7 +745,7 @@ export default function registerFundIPC() {
       ${whereClause}
       ORDER BY t.id DESC
       LIMIT ? OFFSET ?
-    `
+    `,
       )
       .all(...values, limit, offset);
 
@@ -746,7 +753,7 @@ export default function registerFundIPC() {
       .prepare(
         `
       SELECT COUNT(*) AS total FROM fund_transfers t ${whereClause}
-    `
+    `,
       )
       .get(...values);
 
@@ -770,14 +777,17 @@ export default function registerFundIPC() {
           ffc.symbol AS from_fund_currency_symbol,
           tf.name AS to_fund_name,
           tfc.code AS to_fund_currency_code,
+          creator.full_name AS created_by_name,
           tfc.symbol AS to_fund_currency_symbol
         FROM fund_transfers t
         LEFT JOIN funds ff ON ff.id = t.from_fund_id
         LEFT JOIN currencies ffc ON ffc.id = ff.currency_id
         LEFT JOIN funds tf ON tf.id = t.to_fund_id
         LEFT JOIN currencies tfc ON tfc.id = tf.currency_id
+        LEFT JOIN users creator
+        ON creator.id = tf.created_by
         WHERE t.id = ?
-        `
+        `,
       )
       .get(id);
   });
@@ -855,7 +865,7 @@ export default function registerFundIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -891,7 +901,7 @@ export default function registerFundIPC() {
           <td>${r.note || ""}</td>
           <td class="right">${Number(r.running_balance).toFixed(2)}</td>
         </tr>
-      `
+      `,
           )
           .join("");
 
@@ -931,7 +941,7 @@ export default function registerFundIPC() {
 
         const win = new BrowserWindow({ show: false });
         await win.loadURL(
-          "data:text/html;charset=utf-8," + encodeURIComponent(html)
+          "data:text/html;charset=utf-8," + encodeURIComponent(html),
         );
 
         const pdfBuffer = await win.webContents.printToPDF({
@@ -955,6 +965,6 @@ export default function registerFundIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    }
+    },
   );
 }

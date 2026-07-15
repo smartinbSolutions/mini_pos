@@ -47,12 +47,12 @@ const usePayment = () => {
           income_total: 0,
           expense_count: 0,
           expense_total: 0,
-        }
+        },
       );
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.fund") })
+        err?.message || t("errors.createFailed", { field: t("ui.fund") }),
       );
     } finally {
       setLoading(false);

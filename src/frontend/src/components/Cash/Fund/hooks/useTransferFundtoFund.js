@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const emptyForm = {
   from_fund_id: "",
@@ -26,6 +27,7 @@ const useTransferFundtoFund = ({
   const api = window.api;
   const { t } = useTranslation();
   const { money } = usePrimaryCurrency();
+  const { user } = useAuth();
 
   const isEditMode = Boolean(transfer?.id);
   const isSourceLocked = Boolean(lockedFromFundId) && !isEditMode;
@@ -43,12 +45,12 @@ const useTransferFundtoFund = ({
 
   const sourceFund = useMemo(
     () => funds.find((f) => f.id === Number(form.from_fund_id)),
-    [funds, form.from_fund_id]
+    [funds, form.from_fund_id],
   );
 
   const targetFund = useMemo(
     () => funds.find((f) => f.id === Number(form.to_fund_id)),
-    [funds, form.to_fund_id]
+    [funds, form.to_fund_id],
   );
 
   const refetch = useCallback(async () => {
@@ -252,6 +254,7 @@ const useTransferFundtoFund = ({
         deduct_amount: Number(form.amount),
         receive_amount: Number(form.receive_amount),
         note: form.note || autoNote,
+        created_by: user.id,
       };
 
       const res = isEditMode

@@ -110,8 +110,8 @@ export default function registerSalesInvoiceIPC() {
           .prepare(
             `
             INSERT INTO sales_invoices
-            (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, taxValue, created_by, updated_by )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, taxValue, created_by )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
@@ -124,7 +124,6 @@ export default function registerSalesInvoiceIPC() {
             data.tax_rate || 0,
             netTotal,
             data.taxValue || 0,
-            data.created_by || "",
             data.created_by || "",
           );
 
@@ -213,6 +212,7 @@ export default function registerSalesInvoiceIPC() {
             note: `${payment.note} #${invoiceId}`,
             fundOperation: "add",
             date: data.date || new Date().toISOString(),
+            created_by: data.created_by,
           });
 
           createFundHistory(db, {
