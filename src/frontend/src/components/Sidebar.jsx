@@ -19,6 +19,7 @@ import {
   Zap,
   LogOut,
   User as UserIcon,
+  Coins,
 } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -60,7 +61,7 @@ export default function Sidebar() {
     },
     {
       title: "navigation.expense",
-      icon: <CreditCard size={18} />,
+      icon: <Coins size={18} />,
       children: [
         { title: "navigation.expense", path: "/expense" },
         { title: "navigation.expensesCategory", path: "/expense-category" },
@@ -76,7 +77,7 @@ export default function Sidebar() {
       ],
     },
     {
-      title: "navigation.store",
+      title: "navigation.stock",
       icon: <Package size={18} />,
       children: [
         { title: "navigation.products", path: "/products" },
