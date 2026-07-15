@@ -427,8 +427,8 @@ export default function registerExpenseIPC() {
           fullDateTime,
           newSubtotal,
           newNetTotal,
-          data.id,
-          data.updated_by
+          data.updated_by,
+          data.id
         );
 
         // Replace items

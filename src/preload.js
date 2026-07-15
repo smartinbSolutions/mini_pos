@@ -40,6 +40,8 @@ contextBridge.exposeInMainWorld("api", {
   getFunds: () => ipcRenderer.invoke("get-funds"),
   getFund: (id) => ipcRenderer.invoke("get-fund", id),
   getFundHistory: (params) => ipcRenderer.invoke("get-fund-history", params),
+  getFundEarliestDate: (data) =>
+    ipcRenderer.invoke("get-fund-earliest-date", data),
   createFund: (data) => ipcRenderer.invoke("create-fund", data),
   updateFund: (data) => ipcRenderer.invoke("update-fund", data),
   deleteFund: (id) => ipcRenderer.invoke("delete-fund", id),
@@ -74,6 +76,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("export-party-history-excel", params),
   exportPartyHistoryPdf: (params) =>
     ipcRenderer.invoke("export-party-history-pdf", params),
+  getPartyEarliestDate: (data) =>
+    ipcRenderer.invoke("get-party-earliest-date", data),
 
   /* ================= PRODUCT BARCODE ================= */
   getProductBarcodes: () => ipcRenderer.invoke("get-product-barcodes"),

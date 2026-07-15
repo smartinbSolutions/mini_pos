@@ -74,7 +74,7 @@ export default function createPayment(db, data) {
       invoice_id: data.invoice_id,
       invoice_type: "payment",
       amount: data.amount,
-      movement_type: data.type === "income" ? "increase" : "decrease",
+      movement_type: "decrease",
       note: data.note,
       payment_id: result.lastInsertRowid,
       date: paymentDate,

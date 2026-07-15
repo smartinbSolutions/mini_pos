@@ -754,7 +754,8 @@
     "stock": "المستودع",
     "importReports": "تقارير الاستيراد",
     "purchaseReturn": "مرتجع المشتريات",
-    "salesReturn": "مرتجع المبيعات"
+    "salesReturn": "مرتجع المبيعات",
+    "cash": "النقدية"
   },
   "dashboard": {
     "loading": "جار تحميل لوحة التحكم...",

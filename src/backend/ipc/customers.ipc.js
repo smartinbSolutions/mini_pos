@@ -20,7 +20,9 @@ export default function registerCustomersIPC() {
     const openingBalance = Number(data.opening_balance || 0);
 
     if (openingBalance !== 0) {
-      const openingBalanceDate = `${data.opening_balance_year || new Date().getFullYear()}-01-01 00:00:00`;
+      const openingBalanceDate = data.date
+        ? `${data.date.slice(0, 10)} 00:00:00`
+        : `${new Date().getFullYear()}-01-01 00:00:00`;
 
       createPartyHistory(db, {
         party_type: "customer",

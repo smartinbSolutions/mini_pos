@@ -250,9 +250,7 @@ function fetchPartyHistoryLedger(
 }
 
 export default function registerPartyHistoryIPC() {
-  console.log("registerPartyHistoryIPC called");
   ipcMain.handle("get-party-history-ledger", (event, params) => {
-    console.log(params);
     return fetchPartyHistoryLedger(db, params);
   });
   ipcMain.handle("get-customer-credit", (event, customerId) => {
@@ -261,6 +259,22 @@ export default function registerPartyHistoryIPC() {
 
   ipcMain.handle("get-supplier-credit", (event, supplierId) => {
     return getPartyCredit(db, { partyId: supplierId, partyType: "supplier" });
+  });
+
+  ipcMain.handle("get-party-earliest-date", (event, { partyId, partyType }) => {
+    try {
+      if (!partyId || !partyType) {
+        return { success: true, minDate: null };
+      }
+      const row = db
+        .prepare(
+          `SELECT MIN(date) AS minDate FROM party_history WHERE party_id = ? AND party_type = ?`
+        )
+        .get(partyId, partyType);
+      return { success: true, minDate: row?.minDate || null };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle(

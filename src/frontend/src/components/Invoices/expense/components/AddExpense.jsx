@@ -144,6 +144,16 @@ export default function AddExpense() {
                 />
 
                 <input
+                  type="date"
+                  className={inputClass}
+                  value={invoice.date}
+                  // max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, date: e.target.value })
+                  }
+                />
+
+                <input
                   type="text"
                   className={inputClass}
                   placeholder={t("ui.expenseName")}

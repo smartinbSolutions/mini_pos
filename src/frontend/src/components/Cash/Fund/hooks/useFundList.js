@@ -4,7 +4,13 @@ import { useTranslation } from "react-i18next";
 
 const useFundList = () => {
   const { t } = useTranslation();
-  const emptyFund = { name: "", currency_id: "", initial_balance: 0 };
+  const emptyFund = {
+    name: "",
+    currency_id: "",
+    initial_balance: 0,
+    balance_type: "increase",
+    date: "",
+  };
 
   const [saving, setSaving] = useState(false);
   const [funds, setFunds] = useState([]);
@@ -88,12 +94,14 @@ const useFundList = () => {
 
     setSaving(true);
     try {
-      console.log(fund);
       await api.createFund({
         name: String(fund.name || "").trim(),
         currency_id: Number(fund.currency_id),
         currency_code: fund.currency_code,
         initial_balance: Number(fund.initial_balance || 0),
+        balance_type:
+          fund.balance_type === "decrease" ? "decrease" : "increase",
+        date: fund.date || undefined,
       });
       await refetch();
       setActionError("");

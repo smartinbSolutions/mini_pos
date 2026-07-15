@@ -68,7 +68,7 @@ export default function Sidebar() {
       ],
     },
     {
-      title: "navigation.funds",
+      title: "navigation.cash",
       icon: <Landmark size={18} />,
       children: [
         { title: "navigation.funds", path: "/funds" },
@@ -111,7 +111,7 @@ export default function Sidebar() {
       if (!item.children) return;
 
       const match = item.children.some((c) =>
-        location.pathname.startsWith(c.path),
+        location.pathname.startsWith(c.path)
       );
 
       if (match) newOpen[index] = true;
@@ -273,7 +273,7 @@ export default function Sidebar() {
           }
 
           const isActiveGroup = item.children.some((c) =>
-            location.pathname.startsWith(c.path),
+            location.pathname.startsWith(c.path)
           );
 
           return (

@@ -267,7 +267,7 @@ const FundMovementsPage = () => {
 
                     <div className="col-span-2 text-start text-sm text-gray-500 flex items-start gap-2">
                       <CalendarDays size={15} />
-                      {item?.createdAt?.slice(0, 10)}
+                      {item?.date?.slice(0, 10)}
                     </div>
                   </div>
                 );

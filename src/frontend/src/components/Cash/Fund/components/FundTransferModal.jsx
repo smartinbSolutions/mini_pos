@@ -30,6 +30,7 @@ export default function FundTransferModal({
     handleReceiveAmountChange,
     submit,
     t,
+    minDate,
   } = useTransferFundtoFund({
     isOpen,
     refetchList,
@@ -174,8 +175,7 @@ export default function FundTransferModal({
             </div>
           </div>
 
-          {/* Rate breakdown — only meaningful once both amounts exist and
-              the currencies actually differ. */}
+          {/* Rate breakdown */}
           {isCrossCurrency && form.amount && form.receive_amount ? (
             <div className="flex justify-between text-xs text-gray-500 bg-slate-50 p-2.5 rounded-xl border border-dashed">
               <span>
@@ -196,6 +196,28 @@ export default function FundTransferModal({
               </span>
             </div>
           ) : null}
+
+          <div>
+            <label className="text-sm text-gray-600">
+              {t("screens.transfer.date") || "Transfer date"}
+            </label>
+            <input
+              type="date"
+              value={form.date}
+              min={minDate || undefined}
+              // max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, date: e.target.value }))
+              }
+              className="w-full h-10 rounded-xl border px-3 mt-1 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+            />
+            {minDate && (
+              <p className="mt-1 text-xs text-gray-400">
+                {t("screens.transfer.dateNotBefore", { date: minDate }) ||
+                  `Cannot be before ${minDate}`}
+              </p>
+            )}
+          </div>
 
           <div>
             <label className="text-sm text-gray-600">

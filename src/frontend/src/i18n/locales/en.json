@@ -753,7 +753,8 @@
     "stock": "Stock",
     "importReports": "Import reports",
     "purchaseReturn": "Purchase return",
-    "salesReturn": "Sales return"
+    "salesReturn": "Sales return",
+    "cash": "Cash"
   },
   "dashboard": {
     "loading": "Loading dashboard...",

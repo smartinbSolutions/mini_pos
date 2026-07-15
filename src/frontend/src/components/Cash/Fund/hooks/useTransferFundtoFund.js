@@ -3,13 +3,16 @@ import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
 
-const emptyForm = {
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
+const makeEmptyForm = () => ({
   from_fund_id: "",
   to_fund_id: "",
   amount: "", // deduct amount, in source fund's currency
   receive_amount: "", // editable, in destination fund's currency
   note: "",
-};
+  date: todayStr(),
+});
 
 // `transfer` is optional — when present, the hook operates in edit mode
 // against that existing fund_transfers row instead of creating a new one.
@@ -35,8 +38,9 @@ const useTransferFundtoFund = ({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [funds, setFunds] = useState([]);
+  const [minDate, setMinDate] = useState(null);
 
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(makeEmptyForm);
 
   // Tracks whether the person has manually typed their own note — once they
   // have, auto-generation stops overwriting it. Editing an existing transfer
@@ -45,12 +49,12 @@ const useTransferFundtoFund = ({
 
   const sourceFund = useMemo(
     () => funds.find((f) => f.id === Number(form.from_fund_id)),
-    [funds, form.from_fund_id],
+    [funds, form.from_fund_id]
   );
 
   const targetFund = useMemo(
     () => funds.find((f) => f.id === Number(form.to_fund_id)),
-    [funds, form.to_fund_id],
+    [funds, form.to_fund_id]
   );
 
   const refetch = useCallback(async () => {
@@ -64,6 +68,37 @@ const useTransferFundtoFund = ({
     }
   }, [api]);
 
+  // A transfer touches two funds at once, so it can't be dated before
+  // either fund's earliest history — otherwise you'd be backdating money
+  // movement into a fund's ledger before that fund "existed" on paper.
+  // minDate is the LATER of the two funds' earliest dates.
+  const refetchMinDate = useCallback(async () => {
+    if (!api || !form.from_fund_id || !form.to_fund_id) {
+      setMinDate(null);
+      return;
+    }
+
+    try {
+      const [fromRes, toRes] = await Promise.all([
+        api.getFundEarliestDate({ fundId: form.from_fund_id }),
+        api.getFundEarliestDate({ fundId: form.to_fund_id }),
+      ]);
+
+      const fromMin = fromRes?.minDate ? fromRes.minDate.slice(0, 10) : null;
+      const toMin = toRes?.minDate ? toRes.minDate.slice(0, 10) : null;
+      console.log(fromMin);
+      console.log(toMin);
+      if (fromMin && toMin) {
+        setMinDate(fromMin > toMin ? fromMin : toMin);
+      } else {
+        setMinDate(fromMin || toMin || null);
+      }
+    } catch (err) {
+      console.error(err);
+      setMinDate(null);
+    }
+  }, [api, form.from_fund_id, form.to_fund_id]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -76,13 +111,14 @@ const useTransferFundtoFund = ({
         amount: transfer.deduct_amount,
         receive_amount: transfer.receive_amount,
         note: transfer.note || "",
+        date: transfer.date ? transfer.date.slice(0, 10) : todayStr(),
       });
       setNoteEdited(true); // existing note is deliberate, don't auto-overwrite it
     } else if (isSourceLocked) {
-      setForm({ ...emptyForm, from_fund_id: lockedFromFundId });
+      setForm({ ...makeEmptyForm(), from_fund_id: lockedFromFundId });
       setNoteEdited(false);
     } else {
-      setForm(emptyForm);
+      setForm(makeEmptyForm());
       setNoteEdited(false);
     }
 
@@ -96,6 +132,22 @@ const useTransferFundtoFund = ({
     isSourceLocked,
     lockedFromFundId,
   ]);
+
+  // Refetch the floor whenever both funds are known (selection changed, or
+  // edit mode just populated both from the existing transfer).
+  useEffect(() => {
+    refetchMinDate();
+  }, [refetchMinDate]);
+
+  // If the floor arrives (or moves) after the date was already set, and the
+  // current date now violates it, clamp forward rather than leaving an
+  // invalid date sitting in the field.
+  useEffect(() => {
+    if (minDate && form.date && form.date < minDate) {
+      setForm((prev) => ({ ...prev, date: minDate }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minDate]);
 
   const handleSourceFundChange = (e) => {
     const id = Number(e.target.value);
@@ -244,6 +296,19 @@ const useTransferFundtoFund = ({
       return;
     }
 
+    if (!form.date) {
+      setMessage(t("errors.dateRequired"));
+      return;
+    }
+
+    if (minDate && form.date < minDate) {
+      setMessage(
+        t("errors.dateBeforeMin", { date: minDate }) ||
+          `Date cannot be before ${minDate}`
+      );
+      return;
+    }
+
     setLoading(true);
     setMessage("");
 
@@ -254,6 +319,7 @@ const useTransferFundtoFund = ({
         deduct_amount: Number(form.amount),
         receive_amount: Number(form.receive_amount),
         note: form.note || autoNote,
+        date: form.date,
         created_by: user.id,
       };
 
@@ -298,6 +364,7 @@ const useTransferFundtoFund = ({
     handleNoteChange,
     submit,
     t,
+    minDate,
   };
 };
 

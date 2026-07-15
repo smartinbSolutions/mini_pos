@@ -92,7 +92,7 @@ const formatExportDate = (value) => {
 };
 function fetchFundHistory(
   db,
-  { fundId, page = 1, limit = 50, startDate, endDate, exportAll = false },
+  { fundId, page = 1, limit = 50, startDate, endDate, exportAll = false }
 ) {
   const currentPage = Math.max(1, Number(page) || 1);
   const perPage = Math.max(1, Number(limit) || 50);
@@ -169,7 +169,7 @@ function fetchFundHistory(
             END
           ) OVER (
             PARTITION BY h.fund_id
-            ORDER BY h.id
+            ORDER BY h.date, h.id
           ) AS running_balance
 
         FROM fund_history h
@@ -199,9 +199,9 @@ function fetchFundHistory(
       )
       SELECT * FROM full_history fh
       WHERE 1=1 ${dateFilter}
-      ORDER BY id DESC
+      ORDER BY date DESC, id DESC
       ${pagingClause}
-      `,
+      `
     )
     .all(fundId, ...dateValues, ...pagingValues);
 
@@ -211,7 +211,7 @@ function fetchFundHistory(
 
   const { total } = db
     .prepare(
-      `SELECT COUNT(*) AS total FROM fund_history WHERE fund_id = ? ${plainDateFilter}`,
+      `SELECT COUNT(*) AS total FROM fund_history WHERE fund_id = ? ${plainDateFilter}`
     )
     .get(fundId, ...dateValues);
 
@@ -223,7 +223,7 @@ function fetchFundHistory(
         COALESCE(SUM(CASE WHEN movement_type = 'out' THEN amount ELSE 0 END), 0) AS totalOut
       FROM fund_history
       WHERE fund_id = ? ${plainDateFilter}
-      `,
+      `
     )
     .get(fundId, ...dateValues);
 
@@ -241,26 +241,33 @@ function fetchFundHistory(
 export default function registerFundIPC() {
   ipcMain.handle("create-fund", (event, data) => {
     if (!data.name || !data.currency_id) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
 
-    const initialBalance = Number(data.initial_balance || 0);
+    const initialBalance = Math.abs(Number(data.initial_balance || 0));
+    const balanceType =
+      data.balance_type === "decrease" ? "decrease" : "increase";
 
     const result = db
       .prepare(
         `
         INSERT INTO funds (name, currency_id)
         VALUES (?, ?)
-      `,
+      `
       )
       .run(data.name, data.currency_id);
-
+    console.log(data);
     if (initialBalance !== 0) {
+      const openingBalanceDate = data.date
+        ? `${data.date.slice(0, 10)} 00:00:00`
+        : `${new Date().getFullYear()}-01-01 00:00:00`;
+
       createFundHistory(db, {
         fund_id: result.lastInsertRowid,
         record_type: "opening_balance",
-        movement_type: initialBalance > 0 ? "in" : "out",
-        amount: Math.abs(initialBalance),
+        movement_type: balanceType === "increase" ? "in" : "out",
+        amount: initialBalance,
+        date: openingBalanceDate,
         note: "Opening Balance",
       });
     }
@@ -295,7 +302,7 @@ export default function registerFundIPC() {
       LEFT JOIN currencies c ON c.id = f.currency_id
       LEFT JOIN fund_history fh ON fh.fund_id = f.id
       GROUP BY f.id
-    `,
+    `
       )
       .all();
 
@@ -318,15 +325,32 @@ export default function registerFundIPC() {
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE f.id = ?
-    `,
+    `
       )
       .get(id);
 
     return fund;
   });
 
+  ipcMain.handle("get-fund-earliest-date", (event, { fundId }) => {
+    try {
+      if (!fundId) {
+        return { success: true, minDate: null };
+      }
+      console.log(fundId);
+      const row = db
+        .prepare(
+          `SELECT MIN(date) AS minDate FROM fund_history WHERE fund_id = ?`
+        )
+        .get(fundId);
+      return { success: true, minDate: row?.minDate || null };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
   ipcMain.handle("get-fund-history", (event, params) =>
-    fetchFundHistory(db, params),
+    fetchFundHistory(db, params)
   );
 
   ipcMain.handle("update-fund", (event, data) => {
@@ -338,7 +362,7 @@ export default function registerFundIPC() {
       UPDATE funds
       SET name = ?
       WHERE id = ?
-    `,
+    `
     ).run(data.name, data.id);
 
     return { success: true };
@@ -349,7 +373,7 @@ export default function registerFundIPC() {
       .prepare(
         `
       SELECT COUNT(*) AS count FROM fund_history WHERE fund_id = ?
-    `,
+    `
       )
       .get(id);
 
@@ -363,7 +387,7 @@ export default function registerFundIPC() {
     db.prepare(
       `
       DELETE FROM funds WHERE id = ?
-    `,
+    `
     ).run(id);
 
     return { success: true };
@@ -371,8 +395,14 @@ export default function registerFundIPC() {
 
   ipcMain.handle("transfer-fund-to-fund", (event, transferData) => {
     try {
-      const { from_fund_id, to_fund_id, deduct_amount, receive_amount, note } =
-        transferData;
+      const {
+        from_fund_id,
+        to_fund_id,
+        deduct_amount,
+        receive_amount,
+        note,
+        date,
+      } = transferData;
 
       if (!from_fund_id || !to_fund_id) {
         return {
@@ -426,7 +456,9 @@ export default function registerFundIPC() {
       const effectiveRate = Number(receive_amount) / Number(deduct_amount);
 
       const transaction = db.transaction(() => {
-        const now = new Date().toISOString();
+        const dateOnly = (date || new Date().toISOString()).slice(0, 10);
+        const time = new Date().toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
 
         const transferResult = db
           .prepare(
@@ -435,7 +467,7 @@ export default function registerFundIPC() {
           (from_fund_id, to_fund_id, deduct_amount, receive_amount, exchange_rate,
            effective_rate, note, date, created_by)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+        `
           )
           .run(
             from_fund_id,
@@ -445,8 +477,8 @@ export default function registerFundIPC() {
             nominalRate,
             effectiveRate,
             note || null,
-            now,
-            transferData.created_by,
+            fullDateTime,
+            transferData.created_by
           );
 
         const transferId = transferResult.lastInsertRowid;
@@ -458,7 +490,7 @@ export default function registerFundIPC() {
           payment_id: transferId,
           amount: Number(deduct_amount),
           note: note || `Transferred to ${toFund.name}`,
-          date: now,
+          date: fullDateTime,
         });
 
         createFundHistory(db, {
@@ -468,7 +500,7 @@ export default function registerFundIPC() {
           payment_id: transferId,
           amount: Number(receive_amount),
           note: note || `Received from ${fromFund.name}`,
-          date: now,
+          date: fullDateTime,
         });
 
         return {
@@ -488,6 +520,7 @@ export default function registerFundIPC() {
       };
     }
   });
+
   ipcMain.handle("update-fund-transfer", (event, data) => {
     try {
       const {
@@ -497,6 +530,7 @@ export default function registerFundIPC() {
         deduct_amount,
         receive_amount,
         note,
+        date,
       } = data;
 
       if (!id) {
@@ -547,7 +581,7 @@ export default function registerFundIPC() {
           `
         SELECT * FROM fund_history
         WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'out'
-      `,
+      `
         )
         .get(id);
 
@@ -556,7 +590,7 @@ export default function registerFundIPC() {
           `
         SELECT * FROM fund_history
         WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'in'
-      `,
+      `
         )
         .get(id);
 
@@ -575,6 +609,14 @@ export default function registerFundIPC() {
       const effectiveRate = Number(receive_amount) / Number(deduct_amount);
 
       const transaction = db.transaction(() => {
+        const dateOnly = (
+          date ||
+          existing.date ||
+          new Date().toISOString()
+        ).slice(0, 10);
+        const time = new Date().toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
+
         db.prepare(
           `
           UPDATE fund_transfers
@@ -584,9 +626,10 @@ export default function registerFundIPC() {
               receive_amount = ?,
               exchange_rate = ?,
               effective_rate = ?,
-              note = ?
+              note = ?,
+              date = ?
           WHERE id = ?
-        `,
+        `
         ).run(
           from_fund_id,
           to_fund_id,
@@ -595,7 +638,8 @@ export default function registerFundIPC() {
           nominalRate,
           effectiveRate,
           note || null,
-          id,
+          fullDateTime,
+          id
         );
 
         db.prepare(
@@ -603,14 +647,16 @@ export default function registerFundIPC() {
           UPDATE fund_history
           SET fund_id = ?,
               amount = ?,
-              note = ?
+              note = ?,
+              date = ?
           WHERE id = ?
-        `,
+        `
         ).run(
           from_fund_id,
           Number(deduct_amount),
           note || `Transferred to ${toFund.name}`,
-          outRow.id,
+          fullDateTime,
+          outRow.id
         );
 
         db.prepare(
@@ -618,14 +664,16 @@ export default function registerFundIPC() {
           UPDATE fund_history
           SET fund_id = ?,
               amount = ?,
-              note = ?
+              note = ?,
+              date = ?
           WHERE id = ?
-        `,
+        `
         ).run(
           to_fund_id,
           Number(receive_amount),
           note || `Received from ${fromFund.name}`,
-          inRow.id,
+          fullDateTime,
+          inRow.id
         );
 
         return { success: true, message: "Transfer updated successfully." };
@@ -640,6 +688,7 @@ export default function registerFundIPC() {
       };
     }
   });
+
   ipcMain.handle("delete-fund-transfer", (event, id) => {
     try {
       if (!id) {
@@ -659,7 +708,7 @@ export default function registerFundIPC() {
           `
           DELETE FROM fund_history
           WHERE payment_id = ? AND record_type IN ('transfer')
-        `,
+        `
         ).run(id);
 
         db.prepare("DELETE FROM fund_transfers WHERE id = ?").run(id);
@@ -685,13 +734,11 @@ export default function registerFundIPC() {
     const conditions = [];
     const values = [];
 
-    // Optional: filter to transfers touching a specific fund (either side).
     if (params.fundId) {
       conditions.push("(t.from_fund_id = ? OR t.to_fund_id = ?)");
       values.push(params.fundId, params.fundId);
     }
 
-    // Optional: filter to a specific direction from one fund's perspective.
     if (params.fromFundId) {
       conditions.push("t.from_fund_id = ?");
       values.push(params.fromFundId);
@@ -702,14 +749,15 @@ export default function registerFundIPC() {
       values.push(params.toFundId);
     }
 
-    // Optional: date range (inclusive), expects ISO date strings.
+    // Wrapped in date(...) so time-of-day doesn't push same-day rows
+    // outside an inclusive range boundary.
     if (params.dateFrom) {
-      conditions.push("t.date >= ?");
+      conditions.push("date(t.date) >= date(?)");
       values.push(params.dateFrom);
     }
 
     if (params.dateTo) {
-      conditions.push("t.date <= ?");
+      conditions.push("date(t.date) <= date(?)");
       values.push(params.dateTo);
     }
 
@@ -726,9 +774,9 @@ export default function registerFundIPC() {
         ff.currency_code AS from_fund_currency,
         tf.name AS to_fund_name,
         creator.full_name AS created_by_name,
-
+  
         tf.currency_code AS to_fund_currency
-
+  
       FROM fund_transfers t
       LEFT JOIN (
         SELECT f.id, f.name, c.code AS currency_code
@@ -743,9 +791,9 @@ export default function registerFundIPC() {
         LEFT JOIN currencies c ON c.id = f.currency_id
       ) tf ON tf.id = t.to_fund_id
       ${whereClause}
-      ORDER BY t.id DESC
+      ORDER BY t.date DESC, t.id DESC
       LIMIT ? OFFSET ?
-    `,
+    `
       )
       .all(...values, limit, offset);
 
@@ -753,7 +801,7 @@ export default function registerFundIPC() {
       .prepare(
         `
       SELECT COUNT(*) AS total FROM fund_transfers t ${whereClause}
-    `,
+    `
       )
       .get(...values);
 
@@ -785,9 +833,9 @@ export default function registerFundIPC() {
         LEFT JOIN funds tf ON tf.id = t.to_fund_id
         LEFT JOIN currencies tfc ON tfc.id = tf.currency_id
         LEFT JOIN users creator
-        ON creator.id = tf.created_by
+        ON creator.id = t.created_by
         WHERE t.id = ?
-        `,
+        `
       )
       .get(id);
   });
@@ -865,7 +913,7 @@ export default function registerFundIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    },
+    }
   );
 
   ipcMain.handle(
@@ -901,7 +949,7 @@ export default function registerFundIPC() {
           <td>${r.note || ""}</td>
           <td class="right">${Number(r.running_balance).toFixed(2)}</td>
         </tr>
-      `,
+      `
           )
           .join("");
 
@@ -941,7 +989,7 @@ export default function registerFundIPC() {
 
         const win = new BrowserWindow({ show: false });
         await win.loadURL(
-          "data:text/html;charset=utf-8," + encodeURIComponent(html),
+          "data:text/html;charset=utf-8," + encodeURIComponent(html)
         );
 
         const pdfBuffer = await win.webContents.printToPDF({
@@ -965,6 +1013,6 @@ export default function registerFundIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    },
+    }
   );
 }

@@ -437,7 +437,7 @@ export default function AddSales() {
                     value={invoice.tax_id || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value),
+                        (tax) => tax.id === Number(e.target.value)
                       );
                       setInvoice((p) => ({
                         ...p,

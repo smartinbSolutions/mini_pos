@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
 
+const todayStr = () => new Date().toISOString().slice(0, 10);
+
 const useAddPayment = ({
   isOpen,
   onClose,
@@ -34,6 +36,13 @@ const useAddPayment = ({
   const isSupplier = mode === "supplier";
   const isCollectorMode = !invoice;
 
+  // Embedded in an invoice-creation form: payment date follows the invoice's
+  // own date once it's created, so no picker is shown here at all.
+  const isEmbeddedInCreation = isCollectorMode && !!onSubmit;
+  // Direct party-ledger payment with no invoice attached (customer/supplier/
+  // partner collection) — floor is the party's opening balance / earliest entry.
+  const isDirectCollection = isCollectorMode && !onSubmit;
+
   const partyType =
     isPurchase || isExpense || isSupplier || isPurchaseReturn
       ? "supplier"
@@ -54,10 +63,14 @@ const useAddPayment = ({
     currency_symbol: "",
     note: "",
     partner_transaction_type: "",
+    date: todayStr(),
   });
 
   const [availableCredit, setAvailableCredit] = useState(0);
   const [useCredit, setUseCredit] = useState(false);
+  const [minDate, setMinDate] = useState(null);
+
+  const showDatePicker = !isEmbeddedInCreation && !useCredit;
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -80,16 +93,48 @@ const useAddPayment = ({
           ? await api.getSupplierCredit(party)
           : await api.getCustomerCredit(party);
       setAvailableCredit(res?.totalAvailable || 0);
-      console.log(res);
     } catch (err) {
       setAvailableCredit(0);
     }
   }, [api, party, partyType]);
 
+  // Determine the earliest allowed date for this payment.
+  const refetchMinDate = useCallback(async () => {
+    if (isEmbeddedInCreation) {
+      setMinDate(null);
+      return;
+    }
+    if (invoice?.date) {
+      setMinDate(invoice.date.slice(0, 10));
+      return;
+    }
+    if (isDirectCollection && api && party) {
+      try {
+        const res = await api.getPartyEarliestDate({
+          partyId: party,
+          partyType,
+        });
+        setMinDate(res?.minDate ? res.minDate.slice(0, 10) : null);
+      } catch {
+        setMinDate(null);
+      }
+      return;
+    }
+    setMinDate(null);
+  }, [
+    api,
+    invoice,
+    party,
+    partyType,
+    isEmbeddedInCreation,
+    isDirectCollection,
+  ]);
+
   useEffect(() => {
     if (isOpen) {
       refetch();
       refetchCredit();
+      refetchMinDate();
       setUseCredit(false);
 
       let defaultNote = "";
@@ -132,6 +177,7 @@ const useAddPayment = ({
         currency_symbol: "",
         note: defaultNote,
         partner_transaction_type: "income",
+        date: invoice?.date ? invoice.date.slice(0, 10) : todayStr(),
       });
 
       setMessage("");
@@ -140,6 +186,7 @@ const useAddPayment = ({
     isOpen,
     refetch,
     refetchCredit,
+    refetchMinDate,
     invoice,
     isPurchase,
     isExpense,
@@ -153,6 +200,14 @@ const useAddPayment = ({
     initialBaseAmount,
     t,
   ]);
+
+  // If the floor arrives after the form's default date was set (async fetch),
+  // and the current date would violate it, clamp forward.
+  useEffect(() => {
+    if (minDate && form.date && form.date < minDate) {
+      setForm((prev) => ({ ...prev, date: minDate }));
+    }
+  }, [minDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFundChange = (e) => {
     const fundId = Number(e.target.value);
@@ -189,7 +244,7 @@ const useAddPayment = ({
       if (next) {
         const capped = Math.min(
           availableCredit,
-          initialBaseAmount || availableCredit,
+          initialBaseAmount || availableCredit
         );
         setForm((f) => ({
           ...f,
@@ -220,6 +275,16 @@ const useAddPayment = ({
       setMessage(t("errors.creditExceeded"));
       return;
     }
+    if (showDatePicker) {
+      if (!form.date) {
+        setMessage(t("errors.dateRequired"));
+        return;
+      }
+      if (minDate && form.date < minDate) {
+        setMessage(t("errors.dateBeforeMin", { date: minDate }));
+        return;
+      }
+    }
 
     const paymentType =
       isPurchase || isExpense || isSupplier || isSalesReturn
@@ -243,6 +308,7 @@ const useAddPayment = ({
       mode,
       source: useCredit ? "credit" : "new",
       created_by: user.id,
+      date: showDatePicker ? form.date : undefined,
     };
 
     if (isCollectorMode && onSubmit) {
@@ -255,7 +321,6 @@ const useAddPayment = ({
     setMessage("");
     try {
       let res;
-      console.log(mode);
       if (useCredit) {
         res = await api.applyInvoiceCredit({
           partyId: party,
@@ -313,6 +378,8 @@ const useAddPayment = ({
     availableCredit,
     useCredit,
     toggleUseCredit,
+    showDatePicker,
+    minDate,
   };
 };
 

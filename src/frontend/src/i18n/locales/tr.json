@@ -754,7 +754,8 @@
     "stock": "Stok",
     "importReports": "İçe aktarma raporları",
     "purchaseReturn": "Satın alma iadeleri",
-    "salesReturn": "Satış iadeleri"
+    "salesReturn": "Satış iadeleri",
+    "cash": "Nakit"
   },
   "dashboard": {
     "loading": "Kontrol paneli yükleniyor...",

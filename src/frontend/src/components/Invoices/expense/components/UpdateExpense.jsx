@@ -152,7 +152,18 @@ export default function UpdateExpense() {
                   onChange={(e) =>
                     setInvoice({ ...invoice, supplier_id: e.id })
                   }
-                  disabled={isLocked} // omit this prop in AddExpense, only UpdateExpense has isLocked
+                  disabled={isLocked}
+                />
+
+                <input
+                  type="date"
+                  className={inputClass}
+                  value={invoice.date}
+                  // max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) =>
+                    setInvoice({ ...invoice, date: e.target.value })
+                  }
+                  disabled={isLocked}
                 />
 
                 <input

@@ -508,7 +508,7 @@ WHERE si.invoice_id = ?
             date: fullDateTime,
           });
         }
-
+        console.log(data);
         // Sales invoice can only reach this handler while unpaid (guard above),
         // so paid_amount/remaining_amount/status stay at their unpaid defaults.
         db.prepare(
@@ -536,8 +536,8 @@ WHERE si.invoice_id = ?
           data.tax_rate || null,
           newNetTotal,
           data.taxValue || 0,
-          data.id,
-          data.updated_by
+          data.updated_by, // was data.id
+          data.id // was data.updated_by
         );
 
         // Customer party_history reconciliation for the invoice amount

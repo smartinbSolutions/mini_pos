@@ -14,11 +14,11 @@ const emptyItem = {
   total: 0,
 };
 
-const emptyInvoice = {
+const makeEmptyInvoice = () => ({
   supplier_id: NO_SUPPLIER,
   date: new Date().toISOString().slice(0, 10),
   status: "unpaid",
-};
+});
 
 const useUpdateExpense = () => {
   const { t } = useTranslation();
@@ -27,7 +27,7 @@ const useUpdateExpense = () => {
   const api = window.api;
   const { user } = useAuth();
 
-  const [invoice, setInvoice] = useState(emptyInvoice);
+  const [invoice, setInvoice] = useState(makeEmptyInvoice);
   const [items, setItems] = useState([emptyItem]);
 
   const [category, setCategory] = useState([]);
@@ -70,6 +70,10 @@ const useUpdateExpense = () => {
       setInvoice({
         ...res,
         supplier_id: res.supplier_id || NO_SUPPLIER,
+        // Backend stores "YYYY-MM-DD HH:MM:SS"; <input type="date"> needs "YYYY-MM-DD"
+        date: res.date
+          ? res.date.slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
       });
       setItems(res.items || []);
     } catch (err) {
@@ -84,7 +88,7 @@ const useUpdateExpense = () => {
       { id: NO_SUPPLIER, name: t("ui.noSupplier") },
       ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
     ],
-    [suppliers, t],
+    [suppliers, t]
   );
 
   useEffect(() => {
@@ -140,7 +144,7 @@ const useUpdateExpense = () => {
           payment: paymentData || null,
           updated_by: user.id,
         };
-
+        console.log(payload);
         const res = await api.updateExpense(payload);
         console.log(res);
 
@@ -158,11 +162,11 @@ const useUpdateExpense = () => {
         setSaving(false);
       }
     },
-    [api, id, invoice, items, subtotal, netTotal, navigate, t],
+    [api, id, invoice, items, subtotal, netTotal, navigate, t]
   );
 
   const reset = () => {
-    setInvoice(emptyInvoice);
+    setInvoice(makeEmptyInvoice());
     setItems([emptyItem]);
     setError("");
   };

@@ -513,8 +513,8 @@ export default function registerPurchaseInvoicesIPC() {
         data.tax || 0,
         data.net_total || 0,
         data.taxValue || 0,
-        data.id,
-        data.updated_by
+        data.updated_by,
+        data.id
       );
 
       // ---- Supplier party_history reconciliation for the invoice amount ----
