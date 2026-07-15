@@ -259,8 +259,6 @@ const PurchaseReturnList = () => {
                         {money(inv.net_total || 0)}
                       </td>
 
-                      {console.log(inv)}
-
                       <td className="px-5 py-4 text-center">
                         <StatusBadge
                           status={inv.status}

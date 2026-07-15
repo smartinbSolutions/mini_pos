@@ -82,7 +82,6 @@ const PurchaseList = () => {
     openPaymentModel,
     setOpenPaymentModel,
   } = usePurchaseList();
-  console.log(purchaseInvoices);
 
   const [openRefundModel, setOpenRefundModel] = useState(false);
   const navigate = useNavigate();
