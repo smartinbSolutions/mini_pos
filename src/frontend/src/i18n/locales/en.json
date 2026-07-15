@@ -679,6 +679,8 @@
       "keyManagement": "Recovery Key",
       "keyManagementHint": "Regenerating permanently invalidates the previous key.",
       "regenerate": "Generate new Recovery Key",
+      "regenerateTitle": "Generate a new Recovery Key",
+      "regenerateNotice": "Confirm your Administrator PIN to continue.",
       "displayOnce": "Store this Recovery Key securely. It will only be displayed once.",
       "newKeyTitle": "Your new Recovery Key",
       "copyKey": "Copy Recovery Key",

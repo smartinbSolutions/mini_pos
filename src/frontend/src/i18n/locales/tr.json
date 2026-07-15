@@ -680,6 +680,8 @@
       "keyManagement": "Kurtarma Anahtarı",
       "keyManagementHint": "Yeni anahtar oluşturmak önceki anahtarı kalıcı olarak geçersiz kılar.",
       "regenerate": "Yeni Kurtarma Anahtarı oluştur",
+      "regenerateTitle": "Yeni Kurtarma Anahtarı oluştur",
+      "regenerateNotice": "Devam etmek için Yönetici PIN'inizi doğrulayın.",
       "displayOnce": "Bu Kurtarma Anahtarını güvenli saklayın. Yalnızca bir kez gösterilecektir.",
       "newKeyTitle": "Yeni Kurtarma Anahtarınız",
       "copyKey": "Kurtarma Anahtarını Kopyala",

@@ -16,6 +16,7 @@ import DeleteModal from "../../../Global/DeleteModel";
 import ResetPinModal from "./ResetPinModal";
 import { useAuth } from "../../../Global/AuthContext";
 import RecoveryKeyModal from "../../Auth/component/RecoveryKeyModal";
+import RegenerateRecoveryKeyModal from "./RegenerateRecoveryKeyModal";
 
 const UsersList = () => {
   const { t } = useTranslation();
@@ -41,6 +42,7 @@ const UsersList = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [resetTarget, setResetTarget] = useState(null);
   const [recoveryKey, setRecoveryKey] = useState("");
+  const [regenerateModalOpen, setRegenerateModalOpen] = useState(false);
 
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
@@ -229,21 +231,20 @@ const UsersList = () => {
         </p>
         <button
           className="mt-3 rounded-xl border border-[#4663ff] px-4 py-2 text-sm font-bold text-[#4663ff]"
-          onClick={async () => {
-            const administratorPin = window.prompt(t("screens.users.yourPin"));
-            if (!administratorPin) return;
-            const result = await window.api.regenerateRecoveryKey({
-              administratorId: administrator.id,
-              administratorPin,
-            });
-            if (result?.success) setRecoveryKey(result.recoveryKey);
-            else
-              window.alert(result?.error || t("screens.recovery.genericError"));
-          }}
+          onClick={() => setRegenerateModalOpen(true)}
         >
           {t("screens.recovery.regenerate")}
         </button>
       </div>
+      <RegenerateRecoveryKeyModal
+        open={regenerateModalOpen}
+        administratorId={administrator?.id}
+        onClose={() => setRegenerateModalOpen(false)}
+        onSuccess={(newRecoveryKey) => {
+          setRegenerateModalOpen(false);
+          setRecoveryKey(newRecoveryKey);
+        }}
+      />
       <RecoveryKeyModal
         recoveryKey={recoveryKey}
         onClose={() => setRecoveryKey("")}
