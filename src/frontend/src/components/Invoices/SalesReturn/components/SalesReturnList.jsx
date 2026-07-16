@@ -1,16 +1,5 @@
 import React, { useMemo, useState } from "react";
-import {
-  Edit2,
-  Eye,
-  HandCoins,
-  PackagePlus,
-  Percent,
-  Receipt,
-  RefreshCw,
-  Search,
-  Trash2,
-  Undo2,
-} from "lucide-react";
+import { Eye, HandCoins, Percent, Undo2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -20,6 +9,8 @@ import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 import useSalesReturnList from "../hooks/useSalesReturnList";
+import GoTo from "../../../../Global/GoTo";
+import FormattedDate from "../../../../Global/FormattedDate";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -120,14 +111,14 @@ const SalesReturnList = () => {
 
   const totalNet = salesReturns?.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0,
+    0
   );
   const totalTax = salesReturns?.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0,
+    0
   );
   const unpaidCount = salesReturns?.filter(
-    (inv) => inv.status !== "paid",
+    (inv) => inv.status !== "paid"
   ).length;
 
   return (
@@ -227,10 +218,12 @@ const SalesReturnList = () => {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-start font-bold text-slate-900">
-                        {inv.customer_name || "-"}
+                        <GoTo type="customer" id={inv.customer_id}>
+                          {inv.customer_name || "-"}
+                        </GoTo>
                       </td>
                       <td className="px-5 py-4 text-start text-slate-500">
-                        {inv.date}
+                        <FormattedDate value={inv.date} />
                       </td>
                       <td className="px-5 py-4 text-start">
                         <div className="font-semibold tabular-nums text-slate-700">

@@ -256,7 +256,7 @@ export default function registerFundIPC() {
       `
       )
       .run(data.name, data.currency_id);
-    console.log(data);
+
     if (initialBalance !== 0) {
       const openingBalanceDate = data.date
         ? `${data.date.slice(0, 10)} 00:00:00`
@@ -337,7 +337,7 @@ export default function registerFundIPC() {
       if (!fundId) {
         return { success: true, minDate: null };
       }
-      console.log(fundId);
+
       const row = db
         .prepare(
           `SELECT MIN(date) AS minDate FROM fund_history WHERE fund_id = ?`

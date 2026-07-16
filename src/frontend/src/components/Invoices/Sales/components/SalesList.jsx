@@ -4,11 +4,7 @@ import {
   HandCoins,
   PackagePlus,
   Eye,
-  Wallet2,
   Trash2,
-  Info,
-  Clock,
-  Printer,
   Percent,
   Edit2,
   Undo2,
@@ -25,6 +21,7 @@ import SalesReturnModal from "../../SalesReturn/components/SalesReturnModal";
 import FormattedDate from "../../../../Global/FormattedDate";
 import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
 import GoTo from "../../../../Global/GoTo";
+import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -101,6 +98,7 @@ const SalesList = () => {
     total,
     totalPages,
   } = useSalesList();
+
   const [openRefundModel, setOpenRefundModel] = useState(false);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -294,14 +292,17 @@ const SalesList = () => {
                           {money(inv.net_total || 0)}
                         </td>
 
-                        <td className="px-5 py-4 text-center text-start">
-                          <StatusBadge
-                            status={inv.status}
-                            paidAmount={inv.paid_amount}
-                            remainingAmount={inv.remaining_amount}
-                            money={money}
-                            t={t}
-                          />
+                        <td className="px-5 py-4 text-start">
+                          <div className="flex  items-start gap-1.5">
+                            <StatusBadge
+                              status={inv.status}
+                              paidAmount={inv.paid_amount}
+                              remainingAmount={inv.remaining_amount}
+                              money={money}
+                              t={t}
+                            />
+                            <ReturnStatusBadge status={inv.return_status} />
+                          </div>
                         </td>
 
                         <td className="px-5 py-4">
@@ -344,15 +345,18 @@ const SalesList = () => {
                                 <HandCoins size={16} />
                               </button>
                             )}
-                            <button
-                              onClick={() => {
-                                setSelecteInvoice(inv);
-                                setOpenRefundModel(true);
-                              }}
-                              className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                            >
-                              <Undo2 size={16} />
-                            </button>
+                            {inv.return_status !== "full" && (
+                              <button
+                                onClick={() => {
+                                  setSelecteInvoice(inv);
+                                  setOpenRefundModel(true);
+                                }}
+                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                title={t("ui.createSalesReturn")}
+                              >
+                                <Undo2 size={16} />
+                              </button>
+                            )}
                             {inv.status === "unpaid" && (
                               <button
                                 onClick={() => setDeleteInvoice(inv)}

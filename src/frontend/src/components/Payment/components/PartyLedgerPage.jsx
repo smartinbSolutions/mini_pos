@@ -60,7 +60,7 @@ const PartyLedgerPage = () => {
     dateTo,
     setDateTo,
   } = usePartyLedger(id, normalizedType);
-  console.log(data);
+
   const { money } = usePrimaryCurrency();
 
   // Export modal state — independent date range from the on-screen filter above.
@@ -394,9 +394,16 @@ const PartyLedgerPage = () => {
                                 )}
 
                               {p.record_type === "payment" && p.payment_id && (
-                                <GoTo type="fund" id={p.payment_fund_id}>
-                                  {p.fund_name}
-                                </GoTo>
+                                <span>
+                                  <GoTo type="fund" id={p.payment_fund_id}>
+                                    {p.fund_name}{" "}
+                                  </GoTo>
+                                  <span className="mx-1">
+                                    <GoTo type="payment" id={p.payment_id}>
+                                      Payment # {p.payment_id}
+                                    </GoTo>
+                                  </span>
+                                </span>
                               )}
                             </div>
 

@@ -1,5 +1,57 @@
 import createPaymentAllocation from "./createPaymentAllocations";
 
+// Whitelisted table map — invoice_type is passed as a bound SQL parameter,
+// table name is not (never interpolate a table name from user input).
+const OPEN_INVOICE_TABLES = {
+  customer: [
+    { invoice_type: "sales", table: "sales_invoices", column: "customer_id" },
+  ],
+  supplier: [
+    {
+      invoice_type: "purchase",
+      table: "purchase_invoices",
+      column: "supplier_id",
+    },
+    { invoice_type: "expense", table: "expense", column: "supplier_id" },
+  ],
+};
+
+function getOpenInvoicesForParty(db, { partyId, partyType }) {
+  const configs = OPEN_INVOICE_TABLES[partyType] || [];
+  const openInvoices = [];
+
+  for (const { invoice_type, table, column } of configs) {
+    const rows = db
+      .prepare(
+        `
+        SELECT
+          inv.id AS invoice_id,
+          inv.date,
+          inv.net_total - COALESCE(SUM(pa.amount), 0) AS remaining
+        FROM ${table} inv
+        LEFT JOIN payment_allocations pa
+          ON pa.invoice_id = inv.id AND pa.invoice_type = ?
+        WHERE inv.${column} = ?
+        GROUP BY inv.id
+        HAVING remaining > 0
+        `
+      )
+      .all(invoice_type, partyId);
+
+    rows.forEach((r) =>
+      openInvoices.push({
+        invoice_id: r.invoice_id,
+        invoice_type,
+        date: r.date,
+        remaining: r.remaining,
+      })
+    );
+  }
+
+  openInvoices.sort((a, b) => new Date(a.date) - new Date(b.date));
+  return openInvoices;
+}
+
 export function getPartyCredit(db, { partyId, partyType }) {
   const payments = db
     .prepare(
@@ -57,6 +109,54 @@ export function applyPartyCredit(
   const requested = Number(amount || 0);
   let remaining = requested;
   let totalApplied = 0;
+
+  // No specific invoice given — instead of a specific target, close
+  // whatever open invoices this party has, oldest first, using the
+  // same unallocated payments, oldest first.
+  if (!invoiceId) {
+    const openInvoices = getOpenInvoicesForParty(db, { partyId, partyType });
+    let paymentIdx = 0;
+
+    for (const invoice of openInvoices) {
+      if (remaining <= 0) break;
+      let invoiceRemaining = invoice.remaining;
+
+      while (
+        invoiceRemaining > 0 &&
+        remaining > 0 &&
+        paymentIdx < unallocated.length
+      ) {
+        const payment = unallocated[paymentIdx];
+
+        if (payment.available <= 0) {
+          paymentIdx++;
+          continue;
+        }
+
+        const take = Math.min(payment.available, invoiceRemaining, remaining);
+
+        createPaymentAllocation(db, {
+          payment_id: payment.payment_id,
+          invoice_id: invoice.invoice_id,
+          invoice_type: invoice.invoice_type,
+          amount: take,
+        });
+
+        payment.available -= take;
+        invoiceRemaining -= take;
+        remaining -= take;
+        totalApplied += take;
+
+        if (payment.available <= 0) paymentIdx++;
+      }
+    }
+
+    if (totalApplied < requested) {
+      throw new Error("INSUFFICIENT_CREDIT");
+    }
+
+    return totalApplied;
+  }
 
   for (const payment of unallocated) {
     if (remaining <= 0) break;

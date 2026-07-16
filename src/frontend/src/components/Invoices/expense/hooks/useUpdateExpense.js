@@ -144,9 +144,8 @@ const useUpdateExpense = () => {
           payment: paymentData || null,
           updated_by: user.id,
         };
-        console.log(payload);
+
         const res = await api.updateExpense(payload);
-        console.log(res);
 
         if (!res?.success) {
           throw new Error(res?.error || t("errors.updateFailed"));

@@ -83,7 +83,7 @@ const useAddPayment = ({
   }, [api]);
 
   const refetchCredit = useCallback(async () => {
-    if (!api || !party || partyType === "partner") {
+    if (!api || !party || partyType === "partner" || isDirectCollection) {
       setAvailableCredit(0);
       return;
     }
@@ -96,7 +96,7 @@ const useAddPayment = ({
     } catch (err) {
       setAvailableCredit(0);
     }
-  }, [api, party, partyType]);
+  }, [api, party, partyType, isDirectCollection]);
 
   // Determine the earliest allowed date for this payment.
   const refetchMinDate = useCallback(async () => {

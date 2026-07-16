@@ -218,7 +218,7 @@ export default function SalesReturnView() {
                   <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400 bg-slate-50/50">
                     {t(
                       "ui.noCashRefundedSales",
-                      "لم يتم رد مبالغ نقدية، تم ترحيل المرتجع آجل لتخفيض حساب العميل الجاري",
+                      "لم يتم رد مبالغ نقدية، تم ترحيل المرتجع آجل لتخفيض حساب العميل الجاري"
                     )}
                   </div>
                 ) : (

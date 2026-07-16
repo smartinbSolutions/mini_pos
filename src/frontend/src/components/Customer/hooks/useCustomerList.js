@@ -161,7 +161,6 @@ const useCustomerList = () => {
 
   const submitDraft = async (event) => {
     event.preventDefault();
-    console.log(draft);
     const saved = await handleCreateCustomer(draft);
     if (saved) {
       setDraft(emptyCustomer);

@@ -86,8 +86,7 @@ const useTransferFundtoFund = ({
 
       const fromMin = fromRes?.minDate ? fromRes.minDate.slice(0, 10) : null;
       const toMin = toRes?.minDate ? toRes.minDate.slice(0, 10) : null;
-      console.log(fromMin);
-      console.log(toMin);
+
       if (fromMin && toMin) {
         setMinDate(fromMin > toMin ? fromMin : toMin);
       } else {

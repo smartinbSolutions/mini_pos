@@ -268,6 +268,7 @@ export default function registerSalesInvoiceIPC() {
       whereClause = "WHERE DATE(s.date) = ?";
       queryParams.push(date);
     }
+
     const invoices = db
       .prepare(
         `
@@ -278,35 +279,55 @@ export default function registerSalesInvoiceIPC() {
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
-
+  
         s.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-
+  
         CASE
           WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
-        END AS status
-
+        END AS status,
+  
+        CASE
+          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+          ELSE 'partial'
+        END AS return_status
+  
       FROM sales_invoices s
-
+  
       LEFT JOIN customers c
         ON c.id = s.customer_id
-
+  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = s.id
        AND pa.invoice_type = 'sales'
-
-    LEFT JOIN users creator
-    ON creator.id = s.created_by
-    
-    LEFT JOIN users updater
-    ON updater.id = s.updated_by
-
+  
+      LEFT JOIN users creator
+        ON creator.id = s.created_by
+  
+      LEFT JOIN users updater
+        ON updater.id = s.updated_by
+  
+      LEFT JOIN (
+        SELECT
+          si.invoice_id,
+          SUM(si.quantity) AS total_quantity,
+          SUM(COALESCE(sri.returned_qty, 0)) AS total_returned
+        FROM sales_invoice_items si
+        LEFT JOIN (
+          SELECT sales_invoice_item_id, SUM(quantity) AS returned_qty
+          FROM sales_return_items
+          GROUP BY sales_invoice_item_id
+        ) sri ON sri.sales_invoice_item_id = si.id
+        GROUP BY si.invoice_id
+      ) ret ON ret.invoice_id = s.id
+  
          ${whereClause}
       GROUP BY s.id
-
+  
       ORDER BY s.id DESC
-
+  
       LIMIT ? OFFSET ?
       `
       )
@@ -315,6 +336,7 @@ export default function registerSalesInvoiceIPC() {
     const { total } = db
       .prepare(`SELECT COUNT(*) AS total FROM sales_invoices s  ${whereClause}`)
       .get(...queryParams);
+
     return {
       data: invoices,
       page,
