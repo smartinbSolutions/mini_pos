@@ -66,6 +66,19 @@ export default function createPayment(db, data) {
     data.invoice_type === "purchase_return" ||
     data.invoice_type === "sales_return";
 
+  // For customer/supplier, a payment always decreases the amount owed
+  // (whether it's the customer paying us or us paying a customer back
+  // outside of a return, it moves their balance the same direction).
+  // For partners, direction depends on which way the money moved:
+  // a deposit (income) increases what the company owes the partner,
+  // a withdrawal (expense) decreases it.
+  const isPartner = data.party_type === "partner";
+  const movementType = isPartner
+    ? data.type === "income"
+      ? "increase"
+      : "decrease"
+    : "decrease";
+
   if (data.party_type !== "walk-in" && !isReturnRefund) {
     createPartyHistory(db, {
       party_type: data.party_type,
@@ -74,7 +87,7 @@ export default function createPayment(db, data) {
       invoice_id: data.invoice_id,
       invoice_type: "payment",
       amount: data.amount,
-      movement_type: "decrease",
+      movement_type: movementType,
       note: data.note,
       payment_id: result.lastInsertRowid,
       date: paymentDate,
