@@ -131,7 +131,8 @@
     "user": "Kullanıcı",
     "users": "Kullanıcılar",
     "username": "Kullanıcı adı",
-    "refunded": "İade edildi",
+    "fully-refunded": "Tamamen İade Edildi",
+    "partially-refunded": "Kısmen İade Edildi",
     "salesReturn": "Satış iadesi",
     "returns": "İadeler",
     "returnId": "İade #",
@@ -146,6 +147,20 @@
     "primaryCurrency": "Ana para birimi",
     "return": "İade",
     "sale": "Satış"
+  },
+  "filters": {
+    "dateFrom": "Başlangıç tarihi",
+    "dateTo": "Bitiş tarihi",
+    "status": "Durum",
+    "allStatuses": "Tüm durumlar",
+    "allSuppliers": "Tüm tedarikçiler",
+    "allCustomers": "Tüm müşteriler",
+    "returnStatus": "İade durumu",
+    "allReturnStatuses": "Tüm iade durumları",
+    "noReturn": "İade yok",
+    "allCategories": "Tüm kategoriler",
+    "minTotal": "Min toplam",
+    "maxTotal": "Maks toplam"
   },
   "screens": {
     "units": {

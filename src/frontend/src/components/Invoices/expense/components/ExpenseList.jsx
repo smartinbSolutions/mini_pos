@@ -200,8 +200,8 @@ const ExpenseList = () => {
               allLabel: t("filters.allCategories"),
               options: categories.map((c) => ({ value: c.id, label: c.name })),
             },
-            { type: "date", name: "startDate", label: t("ui.fromDate") },
-            { type: "date", name: "endDate", label: t("ui.toDate") },
+            { type: "date", name: "startDate", label: t("filters.dateFrom") },
+            { type: "date", name: "endDate", label: t("filters.dateTo") },
             { type: "number", name: "minTotal", label: t("filters.minTotal") },
             { type: "number", name: "maxTotal", label: t("filters.maxTotal") },
           ]}

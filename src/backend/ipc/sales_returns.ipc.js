@@ -6,268 +6,6 @@ import createProductMovement from "../utils/createPorductMovment";
 import db from "../db";
 
 export default function registerSalesReturnsIpc() {
-  //   ipcMain.handle("create-sales-return", (event, data) => {
-  //     try {
-  //       const transaction = db.transaction(() => {
-  //         if (
-  //           !data.sales_invoice_id ||
-  //           !data.date ||
-  //           !Array.isArray(data.items) ||
-  //           data.items.length === 0
-  //         ) {
-  //           throw new Error("ERROR ENTER DATA");
-  //         }
-
-  //         const subtotal = Number(data.subtotal || 0);
-  //         const netTotal = Number(data.net_total || 0);
-  //         const discount = Number(data.discount || 0);
-  //         const tax = Number(data.tax || 0);
-
-  //         if (subtotal <= 0 || netTotal <= 0) {
-  //           throw new Error("INVALID TOTALS");
-  //         }
-
-  //         const payment = data.payment || null;
-
-  //         const isRefunded = payment && Number(payment.amount || 0) > 0;
-
-  //         if (isRefunded) {
-  //           if (!payment.fund_id) {
-  //             throw new Error("FUND_REQUIRED");
-  //           }
-
-  //           if (Number(payment.amount) <= 0) {
-  //             throw new Error("INVALID_PAYMENT_AMOUNT");
-  //           }
-  //         }
-
-  //         const dateOnly = data.date;
-  //         const now = new Date();
-  //         const time = now.toTimeString().slice(0, 8);
-  //         const fullDateTime = `${dateOnly} ${time}`;
-
-  //         const getOriginalItemQty = db.prepare(`
-  //   SELECT quantity
-  //   FROM sales_invoice_items
-  //   WHERE id = ?
-  // `);
-
-  //         const getAlreadyReturnedQty = db.prepare(`
-  //   SELECT COALESCE(SUM(quantity),0) AS total_returned
-  //   FROM sales_return_items
-  //   WHERE sales_invoice_item_id = ?
-  // `);
-
-  //         for (const item of data.items) {
-  //           const quantityToReturnNow = Number(item.quantity || 0);
-
-  //           if (!item.sales_invoice_item_id || quantityToReturnNow <= 0) {
-  //             throw new Error("INVALID ITEM DATA");
-  //           }
-
-  //           const originalRow = getOriginalItemQty.get(
-  //             item.sales_invoice_item_id,
-  //           );
-
-  //           if (!originalRow) {
-  //             throw new Error(
-  //               `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`,
-  //             );
-  //           }
-
-  //           const returnedRow = getAlreadyReturnedQty.get(
-  //             item.sales_invoice_item_id,
-  //           );
-
-  //           const alreadyReturnedQty = returnedRow?.total_returned || 0;
-
-  //           const maxAllowedToReturn = originalRow.quantity - alreadyReturnedQty;
-
-  //           if (quantityToReturnNow > maxAllowedToReturn) {
-  //             throw new Error(`EXCEEDED_RETURN_LIMIT: ${item.product_id}`);
-  //           }
-  //         }
-
-  //         const returnResult = db
-  //           .prepare(
-  //             `
-  //         INSERT INTO sales_returns
-  //         (
-  //           sales_invoice_id,
-  //           customer_id,
-  //           invoice_name,
-  //           description,
-  //           date,
-  //           subtotal,
-  //           discount,
-  //           tax,
-  //           taxValue,
-  //           net_total,
-  //           created_by
-  //         )
-  //         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  //       `,
-  //           )
-  //           .run(
-  //             data.sales_invoice_id,
-  //             data.customer_id || null,
-  //             data.invoice_name || null,
-  //             data.description || null,
-  //             fullDateTime,
-  //             subtotal,
-  //             discount,
-  //             tax,
-  //             data.taxValue || 0,
-  //             netTotal,
-  //             data.created_by,
-  //           );
-
-  //         const returnId = returnResult.lastInsertRowid;
-
-  //         const insertItem = db.prepare(`
-  // INSERT INTO sales_return_items
-  // (
-  //   return_id,
-  //   sales_invoice_item_id,
-  //   product_id,
-  //   quantity,
-  //   price,
-  //   total
-  // )
-  // VALUES (?, ?, ?, ?, ?, ?)
-  // `);
-
-  //         const updateStock = db.prepare(`
-  //         UPDATE products
-  //         SET quantity = quantity + ?
-  //         WHERE id = ?
-  //       `);
-
-  //         for (const item of data.items) {
-  //           const quantity = Number(item.quantity || 0);
-  //           const price = Number(item.price || 0);
-  //           const sellingPrice = Number(item.sellingPrice || price);
-
-  //           const total = quantity * price;
-
-  //           insertItem.run(
-  //             returnId,
-  //             item.sales_invoice_item_id,
-  //             item.product_id,
-  //             quantity,
-  //             price,
-  //             total,
-  //           );
-  //           updateStock.run(quantity, item.product_id);
-
-  //           createProductMovement(db, {
-  //             product_id: item.product_id,
-  //             reference_id: returnId,
-  //             reference_type: "sales_return",
-  //             type: "in",
-  //             action: "return",
-  //             quantity,
-  //             enterPrice: price,
-  //             date: fullDateTime,
-  //           });
-  //         }
-
-  //         createPartyHistory(db, {
-  //           party_type: "customer",
-  //           party_id: data.customer_id || null,
-  //           invoice_id: returnId,
-  //           invoice_type: "sales_return",
-  //           record_type: "invoice",
-  //           movement_type: "decrease",
-  //           amount: netTotal,
-  //           note: `Sales Return #${returnId} for Invoice #${data.sales_invoice_id}`,
-  //         });
-
-  //         let insertPaymentId = null;
-  //         let allocationId = null;
-
-  //         if (isRefunded) {
-  //           insertPaymentId = createPayment(db, {
-  //             type: data.payment.type,
-  //             party_type: "customer",
-  //             party_id: data.customer_id || null,
-  //             fund_id: data.payment.fund_id,
-  //             amount: data.payment.amount,
-  //             amount_fund_currency: data.payment.collected_amount,
-  //             currency_code: data.payment.currency_code,
-  //             exchange_rate: data.payment.exchange_rate,
-  //             effective_rate: data.payment.effective_rate,
-  //             invoice_id: returnId,
-  //             invoice_type: "sales_return",
-  //             note: `${data.payment.note || "Refund"} #${returnId}`,
-  //             fundOperation: "subtract",
-  //           });
-
-  //           createPartyHistory(db, {
-  //             party_type: "customer",
-  //             party_id: data.customer_id || null,
-  //             invoice_id: returnId,
-  //             invoice_type: "sales_return",
-  //             payment_id: insertPaymentId,
-  //             record_type: "payment",
-  //             movement_type: "increase",
-  //             amount: data.payment.amount,
-  //             note: `Refund Payment for Sales Return #${returnId}`,
-  //           });
-
-  //           createFundHistory(db, {
-  //             fund_id: data.payment.fund_id,
-  //             record_type: "payment",
-  //             payment_id: insertPaymentId,
-  //             movement_type: "out",
-  //             amount: data.payment.collected_amount,
-  //             note: `Refund paid out for Sales Return #${returnId}`,
-  //           });
-
-  //           const allocationResult = db
-  //             .prepare(
-  //               `
-  //           INSERT INTO payment_allocations
-  //           (
-  //             payment_id,
-  //             invoice_id,
-  //             invoice_type,
-  //             amount
-  //           )
-  //           VALUES (?, ?, ?, ?)
-  //         `,
-  //             )
-  //             .run(
-  //               insertPaymentId,
-  //               returnId,
-  //               "sales_return",
-  //               data.payment.amount,
-  //             );
-
-  //           allocationId = allocationResult.lastInsertRowid;
-  //         }
-
-  //         return {
-  //           returnId,
-  //           paymentId: insertPaymentId,
-  //           allocationId,
-  //         };
-  //       });
-
-  //       transaction();
-
-  //       return {
-  //         success: true,
-  //       };
-  //     } catch (err) {
-  //       return {
-  //         success: false,
-  //         error: err.message || String(err),
-  //         code: err.code,
-  //       };
-  //     }
-  //   });
-
   ipcMain.handle("create-sales-return", (event, data) => {
     try {
       const transaction = db.transaction(() => {
@@ -326,17 +64,17 @@ export default function registerSalesReturnsIpc() {
           }
 
           const originalRow = getOriginalItemQty.get(
-            item.sales_invoice_item_id,
+            item.sales_invoice_item_id
           );
 
           if (!originalRow) {
             throw new Error(
-              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`,
+              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`
             );
           }
 
           const returnedRow = getAlreadyReturnedQty.get(
-            item.sales_invoice_item_id,
+            item.sales_invoice_item_id
           );
           const alreadyReturnedQty = returnedRow?.total_returned || 0;
           const maxAllowedToReturn = originalRow.quantity - alreadyReturnedQty;
@@ -364,7 +102,7 @@ export default function registerSalesReturnsIpc() {
             created_by
           )
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
+        `
           )
           .run(
             data.sales_invoice_id,
@@ -377,7 +115,7 @@ export default function registerSalesReturnsIpc() {
             tax,
             data.taxValue || 0,
             netTotal,
-            data.created_by,
+            data.created_by
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -412,7 +150,7 @@ export default function registerSalesReturnsIpc() {
             item.product_id,
             quantity,
             price,
-            total,
+            total
           );
           updateStock.run(quantity, item.product_id);
 
@@ -496,14 +234,40 @@ export default function registerSalesReturnsIpc() {
       const page = Math.max(1, Number(params.page) || 1);
       const limit = Math.max(1, Number(params.limit) || 20);
       const offset = (page - 1) * limit;
-      const date = params.date;
-      let whereClause = "";
-      let queryParams = [];
 
-      if (date) {
-        whereClause = "WHERE DATE(sr.date) = ?";
-        queryParams.push(date);
+      const { dateFrom, dateTo, customerId, status, minTotal, maxTotal } =
+        params;
+
+      const whereConditions = [];
+      const whereValues = [];
+
+      if (dateFrom) {
+        whereConditions.push("date(sr.date) >= date(?)");
+        whereValues.push(dateFrom);
       }
+      if (dateTo) {
+        whereConditions.push("date(sr.date) <= date(?)");
+        whereValues.push(dateTo);
+      }
+      if (customerId) {
+        whereConditions.push("sr.customer_id = ?");
+        whereValues.push(customerId);
+      }
+      if (minTotal !== undefined && minTotal !== "" && minTotal !== null) {
+        whereConditions.push("sr.net_total >= ?");
+        whereValues.push(Number(minTotal));
+      }
+      if (maxTotal !== undefined && maxTotal !== "" && maxTotal !== null) {
+        whereConditions.push("sr.net_total <= ?");
+        whereValues.push(Number(maxTotal));
+      }
+
+      const whereClause = whereConditions.length
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
+
+      const havingClause = status ? `HAVING status = ?` : "";
+      const havingValues = status ? [status] : [];
 
       const returns = db
         .prepare(
@@ -514,17 +278,17 @@ export default function registerSalesReturnsIpc() {
           c.phone AS customer_phone,
           si.invoice_name AS original_invoice_name,
           creator.full_name AS created_by_name,
-
+  
           COALESCE(SUM(pa.amount), 0) AS refunded_amount, 
-
+  
           sr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-
+  
           CASE
             WHEN COALESCE(SUM(pa.amount), 0) >= sr.net_total THEN 'paid' 
             WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'          
             ELSE 'unpaid'                                                
           END AS status
-
+  
         FROM sales_returns sr
         LEFT JOIN customers c ON c.id = sr.customer_id
             LEFT JOIN users creator
@@ -533,21 +297,41 @@ export default function registerSalesReturnsIpc() {
         LEFT JOIN payment_allocations pa 
           ON pa.invoice_id = sr.id 
          AND pa.invoice_type = 'sales_return'
-
+  
          ${whereClause}
-
+  
         GROUP BY sr.id
+  
+        ${havingClause}
+  
         ORDER BY sr.id DESC
         LIMIT ? OFFSET ?
-        `,
+        `
         )
-        .all(...queryParams, limit, offset);
+        .all(...whereValues, ...havingValues, limit, offset);
 
       const { total } = db
         .prepare(
-          `SELECT COUNT(*) AS total FROM sales_returns sr     ${whereClause}`,
+          `
+        SELECT COUNT(*) AS total FROM (
+          SELECT
+            sr.id,
+            CASE
+              WHEN COALESCE(SUM(pa.amount), 0) >= sr.net_total THEN 'paid'
+              WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+              ELSE 'unpaid'
+            END AS status
+          FROM sales_returns sr
+          LEFT JOIN payment_allocations pa
+            ON pa.invoice_id = sr.id
+           AND pa.invoice_type = 'sales_return'
+          ${whereClause}
+          GROUP BY sr.id
+          ${havingClause}
         )
-        .get(...queryParams);
+        `
+        )
+        .get(...whereValues, ...havingValues).total;
 
       return {
         data: returns,
@@ -611,7 +395,7 @@ export default function registerSalesReturnsIpc() {
         ON pa_sum.invoice_id = sr.id
 
       WHERE sr.id = ?
-      `,
+      `
       )
       .get(id);
 
@@ -631,7 +415,7 @@ export default function registerSalesReturnsIpc() {
         ON p.id = sri.product_id
 
       WHERE sri.return_id = ?
-      `,
+      `
       )
       .all(id);
 
@@ -666,7 +450,7 @@ export default function registerSalesReturnsIpc() {
         AND pa.invoice_type = 'sales_return'
 
       ORDER BY pa.id ASC
-      `,
+      `
       )
       .all(id);
 

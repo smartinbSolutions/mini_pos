@@ -73,6 +73,11 @@ const SalesReturnList = () => {
     setSelectedInvoice,
     openPaymentModel,
     setOpenPaymentModel,
+
+    filters,
+    handleFilterChange,
+    clearFilters,
+    customers,
   } = useSalesReturnList();
 
   const navigate = useNavigate();
@@ -80,6 +85,31 @@ const SalesReturnList = () => {
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
+
+  const salesReturnFilterFields = [
+    { name: "dateFrom", type: "date", label: t("filters.dateFrom") },
+    { name: "dateTo", type: "date", label: t("filters.dateTo") },
+    {
+      name: "customerId",
+      type: "select",
+      label: t("ui.customer"),
+      allLabel: t("filters.allCustomers"),
+      options: customers.map((c) => ({ value: c.id, label: c.name })),
+    },
+    {
+      name: "status",
+      type: "select",
+      label: t("filters.status"),
+      allLabel: t("filters.allStatuses"),
+      options: [
+        { value: "paid", label: t("ui.paid") },
+        { value: "partial", label: t("ui.partial") },
+        { value: "unpaid", label: t("ui.unpaid") },
+      ],
+    },
+    { name: "minTotal", type: "number", label: t("filters.minTotal") },
+    { name: "maxTotal", type: "number", label: t("filters.maxTotal") },
+  ];
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -93,6 +123,8 @@ const SalesReturnList = () => {
         inv.date,
         inv.total,
         inv.net_total,
+        inv.original_invoice_name,
+        inv.sales_invoice_id,
       ]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term));
@@ -159,6 +191,11 @@ const SalesReturnList = () => {
           onSearchChange={setSearch}
           searchPlaceholder={t("screens.invoices.search")}
           onRefresh={refetch}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+          filterFields={salesReturnFilterFields}
+          clearLabel={t("common.clear")}
         />
 
         {(error || actionError) && (
@@ -258,7 +295,7 @@ const SalesReturnList = () => {
                         <StatusBadge
                           status={inv.status}
                           paidAmount={inv.refunded_amount}
-                          remainingAmount={inv.remaining_credit}
+                          remainingAmount={inv.remaining_amount}
                           money={money}
                           t={t}
                         />

@@ -82,6 +82,11 @@ const PurchaseReturnList = () => {
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
+
+    filters,
+    handleFilterChange,
+    clearFilters,
+    suppliers,
   } = usePurchaseReturnList();
 
   const navigate = useNavigate();
@@ -89,6 +94,31 @@ const PurchaseReturnList = () => {
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
+
+  const purchaseReturnFilterFields = [
+    { name: "dateFrom", type: "date", label: t("filters.dateFrom") },
+    { name: "dateTo", type: "date", label: t("filters.dateTo") },
+    {
+      name: "supplierId",
+      type: "select",
+      label: t("ui.supplier"),
+      allLabel: t("filters.allSuppliers"),
+      options: suppliers.map((s) => ({ value: s.id, label: s.name })),
+    },
+    {
+      name: "status",
+      type: "select",
+      label: t("filters.status"),
+      allLabel: t("filters.allStatuses"),
+      options: [
+        { value: "paid", label: t("ui.paid") },
+        { value: "partial", label: t("ui.partial") },
+        { value: "unpaid", label: t("ui.unpaid") },
+      ],
+    },
+    { name: "minTotal", type: "number", label: t("filters.minTotal") },
+    { name: "maxTotal", type: "number", label: t("filters.maxTotal") },
+  ];
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -102,6 +132,8 @@ const PurchaseReturnList = () => {
         inv.date,
         inv.total,
         inv.net_total,
+        inv.purchase_invoice_name,
+        inv.purchase_invoice_id,
       ]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(term));
@@ -120,14 +152,14 @@ const PurchaseReturnList = () => {
 
   const totalNet = purchaseReturns?.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0,
+    0
   );
   const totalTax = purchaseReturns?.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0,
+    0
   );
   const unpaidCount = purchaseReturns?.filter(
-    (inv) => inv.status !== "paid",
+    (inv) => inv.status !== "paid"
   ).length;
 
   return (
@@ -168,6 +200,11 @@ const PurchaseReturnList = () => {
           onSearchChange={setSearch}
           searchPlaceholder={t("screens.invoices.search")}
           onRefresh={refetch}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+          filterFields={purchaseReturnFilterFields}
+          clearLabel={t("common.clear")}
         />
 
         {(error || actionError) && (
@@ -219,8 +256,8 @@ const PurchaseReturnList = () => {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-slate-600 font-medium">
-                        {inv.original_invoice_name
-                          ? `${inv.original_invoice_name} `
+                        {inv.purchase_invoice_name
+                          ? `${inv.purchase_invoice_name} `
                           : ""}
                         <span className="text-xs text-slate-400 font-normal">
                           (#{inv.purchase_invoice_id})
@@ -263,7 +300,7 @@ const PurchaseReturnList = () => {
                         <StatusBadge
                           status={inv.status}
                           paidAmount={inv.refunded_amount}
-                          remainingAmount={inv.remaining_credit}
+                          remainingAmount={inv.remaining_amount}
                           money={money}
                           t={t}
                         />

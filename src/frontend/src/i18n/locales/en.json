@@ -131,7 +131,8 @@
     "user": "User",
     "users": "Users",
     "username": "Username",
-    "refunded": "Refunded",
+    "fully-refunded": "Fully Refunded",
+    "partially-refunded": "Partially Refunded",
     "salesReturn": "Sales return",
     "returns": "returns",
     "returnId": "Return #",
@@ -146,6 +147,20 @@
     "primaryCurrency": "Primary currency",
     "return": "Return",
     "sale": "Sale"
+  },
+  "filters": {
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "allSuppliers": "All suppliers",
+    "allCustomers": "All customers",
+    "returnStatus": "Return status",
+    "allReturnStatuses": "All return statuses",
+    "noReturn": "No return",
+    "allCategories": "All categories",
+    "minTotal": "Min total",
+    "maxTotal": "Max total"
   },
   "screens": {
     "units": {

@@ -236,73 +236,122 @@ export default function registerPurchaseReturnIPC() {
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
 
+    const { dateFrom, dateTo, supplierId, status, minTotal, maxTotal } = params;
+
+    const whereConditions = [];
+    const whereValues = [];
+
+    if (dateFrom) {
+      whereConditions.push("date(pr.date) >= date(?)");
+      whereValues.push(dateFrom);
+    }
+    if (dateTo) {
+      whereConditions.push("date(pr.date) <= date(?)");
+      whereValues.push(dateTo);
+    }
+    if (supplierId) {
+      whereConditions.push("pr.supplier_id = ?");
+      whereValues.push(supplierId);
+    }
+    if (minTotal !== undefined && minTotal !== "" && minTotal !== null) {
+      whereConditions.push("pr.net_total >= ?");
+      whereValues.push(Number(minTotal));
+    }
+    if (maxTotal !== undefined && maxTotal !== "" && maxTotal !== null) {
+      whereConditions.push("pr.net_total <= ?");
+      whereValues.push(Number(maxTotal));
+    }
+
+    const whereClause = whereConditions.length
+      ? `WHERE ${whereConditions.join(" AND ")}`
+      : "";
+
+    const havingClause = status ? `HAVING status = ?` : "";
+    const havingValues = status ? [status] : [];
+
     const returns = db
       .prepare(
         `
       SELECT
         pr.*,
-
+  
         p.invoice_name AS purchase_invoice_name,
         p.date AS purchase_date,
-
+  
         s.name AS supplier_name,
         s.phone AS supplier_phone,
         creator.full_name AS created_by_name,
-
+  
         COALESCE(
           SUM(pa.amount),
           0
         ) AS refunded_amount,
-pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-
+        pr.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
+  
         CASE
           WHEN COALESCE(SUM(pa.amount),0) >= pr.net_total
             THEN 'paid'
-
+  
           WHEN COALESCE(SUM(pa.amount),0) > 0
             THEN 'partial'
-
+  
           ELSE 'unpaid'
         END AS status
-
-
+  
+  
       FROM purchase_returns pr
-
-
+  
+  
   LEFT JOIN purchase_invoices p
   ON p.id = pr.purchase_invoice_id
-
+  
     LEFT JOIN users creator
     ON creator.id = pr.created_by
-
+  
       LEFT JOIN suppliers s
         ON s.id = pr.supplier_id
-
-
+  
+  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = pr.id
        AND pa.invoice_type = 'purchase_return'
-
-
+  
+      ${whereClause}
+  
       GROUP BY pr.id
-
-
+  
+      ${havingClause}
+  
       ORDER BY pr.id DESC
-
-
+  
+  
       LIMIT ? OFFSET ?
       `
       )
-      .all(limit, offset);
+      .all(...whereValues, ...havingValues, limit, offset);
 
     const { total } = db
       .prepare(
         `
-      SELECT COUNT(*) AS total
-      FROM purchase_returns
+      SELECT COUNT(*) AS total FROM (
+        SELECT
+          pr.id,
+          CASE
+            WHEN COALESCE(SUM(pa.amount),0) >= pr.net_total THEN 'paid'
+            WHEN COALESCE(SUM(pa.amount),0) > 0 THEN 'partial'
+            ELSE 'unpaid'
+          END AS status
+        FROM purchase_returns pr
+        LEFT JOIN payment_allocations pa
+          ON pa.invoice_id = pr.id
+         AND pa.invoice_type = 'purchase_return'
+        ${whereClause}
+        GROUP BY pr.id
+        ${havingClause}
+      )
       `
       )
-      .get();
+      .get(...whereValues, ...havingValues).total;
 
     return {
       data: returns,

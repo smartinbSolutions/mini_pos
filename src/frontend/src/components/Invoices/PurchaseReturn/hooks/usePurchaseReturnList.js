@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+const DEFAULT_FILTERS = {
+  dateFrom: "",
+  dateTo: "",
+  supplierId: "",
+  status: "",
+  minTotal: "",
+  maxTotal: "",
+};
+
 const usePurchaseReturnList = () => {
   const { t } = useTranslation();
   const api = window.api;
@@ -15,8 +24,21 @@ const usePurchaseReturnList = () => {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [suppliers, setSuppliers] = useState([]);
+
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
+
+  const handleFilterChange = (name, value) => {
+    setFilters((prev) => ({ ...prev, [name]: value }));
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setPage(1);
+  };
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -27,7 +49,16 @@ const usePurchaseReturnList = () => {
     try {
       setLoading(true);
 
-      const res = await api.getPurchaseReturns({ page, limit });
+      const res = await api.getPurchaseReturns({
+        page,
+        limit,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+        supplierId: filters.supplierId || undefined,
+        status: filters.status || undefined,
+        minTotal: filters.minTotal !== "" ? filters.minTotal : undefined,
+        maxTotal: filters.maxTotal !== "" ? filters.maxTotal : undefined,
+      });
 
       setPurchaseReturns(res?.data || []);
       setTotal(res?.total || 0);
@@ -38,11 +69,19 @@ const usePurchaseReturnList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, t]);
+  }, [api, page, limit, filters, t]);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
+
+  useEffect(() => {
+    if (!api?.getSuppliers) return;
+    api
+      .getSuppliers({ page: 1, limit: 1000 })
+      .then((res) => setSuppliers(res?.data || res || []))
+      .catch(() => setSuppliers([]));
+  }, [api]);
 
   const deletePurchaseReturn = async (id) => {
     try {
@@ -56,7 +95,7 @@ const usePurchaseReturnList = () => {
         err?.message ||
           t("errors.deleteFailed", {
             field: t("ui.purchaseReturn"),
-          }),
+          })
       );
     } finally {
       setSaving(false);
@@ -84,6 +123,11 @@ const usePurchaseReturnList = () => {
 
     openPaymentModel,
     setOpenPaymentModel,
+
+    filters,
+    handleFilterChange,
+    clearFilters,
+    suppliers,
   };
 };
 

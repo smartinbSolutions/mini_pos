@@ -131,7 +131,8 @@
     "user": "المستخدم",
     "users": "المستخدمون",
     "username": "اسم المستخدم",
-    "refunded": "مرتجع",
+    "fully-refunded": "مسترجعة بالكامل",
+    "partially-refunded": "مسترجعة جزئياً",
     "salesReturn": "مرتجع مبيعات",
     "returns": "المرتجعات",
     "returnId": "مرتجع #",
@@ -147,6 +148,20 @@
     "noDataToday": "لا توجد بيانات متاحة اليوم",
     "return": "مرتجع",
     "sale": "مبيعات"
+  },
+  "filters": {
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "status": "الحالة",
+    "allStatuses": "كل الحالات",
+    "allSuppliers": "كل الموردين",
+    "allCustomers": "كل العملاء",
+    "returnStatus": "حالة الإرجاع",
+    "allReturnStatuses": "كل حالات الإرجاع",
+    "noReturn": "بدون إرجاع",
+    "allCategories": "كل الفئات",
+    "minTotal": "أقل إجمالي",
+    "maxTotal": "أعلى إجمالي"
   },
   "screens": {
     "units": {
