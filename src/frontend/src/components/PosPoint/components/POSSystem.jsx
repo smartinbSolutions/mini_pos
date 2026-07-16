@@ -82,7 +82,6 @@ export default function POSSystem() {
   const openCustomerDisplay = () => {
     window.api?.openCustomerDisplay?.();
   };
-  console.log(scaleStatus);
 
   useEffect(() => {
     window.api?.pushCartToCustomerDisplay?.({
@@ -140,19 +139,6 @@ export default function POSSystem() {
     setIsTotalModalOpen(false);
   };
 
-  const openMultiCheckout = () => {
-    if (!cart.length) {
-      setActionError(t("screens.pos.addBeforeCheckout"));
-      return;
-    }
-    if (!funds.length) {
-      setActionError(t("screens.pos.noFundsForPayment"));
-      return;
-    }
-    setActionError("");
-    setIsCheckoutMultiOpen(true);
-  };
-
   const openCheckout = () => {
     if (!cart.length) {
       setActionError(t("screens.pos.addBeforeCheckout"));
@@ -189,8 +175,9 @@ export default function POSSystem() {
   return (
     <div className="min-h-screen bg-[#f7f3ee] text-stone-900">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <main className="flex min-w-0 flex-col">
-          {/* HEADER — single dense bar */}
+        {/* MAIN SHOPPING INTERFACE */}
+        <main className="flex min-w-0 flex-col h-screen overflow-y-auto pb-24 lg:pb-0">
+          {/* HEADER */}
           <div className="sticky top-0 z-20 border-b border-stone-200/80 bg-white/90 shadow-sm shadow-stone-200/50 backdrop-blur-xl">
             <div className="flex flex-wrap items-center gap-3 px-4 py-3">
               {isAdmin && (
@@ -215,6 +202,7 @@ export default function POSSystem() {
                 <Receipt size={14} />
                 {t("screens.pos.dailyInvoices", "today Invoices")}
               </button>
+
               <div className="min-w-0 shrink-0">
                 <h1 className="truncate text-lg font-black leading-tight tracking-tight text-stone-950">
                   {t("screens.pos.title")}
@@ -224,6 +212,7 @@ export default function POSSystem() {
                 </p>
               </div>
 
+              {/* SCALE CONTROLS */}
               <div className="flex h-10 items-center overflow-hidden rounded-xl border border-stone-200 bg-stone-50">
                 <div className="flex h-full items-center gap-1.5 border-r border-stone-200 px-2.5">
                   <Scale
@@ -272,6 +261,7 @@ export default function POSSystem() {
                 </select>
               )}
 
+              {/* PRODUCT SEARCH */}
               <div className="relative min-w-[200px] flex-1">
                 <Search
                   size={15}
@@ -303,6 +293,7 @@ export default function POSSystem() {
                 {t("screens.pos.customerDisplay")}
               </button>
 
+              {/* USER BRANDING */}
               <div className="ml-auto flex h-10 shrink-0 items-center gap-2 rounded-xl border border-stone-200 bg-stone-50 pl-3 pr-1.5">
                 <UserIcon size={14} className="text-stone-500" />
                 <span className="max-w-[120px] truncate text-xs font-bold text-stone-800">
@@ -359,7 +350,8 @@ export default function POSSystem() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-4 pb-28 lg:pb-4">
+          {/* PRODUCTS LIST */}
+          <div className="flex-1 p-4">
             {filteredProducts.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {filteredProducts.map((product) => (
@@ -421,8 +413,10 @@ export default function POSSystem() {
           </div>
         </main>
 
-        <aside className="hidden border-l border-stone-200 bg-white lg:flex lg:flex-col">
-          <div className="border-b border-stone-200 p-4">
+        {/* SIDE CART (FIXED HEIGHT / LOCKED PORTRAIT SCROLL) */}
+        <aside className="hidden border-l border-stone-200 bg-white lg:flex lg:flex-col h-screen sticky top-0 overflow-hidden">
+          {/* CART HEADER */}
+          <div className="shrink-0 border-b border-stone-200 p-4 bg-white">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-black text-stone-950">
@@ -472,7 +466,8 @@ export default function POSSystem() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto p-3">
+          {/* CART BODY - THE ONLY SCROLLABLE AREA */}
+          <div className="flex-1 overflow-y-auto p-3 bg-stone-50/30">
             {cart.length === 0 ? (
               <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-stone-300 bg-stone-50/70 text-center">
                 <div>
@@ -490,7 +485,7 @@ export default function POSSystem() {
                 {cart.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-xl border border-stone-200 bg-stone-50 p-3"
+                    className="rounded-xl border border-stone-200 bg-white p-3 cursor-pointer shadow-sm hover:border-teal-200 hover:shadow-md transition duration-150"
                     onClick={() => openPriceModal(item)}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -562,7 +557,8 @@ export default function POSSystem() {
             )}
           </div>
 
-          <div className="space-y-2.5 border-t border-stone-200 p-4">
+          {/* CART FOOTER - STATICALLY BOUND TO SIDEBAR BOTTOM */}
+          <div className="shrink-0 space-y-2.5 border-t border-stone-200 bg-white p-4 shadow-lg shadow-stone-300">
             {cart.length > 0 && (
               <div className="rounded-xl border border-stone-200 bg-white p-3 shadow-sm">
                 <div className="mb-2.5 flex items-center justify-between">
@@ -611,7 +607,7 @@ export default function POSSystem() {
             )}
 
             <div
-              className="cursor-pointer rounded-xl bg-teal-500 p-4 text-white shadow-lg shadow-teal-200"
+              className="cursor-pointer rounded-xl bg-teal-500 p-4 text-white shadow-lg shadow-teal-200 transition hover:bg-teal-600 active:scale-[0.99]"
               onClick={openCheckout}
             >
               <div className="flex items-center justify-between gap-3">
@@ -622,7 +618,7 @@ export default function POSSystem() {
                   {t("screens.pos.itemCount", { count: cart.length })}
                 </span>
               </div>
-              {Number(discount) > 0 && (
+              {Number(discount.value) > 0 && (
                 <p className="mt-0.5 text-xs font-bold line-through opacity-75">
                   {money(subtotal)}
                 </p>
@@ -635,6 +631,7 @@ export default function POSSystem() {
         </aside>
       </div>
 
+      {/* MOBILE LOWER BAR CONTROLS */}
       <div className="fixed inset-x-4 bottom-4 z-40 lg:hidden">
         <div className="rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-2xl shadow-stone-300/60 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
@@ -658,6 +655,7 @@ export default function POSSystem() {
         </div>
       </div>
 
+      {/* MODALS */}
       {isTotalModalOpen && (
         <POSSystemEditTotalPrice
           isTotalModalOpen={isTotalModalOpen}
