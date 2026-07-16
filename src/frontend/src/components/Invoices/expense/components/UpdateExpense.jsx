@@ -213,7 +213,7 @@ export default function UpdateExpense() {
 
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[700px] text-sm">
-                  <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                     <tr>
                       <th className="p-3 text-left">{t("ui.name")}</th>
                       <th className="p-3">{t("ui.price")}</th>

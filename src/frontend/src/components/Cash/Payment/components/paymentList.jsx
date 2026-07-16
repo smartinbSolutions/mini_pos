@@ -339,7 +339,7 @@ const PaymentList = () => {
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1000px] text-start text-sm">
-              <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+              <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                 <tr>
                   <th className="w-10 px-5 py-4"></th>
                   <th className="px-5 py-4 text-start">

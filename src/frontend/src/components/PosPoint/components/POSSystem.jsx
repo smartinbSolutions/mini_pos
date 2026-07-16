@@ -199,7 +199,7 @@ export default function POSSystem() {
                 <h1 className="truncate text-lg font-black leading-tight tracking-tight text-stone-950">
                   {t("screens.pos.title")}
                 </h1>
-                <p className="truncate text-[11px] font-semibold tracking-wide text-stone-400">
+                <p className="truncate text-[11px] font-semibold  text-stone-400">
                   {t("screens.pos.subtitle")}
                 </p>
               </div>
@@ -315,7 +315,7 @@ export default function POSSystem() {
           <div className="grid grid-cols-2 gap-3 p-4 pb-0">
             <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-2.5 shadow-sm shadow-stone-200/70">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                <p className="text-[10px] font-semibold uppercase  text-stone-500">
                   {t("ui.products")}
                 </p>
                 <h2 className="text-xl font-black text-stone-950">
@@ -329,7 +329,7 @@ export default function POSSystem() {
 
             <div className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-2.5 shadow-sm shadow-stone-200/70">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+                <p className="text-[10px] font-semibold uppercase  text-stone-500">
                   {t("ui.totalWithOutDiscont")}
                 </p>
                 <h2 className="truncate text-xl font-black text-stone-950">
@@ -354,7 +354,7 @@ export default function POSSystem() {
                       addToCart(
                         product,
                         activeWeight || 1,
-                        Boolean(activeWeight),
+                        Boolean(activeWeight)
                       );
                       setActionError("");
                     }}
@@ -504,7 +504,7 @@ export default function POSSystem() {
                             e.stopPropagation();
                             updateQuantity(
                               item.id,
-                              item.qty === 1 ? -1 : item.qty - 1,
+                              item.qty === 1 ? -1 : item.qty - 1
                             );
                           }}
                           className="flex h-9 w-9 items-center justify-center text-stone-700 transition hover:bg-stone-100"
@@ -603,10 +603,10 @@ export default function POSSystem() {
               onClick={openCheckout}
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[10px] font-black uppercase tracking-wide">
+                <span className="text-[10px] font-black uppercase ">
                   {t("screens.pos.totalAmount")}
                 </span>
-                <span className="text-[10px] font-black uppercase tracking-wide">
+                <span className="text-[10px] font-black uppercase ">
                   {t("screens.pos.itemCount", { count: cart.length })}
                 </span>
               </div>
@@ -628,7 +628,7 @@ export default function POSSystem() {
         <div className="rounded-2xl border border-stone-200 bg-white/95 p-4 shadow-2xl shadow-stone-300/60 backdrop-blur-xl">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <p className="text-xs font-semibold uppercase  text-stone-500">
                 {t("screens.pos.cartTotal")}
               </p>
               <h2 className="truncate text-2xl font-black text-stone-950">

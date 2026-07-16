@@ -71,7 +71,7 @@ export default function AddFundPayment({
 
   const partyCard = (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-      <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+      <div className="text-[10px] uppercase  text-gray-400 font-semibold">
         {isCashIn
           ? t("screens.payments.linked_account_type")
           : t("screens.payments.linked_account_type")}
@@ -128,7 +128,7 @@ export default function AddFundPayment({
 
   const fundCard = (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-      <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+      <div className="text-[10px] uppercase  text-gray-400 font-semibold">
         {t("screens.payments.target_fund")}
       </div>
 

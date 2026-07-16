@@ -106,7 +106,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
 
   const subtotal = returnItems.reduce(
     (sum, item) => sum + item.returnQuantity * (item.price || 0),
-    0,
+    0
   );
 
   const taxValue = (subtotal - discount) * (taxPercent / 100);
@@ -210,7 +210,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
 
           <div className="rounded-2xl border border-slate-100 overflow-hidden">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500 border-b border-slate-100">
+              <thead className="bg-slate-50 text-xs font-bold uppercase  text-slate-500 border-b border-slate-100">
                 <tr>
                   <th className="px-4 py-3 text-start">{t("ui.product")}</th>
                   <th className="px-4 py-3 text-start">{t("ui.boughtQty")}</th>
@@ -263,7 +263,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold uppercase tracking-wide text-slate-500 block mb-1.5">
+                <label className="text-xs font-bold uppercase  text-slate-500 block mb-1.5">
                   {t("screens.salesReturn.returnNotes")}
                 </label>
                 <textarea
@@ -296,8 +296,8 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
                     setDiscount(
                       Math.min(
                         subtotal,
-                        Math.max(0, Number(e.target.value) || 0),
-                      ),
+                        Math.max(0, Number(e.target.value) || 0)
+                      )
                     )
                   }
                   className="w-24 text-start font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-0.5"

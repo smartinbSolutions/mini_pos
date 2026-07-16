@@ -58,7 +58,7 @@ const ExportModal = ({
         </div>
 
         <div className="space-y-2 mb-5">
-          <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <label className="text-xs font-semibold uppercase  text-gray-500">
             {t("common.dateRange", "Date Range")}
           </label>
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5">
@@ -86,7 +86,7 @@ const ExportModal = ({
         </div>
 
         <div className="space-y-2 mb-5">
-          <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <label className="text-xs font-semibold uppercase  text-gray-500">
             {t("common.exportLanguage", "Document Language")}
           </label>
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5">

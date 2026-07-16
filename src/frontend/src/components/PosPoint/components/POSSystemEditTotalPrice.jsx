@@ -39,7 +39,7 @@ const POSSystemEditTotalPrice = ({
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wide text-stone-500 mb-2">
+            <label className="block text-xs font-bold uppercase  text-stone-500 mb-2">
               {t("screens.pos.finalTotal")}
             </label>
             <div className="relative">

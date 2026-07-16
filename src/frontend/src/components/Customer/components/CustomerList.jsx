@@ -81,7 +81,7 @@ export const CustomerList = () => {
     return customers.filter((s) =>
       `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
         .toLowerCase()
-        .includes(search.toLowerCase()),
+        .includes(search.toLowerCase())
     );
   }, [customers, search]);
 
@@ -114,7 +114,7 @@ export const CustomerList = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[720px] text-start text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
                     <th className="px-5 py-4 text-start">{t("ui.name")}</th>
                     <th className="px-5 py-4 text-start">{t("ui.phone")}</th>

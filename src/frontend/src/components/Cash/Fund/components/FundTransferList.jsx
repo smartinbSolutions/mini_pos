@@ -101,7 +101,7 @@ const FundTransferList = () => {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
                     <th className="px-5 py-4 text-start">{t("ui.date")}</th>
                     <th className="px-5 py-4 text-start">

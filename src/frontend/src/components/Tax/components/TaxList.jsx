@@ -35,7 +35,7 @@ const TaxList = () => {
 
   const filteredTaxes = useMemo(() => {
     return taxes.filter((t) =>
-      `${t.name} ${t.rate}`.toLowerCase().includes(search.toLowerCase()),
+      `${t.name} ${t.rate}`.toLowerCase().includes(search.toLowerCase())
     );
   }, [taxes, search]);
 
@@ -70,7 +70,7 @@ const TaxList = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+          <div className="grid grid-cols-3 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase  text-slate-400">
             <span>{t("ui.name")}</span>
             <span>{t("ui.rate")}</span>
             <span className="text-right">{t("common.actions")}</span>
@@ -146,7 +146,7 @@ const TaxList = () => {
                     </button>
                   </div>
                 </div>
-              ),
+              )
             )}
 
             {filteredTaxes.length === 0 && (

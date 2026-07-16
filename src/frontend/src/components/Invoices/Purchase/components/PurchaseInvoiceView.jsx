@@ -135,7 +135,7 @@ export default function PurchaseInvoiceView() {
           <div className="p-7">
             <div className="overflow-x-auto rounded-2xl border border-[#e5ebff]">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
                     <th className="p-3 text-left">{t("ui.product")}</th>
                     <th className="p-3 text-center">{t("ui.price")}</th>

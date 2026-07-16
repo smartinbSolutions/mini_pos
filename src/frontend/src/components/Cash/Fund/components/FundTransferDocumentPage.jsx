@@ -124,7 +124,7 @@ const FundTransferDocumentPage = () => {
 
           <div className="flex items-center gap-4 border-t border-[#e5ebff] bg-[#f8faff] p-7">
             <div className="flex-1 rounded-2xl border border-red-100 bg-white p-5 text-center">
-              <p className="text-xs font-bold uppercase tracking-wide text-red-500">
+              <p className="text-xs font-bold uppercase  text-red-500">
                 {t("screens.funds.from")}
               </p>
               <p className="mt-2 font-black text-slate-900">
@@ -145,7 +145,7 @@ const FundTransferDocumentPage = () => {
             />
 
             <div className="flex-1 rounded-2xl border border-emerald-100 bg-white p-5 text-center">
-              <p className="text-xs font-bold uppercase tracking-wide text-emerald-600">
+              <p className="text-xs font-bold uppercase  text-emerald-600">
                 {t("screens.funds.to")}
               </p>
               <p className="mt-2 font-black text-slate-900">
@@ -163,7 +163,7 @@ const FundTransferDocumentPage = () => {
 
           <div className="grid grid-cols-2 gap-6 border-t border-[#e5ebff] p-7 text-sm">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("screens.funds.exchangeRate")}
               </p>
               <p className="mt-1 font-bold text-slate-700">
@@ -171,7 +171,7 @@ const FundTransferDocumentPage = () => {
               </p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("screens.funds.effectiveRate")}
               </p>
               <p className="mt-1 font-bold text-slate-700">
@@ -187,7 +187,7 @@ const FundTransferDocumentPage = () => {
 
           {transfer.note && (
             <div className="border-t border-[#e5ebff] p-7 text-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("ui.note")}
               </p>
               <p className="mt-1 text-slate-700">{transfer.note}</p>

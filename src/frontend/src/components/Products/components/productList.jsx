@@ -73,12 +73,12 @@ export default function ProductList() {
 
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0,
+    0
   );
   const totalValue = products.reduce(
     (total, product) =>
       total + Number(product.quantity || 0) * Number(product.price || 0),
-    0,
+    0
   );
 
   return (
@@ -197,7 +197,7 @@ export default function ProductList() {
             <div className="overflow-x-auto">
               <table className="w-full text-start text-sm">
                 <thead>
-                  <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                     <th className="px-5 py-3 text-start">{t("ui.product")}</th>
                     <th className="px-5 py-3 text-start">{t("ui.unit")}</th>
                     <th className="px-5 py-3 text-start">{t("ui.qty")}</th>

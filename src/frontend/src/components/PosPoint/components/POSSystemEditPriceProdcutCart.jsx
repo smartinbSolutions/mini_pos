@@ -28,7 +28,7 @@ const POSSystemEditPriceProdcutCart = ({
         </div>
 
         <div className="my-5">
-          <label className="block text-xs font-bold uppercase tracking-wide text-stone-500 mb-2">
+          <label className="block text-xs font-bold uppercase  text-stone-500 mb-2">
             {t("Edit Product Price")}
           </label>
           <div className="relative">

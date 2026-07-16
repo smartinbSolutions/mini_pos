@@ -92,7 +92,7 @@ const UsersList = () => {
       <div className={`${panelClass} overflow-hidden`}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
               <th className="px-5 py-3 text-start">
                 {t("screens.users.username")}
               </th>

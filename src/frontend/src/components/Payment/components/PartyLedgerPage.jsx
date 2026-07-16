@@ -324,7 +324,7 @@ const PartyLedgerPage = () => {
           ) : (
             Object.entries(groupedByDay).map(([day, rows]) => (
               <div key={day}>
-                <div className="sticky top-0 z-10 border-b border-[#e5ebff] bg-[#f8faff]/95 px-6 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-500 backdrop-blur">
+                <div className="sticky top-0 z-10 border-b border-[#e5ebff] bg-[#f8faff]/95 px-6 py-2.5 text-xs font-bold uppercase  text-slate-500 backdrop-blur">
                   {day === "Unknown date"
                     ? day
                     : new Date(day).toLocaleDateString(undefined, {
@@ -376,7 +376,7 @@ const PartyLedgerPage = () => {
 
                             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                               <span
-                                className={`font-bold uppercase tracking-wide ${
+                                className={`font-bold uppercase  ${
                                   p.record_type === "return"
                                     ? "text-amber-600"
                                     : ""

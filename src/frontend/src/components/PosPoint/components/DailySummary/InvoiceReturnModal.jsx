@@ -67,8 +67,8 @@ export default function InvoiceReturnModal({
       setActionError(
         t(
           "screens.pos.selectAtLeastOneItem",
-          "الرجاء تحديد كمية إرجاع لمنتج واحد على الأقل.",
-        ),
+          "الرجاء تحديد كمية إرجاع لمنتج واحد على الأقل."
+        )
       );
       return;
     }
@@ -77,8 +77,8 @@ export default function InvoiceReturnModal({
       !confirm(
         t(
           "screens.pos.confirmPartialReturn",
-          "هل أنت متأكد من رغبتك في إتمام عملية الإرجاع المحددة؟",
-        ),
+          "هل أنت متأكد من رغبتك في إتمام عملية الإرجاع المحددة؟"
+        )
       )
     ) {
       return;
@@ -96,7 +96,7 @@ export default function InvoiceReturnModal({
         invoice_name: `RTN-SLS-${selectedInvoice.id}`,
         description: t(
           "screens.pos.todayInvoiceReturn",
-          "مرتجع سريع من فواتير اليوم",
+          "مرتجع سريع من فواتير اليوم"
         ),
         date: new Date().toISOString().split("T")[0],
         subtotal: returnTotal,
@@ -114,7 +114,7 @@ export default function InvoiceReturnModal({
         onSuccess();
       } else {
         setActionError(
-          result.error || t("errors.returnFailed", "فشلت عملية الإرجاع"),
+          result.error || t("errors.returnFailed", "فشلت عملية الإرجاع")
         );
       }
     } catch (err) {
@@ -159,7 +159,7 @@ export default function InvoiceReturnModal({
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-xs font-black text-stone-800 uppercase tracking-wider">
+            <h4 className="text-xs font-black text-stone-800 uppercase r">
               {t("screens.pos.chooseReturnQtys", "حدد الكميات المراد إرجاعها")}
             </h4>
 
@@ -241,7 +241,7 @@ export default function InvoiceReturnModal({
               <span>
                 {t(
                   "screens.pos.originalInvoiceTotal",
-                  "إجمالي الفاتورة الأصلية",
+                  "إجمالي الفاتورة الأصلية"
                 )}
               </span>
               <span className="font-bold text-stone-900">
@@ -249,7 +249,7 @@ export default function InvoiceReturnModal({
                   selectedInvoice.net_total ||
                     selectedInvoice.netTotal ||
                     selectedInvoice.total ||
-                    0,
+                    0
                 )}
               </span>
             </div>

@@ -875,7 +875,13 @@
     "todayPurchases": "Today's Purchases",
     "todaySales": "Today's Sales",
     "totalSales": "Total Sales",
-    "unpaidInvoices": "Unpaid Invoices"
+    "unpaidInvoices": "Unpaid Invoices",
+    "total_fund_balance": "Total fund balance",
+    "operating": "Operating",
+    "financing": "Financing (Partners)",
+    "withdrawals": "Withdrawals",
+    "deposits": "Deposits",
+    "topExpenseCategories": "Top Expense Categories"
   },
   "activation": {
     "title": "Activate POS License",

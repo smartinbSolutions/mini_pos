@@ -169,7 +169,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                 <div className="space-y-2">
                   {result.skippedProducts.length > 0 && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
-                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-700">
+                      <p className="mb-2 text-xs font-black uppercase  text-amber-700">
                         {t("screens.products.skippedProducts")}
                       </p>
                       <div className="space-y-1.5">
@@ -191,7 +191,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                   )}
                   {result.skippedBarcodes.length > 0 && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
-                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-700">
+                      <p className="mb-2 text-xs font-black uppercase  text-amber-700">
                         {t("screens.products.skippedBarcodes")}
                       </p>
                       <div className="space-y-1.5">

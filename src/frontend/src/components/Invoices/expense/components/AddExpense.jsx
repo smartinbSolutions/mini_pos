@@ -233,7 +233,7 @@ export default function AddExpense() {
                   {/* Desktop table */}
                   <div className="hidden overflow-x-auto md:block">
                     <table className="w-full min-w-[700px] text-sm">
-                      <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                      <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                         <tr>
                           <th className="p-3 text-left">{t("ui.name")}</th>
                           <th className="p-3">{t("ui.price")}</th>
@@ -298,7 +298,7 @@ export default function AddExpense() {
                     {items.map((item, index) => (
                       <div key={index} className="space-y-3 p-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                          <span className="text-xs font-bold uppercase  text-slate-400">
                             {t("ui.name")} #{index + 1}
                           </span>
                           <button

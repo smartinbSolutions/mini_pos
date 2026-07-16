@@ -78,7 +78,7 @@ export default function FundTransferModal({
           <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3">
             {/* SOURCE */}
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-              <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+              <div className="text-[10px] uppercase  text-gray-400 font-semibold">
                 {t("screens.transfer.source_fund")}
               </div>
 
@@ -130,7 +130,7 @@ export default function FundTransferModal({
 
             {/* DESTINATION */}
             <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-              <div className="text-[10px] uppercase tracking-wide text-gray-400 font-semibold">
+              <div className="text-[10px] uppercase  text-gray-400 font-semibold">
                 {t("screens.transfer.destination_fund")}
               </div>
 

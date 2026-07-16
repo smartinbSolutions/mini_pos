@@ -25,7 +25,7 @@ export default function ReturnInvoiceDetails({
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-xs font-black text-stone-800 uppercase tracking-wider">
+            <h4 className="text-xs font-black text-stone-800 uppercase r">
               {t("screens.pos.returnedProducts", "المنتجات المرجعة")}
             </h4>
             <div className="divide-y divide-stone-100 rounded-2xl border border-stone-200 bg-white px-4">
@@ -76,7 +76,7 @@ export default function ReturnInvoiceDetails({
                 selectedInvoice.net_total ||
                   selectedInvoice.netTotal ||
                   selectedInvoice.total ||
-                  0,
+                  0
               )}
             </span>
           </div>

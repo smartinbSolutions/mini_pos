@@ -26,7 +26,7 @@ export default function InvoiceDetailsModal({
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-stone-800">
+            <h4 className="text-xs font-black uppercase r text-stone-800">
               {t("screens.pos.invoiceProducts", "منتجات الفاتورة")}
             </h4>
 
@@ -67,7 +67,7 @@ export default function InvoiceDetailsModal({
                     </span>
 
                     {(item.unit_code || item.unit_name) && (
-                      <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600 border border-stone-200/50 uppercase tracking-wide">
+                      <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600 border border-stone-200/50 uppercase ">
                         {item.unit_code || item.unit_name}
                       </span>
                     )}
@@ -86,7 +86,7 @@ export default function InvoiceDetailsModal({
               <span className="text-stone-600">
                 {t(
                   "screens.pos.originalInvoiceTotal",
-                  "إجمالي الفاتورة الأصلية",
+                  "إجمالي الفاتورة الأصلية"
                 )}
               </span>
 
@@ -95,7 +95,7 @@ export default function InvoiceDetailsModal({
                   selectedInvoice.net_total ||
                     selectedInvoice.netTotal ||
                     selectedInvoice.total ||
-                    0,
+                    0
                 )}
               </span>
             </div>

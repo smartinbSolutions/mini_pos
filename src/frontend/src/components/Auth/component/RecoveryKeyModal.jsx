@@ -50,7 +50,7 @@ export default function RecoveryKeyModal({ recoveryKey, onClose }) {
             <span>{t("screens.recovery.noOfflineRecovery")}</span>
           </div>
           <div className="rounded-xl border border-[#dbe4ff] bg-[#f8faff] p-4">
-            <code className="block break-all text-center text-lg font-black tracking-wide text-slate-900">
+            <code className="block break-all text-center text-lg font-black  text-slate-900">
               {recoveryKey}
             </code>
           </div>

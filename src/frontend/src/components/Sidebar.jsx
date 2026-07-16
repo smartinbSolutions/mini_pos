@@ -312,7 +312,7 @@ export default function Sidebar() {
               <p className="truncate text-sm font-bold text-slate-100">
                 {user?.full_name || user?.username}
               </p>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              <p className="text-[11px] font-semibold uppercase  text-slate-500">
                 {t(`screens.users.role_${user?.role}`)}
               </p>
             </div>

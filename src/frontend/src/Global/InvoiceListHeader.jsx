@@ -231,7 +231,7 @@ export default function InvoiceListHeader({
               filters?.[field.name] !== "";
 
             const fieldWrapperClass = "flex flex-col gap-1.5";
-            const labelClass = `text-[11px] font-bold uppercase tracking-wide ${
+            const labelClass = `text-[11px] font-bold uppercase  ${
               isActive ? "text-[#4663ff]" : "text-slate-400"
             }`;
             const inputBaseClass = `h-11 rounded-xl border bg-white px-3 text-sm outline-none transition focus:ring-4 focus:ring-[#4663ff]/10 ${

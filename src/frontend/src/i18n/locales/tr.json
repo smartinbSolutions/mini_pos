@@ -876,7 +876,13 @@
     "today": "Bugün",
     "unpaid": "Ödenmemiş",
     "partial": "Tam olmayan",
-    "paid": "Ödenmiş"
+    "paid": "Ödenmiş",
+    "total_fund_balance": "Toplam kasa bakiyesi",
+    "operating": "Faaliyet",
+    "financing": "Finansman (Ortaklar)",
+    "withdrawals": "Çekimler",
+    "deposits": "Yatırımlar",
+    "topExpenseCategories": "En Çok Harcanan Kategoriler"
   },
   "activation": {
     "title": "POS Lisansını Etkinleştir",

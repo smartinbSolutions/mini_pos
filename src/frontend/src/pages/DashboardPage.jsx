@@ -93,6 +93,15 @@ const TONE_CLASSES = {
   },
 };
 
+// Wrap any numeric/money value in this — forces LTR digit order and
+// monospace figures regardless of the surrounding page direction, so
+// grouping separators and currency symbols never get bidi-reordered.
+const Num = ({ children, className = "" }) => (
+  <span dir="ltr" className={`font-mono tabular-nums ${className}`}>
+    {children}
+  </span>
+);
+
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
@@ -147,17 +156,17 @@ export default function Dashboard() {
     },
     {
       key: "payment",
-      label: t("dashboard.new_payment", "New Payment"),
-      icon: HandCoins,
+      label: t("navigation.payment", "Payments"),
+      icon: Wallet,
       tone: "blue",
-      to: "/payments/new",
+      to: "/payments",
     },
     {
       key: "transfer",
-      label: t("dashboard.transfer", "Transfer Funds"),
+      label: t("navigation.transfers", "Transfer Funds"),
       icon: ArrowRightLeft,
       tone: "blue",
-      to: "/funds",
+      to: "/fundTransfer",
     },
   ];
 
@@ -165,13 +174,13 @@ export default function Dashboard() {
   const topProductMax = Math.max(
     1,
     ...topProductsList.map((p) =>
-      Number(productView === "byQuantity" ? p.quantity : p.revenue || 0),
-    ),
+      Number(productView === "byQuantity" ? p.quantity : p.revenue || 0)
+    )
   );
 
   const totalFundBalance = useMemo(
     () => data.fundBalances.reduce((sum, f) => sum + Number(f.balance || 0), 0),
-    [data.fundBalances],
+    [data.fundBalances]
   );
 
   if (loading) {
@@ -187,7 +196,7 @@ export default function Dashboard() {
       <div className="mx-auto max-w-7xl space-y-5">
         {/* HEADER */}
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
+          <p className="mb-2 text-xs font-bold uppercase  text-[#4663ff]">
             {t("dashboard.overview", "Overview")}
           </p>
           <h1 className="text-4xl font-black leading-tight text-slate-950">
@@ -198,53 +207,53 @@ export default function Dashboard() {
         {/* AT A GLANCE — the four numbers that matter most, before anything else */}
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_12px_40px_rgba(70,99,255,0.08)]">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase  text-slate-400">
               <Sparkles size={13} className="text-[#4663ff]" />
               {t("dashboard.net_profit", "Net profit")}
             </div>
-            <div
-              className={`font-mono tabular-nums text-xl font-black ${
+            <Num
+              className={`text-xl font-black ${
                 data.profitLoss.netProfit >= 0
                   ? "text-emerald-700"
                   : "text-rose-600"
               }`}
             >
               {money(data.profitLoss.netProfit)}
-            </div>
+            </Num>
           </div>
 
           <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_12px_40px_rgba(70,99,255,0.08)]">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase text-slate-400">
               <ArrowRightLeft size={13} className="text-[#4663ff]" />
               {t("dashboard.net_cash_movement", "Net cash movement")}
             </div>
-            <div
-              className={`font-mono tabular-nums text-xl font-black ${
+            <Num
+              className={`text-xl font-black ${
                 data.cashFlow.net >= 0 ? "text-emerald-700" : "text-rose-600"
               }`}
             >
               {money(data.cashFlow.net)}
-            </div>
+            </Num>
           </div>
 
           <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_12px_40px_rgba(70,99,255,0.08)]">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase  text-slate-400">
               <Landmark size={13} className="text-[#4663ff]" />
               {t("dashboard.total_fund_balance", "Total fund balance")}
             </div>
-            <div className="font-mono tabular-nums text-xl font-black text-slate-900">
+            <Num className="text-xl font-black text-slate-900">
               {money(totalFundBalance)}
-            </div>
+            </Num>
           </div>
 
           <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_12px_40px_rgba(70,99,255,0.08)]">
-            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+            <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase  text-slate-400">
               <Wallet size={13} className="text-[#4663ff]" />
               {t("dashboard.inventoryValue", "Inventory Value")}
             </div>
-            <div className="font-mono tabular-nums text-xl font-black text-slate-900">
+            <Num className="text-xl font-black text-slate-900">
               {money(data.inventoryValue)}
-            </div>
+            </Num>
             {data.lowStockProducts > 0 && (
               <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-amber-600">
                 <AlertTriangle size={11} />
@@ -286,11 +295,11 @@ export default function Dashboard() {
             const Icon = meta.icon;
             const statusTotal = Math.max(
               1,
-              stat.paid + stat.partial + stat.unpaid,
+              stat.paid + stat.partial + stat.unpaid
             );
             const maxTrend = Math.max(
               1,
-              ...stat.trend.map((d) => Number(d.total || 0)),
+              ...stat.trend.map((d) => Number(d.total || 0))
             );
 
             return (
@@ -300,19 +309,15 @@ export default function Dashboard() {
               >
                 <div className="flex items-start justify-between p-5 pb-3">
                   <div>
-                    <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                    <p className="mb-1 text-xs font-bold uppercase  text-slate-400">
                       {t(`dashboard.${key}`, key)}
                     </p>
-                    <div
-                      className={`font-mono tabular-nums text-2xl font-black ${tone.text}`}
-                    >
+                    <Num className={`text-2xl font-black ${tone.text}`}>
                       {money(stat.total)}
-                    </div>
+                    </Num>
                     <p className="mt-1 text-xs font-semibold text-slate-400">
                       {t("dashboard.today", "Today")}:{" "}
-                      <span className="font-mono tabular-nums text-slate-600">
-                        {money(stat.today)}
-                      </span>
+                      <Num className="text-slate-600">{money(stat.today)}</Num>
                     </p>
                   </div>
                   <div className={`rounded-2xl ${tone.iconBg} p-3`}>
@@ -353,13 +358,14 @@ export default function Dashboard() {
                   </div>
                   <div className="flex justify-between text-[11px] font-semibold text-slate-500">
                     <span>
-                      {t("dashboard.paid", "Paid")} {stat.paid}
+                      {t("dashboard.paid", "Paid")} <Num>{stat.paid}</Num>
                     </span>
                     <span>
-                      {t("dashboard.partial", "Partial")} {stat.partial}
+                      {t("dashboard.partial", "Partial")}{" "}
+                      <Num>{stat.partial}</Num>
                     </span>
                     <span>
-                      {t("dashboard.unpaid", "Unpaid")} {stat.unpaid}
+                      {t("dashboard.unpaid", "Unpaid")} <Num>{stat.unpaid}</Num>
                     </span>
                   </div>
                 </div>
@@ -374,48 +380,48 @@ export default function Dashboard() {
             <h2 className="mb-5 text-lg font-black text-slate-900">
               {t("dashboard.profit_loss", "Profit & Loss")}
             </h2>
-            <div className="space-y-3 font-mono tabular-nums text-sm">
+            <div className="space-y-3 text-sm">
               <div className="flex items-center justify-between">
-                <span className="font-sans text-slate-500">
+                <span className="text-slate-500">
                   {t("dashboard.revenue", "Revenue")}
                 </span>
-                <span className="font-bold text-slate-900">
+                <Num className="font-bold text-slate-900">
                   {money(data.sales.total)}
-                </span>
+                </Num>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-sans text-slate-500">
+                <span className="text-slate-500">
                   {t("dashboard.cost_of_goods_sold", "Cost of goods sold")}
                 </span>
-                <span className="font-bold text-rose-600">
+                <Num className="font-bold text-rose-600">
                   -{money(data.profitLoss.cogs)}
-                </span>
+                </Num>
               </div>
               <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
-                <span className="font-sans font-bold text-slate-700">
+                <span className="font-bold text-slate-700">
                   {t("dashboard.gross_profit", "Gross profit")}
                 </span>
-                <span className="font-bold text-slate-900">
+                <Num className="font-bold text-slate-900">
                   {money(data.profitLoss.grossProfit)}
-                </span>
+                </Num>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-sans text-slate-500">
+                <span className="text-slate-500">
                   {t("dashboard.expenses", "Expenses")}
                 </span>
-                <span className="font-bold text-rose-600">
+                <Num className="font-bold text-rose-600">
                   -{money(data.expense.total)}
-                </span>
+                </Num>
               </div>
               <div className="flex items-center justify-between rounded-2xl bg-[#f8faff] px-4 py-3">
-                <span className="font-sans font-black text-slate-900">
+                <span className="font-black text-slate-900">
                   {t("dashboard.net_profit", "Net profit")}
                 </span>
-                <span
+                <Num
                   className={`text-lg font-black ${data.profitLoss.netProfit >= 0 ? "text-emerald-700" : "text-rose-600"}`}
                 >
                   {money(data.profitLoss.netProfit)}
-                </span>
+                </Num>
               </div>
             </div>
           </div>
@@ -426,24 +432,24 @@ export default function Dashboard() {
             </h2>
 
             <div className="mb-4">
-              <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="mb-2.5 text-xs font-bold uppercase text-slate-400">
                 {t("dashboard.operating", "Operating")}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-emerald-50 p-3.5">
                   <TrendingUp size={16} className="mb-2 text-emerald-600" />
-                  <div className="font-mono tabular-nums text-base font-black text-emerald-700">
+                  <Num className="text-base font-black text-emerald-700">
                     {money(data.cashFlow.operating.income)}
-                  </div>
+                  </Num>
                   <div className="text-[11px] font-semibold text-slate-500">
                     {t("dashboard.income", "Income")}
                   </div>
                 </div>
                 <div className="rounded-2xl bg-rose-50 p-3.5">
                   <TrendingDown size={16} className="mb-2 text-rose-500" />
-                  <div className="font-mono tabular-nums text-base font-black text-rose-600">
+                  <Num className="text-base font-black text-rose-600">
                     {money(data.cashFlow.operating.expense)}
-                  </div>
+                  </Num>
                   <div className="text-[11px] font-semibold text-slate-500">
                     {t("dashboard.expense", "Expense")}
                   </div>
@@ -452,24 +458,24 @@ export default function Dashboard() {
             </div>
 
             <div className="mb-4">
-              <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="mb-2.5 text-xs font-bold uppercase  text-slate-400">
                 {t("dashboard.financing", "Financing (Partners)")}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-[#eef3ff] p-3.5">
                   <TrendingUp size={16} className="mb-2 text-[#4663ff]" />
-                  <div className="font-mono tabular-nums text-base font-black text-[#4663ff]">
+                  <Num className="text-base font-black text-[#4663ff]">
                     {money(data.cashFlow.financing.income)}
-                  </div>
+                  </Num>
                   <div className="text-[11px] font-semibold text-slate-500">
                     {t("dashboard.deposits", "Deposits")}
                   </div>
                 </div>
                 <div className="rounded-2xl bg-slate-100 p-3.5">
                   <TrendingDown size={16} className="mb-2 text-slate-500" />
-                  <div className="font-mono tabular-nums text-base font-black text-slate-600">
+                  <Num className="text-base font-black text-slate-600">
                     {money(data.cashFlow.financing.expense)}
-                  </div>
+                  </Num>
                   <div className="text-[11px] font-semibold text-slate-500">
                     {t("dashboard.withdrawals", "Withdrawals")}
                   </div>
@@ -481,11 +487,11 @@ export default function Dashboard() {
               <span className="text-sm font-bold text-slate-700">
                 {t("dashboard.net_cash_movement", "Net cash movement")}
               </span>
-              <span
-                className={`font-mono tabular-nums text-lg font-black ${data.cashFlow.net >= 0 ? "text-emerald-700" : "text-rose-600"}`}
+              <Num
+                className={`text-lg font-black ${data.cashFlow.net >= 0 ? "text-emerald-700" : "text-rose-600"}`}
               >
                 {money(data.cashFlow.net)}
-              </span>
+              </Num>
             </div>
           </div>
         </section>
@@ -511,15 +517,15 @@ export default function Dashboard() {
                       {fund.currency_code}
                     </span>
                   </div>
-                  <div
-                    className={`font-mono tabular-nums text-xl font-black ${fund.balance >= 0 ? "text-slate-900" : "text-rose-600"}`}
+                  <Num
+                    className={`text-xl font-black ${fund.balance >= 0 ? "text-slate-900" : "text-rose-600"}`}
                   >
                     {formatMoney(
                       fund.balance,
                       fund.currency_code,
-                      fund.currency_symbol,
+                      fund.currency_symbol
                     )}
-                  </div>
+                  </Num>
                 </div>
               ))}
             </div>
@@ -566,11 +572,11 @@ export default function Dashboard() {
                         <span className="truncate font-bold text-slate-700">
                           {product.name}
                         </span>
-                        <span className="font-mono tabular-nums shrink-0 text-slate-500">
+                        <Num className="shrink-0 text-slate-500">
                           {productView === "byQuantity"
                             ? Number(value || 0)
                             : money(value)}
-                        </span>
+                        </Num>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                         <div
@@ -602,8 +608,8 @@ export default function Dashboard() {
                   const maxSpent = Math.max(
                     1,
                     ...data.topExpenseCategories.map((c) =>
-                      Number(c.total_spent || 0),
-                    ),
+                      Number(c.total_spent || 0)
+                    )
                   );
                   return data.topExpenseCategories.map((cat) => (
                     <div key={cat.category_id}>
@@ -611,9 +617,9 @@ export default function Dashboard() {
                         <span className="truncate font-bold text-slate-700">
                           {cat.name}
                         </span>
-                        <span className="font-mono tabular-nums shrink-0 text-slate-500">
+                        <Num className="shrink-0 text-slate-500">
                           {money(cat.total_spent)}
-                        </span>
+                        </Num>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-slate-100">
                         <div
@@ -639,12 +645,12 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="flex items-center justify-between rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_12px_40px_rgba(70,99,255,0.08)]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("dashboard.products", "Products")}
               </p>
-              <p className="font-mono tabular-nums text-xl font-black text-slate-900">
+              <Num className="text-xl font-black text-slate-900">
                 {data.products}
-              </p>
+              </Num>
             </div>
             <div className="rounded-xl bg-[#e5ebff] p-2.5">
               <Package size={18} className="text-[#4663ff]" />
@@ -653,12 +659,12 @@ export default function Dashboard() {
 
           <div className="flex items-center justify-between rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_12px_40px_rgba(70,99,255,0.08)]">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("dashboard.customers", "Customers")}
               </p>
-              <p className="font-mono tabular-nums text-xl font-black text-slate-900">
+              <Num className="text-xl font-black text-slate-900">
                 {data.customers}
-              </p>
+              </Num>
             </div>
             <div className="rounded-xl bg-[#e5ebff] p-2.5">
               <Users size={18} className="text-[#4663ff]" />

@@ -36,7 +36,7 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   return (
     <div className="group relative inline-block">
       <span
-        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] uppercase tracking-wide ${current.classes}`}
+        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] uppercase  ${current.classes}`}
       >
         {current.label}
       </span>
@@ -227,7 +227,7 @@ const PurchaseList = () => {
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1050px] text-left text-sm">
-              <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+              <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                 <tr>
                   <th className="px-5 py-4">{t("ui.invoice")}</th>
                   <th className="px-5 py-4">{t("ui.supplier")}</th>

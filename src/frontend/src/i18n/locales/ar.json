@@ -876,7 +876,13 @@
     "today": "اليوم",
     "unpaid": "غير مدفوعة",
     "partial": "جزئي",
-    "paid": "مدفوع "
+    "paid": "مدفوع ",
+    "total_fund_balance": "إجمالي رصيد الصناديق",
+    "operating": "التشغيل",
+    "financing": "التمويل (الشركاء)",
+    "withdrawals": "سحوبات",
+    "deposits": "إيداعات",
+    "topExpenseCategories": "أعلى فئات المصاريف"
   },
   "activation": {
     "title": "تفعيل رخصة نقاط البيع",

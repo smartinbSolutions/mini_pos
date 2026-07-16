@@ -143,7 +143,7 @@ export default function ExpenseView() {
 
             <div className="overflow-x-auto rounded-2xl border border-[#e5ebff]">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
                     <th className="p-3 text-start">{t("ui.category")}</th>
                     <th className="p-3 text-start">{t("ui.price")}</th>

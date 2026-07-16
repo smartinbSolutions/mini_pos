@@ -157,7 +157,7 @@ export default function CheckoutSingleFundModal({
     >
       <div className="min-h-0 flex-1 overflow-auto p-5 space-y-5">
         <div className="flex items-center justify-between rounded-xl bg-stone-100 px-4 py-2.5">
-          <span className="text-xs font-bold uppercase tracking-wide text-stone-500">
+          <span className="text-xs font-bold uppercase  text-stone-500">
             {t("screens.checkout.totalDue")}
           </span>
 

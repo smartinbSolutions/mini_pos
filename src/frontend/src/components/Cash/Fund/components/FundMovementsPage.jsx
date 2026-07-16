@@ -98,7 +98,7 @@ const FundMovementsPage = () => {
             </div>
 
             <div className="bg-gray-900 text-white rounded-2xl px-5 py-3 min-w-[170px]">
-              <div className="text-xs uppercase tracking-wide opacity-70">
+              <div className="text-xs uppercase  opacity-70">
                 {t("screens.fundMovements.currentBalance")}
               </div>
               <div className="text-2xl font-bold mt-1">
@@ -157,7 +157,7 @@ const FundMovementsPage = () => {
 
         {/* TABLE */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b text-xs uppercase tracking-wide text-gray-500 font-semibold">
+          <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 border-b text-xs uppercase  text-gray-500 font-semibold">
             <div className="col-span-4 text-start">{t("ui.description")}</div>
             <div className="col-span-2 text-start">{t("ui.type")}</div>
             <div className="col-span-2 text-start">{t("ui.amount")}</div>

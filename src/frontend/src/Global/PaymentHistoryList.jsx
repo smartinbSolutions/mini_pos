@@ -42,7 +42,7 @@ export default function PaymentHistoryList({ payments = [] }) {
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[680px] text-sm">
-          <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+          <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
             <tr>
               <th className="p-4 text-left">{t("ui.date")}</th>
               <th className="p-4 text-left">{t("ui.fund")}</th>

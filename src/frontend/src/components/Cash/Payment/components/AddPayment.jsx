@@ -178,9 +178,7 @@ export default function AddPayment({
               {partyIcon}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-wide text-gray-400">
-                {partyLabel}
-              </p>
+              <p className="text-xs uppercase  text-gray-400">{partyLabel}</p>
               <h3 className="font-medium text-gray-800 truncate">
                 {partyName}
               </h3>
@@ -233,7 +231,7 @@ export default function AddPayment({
 
           {/* STEP 2 — HOW IS THIS FUNDED (cash fund vs credit) */}
           <div>
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">
+            <p className="text-xs uppercase  text-gray-400 mb-2">
               {t("screens.payments.paymentSource")}
             </p>
 
@@ -327,7 +325,7 @@ export default function AddPayment({
           {/* STEP 3 — HOW MUCH */}
           <div className="rounded-2xl border p-4 space-y-3">
             <div>
-              <label className="text-xs uppercase tracking-wide text-gray-400">
+              <label className="text-xs uppercase  text-gray-400">
                 {t(
                   useCredit
                     ? "screens.payments.amountFromCredit"
@@ -409,7 +407,7 @@ export default function AddPayment({
           {/* STEP 4 — WHEN (hidden when embedded in invoice creation or paying from credit) */}
           {showDatePicker && (
             <div>
-              <label className="text-xs uppercase tracking-wide text-gray-400 flex items-center gap-1.5">
+              <label className="text-xs uppercase  text-gray-400 flex items-center gap-1.5">
                 <Calendar size={12} />
                 {t("ui.date")}
               </label>
@@ -430,7 +428,7 @@ export default function AddPayment({
 
           {/* NOTE */}
           <div>
-            <label className="text-xs uppercase tracking-wide text-gray-400">
+            <label className="text-xs uppercase  text-gray-400">
               {t("ui.note")}
             </label>
             <textarea

@@ -146,7 +146,7 @@ const PaymentDocumentPage = () => {
 
           <div className="grid grid-cols-2 gap-6 border-t border-[#e5ebff] bg-[#f8faff] p-7 text-sm">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("screens.payments.party")}
               </p>
               <p className="mt-1 font-bold text-slate-900">
@@ -157,7 +157,7 @@ const PaymentDocumentPage = () => {
               </p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("ui.fund")}
               </p>
               <p className="mt-1 font-bold text-slate-900">
@@ -168,7 +168,7 @@ const PaymentDocumentPage = () => {
               </p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("ui.amount")}
               </p>
               <p
@@ -180,7 +180,7 @@ const PaymentDocumentPage = () => {
               </p>
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("screens.payments.collectedAmount")}
               </p>
               <p className="mt-1 font-black tabular-nums text-slate-700">
@@ -195,7 +195,7 @@ const PaymentDocumentPage = () => {
             {rateDiffers && (
               <>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                  <p className="text-xs font-bold uppercase  text-slate-400">
                     {t("screens.payments.exchangeRate")}
                   </p>
                   <p className="mt-1 font-bold text-slate-700">
@@ -203,7 +203,7 @@ const PaymentDocumentPage = () => {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                  <p className="text-xs font-bold uppercase  text-slate-400">
                     {t("screens.payments.effectiveRate")}
                   </p>
                   <p className="mt-1 font-bold text-slate-700">
@@ -216,7 +216,7 @@ const PaymentDocumentPage = () => {
 
           {payment.note && (
             <div className="border-t border-[#e5ebff] p-7 text-sm">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-xs font-bold uppercase  text-slate-400">
                 {t("ui.note")}
               </p>
               <p className="mt-1 text-slate-700">{payment.note}</p>
@@ -225,7 +225,7 @@ const PaymentDocumentPage = () => {
 
           {payment.allocations?.length > 0 && (
             <div className="border-t border-[#e5ebff] p-7">
-              <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="mb-3 text-xs font-bold uppercase  text-slate-400">
                 {t("screens.payments.allocations")}
               </p>
               <div className="divide-y divide-[#e5ebff] overflow-hidden rounded-2xl border border-[#e5ebff]">
