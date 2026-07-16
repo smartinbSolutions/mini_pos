@@ -154,7 +154,7 @@ export default function DailySummaryModal({ isOpen, onClose, t, money }) {
                     : invoiceMode === "return"
                       ? `${t("screens.pos.invoiceReturnProcess", "إرجاع من الفاتورة")} #${selectedInvoice.id || selectedInvoice.invoice_number}`
                       : `${t("screens.pos.invoiceDetails", "تفاصيل الفاتورة")} #${selectedInvoice.id || selectedInvoice.invoice_number}`
-                  : t("screens.pos.todayInvoices", "فواتير اليوم")}
+                  : t("screens.pos.dailyInvoices", "فواتير اليوم")}
               </h2>
 
               <p className="text-xs text-stone-500">

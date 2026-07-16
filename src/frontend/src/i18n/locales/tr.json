@@ -143,7 +143,9 @@
     "soldQty": "Satılan miktar",
     "boughtQty": "Satın alınan miktar",
     "returnQty": "İade miktarı",
-    "primaryCurrency": "Ana para birimi"
+    "primaryCurrency": "Ana para birimi",
+    "return": "İade",
+    "sale": "Satış"
   },
   "screens": {
     "units": {
@@ -435,7 +437,30 @@
       "changeTotal": "Toplamı Değiştir",
       "finalTotal": "Nihai Toplam",
       "originalTotal": "Orijinal Toplam",
-      "discountHint": "Aradaki fark indirim olarak uygulanacaktır"
+      "discountHint": "Aradaki fark indirim olarak uygulanacaktır",
+      "dailyInvoices": "Günlük Faturalar",
+      "returnDetails": "İade Detayları",
+      "invoiceReturnProcess": "Faturadan İade Et",
+      "invoiceDetails": "Fatura Detayları",
+      "fetchingItems": "Ürünler getiriliyor...",
+      "customer": "Müşteri",
+      "invoiceProducts": "Fatura Ürünleri",
+      "originalQty": "Orijinal Miktar",
+      "price": "Fiyat",
+      "totals": "Özet",
+      "originalInvoiceTotal": "Orijinal Fatura Toplamı",
+      "selectAtLeastOneItem": "Lütfen en az bir ürün için iade miktarı seçin.",
+      "confirmPartialReturn": "Belirtilen iade işlemini tamamlamak istediğinizden emin misiniz?",
+      "todayInvoiceReturn": "Bugünün faturalarından hızlı iade",
+      "chooseReturnQtys": "İade edilecek miktarları seçin",
+      "refundTotal": "Beklenen İade Tutarı",
+      "confirmAndRefund": "Seçilen Miktarları Onayla ve İade Et",
+      "returnedProducts": "İade Edilen Ürünler",
+      "returnedQty": "İade Edilen Miktar",
+      "returnInvoiceTotal": "İade Faturası Toplamı",
+      "return": "İade Et",
+      "noDataToday": "Bugün kullanılabilir veri yok",
+      "sales": "Satışlar"
     },
     "checkout": {
       "title": "Ödeme",

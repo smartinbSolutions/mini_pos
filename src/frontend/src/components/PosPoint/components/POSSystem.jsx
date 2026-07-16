@@ -82,6 +82,7 @@ export default function POSSystem() {
   const openCustomerDisplay = () => {
     window.api?.openCustomerDisplay?.();
   };
+  console.log(scaleStatus);
 
   useEffect(() => {
     window.api?.pushCartToCustomerDisplay?.({
@@ -212,7 +213,7 @@ export default function POSSystem() {
                 className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-teal-200 bg-teal-50 px-3 text-xs font-bold text-teal-700 transition hover:bg-teal-100"
               >
                 <Receipt size={14} />
-                {t("screens.pos.todayInvoices", "today Invoices")}
+                {t("screens.pos.dailyInvoices", "today Invoices")}
               </button>
               <div className="min-w-0 shrink-0">
                 <h1 className="truncate text-lg font-black leading-tight tracking-tight text-stone-950">

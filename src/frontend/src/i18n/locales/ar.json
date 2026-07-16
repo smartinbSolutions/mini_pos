@@ -143,7 +143,10 @@
     "soldQty": "الكمية المباعة",
     "boughtQty": "الكمية المشتراة",
     "returnQty": "كمية الإرجاع",
-    "primaryCurrency": "العملة الرئيسية"
+    "primaryCurrency": "العملة الرئيسية",
+    "noDataToday": "لا توجد بيانات متاحة اليوم",
+    "return": "مرتجع",
+    "sale": "مبيعات"
   },
   "screens": {
     "units": {
@@ -435,7 +438,29 @@
       "changeTotal": "تغيير المجموع",
       "finalTotal": "المجموع النهائي",
       "originalTotal": "المجموع الأصلي",
-      "discountHint": "سيتم تطبيق الفرق كخصم"
+      "discountHint": "سيتم تطبيق الفرق كخصم",
+      "dailyInvoices": "الفواتير اليومية",
+      "returnDetails": "تفاصيل المرتجع",
+      "invoiceReturnProcess": "إرجاع من الفاتورة",
+      "invoiceDetails": "تفاصيل الفاتورة",
+      "fetchingItems": "جاري جلب المنتجات...",
+      "customer": "العميل",
+      "invoiceProducts": "منتجات الفاتورة",
+      "originalQty": "الكمية الأصلية",
+      "price": "السعر",
+      "totals": "الملخص المالي",
+      "originalInvoiceTotal": "إجمالي الفاتورة الأصلية",
+      "selectAtLeastOneItem": "الرجاء تحديد كمية إرجاع لمنتج واحد على الأقل.",
+      "confirmPartialReturn": "هل أنت متأكد من رغبتك في إتمام عملية الإرجاع المحددة؟",
+      "todayInvoiceReturn": "مرتجع سريع من فواتير اليوم",
+      "chooseReturnQtys": "حدد الكميات المراد إرجاعها",
+      "refundTotal": "المبلغ المسترد المتوقع",
+      "confirmAndRefund": "تأكيد وإرجاع الكميات المحددة",
+      "returnedProducts": "المنتجات المرجعة",
+      "returnedQty": "الكمية المرجعة",
+      "returnInvoiceTotal": "إجمالي قيمة المرتجع",
+      "sales": "المبيعات",
+      "return": "إرجاع"
     },
     "checkout": {
       "title": "الدفع",

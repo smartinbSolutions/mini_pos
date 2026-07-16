@@ -143,7 +143,9 @@
     "soldQty": "Sold quantity",
     "boughtQty": "Bought quantity",
     "returnQty": "Return quantity",
-    "primaryCurrency": "Primary currency"
+    "primaryCurrency": "Primary currency",
+    "return": "Return",
+    "sale": "Sale"
   },
   "screens": {
     "units": {
@@ -435,7 +437,30 @@
       "changeTotal": "Change Total",
       "finalTotal": "Final Total",
       "originalTotal": "Original Total",
-      "discountHint": "The difference will be applied as a discount"
+      "discountHint": "The difference will be applied as a discount",
+      "dailyInvoices": "Daily Invoices",
+      "returnDetails": "Return Details",
+      "invoiceReturnProcess": "Return from Invoice",
+      "invoiceDetails": "Invoice Details",
+      "fetchingItems": "Fetching products...",
+      "customer": "Customer",
+      "invoiceProducts": "Invoice Products",
+      "originalQty": "Original Qty",
+      "price": "Price",
+      "totals": "Summary",
+      "originalInvoiceTotal": "Original Invoice Total",
+      "selectAtLeastOneItem": "Please select a return quantity for at least one item.",
+      "confirmPartialReturn": "Are you sure you want to complete the specified return process?",
+      "todayInvoiceReturn": "Quick return from today's invoices",
+      "chooseReturnQtys": "Select quantities to return",
+      "refundTotal": "Expected Refund Total",
+      "confirmAndRefund": "Confirm and Refund Selected Quantities",
+      "returnedProducts": "Returned Products",
+      "returnedQty": "Returned Qty",
+      "returnInvoiceTotal": "Return Invoice Total",
+      "return": "Return",
+      "noDataToday": "No data available today",
+      "sales": "Sales"
     },
     "checkout": {
       "title": "Checkout",

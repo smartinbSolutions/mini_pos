@@ -357,7 +357,8 @@ export default function registerSalesInvoiceIPC() {
     SELECT
   si.*,
   p.name,
-
+  u.name AS unit_name,
+  u.code AS unit_code,
   COALESCE(r.returned_quantity, 0) AS returned_quantity,
 
   (
@@ -368,7 +369,8 @@ FROM sales_invoice_items si
 
 LEFT JOIN products p
   ON p.id = si.product_id
-
+LEFT JOIN unit u
+      ON u.id = p.unit_id
 LEFT JOIN (
   SELECT
     sales_invoice_item_id,

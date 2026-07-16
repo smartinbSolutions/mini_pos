@@ -49,7 +49,8 @@ export default function InvoiceDetailsModal({
                       <p className="mt-0.5 text-xs text-stone-500">
                         {t("screens.pos.originalQty", "الكمية الأصلية")}:
                         <span className="ml-1 font-bold text-stone-800">
-                          {item.quantity}
+                          {item.quantity}{" "}
+                          {item.unit_code || item.unit_name || ""}
                         </span>
                         {" | "}
                         {t("screens.pos.price", "السعر")}:
@@ -60,9 +61,17 @@ export default function InvoiceDetailsModal({
                     </div>
                   </div>
 
-                  <span className="rounded-lg bg-stone-100 px-2.5 py-1 text-sm font-bold text-stone-700">
-                    {item.quantity} {t("ui.pcs", "قطعة")}
-                  </span>
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="font-extrabold text-slate-900 text-sm">
+                      {item.quantity}
+                    </span>
+
+                    {(item.unit_code || item.unit_name) && (
+                      <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600 border border-stone-200/50 uppercase tracking-wide">
+                        {item.unit_code || item.unit_name}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

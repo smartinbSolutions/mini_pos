@@ -180,22 +180,40 @@ export default function SalesInvoiceView() {
                     <tr>
                       <td
                         className="p-5 text-center text-slate-500"
-                        colSpan={5}
+                        colSpan={4}
                       >
                         {t("screens.invoices.noItems")}
                       </td>
                     </tr>
                   ) : (
                     items.map((item) => (
-                      <tr key={item.id}>
+                      <tr
+                        key={item.id}
+                        className="hover:bg-slate-50/50 transition"
+                      >
                         <td className="p-3 font-bold text-slate-900">
                           {item.product_name || item.name || "-"}
                         </td>
-                        <td className="p-3 text-center">{money(item.price)}</td>
-                        <td className="p-3 text-center">
-                          {Number(item.quantity || 0)}
+
+                        <td className="p-3 text-center text-slate-600">
+                          {money(item.price)}
                         </td>
-                        <td className="p-3 text-center font-black">
+
+                        <td className="p-3">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="font-extrabold text-slate-900 text-sm">
+                              {item.quantity}
+                            </span>
+
+                            {(item.unit_code || item.unit_name) && (
+                              <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600 border border-stone-200/50 uppercase tracking-wide">
+                                {item.unit_code || item.unit_name}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="p-3 text-center font-black text-slate-950">
                           {money(item.total)}
                         </td>
                       </tr>

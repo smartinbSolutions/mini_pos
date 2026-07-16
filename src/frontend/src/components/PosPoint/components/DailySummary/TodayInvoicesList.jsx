@@ -68,7 +68,7 @@ export default function TodayInvoicesList({
           }`}
         >
           <RotateCcw size={14} />
-          {t("screens.pos.returns", "المرتجع")}{" "}
+          {t("ui.returns", "المرتجع")}{" "}
           {activeTab === "returns" ? `(${total})` : ""}
         </button>
       </div>

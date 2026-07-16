@@ -6,7 +6,7 @@ let scalePort = null;
 let scaleParser = null;
 let scaleStatus = {
   connected: false,
-  message: "Disconnected",
+  message: "disconnected",
   path: "",
   baudRate: 9600,
 };
@@ -57,7 +57,7 @@ const closeScalePort = () =>
       scaleStatus = {
         ...scaleStatus,
         connected: false,
-        message: "Disconnected",
+        message: "disconnected",
       };
       resolve();
       return;
@@ -69,7 +69,7 @@ const closeScalePort = () =>
       scaleStatus = {
         ...scaleStatus,
         connected: false,
-        message: "Disconnected",
+        message: "disconnected",
       };
       resolve();
     });
@@ -138,7 +138,7 @@ export default function registerSerialIPC() {
     scalePort.on("close", () => {
       scaleStatus = {
         connected: false,
-        message: "Disconnected",
+        message: "disconnected",
         path: selectedPath,
         baudRate,
       };
