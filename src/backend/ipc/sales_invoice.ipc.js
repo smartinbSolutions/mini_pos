@@ -260,14 +260,73 @@ export default function registerSalesInvoiceIPC() {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
-    const date = params.date;
-    let whereClause = "";
-    let queryParams = [];
 
-    if (date) {
-      whereClause = "WHERE DATE(s.date) = ?";
-      queryParams.push(date);
+    const whereConditions = [];
+    const whereParams = [];
+    const havingConditions = [];
+    const havingParams = [];
+
+    if (params.dateFrom) {
+      whereConditions.push("DATE(s.date) >= ?");
+      whereParams.push(params.dateFrom);
     }
+    if (params.dateTo) {
+      whereConditions.push("DATE(s.date) <= ?");
+      whereParams.push(params.dateTo);
+    }
+    if (params.customerId) {
+      whereConditions.push("s.customer_id = ?");
+      whereParams.push(params.customerId);
+    }
+    if (
+      params.minTotal !== undefined &&
+      params.minTotal !== "" &&
+      params.minTotal !== null
+    ) {
+      whereConditions.push("s.net_total >= ?");
+      whereParams.push(Number(params.minTotal));
+    }
+    if (
+      params.maxTotal !== undefined &&
+      params.maxTotal !== "" &&
+      params.maxTotal !== null
+    ) {
+      whereConditions.push("s.net_total <= ?");
+      whereParams.push(Number(params.maxTotal));
+    }
+
+    // status/return_status are computed from aggregates, so they must be
+    // filtered in HAVING using the same CASE expression as the SELECT —
+    // they can't be filtered in WHERE since the aggregates don't exist yet
+    // at that stage of query evaluation.
+    if (params.status) {
+      havingConditions.push(`
+        CASE
+          WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
+          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+          ELSE 'unpaid'
+        END = ?
+      `);
+      havingParams.push(params.status);
+    }
+
+    if (params.returnStatus) {
+      havingConditions.push(`
+        CASE
+          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+          ELSE 'partial'
+        END = ?
+      `);
+      havingParams.push(params.returnStatus);
+    }
+
+    const whereClause = whereConditions.length
+      ? `WHERE ${whereConditions.join(" AND ")}`
+      : "";
+    const havingClause = havingConditions.length
+      ? `HAVING ${havingConditions.join(" AND ")}`
+      : "";
 
     const invoices = db
       .prepare(
@@ -325,17 +384,43 @@ export default function registerSalesInvoiceIPC() {
   
          ${whereClause}
       GROUP BY s.id
+         ${havingClause}
   
       ORDER BY s.id DESC
   
       LIMIT ? OFFSET ?
       `
       )
-      .all(...queryParams, limit, offset);
+      .all(...whereParams, ...havingParams, limit, offset);
 
     const { total } = db
-      .prepare(`SELECT COUNT(*) AS total FROM sales_invoices s  ${whereClause}`)
-      .get(...queryParams);
+      .prepare(
+        `
+        SELECT COUNT(*) AS total FROM (
+          SELECT s.id
+          FROM sales_invoices s
+          LEFT JOIN payment_allocations pa
+            ON pa.invoice_id = s.id AND pa.invoice_type = 'sales'
+          LEFT JOIN (
+            SELECT
+              si.invoice_id,
+              SUM(si.quantity) AS total_quantity,
+              SUM(COALESCE(sri.returned_qty, 0)) AS total_returned
+            FROM sales_invoice_items si
+            LEFT JOIN (
+              SELECT sales_invoice_item_id, SUM(quantity) AS returned_qty
+              FROM sales_return_items
+              GROUP BY sales_invoice_item_id
+            ) sri ON sri.sales_invoice_item_id = si.id
+            GROUP BY si.invoice_id
+          ) ret ON ret.invoice_id = s.id
+          ${whereClause}
+          GROUP BY s.id
+          ${havingClause}
+        ) t
+        `
+      )
+      .get(...whereParams, ...havingParams);
 
     return {
       data: invoices,

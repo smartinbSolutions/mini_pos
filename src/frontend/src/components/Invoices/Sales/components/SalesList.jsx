@@ -83,20 +83,27 @@ const SalesList = () => {
   const {
     salesInvoices,
     loading,
+    saving,
     error,
     refetch,
     deleteSales,
-    selecteInvoice,
-    setSelecteInvoice,
-    openPaymentModel,
-    setOpenPaymentModel,
-    api,
+
     page,
     setPage,
     limit,
     setLimit,
     total,
     totalPages,
+    api,
+    selecteInvoice,
+    setSelecteInvoice,
+    openPaymentModel,
+    setOpenPaymentModel,
+
+    filters,
+    handleFilterChange,
+    clearFilters,
+    customers,
   } = useSalesList();
 
   const [openRefundModel, setOpenRefundModel] = useState(false);
@@ -105,6 +112,42 @@ const SalesList = () => {
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
+
+  const salesFilterFields = [
+    { name: "dateFrom", type: "date", label: t("filters.dateFrom") },
+    { name: "dateTo", type: "date", label: t("filters.dateTo") },
+    {
+      name: "customerId",
+      type: "select",
+      label: t("ui.customer"),
+      allLabel: t("filters.allCustomers"),
+      options: customers.map((c) => ({ value: c.id, label: c.name })),
+    },
+    {
+      name: "status",
+      type: "select",
+      label: t("filters.status"),
+      allLabel: t("filters.allStatuses"),
+      options: [
+        { value: "paid", label: t("screens.invoices.paid") },
+        { value: "partial", label: t("screens.invoices.partial") },
+        { value: "unpaid", label: t("screens.invoices.unpaid") },
+      ],
+    },
+    {
+      name: "returnStatus",
+      type: "select",
+      label: t("filters.returnStatus"),
+      allLabel: t("filters.allReturnStatuses"),
+      options: [
+        { value: "none", label: t("filters.noReturn") },
+        { value: "partial", label: t("ui.partiallyRefunded") },
+        { value: "full", label: t("ui.fullyRefunded") },
+      ],
+    },
+    { name: "minTotal", type: "number", label: t("filters.minTotal") },
+    { name: "maxTotal", type: "number", label: t("filters.maxTotal") },
+  ];
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -200,6 +243,11 @@ const SalesList = () => {
           addLabel={t("screens.invoices.addInvoice")}
           addIcon={PackagePlus}
           onAdd={() => navigate("/add-sales")}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+          filterFields={salesFilterFields}
+          clearLabel={t("common.clear")}
         />
 
         {(error || actionError) && (
@@ -314,14 +362,6 @@ const SalesList = () => {
                             >
                               <Eye size={16} />
                             </button>
-                            {/* <button
-                              onClick={() => handlePrint(inv)}
-                              disabled={isPrinting}
-                              className={`rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] ${isPrinting ? "opacity-50 cursor-not-allowed" : ""}`}
-                              title={t("common.print") || "Print"}
-                            >
-                              <Printer size={16} />
-                            </button> */}
                             {inv.status === "unpaid" && (
                               <button
                                 onClick={() =>

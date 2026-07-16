@@ -211,6 +211,69 @@ export default function registerPurchaseInvoicesIPC() {
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
 
+    const whereConditions = [];
+    const whereParams = [];
+    const havingConditions = [];
+    const havingParams = [];
+
+    if (params.dateFrom) {
+      whereConditions.push("DATE(p.date) >= ?");
+      whereParams.push(params.dateFrom);
+    }
+    if (params.dateTo) {
+      whereConditions.push("DATE(p.date) <= ?");
+      whereParams.push(params.dateTo);
+    }
+    if (params.supplierId) {
+      whereConditions.push("p.supplier_id = ?");
+      whereParams.push(params.supplierId);
+    }
+    if (
+      params.minTotal !== undefined &&
+      params.minTotal !== "" &&
+      params.minTotal !== null
+    ) {
+      whereConditions.push("p.net_total >= ?");
+      whereParams.push(Number(params.minTotal));
+    }
+    if (
+      params.maxTotal !== undefined &&
+      params.maxTotal !== "" &&
+      params.maxTotal !== null
+    ) {
+      whereConditions.push("p.net_total <= ?");
+      whereParams.push(Number(params.maxTotal));
+    }
+
+    if (params.status) {
+      havingConditions.push(`
+        CASE
+          WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
+          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+          ELSE 'unpaid'
+        END = ?
+      `);
+      havingParams.push(params.status);
+    }
+
+    if (params.returnStatus) {
+      havingConditions.push(`
+        CASE
+          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+          ELSE 'partial'
+        END = ?
+      `);
+      havingParams.push(params.returnStatus);
+    }
+
+    const whereClause = whereConditions.length
+      ? `WHERE ${whereConditions.join(" AND ")}`
+      : "";
+    const havingClause = havingConditions.length
+      ? `HAVING ${havingConditions.join(" AND ")}`
+      : "";
+
     const invoices = db
       .prepare(
         `
@@ -221,42 +284,89 @@ export default function registerPurchaseInvoicesIPC() {
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
-
+  
         p.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-
+  
         CASE
           WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
-        END AS status
-
+        END AS status,
+  
+        CASE
+          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+          ELSE 'partial'
+        END AS return_status
+  
       FROM purchase_invoices p
-
+  
       LEFT JOIN suppliers s
         ON s.id = p.supplier_id
-
+  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = p.id
        AND pa.invoice_type = 'purchase'
-
-    LEFT JOIN users creator
-    ON creator.id = p.created_by
-    
-    LEFT JOIN users updater
-    ON updater.id = p.updated_by
-
+  
+      LEFT JOIN users creator
+        ON creator.id = p.created_by
+  
+      LEFT JOIN users updater
+        ON updater.id = p.updated_by
+  
+      LEFT JOIN (
+        SELECT
+          pi.invoice_id,
+          SUM(pi.quantity) AS total_quantity,
+          SUM(COALESCE(pri.returned_qty, 0)) AS total_returned
+        FROM purchase_invoice_items pi
+        LEFT JOIN (
+          SELECT purchase_invoice_item_id, SUM(quantity) AS returned_qty
+          FROM purchase_return_items
+          GROUP BY purchase_invoice_item_id
+        ) pri ON pri.purchase_invoice_item_id = pi.id
+        GROUP BY pi.invoice_id
+      ) ret ON ret.invoice_id = p.id
+  
+        ${whereClause}
       GROUP BY p.id
-
+        ${havingClause}
+  
       ORDER BY p.id DESC
-
+  
       LIMIT ? OFFSET ?
       `
       )
-      .all(limit, offset);
+      .all(...whereParams, ...havingParams, limit, offset);
 
     const { total } = db
-      .prepare(`SELECT COUNT(*) AS total FROM purchase_invoices`)
-      .get();
+      .prepare(
+        `
+        SELECT COUNT(*) AS total FROM (
+          SELECT p.id
+          FROM purchase_invoices p
+          LEFT JOIN payment_allocations pa
+            ON pa.invoice_id = p.id AND pa.invoice_type = 'purchase'
+          LEFT JOIN (
+            SELECT
+              pi.invoice_id,
+              SUM(pi.quantity) AS total_quantity,
+              SUM(COALESCE(pri.returned_qty, 0)) AS total_returned
+            FROM purchase_invoice_items pi
+            LEFT JOIN (
+              SELECT purchase_invoice_item_id, SUM(quantity) AS returned_qty
+              FROM purchase_return_items
+              GROUP BY purchase_invoice_item_id
+            ) pri ON pri.purchase_invoice_item_id = pi.id
+            GROUP BY pi.invoice_id
+          ) ret ON ret.invoice_id = p.id
+          ${whereClause}
+          GROUP BY p.id
+          ${havingClause}
+        ) t
+        `
+      )
+      .get(...whereParams, ...havingParams);
 
     return {
       data: invoices,

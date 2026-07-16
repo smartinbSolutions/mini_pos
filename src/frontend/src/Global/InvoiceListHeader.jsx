@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { RefreshCw, Search, Filter, X } from "lucide-react";
+import { RefreshCw, Search, Filter, X, SlidersHorizontal } from "lucide-react";
 
 const VARIANTS = {
   blue: {
@@ -57,11 +57,26 @@ export default function InvoiceListHeader({
         ? "grid-cols-3"
         : "grid-cols-2";
 
-  const hasActiveFilters =
-    filters &&
-    Object.values(filters).some(
-      (v) => v !== null && v !== undefined && v !== ""
-    );
+  const activeEntries = filterFields
+    .map((field) => {
+      const rawValue = filters?.[field.name];
+      const isActive =
+        rawValue !== null && rawValue !== undefined && rawValue !== "";
+      if (!isActive) return null;
+
+      let displayValue = rawValue;
+      if (field.type === "select") {
+        const match = field.options.find(
+          (opt) => String(opt.value) === String(rawValue)
+        );
+        displayValue = match?.label ?? rawValue;
+      }
+
+      return { name: field.name, label: field.label, value: displayValue };
+    })
+    .filter(Boolean);
+
+  const hasActiveFilters = activeEntries.length > 0;
 
   const filterGridColsClass =
     filterFields.length >= 5
@@ -137,37 +152,21 @@ export default function InvoiceListHeader({
         </div>
 
         {filterFields.length > 0 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowFilters((prev) => !prev)}
-              className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${
-                showFilters || hasActiveFilters
-                  ? "border-[#4663ff] bg-[#eef3ff] text-[#4663ff]"
-                  : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-              }`}
-            >
-              <Filter size={16} />
-              {hasActiveFilters && (
-                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#4663ff] text-[10px] font-black text-white">
-                  {
-                    Object.values(filters).filter(
-                      (v) => v !== null && v !== undefined && v !== ""
-                    ).length
-                  }
-                </span>
-              )}
-            </button>
-
-            {hasActiveFilters && onClearFilters && (
-              <button
-                onClick={onClearFilters}
-                className="inline-flex h-12 items-center justify-center gap-1.5 rounded-2xl border border-red-200 bg-red-50 px-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
-              >
-                <X size={14} />
-                {clearLabel}
-              </button>
+          <button
+            onClick={() => setShowFilters((prev) => !prev)}
+            className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${
+              showFilters || hasActiveFilters
+                ? "border-[#4663ff] bg-[#eef3ff] text-[#4663ff]"
+                : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+            }`}
+          >
+            <SlidersHorizontal size={16} />
+            {hasActiveFilters && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#4663ff] text-[10px] font-black text-white">
+                {activeEntries.length}
+              </span>
             )}
-          </div>
+          </button>
         )}
 
         <button
@@ -188,39 +187,105 @@ export default function InvoiceListHeader({
         )}
       </div>
 
+      {/* Active filter chips — always visible when filters are applied,
+          independent of whether the filter panel itself is expanded */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2 border-t border-[#e5ebff] bg-white/40 px-5 py-3.5">
+          <Filter size={13} className="shrink-0 text-slate-400" />
+          {activeEntries.map((entry) => (
+            <span
+              key={entry.name}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#dbe4ff] bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm"
+            >
+              <span className="text-slate-400">{entry.label}:</span>
+              <span className="font-bold text-[#4663ff]">{entry.value}</span>
+              <button
+                onClick={() => onFilterChange(entry.name, "")}
+                className="ms-0.5 rounded-full p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+
+          {onClearFilters && (
+            <button
+              onClick={onClearFilters}
+              className="ms-1 inline-flex items-center gap-1 text-xs font-bold text-red-500 transition hover:text-red-600"
+            >
+              <X size={12} />
+              {clearLabel}
+            </button>
+          )}
+        </div>
+      )}
+
       {showFilters && filterFields.length > 0 && (
         <div
-          className={`grid grid-cols-2 gap-3 border-t border-[#e5ebff] bg-white/60 p-5 ${filterGridColsClass}`}
+          className={`grid grid-cols-2 gap-4 border-t border-[#e5ebff] bg-white/60 p-5 ${filterGridColsClass}`}
         >
           {filterFields.map((field) => {
+            const isActive =
+              filters?.[field.name] !== null &&
+              filters?.[field.name] !== undefined &&
+              filters?.[field.name] !== "";
+
+            const fieldWrapperClass = "flex flex-col gap-1.5";
+            const labelClass = `text-[11px] font-bold uppercase tracking-wide ${
+              isActive ? "text-[#4663ff]" : "text-slate-400"
+            }`;
+            const inputBaseClass = `h-11 rounded-xl border bg-white px-3 text-sm outline-none transition focus:ring-4 focus:ring-[#4663ff]/10 ${
+              isActive
+                ? "border-[#4663ff]/40 bg-[#f8faff]"
+                : "border-[#dbe4ff] focus:border-[#4663ff]"
+            }`;
+
             if (field.type === "date") {
               return (
-                <input
-                  key={field.name}
-                  type="date"
-                  value={filters?.[field.name] || ""}
-                  onChange={(e) => onFilterChange(field.name, e.target.value)}
-                  placeholder={field.label}
-                  className="h-11 rounded-xl border border-[#dbe4ff] bg-white px-3 text-sm outline-none focus:border-[#4663ff]"
-                />
+                <div key={field.name} className={fieldWrapperClass}>
+                  <label className={labelClass}>{field.label}</label>
+                  <input
+                    type="date"
+                    value={filters?.[field.name] || ""}
+                    onChange={(e) => onFilterChange(field.name, e.target.value)}
+                    className={inputBaseClass}
+                  />
+                </div>
+              );
+            }
+
+            if (field.type === "number") {
+              return (
+                <div key={field.name} className={fieldWrapperClass}>
+                  <label className={labelClass}>{field.label}</label>
+                  <input
+                    type="number"
+                    value={filters?.[field.name] ?? ""}
+                    onChange={(e) => onFilterChange(field.name, e.target.value)}
+                    placeholder="0"
+                    className={inputBaseClass}
+                  />
+                </div>
               );
             }
 
             // select
             return (
-              <select
-                key={field.name}
-                value={filters?.[field.name] || ""}
-                onChange={(e) => onFilterChange(field.name, e.target.value)}
-                className="h-11 rounded-xl border border-[#dbe4ff] bg-white px-3 text-sm outline-none focus:border-[#4663ff]"
-              >
-                <option value="">{field.label}</option>
-                {field.options.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              <div key={field.name} className={fieldWrapperClass}>
+                <label className={labelClass}>{field.label}</label>
+                <select
+                  value={filters?.[field.name] || ""}
+                  onChange={(e) => onFilterChange(field.name, e.target.value)}
+                  className={inputBaseClass}
+                >
+                  <option value="">{field.allLabel || field.label}</option>
+                  {field.options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             );
           })}
         </div>

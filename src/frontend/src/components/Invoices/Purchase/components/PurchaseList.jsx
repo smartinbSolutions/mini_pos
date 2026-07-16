@@ -81,6 +81,11 @@ const PurchaseList = () => {
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
+
+    filters,
+    handleFilterChange,
+    clearFilters,
+    suppliers,
   } = usePurchaseList();
 
   const [openRefundModel, setOpenRefundModel] = useState(false);
@@ -89,6 +94,42 @@ const PurchaseList = () => {
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
+
+  const purchaseFilterFields = [
+    { name: "dateFrom", type: "date", label: t("filters.dateFrom") },
+    { name: "dateTo", type: "date", label: t("filters.dateTo") },
+    {
+      name: "supplierId",
+      type: "select",
+      label: t("ui.supplier"),
+      allLabel: t("filters.allSuppliers"),
+      options: suppliers.map((s) => ({ value: s.id, label: s.name })),
+    },
+    {
+      name: "status",
+      type: "select",
+      label: t("filters.status"),
+      allLabel: t("filters.allStatuses"),
+      options: [
+        { value: "paid", label: t("ui.paid") },
+        { value: "partial", label: t("ui.partial") },
+        { value: "unpaid", label: t("ui.unpaid") },
+      ],
+    },
+    {
+      name: "returnStatus",
+      type: "select",
+      label: t("filters.returnStatus"),
+      allLabel: t("filters.allReturnStatuses"),
+      options: [
+        { value: "none", label: t("filters.noReturn") },
+        { value: "partial", label: t("ui.partiallyRefunded") },
+        { value: "full", label: t("ui.fullyRefunded") },
+      ],
+    },
+    { name: "minTotal", type: "number", label: t("filters.minTotal") },
+    { name: "maxTotal", type: "number", label: t("filters.maxTotal") },
+  ];
 
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -120,14 +161,14 @@ const PurchaseList = () => {
 
   const totalNet = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0,
+    0
   );
   const totalTax = purchaseInvoices.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0,
+    0
   );
   const unpaidCount = purchaseInvoices.filter(
-    (inv) => inv.status !== "paid",
+    (inv) => inv.status !== "paid"
   ).length;
 
   return (
@@ -170,6 +211,11 @@ const PurchaseList = () => {
           addLabel={t("screens.invoices.addInvoice")}
           addIcon={PackagePlus}
           onAdd={() => navigate("/add-purchase")}
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onClearFilters={clearFilters}
+          filterFields={purchaseFilterFields}
+          clearLabel={t("common.clear")}
         />
 
         {(error || actionError) && (

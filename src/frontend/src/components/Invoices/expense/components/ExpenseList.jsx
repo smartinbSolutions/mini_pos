@@ -18,6 +18,7 @@ import useExpenseList from "../hooks/useExpenseList";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
+import CategoryTags from "../../../../Global/CategoryTags";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -79,21 +80,25 @@ const ExpenseList = () => {
   const {
     expenses,
     suppliers,
+    categories,
     loading,
     saving,
     error,
     refetch,
     handleDelete,
+
     page,
     setPage,
     limit,
     setLimit,
     total,
     totalPages,
+
     selecteInvoice,
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
+
     filters,
     setFilters,
     clearFilters,
@@ -127,7 +132,7 @@ const ExpenseList = () => {
 
   const totalNet = expenses.reduce(
     (sum, inv) => sum + Number(inv?.net_total || 0),
-    0,
+    0
   );
 
   const unpaidCount = expenses.filter((inv) => inv.status !== "paid").length;
@@ -170,7 +175,8 @@ const ExpenseList = () => {
             {
               type: "select",
               name: "status",
-              label: t("screens.invoices.allStatuses"),
+              label: t("filters.status"),
+              allLabel: t("filters.allStatuses"),
               options: [
                 { value: "paid", label: t("ui.paid") },
                 { value: "partial", label: t("ui.partial") },
@@ -180,14 +186,24 @@ const ExpenseList = () => {
             {
               type: "select",
               name: "supplier_id",
-              label: t("screens.invoices.allSuppliers"),
+              label: t("ui.supplier"),
+              allLabel: t("filters.allSuppliers"),
               options: [
                 { value: "none", label: t("screens.invoices.noSupplier") },
                 ...suppliers.map((s) => ({ value: s.id, label: s.name })),
               ],
             },
+            {
+              type: "select",
+              name: "category_id",
+              label: t("ui.category"),
+              allLabel: t("filters.allCategories"),
+              options: categories.map((c) => ({ value: c.id, label: c.name })),
+            },
             { type: "date", name: "startDate", label: t("ui.fromDate") },
             { type: "date", name: "endDate", label: t("ui.toDate") },
+            { type: "number", name: "minTotal", label: t("filters.minTotal") },
+            { type: "number", name: "maxTotal", label: t("filters.maxTotal") },
           ]}
         />
 
@@ -199,12 +215,13 @@ const ExpenseList = () => {
 
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-sm">
+            <table className="w-full min-w-[1100px] text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-5 py-4 text-start">{t("ui.invoice")}</th>
                   <th className="px-5 py-4 text-start">{t("ui.name")}</th>
                   <th className="px-5 py-4 text-start">{t("ui.supplier")}</th>
+                  <th className="px-5 py-4 text-start">{t("ui.category")}</th>
                   <th className="px-5 py-4 text-start">{t("ui.date")}</th>
                   <th className="px-5 py-4 text-start">{t("ui.net")}</th>
                   <th className="px-5 py-4 text-start">{t("ui.status")}</th>
@@ -217,13 +234,13 @@ const ExpenseList = () => {
               <tbody className="divide-y divide-[#e5ebff]">
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="p-8 text-center text-slate-500">
+                    <td colSpan="8" className="p-8 text-center text-slate-500">
                       {t("common.loading")}
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="p-8 text-center text-slate-500">
+                    <td colSpan="8" className="p-8 text-center text-slate-500">
                       {t("screens.invoices.empty")}
                     </td>
                   </tr>
@@ -263,6 +280,10 @@ const ExpenseList = () => {
 
                         <td className="px-5 py-4 text-start font-bold text-slate-900">
                           {exp.supplier_name || "-"}
+                        </td>
+
+                        <td className="px-5 py-4 text-start">
+                          <CategoryTags names={exp.category_names} />
                         </td>
 
                         <td className="px-5 py-4 text-start text-slate-500">

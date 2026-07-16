@@ -175,7 +175,15 @@ export default function registerExpenseIPC() {
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
 
-    const { startDate, endDate, supplier_id, status } = params;
+    const {
+      startDate,
+      endDate,
+      supplier_id,
+      status,
+      minTotal,
+      maxTotal,
+      category_id,
+    } = params;
 
     const whereConditions = [];
     const whereValues = [];
@@ -194,6 +202,20 @@ export default function registerExpenseIPC() {
       whereConditions.push("e.supplier_id = ?");
       whereValues.push(supplier_id);
     }
+    if (minTotal !== undefined && minTotal !== "" && minTotal !== null) {
+      whereConditions.push("e.net_total >= ?");
+      whereValues.push(Number(minTotal));
+    }
+    if (maxTotal !== undefined && maxTotal !== "" && maxTotal !== null) {
+      whereConditions.push("e.net_total <= ?");
+      whereValues.push(Number(maxTotal));
+    }
+    if (category_id) {
+      whereConditions.push(
+        "EXISTS (SELECT 1 FROM expense_items ei WHERE ei.expense_id = e.id AND ei.category_id = ?)"
+      );
+      whereValues.push(category_id);
+    }
 
     const whereClause = whereConditions.length
       ? `WHERE ${whereConditions.join(" AND ")}`
@@ -211,7 +233,7 @@ export default function registerExpenseIPC() {
         s.phone AS supplier_phone,
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
-
+  
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
   
         e.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
@@ -220,7 +242,14 @@ export default function registerExpenseIPC() {
           WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
-        END AS status
+        END AS status,
+  
+        (
+          SELECT GROUP_CONCAT(DISTINCT ec.name)
+          FROM expense_items ei2
+          JOIN expence_category ec ON ec.id = ei2.category_id
+          WHERE ei2.expense_id = e.id
+        ) AS category_names
   
       FROM expense e
   
@@ -232,8 +261,8 @@ export default function registerExpenseIPC() {
     
     LEFT JOIN users updater
     ON updater.id = e.updated_by
-
-
+  
+  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = e.id
        AND pa.invoice_type = 'expense'

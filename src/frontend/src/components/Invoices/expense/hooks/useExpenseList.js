@@ -7,6 +7,7 @@ const useExpenseList = () => {
 
   const [expenses, setExpenses] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -24,6 +25,9 @@ const useExpenseList = () => {
     supplier_id: null,
     startDate: null,
     endDate: null,
+    minTotal: null,
+    maxTotal: null,
+    category_id: null,
   });
 
   const setFilters = (patch) => {
@@ -37,6 +41,9 @@ const useExpenseList = () => {
       supplier_id: null,
       startDate: null,
       endDate: null,
+      minTotal: null,
+      maxTotal: null,
+      category_id: null,
     });
     setPage(1);
   };
@@ -47,6 +54,19 @@ const useExpenseList = () => {
         .getSuppliers()
         .then((res) => setSuppliers(res?.data || res || []))
         .catch(() => setSuppliers([]));
+    }
+  }, [api]);
+
+  // Bare array response (not { data: [...] }) — different shape than
+  // getSuppliers, confirmed against the actual IPC handler.
+  useEffect(() => {
+    if (api?.getExpensesCategory) {
+      api
+        .getExpensesCategory()
+        .then((res) =>
+          setCategories(Array.isArray(res) ? res : res?.data || [])
+        )
+        .catch(() => setCategories([]));
     }
   }, [api]);
 
@@ -65,6 +85,15 @@ const useExpenseList = () => {
         supplier_id: filters.supplier_id || undefined,
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
+        minTotal:
+          filters.minTotal !== null && filters.minTotal !== ""
+            ? filters.minTotal
+            : undefined,
+        maxTotal:
+          filters.maxTotal !== null && filters.maxTotal !== ""
+            ? filters.maxTotal
+            : undefined,
+        category_id: filters.category_id || undefined,
       });
 
       setExpenses(res?.data || []);
@@ -95,6 +124,7 @@ const useExpenseList = () => {
   return {
     expenses,
     suppliers,
+    categories,
     loading,
     saving,
     error,

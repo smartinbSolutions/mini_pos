@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+const DEFAULT_FILTERS = {
+  dateFrom: "",
+  dateTo: "",
+  supplierId: "",
+  status: "",
+  returnStatus: "",
+  minTotal: "",
+  maxTotal: "",
+};
+
 const usePurchaseList = () => {
   const { t } = useTranslation();
   const api = window.api;
@@ -15,8 +25,21 @@ const usePurchaseList = () => {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [suppliers, setSuppliers] = useState([]);
+
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
+
+  const handleFilterChange = (name, value) => {
+    setFilters((prev) => ({ ...prev, [name]: value }));
+    setPage(1);
+  };
+
+  const clearFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+    setPage(1);
+  };
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -26,7 +49,17 @@ const usePurchaseList = () => {
 
     try {
       setLoading(true);
-      const res = await api.getPurchaseInvoices({ page, limit });
+      const res = await api.getPurchaseInvoices({
+        page,
+        limit,
+        dateFrom: filters.dateFrom || undefined,
+        dateTo: filters.dateTo || undefined,
+        supplierId: filters.supplierId || undefined,
+        status: filters.status || undefined,
+        returnStatus: filters.returnStatus || undefined,
+        minTotal: filters.minTotal !== "" ? filters.minTotal : undefined,
+        maxTotal: filters.maxTotal !== "" ? filters.maxTotal : undefined,
+      });
 
       setPurchaseInvoices(res?.data || []);
       setTotal(res?.total || 0);
@@ -37,11 +70,20 @@ const usePurchaseList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, t]);
+  }, [api, page, limit, filters, t]);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
+
+  // Loaded once for the filter dropdown — full list, not paginated.
+  useEffect(() => {
+    if (!api?.getSuppliers) return;
+    api
+      .getSuppliers({ page: 1, limit: 1000 })
+      .then((res) => setSuppliers(res?.data || res || []))
+      .catch(() => setSuppliers([]));
+  }, [api]);
 
   const deletePurchase = async (id) => {
     try {
@@ -76,6 +118,11 @@ const usePurchaseList = () => {
     setSelecteInvoice,
     openPaymentModel,
     setOpenPaymentModel,
+
+    filters,
+    handleFilterChange,
+    clearFilters,
+    suppliers,
   };
 };
 
