@@ -111,7 +111,7 @@ export default function Sidebar() {
       if (!item.children) return;
 
       const match = item.children.some((c) =>
-        location.pathname.startsWith(c.path)
+        location.pathname.startsWith(c.path),
       );
 
       if (match) newOpen[index] = true;
@@ -203,6 +203,7 @@ export default function Sidebar() {
       className={`fixed ${
         isRtl ? "right-0 border-l" : "left-0 border-r"
       } top-0 flex h-screen w-64 flex-col border-white/5 bg-[linear-gradient(180deg,#0b1220_0%,#0d1526_60%,#0b1220_100%)] text-white`}
+      style={{ zIndex: "1000" }}
     >
       {/* BRAND */}
       <div className="border-b border-white/5 p-5">
@@ -273,7 +274,7 @@ export default function Sidebar() {
           }
 
           const isActiveGroup = item.children.some((c) =>
-            location.pathname.startsWith(c.path)
+            location.pathname.startsWith(c.path),
           );
 
           return (
