@@ -610,7 +610,11 @@
       "paymentForSalesReturn": "دفعة لمرتجع المبيعات",
       "paymentForPurchaseReturn": "دفعة لمرتجع المشتريات",
       "purchaseReturnPayment": "دفعة إعادة مشتريات",
-      "salesReturnPayment": "دفعة إعادة مبيعات"
+      "salesReturnPayment": "دفعة إعادة مبيعات",
+      "paymentSource": "مصدر الدفع",
+      "dateNotBefore": "لا يمكن أن يكون التاريخ قبل {{date}}",
+      "summaryPaying": "أنت تدفع",
+      "payFromFund": "الدفع من الصندوق"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",

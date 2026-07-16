@@ -609,7 +609,11 @@
       "paymentForSalesReturn": "Payment for sales return",
       "paymentForPurchaseReturn": "Payment for purchase return",
       "purchaseReturnPayment": "Purchase return payment",
-      "salesReturnPayment": "Sales return payment"
+      "salesReturnPayment": "Sales return payment",
+      "paymentSource": "Payment source",
+      "dateNotBefore": "Date cannot be before {{date}}",
+      "summaryPaying": "You're paying",
+      "payFromFund": "Pay from fund"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",

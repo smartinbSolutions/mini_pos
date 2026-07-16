@@ -610,7 +610,11 @@
       "paymentForSalesReturn": "Satış iade ödemesi",
       "paymentForPurchaseReturn": "Satın alma iade ödemesi",
       "purchaseReturnPayment": "Satın alma iade ödemesi",
-      "salesReturnPayment": "Satış iade ödemesi"
+      "salesReturnPayment": "Satış iade ödemesi",
+      "paymentSource": "Ödeme kaynağı",
+      "dateNotBefore": "Tarih {{date}} tarihinden önce olamaz",
+      "summaryPaying": "Ödediğiniz tutar",
+      "payFromFund": "Kasadan öde"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
