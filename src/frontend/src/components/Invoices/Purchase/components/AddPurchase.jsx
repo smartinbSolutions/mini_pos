@@ -43,9 +43,11 @@ export default function AddPurchase() {
     saving,
     error,
     reset,
+    api,
+    setProducts,
+    products,
   } = useAddPurchase();
   const {
-    products,
     barcodesByProduct,
     saving: productSaving,
     openCreate,
@@ -274,9 +276,25 @@ export default function AddPurchase() {
                                 placeholder={t("ui.selectProduct")}
                                 options={products}
                                 selectedValue={item.product_id}
-                                onChange={(e) =>
-                                  updateItem(index, "product_id", e.id)
-                                }
+                                selectedLabel={item.name}
+                                onChange={(e) => {
+                                  updateItem(index, "product_id", e.id);
+                                }}
+                                onInputChange={async (value) => {
+                                  if (!value.trim()) return;
+
+                                  try {
+                                    const res = await api.getProducts({
+                                      page: 1,
+                                      limit: 50,
+                                      search: value,
+                                    });
+
+                                    setProducts(res?.data || []);
+                                  } catch (err) {
+                                    console.error(err);
+                                  }
+                                }}
                               />
                             </td>
                             <td className="p-2">

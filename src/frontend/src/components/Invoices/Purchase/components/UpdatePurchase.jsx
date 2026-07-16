@@ -26,6 +26,8 @@ export default function UpdatePurchase() {
     saving,
     error,
     loading,
+    api,
+    setProducts,
   } = useUpdatePurchase();
   const { money } = usePrimaryCurrency();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
@@ -143,9 +145,25 @@ export default function UpdatePurchase() {
                             placeholder={t("ui.selectProduct")}
                             options={products}
                             selectedValue={item.product_id}
-                            onChange={(e) =>
-                              updateItem(index, "product_id", e.id)
-                            }
+                            selectedLabel={item.name}
+                            onChange={(e) => {
+                              updateItem(index, "product_id", e.id);
+                            }}
+                            onInputChange={async (value) => {
+                              if (!value.trim()) return;
+
+                              try {
+                                const res = await api.getProducts({
+                                  page: 1,
+                                  limit: 50,
+                                  search: value,
+                                });
+
+                                setProducts(res?.data || []);
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
                           />
                         </td>
                         <td className="p-2">

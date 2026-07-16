@@ -63,6 +63,7 @@ export default function useUpdatePurchase() {
   const removeItem = (index) => {
     setItems((p) => p.filter((_, i) => i !== index));
   };
+  console.log(products);
 
   const updateItem = (index, key, value) => {
     setItems((prev) => {
@@ -72,7 +73,7 @@ export default function useUpdatePurchase() {
       item[key] = value;
 
       if (key === "product_id") {
-        const product = products.find((p) => p.id == value);
+        const product = products?.find((p) => p.id == value);
 
         if (product) {
           item.price = product.costPrice || 0;
@@ -228,5 +229,7 @@ export default function useUpdatePurchase() {
     taxableAmount,
     taxValue,
     netTotal,
+    api,
+    setProducts,
   };
 }

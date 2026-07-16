@@ -235,7 +235,8 @@ export default function useUpdateSales() {
     taxableAmount,
     taxValue,
     netTotal,
-
+    api,
+    setProducts,
     status: invoice?.status,
   };
 }

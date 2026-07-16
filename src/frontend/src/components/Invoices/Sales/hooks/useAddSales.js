@@ -35,16 +35,16 @@ export default function useAddSales() {
   const [saving, setSaving] = useState(false);
 
   const refetch = useCallback(async () => {
-    if (!api) {
-      setError(t("errors.apiNotAvailable"));
-      return;
-    }
+    if (!api) return;
 
     try {
       setLoading(true);
 
       const [res, taxRes, custRes] = await Promise.all([
-        api.getProducts(),
+        api.getProducts({
+          page: 1,
+          limit: 200,
+        }),
         api.getTaxes(),
         api.getCustomers(),
       ]);
@@ -52,13 +52,12 @@ export default function useAddSales() {
       setProducts(res || []);
       setTaxes(taxRes || []);
       setCustomers(custRes || []);
-      setError("");
     } catch (err) {
-      setError(err?.message || t("errors.loadError"));
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [api, t]);
+  }, [api]);
 
   useEffect(() => {
     refetch();
@@ -80,7 +79,7 @@ export default function useAddSales() {
       item[key] = value;
 
       if (key === "product_id") {
-        const product = products.find((p) => p.id == value);
+        const product = products?.find((p) => p.id == value);
         if (product) {
           item.price = product.price;
           item.name = product.name;
@@ -115,7 +114,7 @@ export default function useAddSales() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id)
+              (i) => Number(i.product_id) === Number(product.id),
             );
 
             if (existingIndex !== -1) {
@@ -230,7 +229,7 @@ export default function useAddSales() {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t]
+    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t],
   );
 
   const reset = () => {
@@ -259,5 +258,7 @@ export default function useAddSales() {
     saving,
     error,
     navigate,
+    api,
+    setProducts,
   };
 }

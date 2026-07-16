@@ -40,7 +40,8 @@ export default function UpdateSales() {
     taxableAmount,
     taxValue,
     netTotal,
-
+    api,
+    setProducts,
     status,
   } = useUpdateSales();
 
@@ -237,14 +238,29 @@ export default function UpdateSales() {
                       <tr key={index} className="transition hover:bg-[#f8faff]">
                         <td className="p-2">
                           <SearchableSelect
-                            placeholder={t("ui.selectProducts")}
+                            placeholder={t("ui.selectProduct")}
                             options={products}
                             selectedValue={item.product_id}
+                            selectedLabel={item.name}
                             onChange={(e) => {
                               updateItem(index, "product_id", e.id);
                               updateItem(index, "buyingPrice", e.costPrice);
                             }}
-                            disabled={isLocked}
+                            onInputChange={async (value) => {
+                              if (!value.trim()) return;
+
+                              try {
+                                const res = await api.getProducts({
+                                  page: 1,
+                                  limit: 50,
+                                  search: value,
+                                });
+
+                                setProducts(res?.data || []);
+                              } catch (err) {
+                                console.error(err);
+                              }
+                            }}
                           />
                         </td>
                         <td className="p-2">

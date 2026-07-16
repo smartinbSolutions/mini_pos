@@ -62,7 +62,11 @@ const SearchableSelect = ({
       return;
     }
 
-    if (selectedValue !== "" && selectedValue !== null && selectedValue !== undefined) {
+    if (
+      selectedValue !== "" &&
+      selectedValue !== null &&
+      selectedValue !== undefined
+    ) {
       const selectedOption = optionList.find(
         (option) =>
           String(option.id) === String(selectedValue) ||

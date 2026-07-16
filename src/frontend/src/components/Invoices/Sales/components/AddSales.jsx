@@ -41,6 +41,8 @@ export default function AddSales() {
     saving,
     error,
     navigate,
+    api,
+    setProducts,
   } = useAddSales();
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
@@ -264,9 +266,25 @@ export default function AddSales() {
                                 placeholder={t("ui.selectProduct")}
                                 options={products}
                                 selectedValue={item.product_id}
+                                selectedLabel={item.name}
                                 onChange={(e) => {
                                   updateItem(i, "product_id", e.id);
                                   updateItem(i, "buyingPrice", e.costPrice);
+                                }}
+                                onInputChange={async (value) => {
+                                  if (!value.trim()) return;
+
+                                  try {
+                                    const res = await api.getProducts({
+                                      page: 1,
+                                      limit: 50,
+                                      search: value,
+                                    });
+
+                                    setProducts(res?.data || []);
+                                  } catch (err) {
+                                    console.error(err);
+                                  }
                                 }}
                               />
                             </td>
@@ -437,7 +455,7 @@ export default function AddSales() {
                     value={invoice.tax_id || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value)
+                        (tax) => tax.id === Number(e.target.value),
                       );
                       setInvoice((p) => ({
                         ...p,
