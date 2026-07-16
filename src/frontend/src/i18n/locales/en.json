@@ -196,7 +196,11 @@
       "transfer_Flow": "Transfer Flow",
       "transfer_rate": "Transfer Rate",
       "searchFunds": "Search in funds",
-      "noFunds": "No funds"
+      "noFunds": "No funds",
+      "balanceAsOf": "Balance as of",
+      "startsInDeficit": "Starts in deficit",
+      "startsWithMoney": "Starts with money",
+      "initialBalanceHelper": "Optional — only if this fund already has money in it"
     },
     "contacts": {
       "customersSubtitle": "Manage your customers easily",

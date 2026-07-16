@@ -197,7 +197,11 @@
       "transfer_Flow": "حركة التحويل",
       "transfer_rate": "سعر التحويل",
       "searchFunds": "بحث في الصناديق",
-      "noFunds": "لا يوجد صناديق"
+      "noFunds": "لا يوجد صناديق",
+      "balanceAsOf": "الرصيد اعتباراً من",
+      "startsInDeficit": "يبدأ بعجز مالي",
+      "startsWithMoney": "يبدأ برصيد مالي",
+      "initialBalanceHelper": "اختياري — فقط إذا كان هذا الصندوق يحتوي على أموال بالفعل"
     },
     "contacts": {
       "customersSubtitle": "إدارة العملاء بسهولة",

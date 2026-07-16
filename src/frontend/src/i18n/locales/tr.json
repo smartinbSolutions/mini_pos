@@ -196,7 +196,11 @@
       "transfer_Flow": "Transfer Akışı",
       "transfer_rate": "Transfer Kuru",
       "searchFunds": "Kasalarda arama",
-      "noFunds": "Kasa bulunamadı"
+      "noFunds": "Kasa bulunamadı",
+      "balanceAsOf": "itibarıyla bakiye",
+      "startsInDeficit": "Açıkla başlıyor",
+      "startsWithMoney": "Bakiye ile başlıyor",
+      "initialBalanceHelper": "İsteğe bağlı — yalnızca bu kasada zaten para varsa"
     },
     "contacts": {
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
