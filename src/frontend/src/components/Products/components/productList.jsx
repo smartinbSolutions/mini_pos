@@ -87,7 +87,7 @@ export default function ProductList() {
         <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
           <div className="grid gap-6 p-7 xl:grid-cols-[1fr_420px]">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
+              <p className="mb-2 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.inventory")}
               </p>
               <h1 className="max-w-2xl text-4xl font-black leading-tight text-slate-950">

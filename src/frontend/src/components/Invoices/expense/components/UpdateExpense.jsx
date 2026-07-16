@@ -91,7 +91,7 @@ export default function UpdateExpense() {
               <Receipt size={24} />
             </span>
             <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.expense")}
               </p>
               <h1 className="text-3xl font-black text-slate-950">

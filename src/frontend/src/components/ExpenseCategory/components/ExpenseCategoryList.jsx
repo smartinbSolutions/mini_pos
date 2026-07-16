@@ -58,7 +58,7 @@ const ExpenseCategoryList = () => {
     if (!term) return expenseCategory || [];
 
     return (expenseCategory || []).filter((c) =>
-      `${c.name}`.toLowerCase().includes(term),
+      `${c.name}`.toLowerCase().includes(term)
     );
   }, [expenseCategory, search]);
 
@@ -66,9 +66,9 @@ const ExpenseCategoryList = () => {
     () =>
       (expenseCategory || []).reduce(
         (sum, c) => sum + Number(c.total_spent || 0),
-        0,
+        0
       ),
-    [expenseCategory],
+    [expenseCategory]
   );
 
   const hasDateFilter = Boolean(dateRange.startDate || dateRange.endDate);
@@ -82,7 +82,7 @@ const ExpenseCategoryList = () => {
           <div className="border-b p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+                <p className="text-xs font-bold uppercase  text-[#4663ff]">
                   {t("ui.setup")}
                 </p>
                 <h2 className="text-2xl font-black">
@@ -254,7 +254,7 @@ const ExpenseCategoryList = () => {
                     )}
                   </div>
                 </div>
-              ),
+              )
             )}
 
             {filtered.length === 0 && (

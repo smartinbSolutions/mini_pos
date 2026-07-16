@@ -125,7 +125,7 @@ export default function CompanySettings({ onSetupComplete }) {
                 className="h-10 w-10 rounded-xl shadow-sm"
               />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+                <p className="text-[10px] font-bold uppercase  text-[#4663ff]">
                   {t("app.name")}
                 </p>
                 <h1 className="text-lg font-black leading-tight text-slate-950">

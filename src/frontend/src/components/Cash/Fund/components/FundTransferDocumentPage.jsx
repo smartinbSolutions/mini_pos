@@ -110,7 +110,7 @@ const FundTransferDocumentPage = () => {
 
         <section className={panelClass}>
           <div className="p-7">
-            <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
+            <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase  text-[#4663ff]">
               <CloudSync size={14} />
               {t("screens.funds.fund_transfer")}
             </p>

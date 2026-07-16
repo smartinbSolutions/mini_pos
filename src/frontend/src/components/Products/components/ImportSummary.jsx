@@ -38,7 +38,7 @@ export default function ImportHistoryList() {
               total_imports: 0,
               total_created: 0,
               total_skipped: 0,
-            },
+            }
           );
         }
       } finally {
@@ -84,7 +84,7 @@ export default function ImportHistoryList() {
         <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
           <div className="grid gap-6 p-7 xl:grid-cols-[1fr_420px]">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
+              <p className="mb-2 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.inventory")}
               </p>
               <h1 className="max-w-2xl text-4xl font-black leading-tight text-slate-950">
@@ -175,7 +175,7 @@ export default function ImportHistoryList() {
                           <p className="font-bold text-slate-900">
                             {imp.file_name ||
                               t(
-                                "screens.products.importHistory.untitledImport",
+                                "screens.products.importHistory.untitledImport"
                               )}
                           </p>
                           <p className="text-xs text-slate-400">
@@ -226,7 +226,7 @@ export default function ImportHistoryList() {
                           <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
                             <CheckCircle2 size={14} />
                             {t(
-                              "screens.products.importHistory.noIssuesInImport",
+                              "screens.products.importHistory.noIssuesInImport"
                             )}
                           </div>
                         )}

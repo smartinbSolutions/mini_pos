@@ -96,7 +96,7 @@ export default function AddSales() {
               <Receipt size={24} />
             </span>
             <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.sales")}
               </p>
               <h1 className="text-3xl font-black text-slate-950">
@@ -249,7 +249,7 @@ export default function AddSales() {
                   {/* Desktop table */}
                   <div className="hidden overflow-x-auto md:block">
                     <table className="w-full min-w-[760px] text-sm">
-                      <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                      <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                         <tr>
                           <th className="p-3 text-left">{t("ui.product")}</th>
                           <th className="p-3">{t("ui.qty")}</th>
@@ -339,7 +339,7 @@ export default function AddSales() {
                     {items.map((item, i) => (
                       <div key={i} className="space-y-3 p-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                          <span className="text-xs font-bold uppercase  text-slate-400">
                             {t("ui.product")} #{i + 1}
                           </span>
                           <button
@@ -455,7 +455,7 @@ export default function AddSales() {
                     value={invoice.tax_id || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value),
+                        (tax) => tax.id === Number(e.target.value)
                       );
                       setInvoice((p) => ({
                         ...p,

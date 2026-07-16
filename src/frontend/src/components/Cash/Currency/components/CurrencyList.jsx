@@ -38,7 +38,7 @@ const CurrencyList = () => {
         <div className="space-y-5">
           <div className={`${panelClass} flex items-center justify-between`}>
             <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.setup")}
               </p>
               <h2 className="text-2xl font-black text-slate-950">
@@ -184,7 +184,7 @@ const CurrencyList = () => {
                     )}
                   </div>
                 </div>
-              ),
+              )
             )}
 
             {currencies.length === 0 && (

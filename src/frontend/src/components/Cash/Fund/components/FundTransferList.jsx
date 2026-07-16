@@ -67,7 +67,7 @@ const FundTransferList = () => {
         <div className={panelClass}>
           <div className="flex items-center justify-between gap-4 p-6 pb-4">
             <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.setup")}
               </p>
               <h2 className="text-2xl font-black text-slate-950">

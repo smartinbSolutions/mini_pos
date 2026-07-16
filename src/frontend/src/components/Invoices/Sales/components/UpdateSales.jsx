@@ -103,7 +103,7 @@ export default function UpdateSales() {
               <Receipt size={24} />
             </span>
             <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.sales")}
               </p>
               <h1 className="text-3xl font-black text-slate-950">
@@ -223,7 +223,7 @@ export default function UpdateSales() {
 
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
-                  <thead className="bg-[#f8faff] text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                     <tr>
                       <th className="p-3 text-left">{t("ui.product")}</th>
                       <th className="p-3">{t("ui.qty")}</th>
@@ -338,7 +338,7 @@ export default function UpdateSales() {
                   disabled={isLocked}
                   onChange={(e) => {
                     const selected = taxes.find(
-                      (tax) => tax.id === Number(e.target.value),
+                      (tax) => tax.id === Number(e.target.value)
                     );
 
                     setInvoice({

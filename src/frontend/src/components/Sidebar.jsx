@@ -214,7 +214,7 @@ export default function Sidebar() {
             <h1 className="text-base font-black leading-tight">
               {t("app.name")}
             </h1>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <p className="text-[11px] font-semibold uppercase  text-slate-500">
               {t("app.tagline")}
             </p>
           </div>

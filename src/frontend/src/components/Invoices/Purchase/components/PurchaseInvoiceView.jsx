@@ -105,7 +105,7 @@ export default function PurchaseInvoiceView() {
                 <Receipt size={24} />
               </span>
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-[#4663ff]">
+                <p className="text-xs uppercase  text-[#4663ff]">
                   {t("screens.invoices.purchaseInvoice")}
                 </p>
                 <h1 className="text-3xl  text-slate-950">

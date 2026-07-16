@@ -165,7 +165,7 @@ const PartyLedgerPage = () => {
               </button>
 
               <div className="min-w-0">
-                <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
+                <p className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase  text-[#4663ff]">
                   <PartyIcon size={13} />
                   {typeLabel}
                 </p>

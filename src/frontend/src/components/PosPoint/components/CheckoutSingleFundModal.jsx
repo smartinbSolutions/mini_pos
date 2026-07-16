@@ -232,7 +232,7 @@ export default function CheckoutSingleFundModal({
 
                 setError("");
               }}
-              className="h-24 w-full rounded-2xl border-2 border-stone-200 bg-white px-5 pr-24 text-5xl font-black tracking-tight focus:border-teal-500 focus:outline-none"
+              className="h-24 w-full rounded-2xl border-2 border-stone-200 bg-white px-5 pr-24 text-5xl font-black  focus:border-teal-500 focus:outline-none"
             />
 
             <span className="pointer-events-none absolute right-16 top-1/2 -translate-y-1/2 text-lg font-bold text-stone-400">

@@ -37,7 +37,7 @@ const UnitList = () => {
     return units.filter((u) =>
       `${u.name} ${u.latinName} ${u.code}`
         .toLowerCase()
-        .includes(search.toLowerCase()),
+        .includes(search.toLowerCase())
     );
   }, [units, search]);
 
@@ -47,11 +47,15 @@ const UnitList = () => {
         <div className={panelClass}>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <p className="mb-1 text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.setup")}
               </p>
-              <h2 className="text-2xl font-black text-slate-950">{t("screens.units.title")}</h2>
-              <p className="text-sm text-slate-500">{t("screens.units.subtitle")}</p>
+              <h2 className="text-2xl font-black text-slate-950">
+                {t("screens.units.title")}
+              </h2>
+              <p className="text-sm text-slate-500">
+                {t("screens.units.subtitle")}
+              </p>
             </div>
 
             <div className="relative">
@@ -149,7 +153,7 @@ const UnitList = () => {
                     </button>
                   </div>
                 </div>
-              ),
+              )
             )}
 
             {filteredUnits.length === 0 && (
@@ -161,7 +165,9 @@ const UnitList = () => {
         </div>
 
         <div className="sticky top-6 h-fit rounded-[28px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur">
-          <h3 className="mb-1 text-lg font-black text-slate-950">{t("screens.units.createTitle")}</h3>
+          <h3 className="mb-1 text-lg font-black text-slate-950">
+            {t("screens.units.createTitle")}
+          </h3>
           <p className="mb-5 text-sm text-slate-500">
             {t("screens.units.createSubtitle")}
           </p>

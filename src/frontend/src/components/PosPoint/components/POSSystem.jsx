@@ -196,7 +196,7 @@ export default function POSSystem() {
               </button>
 
               <div className="min-w-0 shrink-0">
-                <h1 className="truncate text-lg font-black leading-tight tracking-tight text-stone-950">
+                <h1 className="truncate text-lg font-black leading-tight  text-stone-950">
                   {t("screens.pos.title")}
                 </h1>
                 <p className="truncate text-[11px] font-semibold  text-stone-400">
@@ -615,7 +615,7 @@ export default function POSSystem() {
                   {money(subtotal)}
                 </p>
               )}
-              <h2 className="mt-0.5 truncate text-3xl font-black tracking-tight">
+              <h2 className="mt-0.5 truncate text-3xl font-black ">
                 {money(netTotal)}
               </h2>
             </div>

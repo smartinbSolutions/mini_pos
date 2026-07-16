@@ -119,7 +119,7 @@ const PaymentDocumentPage = () => {
         <section className={panelClass}>
           <div className="flex items-start justify-between p-7">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase tracking-[0.24em] text-[#4663ff]">
+              <p className="mb-2 text-xs font-bold uppercase  text-[#4663ff]">
                 {t("ui.payment")}
               </p>
               <h1 className="text-3xl font-black text-slate-950">

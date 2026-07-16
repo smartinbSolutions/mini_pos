@@ -112,7 +112,7 @@ export default function PurchaseReturnView() {
                 <Undo2 size={24} />
               </span>
               <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-amber-700 font-bold">
+                <p className="text-xs uppercase  text-amber-700 font-bold">
                   {t("screens.purchaseReturn.purchaseReturn")}
                 </p>
                 <h1 className="text-3xl text-slate-950 font-bold mt-0.5">

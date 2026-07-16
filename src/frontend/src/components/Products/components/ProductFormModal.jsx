@@ -71,7 +71,7 @@ export default function ProductFormModal({
     setForm((current) => ({
       ...current,
       barcodes: current.barcodes.map((barcode, currentIndex) =>
-        currentIndex === index ? { ...barcode, barcode: value } : barcode,
+        currentIndex === index ? { ...barcode, barcode: value } : barcode
       ),
     }));
   };
@@ -90,7 +90,7 @@ export default function ProductFormModal({
         current.barcodes.length === 1
           ? [{ barcode: "" }]
           : current.barcodes.filter(
-              (_, currentIndex) => currentIndex !== index,
+              (_, currentIndex) => currentIndex !== index
             ),
     }));
   };
@@ -160,7 +160,7 @@ export default function ProductFormModal({
           <aside className="flex min-h-0 flex-col border-b border-[#e5ebff] bg-white/70 p-6 lg:border-b-0 lg:border-r">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#4663ff]">
+                <p className="text-xs font-bold uppercase  text-[#4663ff]">
                   {t("ui.inventory")}
                 </p>
                 <h2 className="mt-1 text-2xl font-black text-slate-950">

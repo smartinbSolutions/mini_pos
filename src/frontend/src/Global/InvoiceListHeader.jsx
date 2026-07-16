@@ -92,7 +92,7 @@ export default function InvoiceListHeader({
           {badgeLabel && (
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#eef3ff] px-3 py-1">
               {BadgeIcon && <BadgeIcon size={12} className="text-[#4663ff]" />}
-              <span className="text-xs font-bold uppercase tracking-[0.2em] text-[#4663ff]">
+              <span className="text-xs font-bold uppercase  text-[#4663ff]">
                 {badgeLabel}
               </span>
             </div>
