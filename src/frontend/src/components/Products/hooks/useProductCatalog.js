@@ -61,6 +61,7 @@ export default function useProductCatalog() {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCost, setTotalCost] = useState(1);
   const api = window.api;
 
   const canUseUnits = !unavailableHandlers.includes("units");
@@ -75,7 +76,9 @@ export default function useProductCatalog() {
 
     try {
       setLoading(true);
+      const res = await api.getDashboardStats();
 
+      setTotalCost(res?.inventoryValue);
       const [productsResult, barcodesResult, unitsResult] =
         await Promise.allSettled([
           api.getProducts({
@@ -310,5 +313,6 @@ export default function useProductCatalog() {
     setLimit,
     total,
     totalPages,
+    totalCost,
   };
 }

@@ -1,8 +1,8 @@
 {
-  "name": "mine_pos",
-  "productName": "mine_pos",
+  "name": "mini_pos",
+  "productName": "POS System",
   "version": "1.0.5",
-  "description": "My Electron application description",
+  "description": "Professional POS System",
   "main": ".vite/build/main.js",
   "private": true,
   "scripts": {
@@ -10,24 +10,55 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "dist": "electron-builder"
   },
   "build": {
-    "appId": "com.mypos.app",
+    "appId": "com.devzerosh.pos",
     "productName": "POS System",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "build"
     },
     "files": [
-      "electron/**/*",
-      "frontend/build/**/*",
-      "package.json"
+      ".vite/build/**/*",
+      ".vite/renderer/**/*",
+      "package.json",
+      "node_modules/**/*"
     ],
+    "asar": true,
     "win": {
-      "target": "nsis"
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": [
+        "en"
+      ],
+      "language": 1033,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "POS System",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "POS-System-Setup-${version}.exe"
     }
   },
-  "keywords": [],
+  "keywords": [
+    "POS",
+    "ERP",
+    "Accounting",
+    "Inventory"
+  ],
   "author": {
     "name": "DevZeroSh",
     "email": "m.shahrour.work@gmail.com"

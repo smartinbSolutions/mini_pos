@@ -60,6 +60,7 @@ export default function ProductList() {
     setLimit,
     total,
     totalPages,
+    totalCost,
   } = catalog;
 
   const {
@@ -73,12 +74,12 @@ export default function ProductList() {
 
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0
+    0,
   );
   const totalValue = products.reduce(
     (total, product) =>
       total + Number(product.quantity || 0) * Number(product.price || 0),
-    0
+    0,
   );
 
   return (
@@ -120,7 +121,7 @@ export default function ProductList() {
               <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
                 <Package size={20} className="mb-4 text-[#4663ff]" />
                 <div className="text-2xl font-black text-slate-950">
-                  {money(totalValue)}
+                  {money(totalCost)}
                 </div>
                 <div className="text-xs font-semibold text-slate-500">
                   {t("ui.retailValue")}

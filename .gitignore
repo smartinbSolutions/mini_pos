@@ -90,8 +90,9 @@ typings/
 
 # Electron-Forge
 out/
-
+build
 # Licensing keys
 src/keys/private.pem
 server/keys/private.pem
 pos.db
+dist
