@@ -91,7 +91,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("delete-product-barcode", id),
 
   /* ================= PRODUCTS ================= */
-  getProducts: () => ipcRenderer.invoke("get-products"),
+  getProducts: (params) => ipcRenderer.invoke("get-products", params),
   getProduct: (id) => ipcRenderer.invoke("get-product", id),
   createProduct: (data) => ipcRenderer.invoke("create-product", data),
   updateProduct: (data) => ipcRenderer.invoke("update-product", data),

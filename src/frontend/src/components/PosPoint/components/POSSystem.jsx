@@ -60,6 +60,8 @@ export default function POSSystem() {
     customers,
     funds,
     cart,
+    search,
+    setSearch,
     discount,
     setDiscount,
     selectedCustomerId,
@@ -76,6 +78,7 @@ export default function POSSystem() {
     removeFromCart,
     clearCart,
     checkout,
+    currencies,
   } = usePosCheckout({ weight });
   const { money, primaryCurrency } = usePrimaryCurrency();
   const [isDailySummaryOpen, setIsDailySummaryOpen] = useState(false);
@@ -94,22 +97,11 @@ export default function POSSystem() {
   const activeWeight = Number(currentWeight) > 0 ? Number(currentWeight) : 0;
 
   const [selectedScalePort, setSelectedScalePort] = useState("");
-  const [search, setSearch] = useState("");
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isCheckoutMultiOpen, setIsCheckoutMultiOpen] = useState(false);
   const [actionError, setActionError] = useState("");
   const [isTotalModalOpen, setIsTotalModalOpen] = useState(false);
   const [customNetTotal, setCustomNetTotal] = useState("");
-
-  const filteredProducts = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return products;
-    return products.filter((product) =>
-      [product.name, product.latinName, product.unit_name, product.unit_code]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term)),
-    );
-  }, [products, search]);
 
   const openPriceModal = (item) => {
     setEditingItem(item);
@@ -327,7 +319,7 @@ export default function POSSystem() {
                   {t("ui.products")}
                 </p>
                 <h2 className="text-xl font-black text-stone-950">
-                  {filteredProducts.length}
+                  {products.length}
                 </h2>
               </div>
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
@@ -352,9 +344,9 @@ export default function POSSystem() {
 
           {/* PRODUCTS LIST */}
           <div className="flex-1 p-4">
-            {filteredProducts.length > 0 ? (
+            {products.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                {filteredProducts.map((product) => (
+                {products.map((product) => (
                   <button
                     key={product.id}
                     type="button"
@@ -448,7 +440,7 @@ export default function POSSystem() {
                     phone: "",
                     address: "",
                   },
-                  ...customers?.data,
+                  ...customers,
                 ]}
                 selectedValue={selectedCustomerId}
                 onChange={(customer) =>

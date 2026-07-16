@@ -223,7 +223,13 @@
       "addPartnerContact": "إضافة جهة اتصال الشريك",
       "addCustomer": "إضافة عميل",
       "addSupplier": "إضافة مورد",
-      "addPartner": "إضافة الشريك"
+      "addPartner": "إضافة الشريك",
+      "customerOwesYou": "هذا العميل مدين لك بهذا المبلغ",
+      "youOweSupplier": "أنت مدين لهذا المورد بهذا المبلغ",
+      "openingBalanceHelper": "اختياري — فقط إذا كان لجهة الاتصال هذه رصيد افتتاحي",
+      "balanceAsOf": "اعتباراً من تاريخ",
+      "theyOweYou": "مستحق لك",
+      "youOweThem": "مستحق عليهم"
     },
     "products": {
       "loading": "جار تحميل كتالوج المنتجات...",
@@ -273,12 +279,15 @@
       "action": {
         "create": "إنشاء",
         "update": "تحديث",
-        "edit": "تعديل"
+        "edit": "تعديل",
+        "return": "مرتجع"
       },
       "refType": {
         "sales_invoice": "فاتورة مبيعات",
         "purchase_invoice": "فاتورة مشتريات",
-        "products": "المنتجات"
+        "products": "المنتجات",
+        "sales_return": "مرتجع مبيعات",
+        "purchase_return": "مرتجع مشتريات"
       },
       "importHistory": {
         "title": "سجل الاستيراد",
@@ -402,7 +411,9 @@
       "valueRequired": "{{field}} مطلوب",
       "pinInvalid": "يجب أن يتكون الرمز السري من 6 أرقام بالضبط",
       "pinMismatch": "الرمزان غير متطابقين",
-      "emailInvalid": "أدخل بريداً إلكترونياً صالحاً"
+      "emailInvalid": "أدخل بريداً إلكترونياً صالحاً",
+      "Product name already exists": "اسم المنتج موجود بالفعل",
+      "Barcode already used by another product": "هذا الباركود مستخدم بالفعل لمنتج آخر"
     },
     "pos": {
       "loading": "جار تحميل نظام نقاط البيع...",
@@ -607,7 +618,9 @@
       "deposit": "الإيداع",
       "return": "العائد",
       "effectiveRate": "سعر الصرف الفعلي",
-      "fundRate": "سعر صرف الصندوق"
+      "fundRate": "سعر صرف الصندوق",
+      "openingBalance": "الرصيد الافتتاحي",
+      "allTimeResults": "نتائج جميع الأوقات"
     },
     "fundMovements": {
       "title": "حركات الصندوق",

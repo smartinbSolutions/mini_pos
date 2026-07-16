@@ -57,7 +57,10 @@ export default function useProductCatalog() {
   const [actionError, setActionError] = useState("");
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [selectDeleteProduct, setSelectDeleteProduct] = useState(null);
-
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const api = window.api;
 
   const canUseUnits = !unavailableHandlers.includes("units");
@@ -75,7 +78,11 @@ export default function useProductCatalog() {
 
       const [productsResult, barcodesResult, unitsResult] =
         await Promise.allSettled([
-          api.getProducts(),
+          api.getProducts({
+            page,
+            limit,
+            search,
+          }),
           api.getProductBarcodes(),
           api.getUnits(),
         ]);
@@ -98,8 +105,12 @@ export default function useProductCatalog() {
         console.error("Failed to load units:", unitsResult.reason);
         nextUnavailableHandlers.push("units");
       }
+      const productsResponse = productsResult.value || {};
 
-      setProducts(productsResult.value || []);
+      setProducts(productsResponse.data || []);
+
+      setTotal(productsResponse.total || 0);
+      setTotalPages(productsResponse.totalPages || 1);
       setBarcodes(
         barcodesResult.status === "fulfilled" ? barcodesResult.value || [] : [],
       );
@@ -120,12 +131,15 @@ export default function useProductCatalog() {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit, search, t]);
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, [page, limit, search]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
   const barcodesByProduct = useMemo(() => {
     return barcodes.reduce((groups, barcode) => {
       const productId = barcode.product_id;
@@ -207,25 +221,6 @@ export default function useProductCatalog() {
     }
   };
 
-  const filteredProducts = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return products;
-
-    return products.filter((product) => {
-      const productBarcodes = barcodesByProduct[product.id] || [];
-
-      return [
-        product.name,
-        product.latinName,
-        product.unit_name,
-        product.unit_code,
-        ...productBarcodes.map((barcode) => barcode.barcode),
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(term));
-    });
-  }, [barcodesByProduct, products, search]);
-
   const openCreate = () => {
     setActiveProduct(null);
     setIsFormOpen(true);
@@ -295,7 +290,6 @@ export default function useProductCatalog() {
     canUseUnits,
     search,
     setSearch,
-    filteredProducts,
     refetch,
     openCreate,
     openEdit,
@@ -310,5 +304,11 @@ export default function useProductCatalog() {
     setSelectDeleteProduct,
     handleDeleteProduct,
     handleLogo,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   };
 }

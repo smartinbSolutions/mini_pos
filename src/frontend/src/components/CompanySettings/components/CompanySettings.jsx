@@ -29,11 +29,11 @@ export default function CompanySettings() {
     <div className="p-6 bg-[#f5f7fb] min-h-screen">
       <div className="max-w-5xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">{t("screens.company.title")}</h1>
+          <h1 className="text-3xl font-bold text-gray-800">
+            {t("screens.company.title")}
+          </h1>
 
-          <p className="text-gray-500 mt-2">
-            {t("screens.company.subtitle")}
-          </p>
+          <p className="text-gray-500 mt-2">{t("screens.company.subtitle")}</p>
         </div>
 
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
@@ -53,7 +53,12 @@ export default function CompanySettings() {
                     )}
                   </div>
 
-                  <input type="file" className="hidden" onChange={handleLogo} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleLogo}
+                  />
                 </label>
               </div>
 
@@ -62,7 +67,9 @@ export default function CompanySettings() {
                   {form.company_name || t("screens.company.fallbackName")}
                 </h2>
 
-                <p className="text-white/80 mt-1">{t("screens.company.configuration")}</p>
+                <p className="text-white/80 mt-1">
+                  {t("screens.company.configuration")}
+                </p>
               </div>
             </div>
           </div>
@@ -214,7 +221,9 @@ export default function CompanySettings() {
               >
                 <Save size={18} />
 
-                {saving ? t("common.saving") : t("screens.company.saveSettings")}
+                {saving
+                  ? t("common.saving")
+                  : t("screens.company.saveSettings")}
               </button>
             </div>
           </div>

@@ -146,7 +146,7 @@ const ContactListHeader = ({
                   {t("ui.opening_balance")}
                 </p>
                 <p className="text-xs text-slate-400">
-                  {t("ui.openingBalanceHelper") ||
+                  {t("screens.contacts.openingBalanceHelper") ||
                     "Optional — only if this contact has a starting balance"}
                 </p>
               </div>

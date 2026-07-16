@@ -10,7 +10,8 @@ import {
 import { useTranslation } from "react-i18next";
 
 export default function ProductImportModal({ isOpen, onClose, onImported }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
   const api = window.api;
 
   const [downloading, setDownloading] = useState(false);
@@ -64,7 +65,11 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl">
+      <div
+        className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"
+        style={{ direction: isRtl ? "rtl" : "ltr" }}
+      >
+        {/* HEADER */}
         <div className="flex items-center justify-between border-b bg-gray-50 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="rounded-2xl bg-[#eef3ff] p-2 text-[#4663ff]">
@@ -76,12 +81,13 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
           </div>
           <button
             onClick={handleClose}
-            className="rounded-xl p-2 hover:bg-gray-200"
+            className="rounded-xl p-2 hover:bg-gray-200 transition"
           >
             <X size={18} />
           </button>
         </div>
 
+        {/* BODY */}
         <div className="max-h-[70vh] space-y-4 overflow-y-auto p-5">
           {!result ? (
             <>
@@ -123,6 +129,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
             </>
           ) : (
             <>
+              {/* RESULTS COUNTER */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-2xl bg-emerald-50 p-4 text-center">
                   <p className="text-2xl font-black text-emerald-700">
@@ -157,6 +164,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                 </div>
               )}
 
+              {/* ISSUES LIST */}
               {hasIssues && (
                 <div className="space-y-2">
                   {result.skippedProducts.length > 0 && (
@@ -173,15 +181,14 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                             <span className="font-bold text-slate-700">
                               {t("ui.row")} {item.row} · {item.name}
                             </span>
-                            <span className="shrink-0 text-amber-700">
-                              {item.reason}
+                            <span className="shrink-0 text-amber-700 font-medium">
+                              {item.reason ? t(item.reason) : t("ui.noReason")}
                             </span>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
-
                   {result.skippedBarcodes.length > 0 && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
                       <p className="mb-2 text-xs font-black uppercase tracking-wide text-amber-700">
@@ -196,8 +203,8 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                             <span className="font-bold text-slate-700">
                               {t("ui.row")} {item.row} · {item.barcode}
                             </span>
-                            <span className="shrink-0 text-amber-700">
-                              {item.reason}
+                            <span className="shrink-0 text-amber-700 font-medium">
+                              {item.reason ? t(item.reason) : t("ui.noReason")}
                             </span>
                           </div>
                         ))}
@@ -210,7 +217,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
               <button
                 type="button"
                 onClick={() => setResult(null)}
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] text-sm font-black text-white"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] text-sm font-black text-white hover:bg-[#3854e8] transition"
               >
                 <Upload size={16} />
                 {t("screens.products.importAnother")}

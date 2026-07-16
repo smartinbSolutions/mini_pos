@@ -222,7 +222,13 @@
       "addPartnerContact": "Ortak iletişimi ekle",
       "addCustomer": "Müşteri Ekle",
       "addSupplier": "Tedarikçi Ekle",
-      "addPartner": "Ortak Ekle"
+      "addPartner": "Ortak Ekle",
+      "customerOwesYou": "Bu müşterinin size bu kadar borcu var",
+      "youOweSupplier": "Bu tedarikçiye bu kadar borcunuz var",
+      "openingBalanceHelper": "İsteğe bağlı — yalnızca bu kişinin açılış bakiyesi varsa",
+      "balanceAsOf": "Tarihi itibarıyla",
+      "theyOweYou": "Size borçlular",
+      "youOweThem": "Onlara borçlusunuz"
     },
     "products": {
       "loading": "Ürün kataloğu yükleniyor...",
@@ -272,12 +278,15 @@
       "action": {
         "create": "Oluşturma",
         "update": "Güncelleme",
-        "edit": "Düzenleme"
+        "edit": "Düzenleme",
+        "return": "İade"
       },
       "refType": {
         "sales_invoice": "Satış faturası",
         "purchase_invoice": "Satın alma faturası",
-        "products": "Ürünler"
+        "products": "Ürünler",
+        "sales_return": "Satış İadesi",
+        "purchase_return": "Alış İadesi"
       },
       "importHistory": {
         "title": "İçe Aktarma Geçmişi",
@@ -401,7 +410,9 @@
       "valueRequired": "{{field}} zorunludur",
       "pinInvalid": "PIN tam olarak 6 haneli olmalıdır",
       "pinMismatch": "PIN kodları eşleşmiyor",
-      "emailInvalid": "Geçerli bir e-posta adresi girin"
+      "emailInvalid": "Geçerli bir e-posta adresi girin",
+      "Product name already exists": "Ürün adı zaten mevcut",
+      "Barcode already used by another product": "Barkod zaten başka bir ürün tarafından kullanılıyor"
     },
     "pos": {
       "loading": "POS Sistemi yükleniyor...",
@@ -607,7 +618,9 @@
       "deposit": "Yatırım",
       "return": "Getiri",
       "effectiveRate": "Etkin döviz kuru",
-      "fundRate": "Fon döviz kuru"
+      "fundRate": "Fon döviz kuru",
+      "openingBalance": "Açılış Bakiyesi",
+      "allTimeResults": "Tüm Zamanların Sonuçları"
     },
     "fundMovements": {
       "title": "Kasa Hareketleri",

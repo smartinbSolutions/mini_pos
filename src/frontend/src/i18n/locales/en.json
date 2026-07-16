@@ -222,7 +222,13 @@
       "addPartnerContact": "Add a partner contact",
       "addCustomer": "Add Customer",
       "addSupplier": "Add Supplier",
-      "addPartner": "Add Partner"
+      "addPartner": "Add Partner",
+      "customerOwesYou": "This customer owes you this amount",
+      "youOweSupplier": "You owe this supplier this amount",
+      "openingBalanceHelper": "Optional — only if this contact has a starting balance",
+      "balanceAsOf": "As of date",
+      "theyOweYou": "They owe you",
+      "youOweThem": "You owe them"
     },
     "products": {
       "loading": "Loading product catalog...",
@@ -272,12 +278,15 @@
       "action": {
         "create": "Create",
         "update": "Update",
-        "edit": "Edit"
+        "edit": "Edit",
+        "return": "Return"
       },
       "refType": {
         "sales_invoice": "Sales invoice",
         "purchase_invoice": "Purchase invoice",
-        "products": "Products"
+        "products": "Products",
+        "sales_return": "Sales Return",
+        "purchase_return": "Purchase Return"
       },
       "importHistory": {
         "title": "Import History",
@@ -401,7 +410,9 @@
       "valueRequired": "{{field}} is required",
       "pinInvalid": "PIN must be exactly 6 digits",
       "pinMismatch": "PIN codes do not match",
-      "emailInvalid": "Enter a valid email address"
+      "emailInvalid": "Enter a valid email address",
+      "Product name already exists": "Product name already exists",
+      "Barcode already used by another product": "Barcode already used by another product"
     },
     "pos": {
       "loading": "Loading POS System...",
@@ -606,7 +617,9 @@
       "deposit": "Deposit",
       "return": "Return",
       "effectiveRate": "Effective rate",
-      "fundRate": "Fund rate"
+      "fundRate": "Fund rate",
+      "openingBalance": "Opening Balance",
+      "allTimeResults": "All-Time Results"
     },
     "fundMovements": {
       "title": "Fund Movements",

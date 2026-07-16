@@ -217,7 +217,7 @@ export default function ImportHistoryList() {
                                   {item.product_name || item.barcode}
                                 </span>
                                 <span className="shrink-0 text-amber-700">
-                                  {item.reason}
+                                  {t(`screens.errors.${item.reason}`)}
                                 </span>
                               </div>
                             ))}
@@ -225,7 +225,9 @@ export default function ImportHistoryList() {
                         ) : (
                           <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
                             <CheckCircle2 size={14} />
-                            {t("screens.products.noIssuesInImport")}
+                            {t(
+                              "screens.products.importHistory.noIssuesInImport",
+                            )}
                           </div>
                         )}
                       </div>

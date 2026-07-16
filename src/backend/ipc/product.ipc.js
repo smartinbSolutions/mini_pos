@@ -8,19 +8,65 @@ import {
 } from "../utils/productImport";
 
 export default function registerProductIPC() {
-  ipcMain.handle("get-products", () => {
-    return db
+  ipcMain.handle("get-products", (event, params = {}) => {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const search = (params.search || "").trim();
+
+    let whereClause = "";
+    const queryParams = [];
+
+    if (search) {
+      whereClause = `
+      WHERE
+        products.name LIKE ?
+      `;
+
+      const keyword = `%${search}%`;
+
+      queryParams.push(keyword);
+    }
+
+    const data = db
       .prepare(
         `
-      SELECT 
+      SELECT
         products.*,
-        unit.name as unit_name,
-        unit.code as unit_code
+        unit.name AS unit_name,
+        unit.code AS unit_code
       FROM products
-      LEFT JOIN unit ON unit.id = products.unit_id
-    `
+
+      LEFT JOIN unit
+        ON unit.id = products.unit_id
+
+      ${whereClause}
+
+      ORDER BY products.id DESC
+
+      LIMIT ? OFFSET ?
+      `,
       )
-      .all();
+      .all(...queryParams, limit, offset);
+
+    const countQuery = db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM products
+      LEFT JOIN unit
+        ON unit.id = products.unit_id
+      ${whereClause}
+  `);
+
+    const { total } = countQuery.get(...queryParams);
+
+    return {
+      data,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
   });
 
   ipcMain.handle("get-product", (event, id) => {
@@ -31,7 +77,7 @@ export default function registerProductIPC() {
         unit.name as unit_name,
         unit.code as unit_code
       FROM products
-      LEFT JOIN unit ON unit.id = products.unit_id WHERE id=?`
+      LEFT JOIN unit ON unit.id = products.unit_id WHERE id=?`,
       )
       .get(id);
   });
@@ -45,7 +91,7 @@ export default function registerProductIPC() {
         `
       INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id, logo)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `
+    `,
       )
       .run(
         data.name,
@@ -54,7 +100,7 @@ export default function registerProductIPC() {
         data.price,
         data.quantity,
         data.unit_id,
-        data.logo
+        data.logo,
       );
     createProductMovement(db, {
       product_id: result.lastInsertRowid,
@@ -77,7 +123,7 @@ export default function registerProductIPC() {
       UPDATE products
       SET name=?, latinName=?, costPrice=?, price=?, quantity=?, unit_id=?, logo=?
       WHERE id=?
-    `
+    `,
     ).run(
       data.name,
       data.latinName,
@@ -86,7 +132,7 @@ export default function registerProductIPC() {
       data.quantity,
       data.unit_id,
       data.logo,
-      data.id
+      data.id,
     );
     if (data.quantity !== data.oldQuantity) {
       const delta = data.quantity - data.oldQuantity;
@@ -108,13 +154,13 @@ export default function registerProductIPC() {
       const transaction = db.transaction(() => {
         const usedInPurchase = db
           .prepare(
-            `SELECT COUNT(*) as count FROM purchase_invoice_items WHERE product_id = ?`
+            `SELECT COUNT(*) as count FROM purchase_invoice_items WHERE product_id = ?`,
           )
           .get(id);
 
         const usedInSales = db
           .prepare(
-            `SELECT COUNT(*) as count FROM sales_invoice_items WHERE product_id = ?`
+            `SELECT COUNT(*) as count FROM sales_invoice_items WHERE product_id = ?`,
           )
           .get(id);
 
@@ -124,7 +170,7 @@ export default function registerProductIPC() {
 
         db.prepare(`DELETE FROM product_barcodes WHERE product_id = ?`).run(id);
         db.prepare(`DELETE FROM product_movements WHERE product_id = ?`).run(
-          id
+          id,
         );
         db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
       });
@@ -144,7 +190,7 @@ export default function registerProductIPC() {
       FROM product_barcodes pb
       JOIN products p ON p.id = pb.product_id
       WHERE pb.barcode = ?
-    `
+    `,
       )
       .get(barcode);
 
@@ -165,7 +211,7 @@ export default function registerProductIPC() {
         LEFT JOIN unit ON unit.id = products.unit_id
         WHERE product_movements.product_id = ?
         ORDER BY product_movements.createdAt DESC, product_movements.id DESC
-        `
+        `,
         )
         .all(product_id);
     }
@@ -181,7 +227,7 @@ export default function registerProductIPC() {
         LEFT JOIN products ON products.id = product_movements.product_id
         LEFT JOIN unit ON unit.id = products.unit_id
         ORDER BY product_movements.createdAt DESC, product_movements.id DESC
-        `
+        `,
       )
       .all();
   });
@@ -230,7 +276,7 @@ export default function registerProductIPC() {
           COALESCE(SUM(skipped_products_count), 0) AS total_skipped_products,
           COALESCE(SUM(skipped_barcodes_count), 0) AS total_skipped_barcodes
         FROM product_imports
-      `
+      `,
       )
       .get();
 
@@ -249,7 +295,7 @@ export default function registerProductIPC() {
   ipcMain.handle("get-product-import-items", (event, importId) => {
     return db
       .prepare(
-        `SELECT * FROM product_import_items WHERE import_id = ? ORDER BY row_number ASC`
+        `SELECT * FROM product_import_items WHERE import_id = ? ORDER BY row_number ASC`,
       )
       .all(importId);
   });

@@ -20,6 +20,7 @@ import { formatNumber } from "../../../Global/FormatNumber";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import ProductImportModal from "./ProductImportModal";
+import Pagination from "../../../Global/Pagination";
 
 export default function ProductList() {
   const { t } = useTranslation();
@@ -39,7 +40,6 @@ export default function ProductList() {
     setSearch,
     openCreate,
     actionError,
-    filteredProducts,
     openEdit,
     handleDeleteProduct,
     isFormOpen,
@@ -54,6 +54,12 @@ export default function ProductList() {
     setSelectDeleteProduct,
     selectDeleteProduct,
     handleLogo,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
   } = catalog;
 
   const {
@@ -177,7 +183,7 @@ export default function ProductList() {
             <div className="flex items-center justify-center p-12 text-slate-500">
               {t("screens.products.loading")}
             </div>
-          ) : filteredProducts.length === 0 ? (
+          ) : products.length === 0 ? (
             <div className="p-12 text-center">
               <Package size={42} className="mx-auto text-[#4663ff]" />
               <h2 className="mt-4 text-xl font-black text-slate-950">
@@ -204,7 +210,7 @@ export default function ProductList() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#eef1ff]">
-                  {filteredProducts.map((product) => {
+                  {products.map((product) => {
                     const productBarcodes = barcodesByProduct[product.id] || [];
 
                     return (
@@ -212,7 +218,7 @@ export default function ProductList() {
                         key={product.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-3 max-w-[280px]">
                           <div className="flex items-center gap-3">
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f8faff] text-[#4663ff]">
                               {product.logo ? (
@@ -225,12 +231,13 @@ export default function ProductList() {
                                 <Package size={18} />
                               )}
                             </div>
-                            <div className="min-w-0">
-                              <div className="truncate font-bold text-slate-950">
+                            <div className="min-w-0 flex-1">
+                              {/* الاسم العربي الأساسي */}
+                              <div
+                                className="truncate font-bold text-slate-950 text-sm"
+                                title={product.name || t("ui.unnamedProduct")} // يظهر عند تمرير الفأرة فوق الاسم المقطوع
+                              >
                                 {product.name || t("ui.unnamedProduct")}
-                              </div>
-                              <div className="truncate text-xs text-slate-500">
-                                {product.latinName || t("ui.noLatinName")}
                               </div>
                             </div>
                           </div>
@@ -297,6 +304,17 @@ export default function ProductList() {
                   })}
                 </tbody>
               </table>
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                limit={limit}
+                onPageChange={setPage}
+                onLimitChange={(newLimit) => {
+                  setLimit(newLimit);
+                  setPage(1);
+                }}
+              />
             </div>
           )}
         </section>
