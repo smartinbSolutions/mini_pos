@@ -4,6 +4,7 @@ import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
+import { buildDefaultInvoiceName } from "../utils/helpers";
 import { applyPartyCredit } from "../utils/partyCredit";
 export default function registerPurchaseInvoicesIPC() {
   // CREATE
@@ -60,6 +61,7 @@ export default function registerPurchaseInvoicesIPC() {
             INSERT INTO purchase_invoices
             (
               supplier_id,
+              invoice_name,
               date,
               subtotal,
               discount,
@@ -68,11 +70,12 @@ export default function registerPurchaseInvoicesIPC() {
               taxValue,
               created_by
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `
           )
           .run(
             data.supplier_id,
+            data.invoice_name?.trim() || null,
             fullDateTime,
             subtotal,
             discount,
@@ -83,6 +86,14 @@ export default function registerPurchaseInvoicesIPC() {
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
+
+        let invoiceName = data.invoice_name?.trim();
+        if (!invoiceName) {
+          invoiceName = buildDefaultInvoiceName(db, "purchase", invoiceId);
+          db.prepare(
+            `UPDATE purchase_invoices SET invoice_name = ? WHERE id = ?`
+          ).run(invoiceName, invoiceId);
+        }
 
         const insertItem = db.prepare(`
           INSERT INTO purchase_invoice_items
@@ -130,7 +141,7 @@ export default function registerPurchaseInvoicesIPC() {
           movement_type: "increase",
           amount: netTotal,
           date: fullDateTime,
-          note: `Purchase Invoice #${invoiceId}`,
+          note: invoiceName,
         });
 
         let insertPaymentId = null;
@@ -157,7 +168,7 @@ export default function registerPurchaseInvoicesIPC() {
             effective_rate: payment.effective_rate,
             invoice_id: invoiceId,
             invoice_type: payment.mode,
-            note: `${payment.note} #${invoiceId}`,
+            note: `${invoiceName}`,
             fundOperation: "subtract",
             date: fullDateTime,
             created_by: data.created_by,
@@ -169,12 +180,13 @@ export default function registerPurchaseInvoicesIPC() {
             movement_type: "out",
             amount: payment.collected_amount,
             date: fullDateTime,
-            note: `Payment for Purchase Invoice #${invoiceId}`,
+            note: `Payment for ${invoiceName}`,
           });
         }
 
         return {
           invoiceId,
+          invoiceName,
           paymentId: insertPaymentId,
           creditApplied,
         };

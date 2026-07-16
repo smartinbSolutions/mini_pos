@@ -116,10 +116,6 @@ function fetchPartyHistoryLedger(
     exportAll = false,
   }
 ) {
-  console.log("partyId", partyId);
-  console.log("partyType", partyType);
-  console.log("startDate", startDate);
-  console.log("endDate", endDate);
   const currentPage = Math.max(1, Number(page) || 1);
   const perPage = Math.max(1, Number(limit) || 50);
   const offset = (currentPage - 1) * perPage;
@@ -382,7 +378,6 @@ export default function registerPartyHistoryIPC() {
       event,
       { partyId, partyType, startDate, endDate, language, partyName }
     ) => {
-      console.log("dddd");
       try {
         const L = getLabels(language);
         const isRtl = language === "ar";
@@ -394,7 +389,7 @@ export default function registerPartyHistoryIPC() {
           endDate,
           exportAll: true,
         });
-        console.log("rows count:", rows.length, "summary:", summary);
+
         const rowsHtml = rows
           .map(
             (r) => `

@@ -84,12 +84,12 @@ export default function ProductMovementsModal({
                               `screens.products.refType.${movement.reference_type}`,
                               {
                                 defaultValue: movement.reference_type,
-                              },
+                              }
                             )}
                           </span>
                         </div>
                         <div className="text-xs text-slate-500">
-                          {new Date(movement.createdAt).toLocaleString()}
+                          {new Date(movement.date).toLocaleString()}
                         </div>
                       </div>
                     </div>

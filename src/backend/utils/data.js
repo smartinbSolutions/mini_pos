@@ -92,11 +92,26 @@ export function seedData(db, { language = "ar", currencyId } = {}) {
 
   if (!existingTestProduct && pieceUnit) {
     const [name, latinName] = localize(TRANSLATIONS.testProduct, lang);
-    db.prepare(
-      `
+    const costPrice = 50;
+    const quantity = 10;
+
+    const result = db
+      .prepare(
+        `
       INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id)
       VALUES (?, ?, ?, ?, ?, ?)
     `
-    ).run(name, latinName, 50, 100, 10, pieceUnit.id);
+      )
+      .run(name, latinName, costPrice, 100, quantity, pieceUnit.id);
+
+    createProductMovement(db, {
+      product_id: result.lastInsertRowid,
+      reference_id: result.lastInsertRowid,
+      reference_type: "products",
+      action: "create",
+      type: "in",
+      quantity,
+      enterPrice: costPrice,
+    });
   }
 }

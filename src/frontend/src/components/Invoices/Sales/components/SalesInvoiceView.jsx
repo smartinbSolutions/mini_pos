@@ -3,6 +3,7 @@ import { Printer, ArrowLeft, Receipt } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
+import GoTo from "../../../../Global/GoTo";
 
 export default function SalesInvoiceView() {
   const { t } = useTranslation();
@@ -12,7 +13,6 @@ export default function SalesInvoiceView() {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const { money } = usePrimaryCurrency();
-  console.log(invoice);
 
   useEffect(() => {
     let cancelled = false;
@@ -180,40 +180,22 @@ export default function SalesInvoiceView() {
                     <tr>
                       <td
                         className="p-5 text-center text-slate-500"
-                        colSpan={4}
+                        colSpan={5}
                       >
                         {t("screens.invoices.noItems")}
                       </td>
                     </tr>
                   ) : (
                     items.map((item) => (
-                      <tr
-                        key={item.id}
-                        className="hover:bg-slate-50/50 transition"
-                      >
+                      <tr key={item.id}>
                         <td className="p-3 font-bold text-slate-900">
                           {item.product_name || item.name || "-"}
                         </td>
-
-                        <td className="p-3 text-center text-slate-600">
-                          {money(item.price)}
+                        <td className="p-3 text-center">{money(item.price)}</td>
+                        <td className="p-3 text-center">
+                          {Number(item.quantity || 0)}
                         </td>
-
-                        <td className="p-3">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <span className="font-extrabold text-slate-900 text-sm">
-                              {item.quantity}
-                            </span>
-
-                            {(item.unit_code || item.unit_name) && (
-                              <span className="inline-flex items-center rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-600 border border-stone-200/50 uppercase tracking-wide">
-                                {item.unit_code || item.unit_name}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="p-3 text-center font-black text-slate-950">
+                        <td className="p-3 text-center font-black">
                           {money(item.total)}
                         </td>
                       </tr>
@@ -249,10 +231,9 @@ export default function SalesInvoiceView() {
                         className="flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
                       >
                         <div>
-                          <div className="font-bold text-slate-800">
+                          <GoTo type="fund" id={alloc.fund_id}>
                             {alloc.fund_name || "-"}
-                          </div>
-
+                          </GoTo>
                           <div className="text-xs text-slate-400">
                             {formatDate(alloc.createdAt)} · {t("ui.payment")} #
                             {alloc.payment_id}

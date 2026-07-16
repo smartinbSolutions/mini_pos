@@ -3,6 +3,7 @@ import db from "../db";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
+import { buildDefaultInvoiceName } from "../utils/helpers";
 import { applyPartyCredit } from "../utils/partyCredit";
 
 export default function registerExpenseIPC() {
@@ -60,7 +61,7 @@ export default function registerExpenseIPC() {
           )
           .run(
             data.supplier_id || null,
-            data.invoice_name || null,
+            data.invoice_name?.trim() || null,
             data.description || null,
             fullDateTime,
             subtotal,
@@ -68,6 +69,15 @@ export default function registerExpenseIPC() {
             data.created_by
           );
         const invoiceId = invoiceResult.lastInsertRowid;
+
+        let invoiceName = data.invoice_name?.trim();
+        if (!invoiceName) {
+          invoiceName = buildDefaultInvoiceName(db, "expense", invoiceId);
+          db.prepare(`UPDATE expense SET invoice_name = ? WHERE id = ?`).run(
+            invoiceName,
+            invoiceId
+          );
+        }
 
         const insertItem = db.prepare(`
           INSERT INTO expense_items
@@ -85,7 +95,7 @@ export default function registerExpenseIPC() {
             movement_type: "increase",
             amount: netTotal,
             date: fullDateTime,
-            note: data.note || `Expense Invoice #${invoiceId}`,
+            note: invoiceName,
           });
         }
 
@@ -123,7 +133,7 @@ export default function registerExpenseIPC() {
             effective_rate: payment.effective_rate,
             invoice_id: invoiceId,
             invoice_type: payment.mode,
-            note: `${payment.note} #${invoiceId}`,
+            note: `${invoiceName}`,
             fundOperation: "subtract",
             date: fullDateTime,
             created_by: data.created_by,
@@ -136,12 +146,13 @@ export default function registerExpenseIPC() {
             movement_type: "out",
             amount: payment.collected_amount,
             date: fullDateTime,
-            note: `${payment.note} #${invoiceId}`,
+            note: invoiceName,
           });
         }
 
         return {
           invoiceId,
+          invoiceName,
           paymentId: insertPaymentId,
           creditApplied,
         };

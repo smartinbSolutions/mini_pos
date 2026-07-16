@@ -22,6 +22,9 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 import SalesReturnModal from "../../SalesReturn/components/SalesReturnModal";
+import FormattedDate from "../../../../Global/FormattedDate";
+import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
+import GoTo from "../../../../Global/GoTo";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -149,15 +152,15 @@ const SalesList = () => {
 
   const totalNet = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0,
+    0
   );
   const totalTax = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0,
+    0
   );
 
   const unpaidCount = salesInvoices.filter(
-    (inv) => inv.status !== "paid",
+    (inv) => inv.status !== "paid"
   ).length;
 
   return (
@@ -248,32 +251,17 @@ const SalesList = () => {
                         className="transition hover:bg-[#f8faff]"
                       >
                         <td className="px-5 py-4 text-start">
-                          <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff]">
-                            #{inv.id}
-                          </span>
+                          <InvoiceIdBadge id={inv.id} name={inv.invoice_name} />
                         </td>
 
                         <td className="px-5 py-4 text-start">
-                          <div className="group relative flex items-center gap-1.5">
-                            <span className="font-bold text-slate-900">
-                              {inv.customer_name || "-"}
-                            </span>
-                            {inv.invoice_name && (
-                              <>
-                                <Info
-                                  size={14}
-                                  className="cursor-help text-slate-400 hover:text-[#4663ff]"
-                                />
-                                <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1.5 max-w-[220px] whitespace-normal rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                                  {inv.invoice_name}
-                                </span>
-                              </>
-                            )}
-                          </div>
+                          <GoTo type="customer" id={inv.customer_id}>
+                            {inv.customer_name || "-"}
+                          </GoTo>
                         </td>
 
                         <td className="px-5 py-4 text-slate-500 text-start">
-                          {inv.date}
+                          <FormattedDate value={inv.date} />
                         </td>
 
                         <td className="px-5 py-4 text-start">

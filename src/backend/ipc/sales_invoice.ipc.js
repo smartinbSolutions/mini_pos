@@ -4,6 +4,7 @@ import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
+import { buildDefaultInvoiceName } from "../utils/helpers";
 import { applyPartyCredit } from "../utils/partyCredit";
 
 const receiptLabels = {
@@ -111,11 +112,11 @@ export default function registerSalesInvoiceIPC() {
             INSERT INTO sales_invoices
             (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, taxValue, created_by )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `,
+          `
           )
           .run(
             data.customer_id || null,
-            data.invoice_name || null,
+            data.invoice_name?.trim() || null,
             data.description || null,
             fullDateTime,
             subtotal,
@@ -123,10 +124,21 @@ export default function registerSalesInvoiceIPC() {
             data.tax_rate || 0,
             netTotal,
             data.taxValue || 0,
-            data.created_by || "",
+            data.created_by || ""
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
+
+        // Fall back to "Sales Invoice #<id>" if no name was given,
+        // and persist it so the DB row itself carries the default
+        // (not just an in-memory fallback used for notes).
+        let invoiceName = data.invoice_name?.trim();
+        if (!invoiceName) {
+          invoiceName = buildDefaultInvoiceName(db, "sales", invoiceId);
+          db.prepare(
+            `UPDATE sales_invoices SET invoice_name = ? WHERE id = ?`
+          ).run(invoiceName, invoiceId);
+        }
 
         const insertItem = db.prepare(`
           INSERT INTO sales_invoice_items
@@ -155,7 +167,7 @@ export default function registerSalesInvoiceIPC() {
             quantity,
             price,
             item.buyingPrice,
-            total,
+            total
           );
           updateStock.run(quantity, item.product_id);
 
@@ -181,7 +193,7 @@ export default function registerSalesInvoiceIPC() {
             movement_type: "increase",
             amount: netTotal,
             date: fullDateTime,
-            note: data.invoice_name || `Sales Invoice #${invoiceId}`,
+            note: invoiceName,
           });
         }
 
@@ -222,11 +234,16 @@ export default function registerSalesInvoiceIPC() {
             movement_type: "in",
             amount: payment.collected_amount,
             date: fullDateTime,
-            note: `Payment for Sales Invoice #${invoiceId}`,
+            note: `Payment for ${invoiceName}`,
           });
         }
 
-        return { invoiceId, paymentId: insertPaymentId, creditApplied };
+        return {
+          invoiceId,
+          invoiceName,
+          paymentId: insertPaymentId,
+          creditApplied,
+        };
       });
 
       return { success: true, ...transaction() };
@@ -291,7 +308,7 @@ export default function registerSalesInvoiceIPC() {
       ORDER BY s.id DESC
 
       LIMIT ? OFFSET ?
-      `,
+      `
       )
       .all(...queryParams, limit, offset);
 
@@ -345,7 +362,7 @@ export default function registerSalesInvoiceIPC() {
       GROUP BY invoice_id
     ) pa_sum ON pa_sum.invoice_id = sa.id
     WHERE sa.id = ?
-    `,
+    `
       )
       .get(id);
 
@@ -357,8 +374,7 @@ export default function registerSalesInvoiceIPC() {
     SELECT
   si.*,
   p.name,
-  u.name AS unit_name,
-  u.code AS unit_code,
+
   COALESCE(r.returned_quantity, 0) AS returned_quantity,
 
   (
@@ -369,8 +385,7 @@ FROM sales_invoice_items si
 
 LEFT JOIN products p
   ON p.id = si.product_id
-LEFT JOIN unit u
-      ON u.id = p.unit_id
+
 LEFT JOIN (
   SELECT
     sales_invoice_item_id,
@@ -381,7 +396,7 @@ LEFT JOIN (
   ON r.sales_invoice_item_id = si.id
 
 WHERE si.invoice_id = ?
-    `,
+    `
       )
       .all(id);
 
@@ -409,7 +424,7 @@ WHERE si.invoice_id = ?
     WHERE pa.invoice_id = ?
       AND pa.invoice_type = 'sales'
     ORDER BY pa.id ASC
-    `,
+    `
       )
       .all(id);
 
@@ -465,13 +480,13 @@ WHERE si.invoice_id = ?
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          data.id,
+          data.id
         );
         db.prepare(
           `
           DELETE FROM product_movements
           WHERE reference_type = 'sales_invoice' AND reference_id = ?
-        `,
+        `
         ).run(data.id);
 
         const insertItem = db.prepare(`
@@ -501,7 +516,7 @@ WHERE si.invoice_id = ?
             quantity,
             price,
             item.buyingPrice,
-            total,
+            total
           );
           applyStock.run(quantity, item.product_id);
 
@@ -533,7 +548,7 @@ WHERE si.invoice_id = ?
               taxValue = ?,
               updated_by = ?
           WHERE id = ?
-        `,
+        `
         ).run(
           newCustomerId,
           data.invoice_name || null,
@@ -545,7 +560,7 @@ WHERE si.invoice_id = ?
           newNetTotal,
           data.taxValue || 0,
           data.updated_by, // was data.id
-          data.id, // was data.updated_by
+          data.id // was data.updated_by
         );
 
         // Customer party_history reconciliation for the invoice amount
@@ -555,12 +570,12 @@ WHERE si.invoice_id = ?
             UPDATE party_history
             SET amount = ?, date = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-          `,
+          `
           ).run(
             newNetTotal,
             fullDateTime,
             `Sales Invoice #${data.id}`,
-            data.id,
+            data.id
           );
         } else {
           if (oldCustomerId) {
@@ -568,7 +583,7 @@ WHERE si.invoice_id = ?
               `
               DELETE FROM party_history
               WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-            `,
+            `
             ).run(data.id);
           }
 
@@ -645,13 +660,13 @@ WHERE si.invoice_id = ?
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
-          id,
+          id
         );
         db.prepare(
           `
           DELETE FROM party_history
           WHERE invoice_id = ? AND invoice_type = 'sales'
-        `,
+        `
         ).run(id);
         db.prepare(`DELETE FROM sales_invoices WHERE id = ?`).run(id);
       });
@@ -676,7 +691,7 @@ WHERE si.invoice_id = ?
               payment.amount_fund_currency ||
                 payment.amountFundCurrency ||
                 payment.paymentInfundCurrency ||
-                0,
+                0
             ),
             currencyCode: payment.currency_code,
             exchangeRate: Number(payment.exchange_rate || 1) || 1,
@@ -685,7 +700,7 @@ WHERE si.invoice_id = ?
             (payment) =>
               payment.fundId &&
               payment.amount > 0 &&
-              payment.amountFundCurrency > 0,
+              payment.amountFundCurrency > 0
           )
       : [];
 
@@ -700,7 +715,7 @@ WHERE si.invoice_id = ?
     }
 
     const paidTotal = roundCents(
-      payments.reduce((sum, payment) => sum + payment.amount, 0),
+      payments.reduce((sum, payment) => sum + payment.amount, 0)
     );
     const invoiceTotal = Number(data.net_total || 0);
 
@@ -737,7 +752,7 @@ WHERE si.invoice_id = ?
         data.discount || 0,
         data.tax_rate || 0,
         data.net_total || 0,
-        data.created_by || null,
+        data.created_by || null
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
@@ -752,7 +767,7 @@ WHERE si.invoice_id = ?
           quantity,
           price,
           item.costPrice,
-          total,
+          total
         );
         updateStock.run(quantity, item.id);
 
@@ -840,11 +855,11 @@ WHERE si.invoice_id = ?
   ipcMain.handle("print-receipt", async (event, data) => {
     const companySettings = db
       .prepare(
-        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`,
+        `SELECT company_name, company_latin_name, language FROM company_settings LIMIT 1`
       )
       .get();
     const language = getReceiptLanguage(
-      data.language || companySettings?.language,
+      data.language || companySettings?.language
     );
     const labels = receiptLabels[language];
     const direction = language === "ar" ? "rtl" : "ltr";
@@ -870,7 +885,7 @@ WHERE si.invoice_id = ?
         <td class="right">${Number(item.price).toFixed(2)}</td>
         <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
       </tr>
-    `,
+    `
       )
       .join("");
 
@@ -928,7 +943,7 @@ WHERE si.invoice_id = ?
   `;
 
     await win.loadURL(
-      "data:text/html;charset=utf-8," + encodeURIComponent(html),
+      "data:text/html;charset=utf-8," + encodeURIComponent(html)
     );
 
     win.webContents.print(
@@ -938,7 +953,7 @@ WHERE si.invoice_id = ?
         margins: { marginType: "none" },
         scaleFactor: 100,
       },
-      () => win.close(),
+      () => win.close()
     );
   });
 
@@ -971,7 +986,7 @@ WHERE si.invoice_id = ?
 
               printWindow.destroy();
               printWindow = null;
-            },
+            }
           );
         }, 600);
       });
