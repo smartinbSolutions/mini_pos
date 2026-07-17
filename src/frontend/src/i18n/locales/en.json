@@ -147,7 +147,9 @@
     "primaryCurrency": "Primary currency",
     "return": "Return",
     "sale": "Sale",
-    "onAccount": "On Account"
+    "onAccount": "On Account",
+    "in": "Cash In",
+    "out": "Cash Out"
   },
   "filters": {
     "dateFrom": "From date",

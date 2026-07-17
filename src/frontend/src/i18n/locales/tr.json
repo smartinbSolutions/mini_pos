@@ -147,7 +147,9 @@
     "primaryCurrency": "Ana para birimi",
     "return": "İade",
     "sale": "Satış",
-    "onAccount": "Cari Hesaba"
+    "onAccount": "Cari Hesaba",
+    "in": "Girişi",
+    "out": "Çıkışı"
   },
   "filters": {
     "dateFrom": "Başlangıç tarihi",
