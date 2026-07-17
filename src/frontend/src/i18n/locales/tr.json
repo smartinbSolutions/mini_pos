@@ -24,7 +24,8 @@
     "perPage": "Sayfa Başına",
     "create": "Oluştur",
     "print": "Yazdır",
-    "filters": "Filtreler"
+    "filters": "Filtreler",
+    "clear": "Filtreyi Temizle"
   },
   "ui": {
     "setup": "Kurulum",
@@ -149,7 +150,8 @@
     "sale": "Satış",
     "onAccount": "Cari Hesaba",
     "in": "Girişi",
-    "out": "Çıkışı"
+    "out": "Çıkışı",
+    "partiallyRefunded": "Kısmen İade Edildi"
   },
   "filters": {
     "dateFrom": "Başlangıç tarihi",

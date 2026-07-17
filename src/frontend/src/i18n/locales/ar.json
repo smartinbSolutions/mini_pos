@@ -24,7 +24,8 @@
     "perPage": "لكل صفحة",
     "create": "إنشاء",
     "print": "طباعة",
-    "filters": "التصفيات"
+    "filters": "التصفيات",
+    "clear": "مسح الفلتر"
   },
   "ui": {
     "setup": "الإعداد",
@@ -150,7 +151,8 @@
     "sale": "مبيعات",
     "onAccount": "على الحساب",
     "in": "وارد",
-    "out": "صادر"
+    "out": "صادر",
+    "partiallyRefunded": "مسترجع جزئياً"
   },
   "filters": {
     "dateFrom": "من تاريخ",

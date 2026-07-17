@@ -24,7 +24,8 @@
     "perPage": "Per Page",
     "create": "Create",
     "print": "Print",
-    "filters": "Filters"
+    "filters": "Filters",
+    "clear": "Clear"
   },
   "ui": {
     "setup": "Setup",
@@ -149,7 +150,8 @@
     "sale": "Sale",
     "onAccount": "On Account",
     "in": "Cash In",
-    "out": "Cash Out"
+    "out": "Cash Out",
+    "partiallyRefunded": "Partially Refunded"
   },
   "filters": {
     "dateFrom": "From date",
