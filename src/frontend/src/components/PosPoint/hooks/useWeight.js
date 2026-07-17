@@ -51,7 +51,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
       .getScaleStatus?.()
       .then((payload) => {
         setIsConnected(Boolean(payload?.connected));
-        setStatus(payload?.message || t("screens.pos.disconnected"));
+        setStatus(t("screens.pos.disconnected"));
 
         const nextWeight = Number(payload?.weight);
 
@@ -75,7 +75,7 @@ const useWeight = ({ setCurrentWeight, baudRate = 9600 } = {}) => {
 
     const removeStatusListener = api.onScaleStatus((payload) => {
       setIsConnected(Boolean(payload?.connected));
-      setStatus(payload?.message || t("screens.pos.disconnected"));
+      setStatus(t("screens.pos.disconnected"));
     });
 
     return () => {
