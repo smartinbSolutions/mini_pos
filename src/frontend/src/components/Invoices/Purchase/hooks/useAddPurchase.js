@@ -75,7 +75,7 @@ export default function useAddPurchase() {
       item[key] = value;
 
       if (key === "product_id") {
-        const product = products.find((p) => p.id == value);
+        const product = products?.data?.find((p) => p.id == value);
 
         if (product) {
           item.price = product.costPrice || 0;
