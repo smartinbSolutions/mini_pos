@@ -572,10 +572,7 @@ export default function AddSales() {
       {customerModalOpen && (
         <CustomerFormModal
           open={customerModalOpen}
-          onClose={async () => {
-            setCustomerModalOpen(false);
-            await refetch();
-          }}
+          onClose={async () => setCustomerModalOpen(false)}
           draft={draft}
           setDraft={setDraft}
           onSubmit={submitDraft}
