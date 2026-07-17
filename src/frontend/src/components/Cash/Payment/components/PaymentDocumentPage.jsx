@@ -99,13 +99,13 @@ const PaymentDocumentPage = () => {
           </button>
 
           <div className="flex gap-2">
-            <button
+            {/* <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
             >
               <Printer size={16} />
               {t("common.print")}
-            </button>
+            </button> */}
             <button
               onClick={() => setDeleteOpen(true)}
               className="inline-flex items-center gap-2 rounded-2xl border border-red-100 bg-white px-4 py-2.5 text-sm font-bold text-red-500 transition hover:bg-red-50"
@@ -187,7 +187,7 @@ const PaymentDocumentPage = () => {
                 {formatMoney(
                   payment.amount_fund_currency,
                   currencyForFund.code,
-                  currencyForFund.symbol
+                  currencyForFund.symbol,
                 )}
               </p>
             </div>
@@ -241,7 +241,7 @@ const PaymentDocumentPage = () => {
                       {formatMoney(
                         a.amount,
                         currencyForFund.code,
-                        currencyForFund.symbol
+                        currencyForFund.symbol,
                       )}
                     </span>
                   </div>

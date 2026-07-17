@@ -147,7 +147,8 @@
     "primaryCurrency": "العملة الرئيسية",
     "noDataToday": "لا توجد بيانات متاحة اليوم",
     "return": "مرتجع",
-    "sale": "مبيعات"
+    "sale": "مبيعات",
+    "onAccount": "على الحساب"
   },
   "filters": {
     "dateFrom": "من تاريخ",
@@ -614,7 +615,9 @@
       "paymentSource": "مصدر الدفع",
       "dateNotBefore": "لا يمكن أن يكون التاريخ قبل {{date}}",
       "summaryPaying": "أنت تدفع",
-      "payFromFund": "الدفع من الصندوق"
+      "payFromFund": "الدفع من الصندوق",
+      "allocations": "تخصيصات",
+      "collectedAmount": "المبلغ المحصَّل"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
@@ -639,7 +642,8 @@
       "effectiveRate": "سعر الصرف الفعلي",
       "fundRate": "سعر صرف الصندوق",
       "openingBalance": "الرصيد الافتتاحي",
-      "allTimeResults": "نتائج جميع الأوقات"
+      "allTimeResults": "نتائج جميع الأوقات",
+      "totalReturn": "إجمالي المرتجعات"
     },
     "fundMovements": {
       "title": "حركات الصندوق",

@@ -199,7 +199,7 @@ export default function FundTransferModal({
 
           <div>
             <label className="text-sm text-gray-600">
-              {t("screens.transfer.date") || "Transfer date"}
+              {t("ui.date") || "Transfer date"}
             </label>
             <input
               type="date"

@@ -146,7 +146,8 @@
     "returnQty": "Return quantity",
     "primaryCurrency": "Primary currency",
     "return": "Return",
-    "sale": "Sale"
+    "sale": "Sale",
+    "onAccount": "On Account"
   },
   "filters": {
     "dateFrom": "From date",
@@ -613,7 +614,9 @@
       "paymentSource": "Payment source",
       "dateNotBefore": "Date cannot be before {{date}}",
       "summaryPaying": "You're paying",
-      "payFromFund": "Pay from fund"
+      "payFromFund": "Pay from fund",
+      "allocations": "Allocations",
+      "collectedAmount": "Collected Amount"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",
@@ -638,7 +641,8 @@
       "effectiveRate": "Effective rate",
       "fundRate": "Fund rate",
       "openingBalance": "Opening Balance",
-      "allTimeResults": "All-Time Results"
+      "allTimeResults": "All-Time Results",
+      "totalReturn": "Total Return"
     },
     "fundMovements": {
       "title": "Fund Movements",

@@ -146,7 +146,8 @@
     "returnQty": "İade miktarı",
     "primaryCurrency": "Ana para birimi",
     "return": "İade",
-    "sale": "Satış"
+    "sale": "Satış",
+    "onAccount": "Cari Hesaba"
   },
   "filters": {
     "dateFrom": "Başlangıç tarihi",
@@ -614,7 +615,9 @@
       "paymentSource": "Ödeme kaynağı",
       "dateNotBefore": "Tarih {{date}} tarihinden önce olamaz",
       "summaryPaying": "Ödediğiniz tutar",
-      "payFromFund": "Kasadan öde"
+      "payFromFund": "Kasadan öde",
+      "allocations": "Tahsisatlar",
+      "collectedAmount": "Tahsil Edilen Tutar"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
@@ -639,7 +642,8 @@
       "effectiveRate": "Etkin döviz kuru",
       "fundRate": "Fon döviz kuru",
       "openingBalance": "Açılış Bakiyesi",
-      "allTimeResults": "Tüm Zamanların Sonuçları"
+      "allTimeResults": "Tüm Zamanların Sonuçları",
+      "totalReturn": "Toplam İade"
     },
     "fundMovements": {
       "title": "Kasa Hareketleri",
