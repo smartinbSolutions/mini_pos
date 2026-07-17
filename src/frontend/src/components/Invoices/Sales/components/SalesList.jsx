@@ -193,15 +193,15 @@ const SalesList = () => {
 
   const totalNet = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0
+    0,
   );
   const totalTax = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0
+    0,
   );
 
   const unpaidCount = salesInvoices.filter(
-    (inv) => inv.status !== "paid"
+    (inv) => inv.status !== "paid",
   ).length;
 
   return (
@@ -302,7 +302,8 @@ const SalesList = () => {
 
                         <td className="px-5 py-4 text-start">
                           <GoTo type="customer" id={inv.customer_id}>
-                            {inv.customer_name || "-"}
+                            {inv.customer_name ||
+                              t("screens.pos.walkInCustomer")}
                           </GoTo>
                         </td>
 
