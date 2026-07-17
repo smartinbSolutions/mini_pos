@@ -142,14 +142,12 @@ export default function AddSales() {
             </button>
           </div>
         </section>
-
         {error && (
           <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             <AlertCircle size={18} className="mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
-
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <main className="space-y-6">
             {/* Customer + date + name + description */}
@@ -568,6 +566,7 @@ export default function AddSales() {
             </section>
           </aside>
         </div>
+        l
       </div>
       {customerModalOpen && (
         <CustomerFormModal
