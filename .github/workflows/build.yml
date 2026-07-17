@@ -8,19 +8,11 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write # قمنا بتغييرها إلى write لتتمكن البيئة من رفع وبناء الحزم بحرية
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - windows-latest
-          - macos-latest
-          - ubuntu-latest
-
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest # قمنا بتثبيته على ويندوز لتجنب مشاكل الروابط الرمزية وبناء better-sqlite3 و serialport للويندوز بشكل مباشر
 
     steps:
       - name: Checkout
@@ -32,14 +24,19 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Install
-        run: npm install
+      - name: Install Dependencies
+        run: npm ci # يفضل استخدام npm ci في السيرفرات لضمان تثبيت دقيق ومطابق لـ package-lock.json
 
-      - name: Build
+      - name: Build Electron App
         run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # هامة جداً لـ electron-builder في حال رغبت برفع النسخة للـ Releases لاحقاً
 
-      - name: Upload
+      - name: Upload Installer Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: POS-${{ runner.os }}
-          path: dist/
+          name: POS-Windows-Installer
+          # نحدد مسار ملف الـ Setup والملفات الناتجة مباشرة لتجنب رفع مجلد dist بالكامل بما يحتويه من ملفات مؤقتة ضخمة
+          path: |
+            dist/*.exe
+            dist/*.blockmap
