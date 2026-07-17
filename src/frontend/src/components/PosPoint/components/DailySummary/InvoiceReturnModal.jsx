@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Minus,
   Plus,
@@ -6,7 +6,43 @@ import {
   RotateCcw,
   AlertCircle,
   ShoppingBag,
+  Wallet,
 } from "lucide-react";
+
+// Mirrors the refund across the same funds the original sale was paid
+// through, proportional to how much of the sale is being returned. The
+// last fund absorbs any rounding remainder so the primary-currency total
+// always matches returnTotal exactly.
+function computeRefundAllocations(allocations, originalTotal, refundTotal) {
+  if (!allocations?.length || !originalTotal || refundTotal <= 0) return [];
+
+  let allocatedPrimary = 0;
+
+  return allocations
+    .map((alloc, idx) => {
+      const isLast = idx === allocations.length - 1;
+      const share = alloc.amount / originalTotal;
+
+      const amount = isLast
+        ? Number((refundTotal - allocatedPrimary).toFixed(2))
+        : Number((refundTotal * share).toFixed(2));
+
+      allocatedPrimary += amount;
+
+      const rate = alloc.amount > 0 ? alloc.fund_amount / alloc.amount : 1;
+      const fundAmount = Number((amount * rate).toFixed(2));
+
+      return {
+        fund_id: alloc.fund_id,
+        fund_name: alloc.fund_name,
+        currency_code: alloc.currency_code,
+        currency_symbol: alloc.currency_symbol,
+        amount,
+        fund_amount: fundAmount,
+      };
+    })
+    .filter((row) => row.amount > 0);
+}
 
 export default function InvoiceReturnModal({
   selectedInvoice,
@@ -51,6 +87,22 @@ export default function InvoiceReturnModal({
     return sum + returnQty * (item.price || 0);
   }, 0);
 
+  const originalTotal =
+    selectedInvoice.net_total ||
+    selectedInvoice.netTotal ||
+    selectedInvoice.total ||
+    0;
+
+  const refundAllocations = useMemo(
+    () =>
+      computeRefundAllocations(
+        selectedInvoice.allocations || [],
+        originalTotal,
+        returnTotal
+      ),
+    [selectedInvoice.allocations, originalTotal, returnTotal]
+  );
+
   const handleConfirmReturn = async () => {
     setActionError("");
     const returnedItems = salesInvoicesItem
@@ -90,6 +142,16 @@ export default function InvoiceReturnModal({
       const taxValue = returnTotal * (taxPercent / 100);
       const netTotal = returnTotal + taxValue;
 
+      const payments = refundAllocations.map((alloc) => ({
+        fund_id: alloc.fund_id,
+        amount: alloc.amount,
+        amount_fund_currency: alloc.fund_amount,
+        currency_code: alloc.currency_code,
+        exchange_rate: alloc.amount > 0 ? alloc.fund_amount / alloc.amount : 1,
+        effective_rate: alloc.amount > 0 ? alloc.fund_amount / alloc.amount : 1,
+        note: `Refund via ${alloc.fund_name}`,
+      }));
+
       const returnData = {
         sales_invoice_id: selectedInvoice.id,
         customer_id: selectedInvoice.customer_id,
@@ -106,7 +168,7 @@ export default function InvoiceReturnModal({
         net_total: netTotal,
         created_by: selectedInvoice.created_by || 1,
         items: returnedItems,
-        payment: null,
+        payments,
       };
 
       const result = await window.api.createSalesReturn(returnData);
@@ -125,41 +187,38 @@ export default function InvoiceReturnModal({
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-[#f7f3ee]">
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="space-y-5">
+        <div className="mx-auto max-w-2xl space-y-4">
           {actionError && (
-            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700">
-              <AlertCircle size={14} />
+            <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+              <AlertCircle size={16} />
               {actionError}
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4 rounded-2xl bg-stone-50 p-4 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white p-4">
             <div>
               <span className="text-xs text-stone-500">
                 {t("screens.pos.customer", "العميل")}
               </span>
-              <p className="font-bold text-stone-900 mt-0.5">
+              <p className="mt-0.5 text-sm font-bold text-stone-900">
                 {selectedInvoice.customer?.name ||
                   selectedInvoice.customer_name ||
                   t("screens.pos.walkInCustomer", "زبون سفري")}
               </p>
             </div>
-            <div className="flex justify-between items-center">
-              <div></div>
-              <button
-                type="button"
-                onClick={handleReturnAll}
-                className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 transition"
-              >
-                {t("ui.returnAll", "إرجاع الكل")}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleReturnAll}
+              className="h-11 rounded-2xl bg-amber-500 px-4 text-sm font-bold text-white transition hover:bg-amber-600 active:scale-95"
+            >
+              {t("ui.returnAll", "إرجاع الكل")}
+            </button>
           </div>
 
-          <div className="space-y-2">
-            <h4 className="text-xs font-black text-stone-800 uppercase r">
+          <div className="space-y-2.5">
+            <h4 className="text-xs font-black uppercase text-stone-500">
               {t("screens.pos.chooseReturnQtys", "حدد الكميات المراد إرجاعها")}
             </h4>
 
@@ -172,17 +231,17 @@ export default function InvoiceReturnModal({
                 return (
                   <div
                     key={item.id}
-                    className="flex flex-wrap items-center justify-between gap-3 py-3.5"
+                    className="flex flex-wrap items-center justify-between gap-3 py-4"
                   >
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-stone-50 text-stone-600 border border-stone-200/50">
-                        <ShoppingBag size={15} />
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                        <ShoppingBag size={18} />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-bold text-stone-950 truncate">
+                        <p className="truncate text-sm font-bold text-stone-950">
                           {item.name || item.product_name}
                         </p>
-                        <p className="text-xs text-stone-500 mt-0.5">
+                        <p className="mt-0.5 text-xs text-stone-500">
                           {t("screens.pos.originalQty", "الكمية الأصلية")}:{" "}
                           <span className="font-bold text-stone-800">
                             {originalQty}
@@ -196,16 +255,16 @@ export default function InvoiceReturnModal({
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 items-center overflow-hidden rounded-xl border border-stone-200 bg-stone-50 shadow-sm">
+                      <div className="flex h-11 items-center overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
                         <button
                           type="button"
                           onClick={() =>
                             handleQtyChange(item.id, originalQty, -1)
                           }
-                          className="flex h-9 w-9 items-center justify-center text-stone-700 hover:bg-stone-100 disabled:opacity-40"
+                          className="flex h-11 w-11 items-center justify-center text-stone-700 transition hover:bg-stone-100 active:scale-90 disabled:opacity-40"
                           disabled={returnQty === 0}
                         >
-                          <Minus size={13} />
+                          <Minus size={15} />
                         </button>
                         <span className="w-10 text-center text-sm font-black text-stone-950">
                           {returnQty}
@@ -215,14 +274,14 @@ export default function InvoiceReturnModal({
                           onClick={() =>
                             handleQtyChange(item.id, originalQty, 1)
                           }
-                          className="flex h-9 w-9 items-center justify-center text-stone-700 hover:bg-stone-100 disabled:opacity-40"
+                          className="flex h-11 w-11 items-center justify-center text-stone-700 transition hover:bg-stone-100 active:scale-90 disabled:opacity-40"
                           disabled={returnQty >= originalQty}
                         >
-                          <Plus size={13} />
+                          <Plus size={15} />
                         </button>
                       </div>
                       <div className="w-20 text-left">
-                        <p className="text-[10px] text-stone-400 font-semibold uppercase">
+                        <p className="text-[10px] font-semibold uppercase text-stone-400">
                           {t("ui.subtotal", "الفرعي")}
                         </p>
                         <span className="text-sm font-black text-stone-900">
@@ -236,8 +295,43 @@ export default function InvoiceReturnModal({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-stone-200 bg-stone-50/50 p-4 space-y-2 text-sm">
-            <div className="flex justify-between text-stone-600 font-medium">
+          {/* REFUND GOES BACK TO — auto-mirrors the original payment split */}
+          {refundAllocations.length > 0 && (
+            <div className="rounded-2xl border border-stone-200 bg-white p-4">
+              <h4 className="mb-2.5 flex items-center gap-1.5 text-xs font-black uppercase text-stone-500">
+                <Wallet size={13} />
+                {t("screens.pos.refundGoesBackTo", "المبلغ يُرد إلى")}
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {refundAllocations.map((alloc) => (
+                  <div
+                    key={alloc.fund_id}
+                    className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2"
+                  >
+                    <span className="text-sm font-bold text-stone-800">
+                      {alloc.fund_name}
+                    </span>
+                    <span className="text-stone-300">·</span>
+                    <span className="text-sm font-black text-rose-700">
+                      {Number(alloc.fund_amount).toLocaleString(undefined, {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      {alloc.currency_symbol || alloc.currency_code}
+                    </span>
+                    {alloc.fund_amount !== alloc.amount && (
+                      <span className="text-xs font-medium text-stone-500">
+                        (= {money(alloc.amount)})
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm">
+            <div className="flex justify-between font-medium text-stone-600">
               <span>
                 {t(
                   "screens.pos.originalInvoiceTotal",
@@ -245,20 +339,15 @@ export default function InvoiceReturnModal({
                 )}
               </span>
               <span className="font-bold text-stone-900">
-                {money(
-                  selectedInvoice.net_total ||
-                    selectedInvoice.netTotal ||
-                    selectedInvoice.total ||
-                    0
-                )}
+                {money(originalTotal)}
               </span>
             </div>
-            <div className="border-t border-dashed border-stone-200 pt-2 flex justify-between font-black text-base">
-              <span className="text-stone-900 flex items-center gap-1.5">
-                <RotateCcw size={15} className="text-rose-600 animate-pulse" />
+            <div className="flex items-center justify-between border-t border-dashed border-stone-200 pt-2.5 text-base font-black">
+              <span className="flex items-center gap-1.5 text-stone-900">
+                <RotateCcw size={16} className="text-rose-600" />
                 {t("screens.pos.refundTotal", "المبلغ المسترد المتوقع")}
               </span>
-              <span className="text-rose-600 text-lg">
+              <span className="text-lg text-rose-600">
                 {money(returnTotal)}
               </span>
             </div>
@@ -266,22 +355,22 @@ export default function InvoiceReturnModal({
         </div>
       </div>
 
-      <div className="border-t border-stone-100 px-6 py-4 bg-stone-50/50 flex justify-between items-center">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-stone-200 bg-white px-6 py-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="h-12 rounded-2xl border border-stone-200 bg-white px-6 text-sm font-bold text-stone-700 transition hover:bg-stone-50 active:scale-95"
+        >
+          {t("common.close", "إغلاق")}
+        </button>
         <button
           type="button"
           disabled={loading || returnTotal === 0}
           onClick={handleConfirmReturn}
-          className="flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-black text-white hover:bg-rose-700 transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-rose-200"
+          className="flex h-12 items-center gap-2 rounded-2xl bg-rose-600 px-6 text-sm font-black text-white shadow-md shadow-rose-200 transition hover:bg-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Undo2 size={16} />
+          <Undo2 size={17} />
           {t("screens.pos.confirmAndRefund", "تأكيد وإرجاع الكميات المحددة")}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-xl border border-stone-200 bg-white px-5 py-2 text-sm font-bold text-stone-700 transition hover:bg-stone-50"
-        >
-          {t("common.close", "إغلاق")}
         </button>
       </div>
     </div>

@@ -137,6 +137,8 @@ contextBridge.exposeInMainWorld("api", {
   printReceipt: (data) => ipcRenderer.invoke("print-receipt", data),
   applyInvoiceCredit: (data) =>
     ipcRenderer.invoke("apply-invoice-credit", data),
+  getDailyPosReport: (params) =>
+    ipcRenderer.invoke("get-daily-pos-report", params),
 
   /* ================= SALES RETURN ================= */
   getSalesReturns: (params) => ipcRenderer.invoke("get-sales-returns", params),

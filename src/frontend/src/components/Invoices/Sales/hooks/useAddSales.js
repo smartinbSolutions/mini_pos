@@ -77,9 +77,9 @@ export default function useAddSales() {
       let item = { ...copy[index] };
 
       item[key] = value;
-
+      console.log(products);
       if (key === "product_id") {
-        const product = products?.find((p) => p.id == value);
+        const product = products?.data?.find((p) => p.id == value);
         if (product) {
           item.price = product.price;
           item.name = product.name;
@@ -114,7 +114,7 @@ export default function useAddSales() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {
@@ -229,7 +229,7 @@ export default function useAddSales() {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t],
+    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t]
   );
 
   const reset = () => {

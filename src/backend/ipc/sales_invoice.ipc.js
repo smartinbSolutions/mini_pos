@@ -959,6 +959,197 @@ WHERE si.invoice_id = ?
     }
   });
 
+  ipcMain.handle("get-daily-pos-report", (event, params = {}) => {
+    const date = params.date || new Date().toLocaleDateString("en-CA");
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const rows = db
+      .prepare(
+        `
+        SELECT * FROM (
+          SELECT
+            s.id,
+            s.date,
+            s.net_total,
+            s.net_total AS paid_amount,
+            'paid' AS status,
+            'sale' AS type
+          FROM sales_invoices s
+          WHERE DATE(s.date) = ? AND s.customer_id IS NULL
+  
+          UNION ALL
+  
+          SELECT
+            r.id,
+            r.date,
+            r.net_total,
+            r.net_total AS paid_amount,
+            NULL AS status,
+            'return' AS type
+          FROM sales_returns r
+          WHERE DATE(r.date) = ? AND r.customer_id IS NULL
+        )
+        ORDER BY date DESC, id DESC
+        LIMIT ? OFFSET ?
+        `
+      )
+      .all(date, date, limit, offset);
+
+    const { total } = db
+      .prepare(
+        `
+        SELECT
+          (SELECT COUNT(*) FROM sales_invoices WHERE DATE(date) = ? AND customer_id IS NULL) +
+          (SELECT COUNT(*) FROM sales_returns WHERE DATE(date) = ? AND customer_id IS NULL) AS total
+        `
+      )
+      .get(date, date);
+
+    const salesStats = db
+      .prepare(
+        `
+        SELECT COUNT(*) AS count, COALESCE(SUM(net_total), 0) AS total
+        FROM sales_invoices
+        WHERE DATE(date) = ? AND customer_id IS NULL
+        `
+      )
+      .get(date);
+
+    const returnStats = db
+      .prepare(
+        `
+        SELECT COUNT(*) AS count, COALESCE(SUM(net_total), 0) AS total
+        FROM sales_returns
+        WHERE DATE(date) = ? AND customer_id IS NULL
+        `
+      )
+      .get(date);
+
+    const fundIn = db
+      .prepare(
+        `
+        SELECT
+          f.id AS fund_id,
+          f.name AS fund_name,
+          cur.code AS currency_code,
+          cur.symbol AS currency_symbol,
+          COALESCE(SUM(p.amount), 0) AS amount,
+          COALESCE(SUM(p.amount_fund_currency), 0) AS fund_amount
+        FROM payment_allocations pa
+        JOIN payments p ON p.id = pa.payment_id
+        JOIN funds f ON f.id = p.fund_id
+        JOIN currencies cur ON cur.id = f.currency_id
+        JOIN sales_invoices s ON s.id = pa.invoice_id
+        WHERE pa.invoice_type = 'sales'
+          AND DATE(s.date) = ?
+          AND s.customer_id IS NULL
+        GROUP BY f.id, f.name, cur.code, cur.symbol
+        ORDER BY amount DESC
+        `
+      )
+      .all(date);
+
+    const fundOut = db
+      .prepare(
+        `
+        SELECT
+          f.id AS fund_id,
+          f.name AS fund_name,
+          cur.code AS currency_code,
+          cur.symbol AS currency_symbol,
+          COALESCE(SUM(p.amount), 0) AS amount,
+          COALESCE(SUM(p.amount_fund_currency), 0) AS fund_amount
+        FROM payment_allocations pa
+        JOIN payments p ON p.id = pa.payment_id
+        JOIN funds f ON f.id = p.fund_id
+        JOIN currencies cur ON cur.id = f.currency_id
+        JOIN sales_returns r ON r.id = pa.invoice_id
+        WHERE pa.invoice_type = 'sales_return'
+          AND DATE(r.date) = ?
+          AND r.customer_id IS NULL
+        GROUP BY f.id, f.name, cur.code, cur.symbol
+        ORDER BY amount DESC
+        `
+      )
+      .all(date);
+
+    // Per-invoice fund allocations — batched for just the ids on this page,
+    // not one query per row. Grouped by invoice_id + fund so a single
+    // invoice split across two funds shows both lines.
+    const saleIds = rows.filter((r) => r.type === "sale").map((r) => r.id);
+    const returnIds = rows.filter((r) => r.type === "return").map((r) => r.id);
+
+    const getInvoiceAllocations = (ids, invoiceType) => {
+      if (!ids.length) return [];
+      const placeholders = ids.map(() => "?").join(",");
+      return db
+        .prepare(
+          `
+          SELECT
+            pa.invoice_id,
+            f.id AS fund_id,
+            f.name AS fund_name,
+            cur.code AS currency_code,
+            cur.symbol AS currency_symbol,
+            COALESCE(SUM(p.amount), 0) AS amount,
+            COALESCE(SUM(p.amount_fund_currency), 0) AS fund_amount
+          FROM payment_allocations pa
+          JOIN payments p ON p.id = pa.payment_id
+          JOIN funds f ON f.id = p.fund_id
+          JOIN currencies cur ON cur.id = f.currency_id
+          WHERE pa.invoice_type = ? AND pa.invoice_id IN (${placeholders})
+          GROUP BY pa.invoice_id, f.id, f.name, cur.code, cur.symbol
+          `
+        )
+        .all(invoiceType, ...ids);
+    };
+
+    const saleAllocations = getInvoiceAllocations(saleIds, "sales").map(
+      (a) => ({ ...a, rowType: "sale" })
+    );
+    const returnAllocations = getInvoiceAllocations(
+      returnIds,
+      "sales_return"
+    ).map((a) => ({ ...a, rowType: "return" }));
+
+    const allocationsByKey = {};
+    for (const a of [...saleAllocations, ...returnAllocations]) {
+      const key = `${a.rowType}-${a.invoice_id}`;
+      if (!allocationsByKey[key]) allocationsByKey[key] = [];
+      allocationsByKey[key].push({
+        fund_id: a.fund_id,
+        fund_name: a.fund_name,
+        currency_code: a.currency_code,
+        currency_symbol: a.currency_symbol,
+        amount: a.amount,
+        fund_amount: a.fund_amount,
+      });
+    }
+
+    const rowsWithAllocations = rows.map((r) => ({
+      ...r,
+      allocations: allocationsByKey[`${r.type}-${r.id}`] || [],
+    }));
+
+    return {
+      data: rowsWithAllocations,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+      stats: {
+        salesCount: salesStats.count,
+        salesTotal: salesStats.total,
+        returnCount: returnStats.count,
+        returnTotal: returnStats.total,
+        fundIn,
+        fundOut,
+      },
+    };
+  });
+
   ipcMain.handle("print-receipt", async (event, data) => {
     const companySettings = db
       .prepare(

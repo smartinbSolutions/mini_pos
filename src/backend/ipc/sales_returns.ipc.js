@@ -27,15 +27,15 @@ export default function registerSalesReturnsIpc() {
           throw new Error("INVALID TOTALS");
         }
 
-        const payment = data.payment || null;
-        const isRefunded = payment && Number(payment.amount || 0) > 0;
+        const payments = Array.isArray(data.payments) ? data.payments : [];
+        const isRefunded = payments.length > 0;
 
         if (isRefunded) {
-          if (!payment.fund_id) {
-            throw new Error("FUND_REQUIRED");
-          }
-          if (Number(payment.amount) <= 0) {
-            throw new Error("INVALID_PAYMENT_AMOUNT");
+          for (const p of payments) {
+            if (!p.fund_id) throw new Error("FUND_REQUIRED");
+            if (!p.amount || Number(p.amount) <= 0) {
+              throw new Error("INVALID_PAYMENT_AMOUNT");
+            }
           }
         }
 
@@ -45,16 +45,12 @@ export default function registerSalesReturnsIpc() {
         const fullDateTime = `${dateOnly} ${time}`;
 
         const getOriginalItemQty = db.prepare(`
-        SELECT quantity
-        FROM sales_invoice_items
-        WHERE id = ?
-      `);
-
+          SELECT quantity FROM sales_invoice_items WHERE id = ?
+        `);
         const getAlreadyReturnedQty = db.prepare(`
-        SELECT COALESCE(SUM(quantity),0) AS total_returned
-        FROM sales_return_items
-        WHERE sales_invoice_item_id = ?
-      `);
+          SELECT COALESCE(SUM(quantity),0) AS total_returned
+          FROM sales_return_items WHERE sales_invoice_item_id = ?
+        `);
 
         for (const item of data.items) {
           const quantityToReturnNow = Number(item.quantity || 0);
@@ -66,7 +62,6 @@ export default function registerSalesReturnsIpc() {
           const originalRow = getOriginalItemQty.get(
             item.sales_invoice_item_id
           );
-
           if (!originalRow) {
             throw new Error(
               `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`
@@ -87,22 +82,10 @@ export default function registerSalesReturnsIpc() {
         const returnResult = db
           .prepare(
             `
-          INSERT INTO sales_returns
-          (
-            sales_invoice_id,
-            customer_id,
-            invoice_name,
-            description,
-            date,
-            subtotal,
-            discount,
-            tax,
-            taxValue,
-            net_total,
-            created_by
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
+            INSERT INTO sales_returns
+            (sales_invoice_id, customer_id, invoice_name, description, date, subtotal, discount, tax, taxValue, net_total, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `
           )
           .run(
             data.sales_invoice_id,
@@ -121,23 +104,13 @@ export default function registerSalesReturnsIpc() {
         const returnId = returnResult.lastInsertRowid;
 
         const insertItem = db.prepare(`
-        INSERT INTO sales_return_items
-        (
-          return_id,
-          sales_invoice_item_id,
-          product_id,
-          quantity,
-          price,
-          total
-        )
-        VALUES (?, ?, ?, ?, ?, ?)
-      `);
-
+          INSERT INTO sales_return_items
+          (return_id, sales_invoice_item_id, product_id, quantity, price, total)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
         const updateStock = db.prepare(`
-        UPDATE products
-        SET quantity = quantity + ?
-        WHERE id = ?
-      `);
+          UPDATE products SET quantity = quantity + ? WHERE id = ?
+        `);
 
         for (const item of data.items) {
           const quantity = Number(item.quantity || 0);
@@ -178,49 +151,47 @@ export default function registerSalesReturnsIpc() {
           note: `Sales Return #${returnId} for Invoice #${data.sales_invoice_id}`,
         });
 
-        let insertPaymentId = null;
+        // Refund out through the same funds the sale came in through —
+        // one payment + fund history row per fund, mirroring the original
+        // payment_allocations split instead of one lump refund.
+        const insertPaymentIds = [];
 
-        if (isRefunded) {
-          insertPaymentId = createPayment(db, {
-            type: payment.type,
+        for (const p of payments) {
+          const paymentId = createPayment(db, {
+            type: p.type || "refund",
             party_type: "customer",
             party_id: data.customer_id || null,
-            fund_id: payment.fund_id,
-            amount: payment.amount,
-            amount_fund_currency: payment.collected_amount,
-            currency_code: payment.currency_code,
-            exchange_rate: payment.exchange_rate,
-            effective_rate: payment.effective_rate,
+            fund_id: p.fund_id,
+            amount: p.amount,
+            amount_fund_currency: p.amount_fund_currency,
+            currency_code: p.currency_code,
+            exchange_rate: p.exchange_rate,
+            effective_rate: p.effective_rate,
             invoice_id: returnId,
             invoice_type: "sales_return",
-            note: `${payment.note || "Refund"} #${returnId}`,
+            note: `${p.note || "Refund"} #${returnId}`,
             fundOperation: "subtract",
             date: fullDateTime,
           });
 
           createFundHistory(db, {
-            fund_id: payment.fund_id,
+            fund_id: p.fund_id,
             record_type: "payment",
-            payment_id: insertPaymentId,
+            payment_id: paymentId,
             movement_type: "out",
-            amount: payment.collected_amount,
+            amount: p.amount_fund_currency,
             date: fullDateTime,
             note: `Refund paid out for Sales Return #${returnId}`,
           });
+
+          insertPaymentIds.push(paymentId);
         }
 
-        return {
-          returnId,
-          paymentId: insertPaymentId,
-        };
+        return { returnId, paymentIds: insertPaymentIds };
       });
 
       const result = transaction();
-
-      return {
-        success: true,
-        ...result,
-      };
+      return { success: true, ...result };
     } catch (err) {
       return {
         success: false,
@@ -229,6 +200,7 @@ export default function registerSalesReturnsIpc() {
       };
     }
   });
+
   ipcMain.handle("get-sales-returns", (event, params = {}) => {
     try {
       const page = Math.max(1, Number(params.page) || 1);
