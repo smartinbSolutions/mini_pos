@@ -619,7 +619,8 @@
       "summaryPaying": "Ödediğiniz tutar",
       "payFromFund": "Kasadan öde",
       "allocations": "Tahsisatlar",
-      "collectedAmount": "Tahsil Edilen Tutar"
+      "collectedAmount": "Tahsil Edilen Tutar",
+      "summaryReceiving": "Kabul Özeti"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",

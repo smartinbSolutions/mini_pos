@@ -618,7 +618,8 @@
       "summaryPaying": "You're paying",
       "payFromFund": "Pay from fund",
       "allocations": "Allocations",
-      "collectedAmount": "Collected Amount"
+      "collectedAmount": "Collected Amount",
+      "summaryReceiving": "Receiving Summary"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",

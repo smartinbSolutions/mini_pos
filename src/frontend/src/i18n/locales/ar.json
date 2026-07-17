@@ -619,7 +619,8 @@
       "summaryPaying": "أنت تدفع",
       "payFromFund": "الدفع من الصندوق",
       "allocations": "تخصيصات",
-      "collectedAmount": "المبلغ المحصَّل"
+      "collectedAmount": "المبلغ المحصَّل",
+      "summaryReceiving": "ملخص الاستلام"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
