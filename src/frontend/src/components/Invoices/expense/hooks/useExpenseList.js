@@ -64,7 +64,7 @@ const useExpenseList = () => {
       api
         .getExpensesCategory()
         .then((res) =>
-          setCategories(Array.isArray(res) ? res : res?.data || [])
+          setCategories(Array.isArray(res) ? res : res?.data || []),
         )
         .catch(() => setCategories([]));
     }
@@ -98,6 +98,8 @@ const useExpenseList = () => {
 
       setExpenses(res?.data || []);
       setTotal(res?.total || 0);
+      console.log(res);
+
       setTotalPages(res?.totalPages || 1);
       setError("");
     } catch (err) {

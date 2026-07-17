@@ -17,8 +17,8 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import useExpenseList from "../hooks/useExpenseList";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
-import Pagination from "../../../../Global/Pagination";
 import CategoryTags from "../../../../Global/CategoryTags";
+import Pagination from "../../../../Global/Pagination";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -132,7 +132,7 @@ const ExpenseList = () => {
 
   const totalNet = expenses.reduce(
     (sum, inv) => sum + Number(inv?.net_total || 0),
-    0
+    0,
   );
 
   const unpaidCount = expenses.filter((inv) => inv.status !== "paid").length;

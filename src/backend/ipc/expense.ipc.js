@@ -57,7 +57,7 @@ export default function registerExpenseIPC() {
                 (supplier_id, invoice_name,
                  description, date, subtotal, net_total, created_by)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-              `
+              `,
           )
           .run(
             data.supplier_id || null,
@@ -66,7 +66,7 @@ export default function registerExpenseIPC() {
             fullDateTime,
             subtotal,
             netTotal,
-            data.created_by
+            data.created_by,
           );
         const invoiceId = invoiceResult.lastInsertRowid;
 
@@ -75,7 +75,7 @@ export default function registerExpenseIPC() {
           invoiceName = buildDefaultInvoiceName(db, "expense", invoiceId);
           db.prepare(`UPDATE expense SET invoice_name = ? WHERE id = ?`).run(
             invoiceName,
-            invoiceId
+            invoiceId,
           );
         }
 
@@ -212,7 +212,7 @@ export default function registerExpenseIPC() {
     }
     if (category_id) {
       whereConditions.push(
-        "EXISTS (SELECT 1 FROM expense_items ei WHERE ei.expense_id = e.id AND ei.category_id = ?)"
+        "EXISTS (SELECT 1 FROM expense_items ei WHERE ei.expense_id = e.id AND ei.category_id = ?)",
       );
       whereValues.push(category_id);
     }
@@ -276,32 +276,42 @@ export default function registerExpenseIPC() {
       ORDER BY e.id DESC
   
       LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(...whereValues, ...havingValues, limit, offset);
+
+    const countHaving = status
+      ? `
+    HAVING 
+      CASE
+        WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
+        WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+        ELSE 'unpaid'
+      END = ?
+  `
+      : "";
 
     const { total } = db
       .prepare(
         `
-      SELECT COUNT(*) AS total FROM (
-        SELECT
-          e.id,
-          CASE
-            WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
-            WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
-            ELSE 'unpaid'
-          END AS status
-        FROM expense e
-        LEFT JOIN payment_allocations pa
-          ON pa.invoice_id = e.id
-         AND pa.invoice_type = 'expense'
-        ${whereClause}
-        GROUP BY e.id
-        ${havingClause}
+    SELECT COUNT(*) AS total
+    FROM (
+      SELECT e.id
+      FROM expense e
+
+      LEFT JOIN payment_allocations pa
+        ON pa.invoice_id = e.id
+       AND pa.invoice_type = 'expense'
+
+      ${whereClause}
+
+      GROUP BY e.id
+
+      ${countHaving}
+    )
+    `,
       )
-      `
-      )
-      .get(...whereValues, ...havingValues).total;
+      .get(...whereValues, ...(status ? [status] : []));
 
     return {
       data: rows,
@@ -346,7 +356,7 @@ export default function registerExpenseIPC() {
           GROUP BY invoice_id
         ) pa_sum ON pa_sum.invoice_id = e.id
         WHERE e.id = ?
-      `
+      `,
       )
       .get(id);
 
@@ -361,7 +371,7 @@ export default function registerExpenseIPC() {
         FROM expense_items pii
         LEFT JOIN expence_category c ON c.id = pii.category_id
         WHERE pii.expense_id = ?
-      `
+      `,
       )
       .all(id);
 
@@ -384,7 +394,7 @@ export default function registerExpenseIPC() {
         WHERE pa.invoice_id = ?
           AND pa.invoice_type = 'expense'
         ORDER BY pa.id ASC
-      `
+      `,
       )
       .all(id);
 
@@ -425,7 +435,7 @@ export default function registerExpenseIPC() {
           FROM payment_allocations pa
           WHERE pa.invoice_id = ? AND pa.invoice_type = 'expense'
           LIMIT 1
-          `
+          `,
           )
           .get(data.id);
 
@@ -459,7 +469,7 @@ export default function registerExpenseIPC() {
               net_total = ?,
               updated_by = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           newSupplierId,
           data.invoice_name || null,
@@ -468,12 +478,12 @@ export default function registerExpenseIPC() {
           newSubtotal,
           newNetTotal,
           data.updated_by,
-          data.id
+          data.id,
         );
 
         // Replace items
         db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(
-          data.id
+          data.id,
         );
 
         const insertItem = db.prepare(`
@@ -497,12 +507,12 @@ export default function registerExpenseIPC() {
             UPDATE party_history
             SET amount = ?, date = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'expense' AND record_type = 'invoice'
-          `
+          `,
           ).run(
             newNetTotal,
             fullDateTime,
             data.note || `Expense Invoice #${data.id}`,
-            data.id
+            data.id,
           );
         } else {
           if (oldSupplierId) {
@@ -510,7 +520,7 @@ export default function registerExpenseIPC() {
               `
               DELETE FROM party_history
               WHERE invoice_id = ? AND invoice_type = 'expense' AND record_type = 'invoice'
-            `
+            `,
             ).run(data.id);
           }
 
@@ -586,7 +596,7 @@ export default function registerExpenseIPC() {
   WHERE invoice_id = ?
     AND invoice_type = 'expense'
     AND record_type = 'invoice'
-`
+`,
       ).run(id);
       db.prepare(`DELETE FROM expense WHERE id = ?`).run(id);
     });
