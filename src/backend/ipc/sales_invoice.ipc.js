@@ -968,32 +968,34 @@ WHERE si.invoice_id = ?
     const rows = db
       .prepare(
         `
-        SELECT * FROM (
-          SELECT
-            s.id,
-            s.date,
-            s.net_total,
-            s.net_total AS paid_amount,
-            'paid' AS status,
-            'sale' AS type
-          FROM sales_invoices s
-          WHERE DATE(s.date) = ? AND s.customer_id IS NULL
+      SELECT * FROM (
+        SELECT
+          s.id,
+          s.date,
+          s.net_total,
+          s.net_total AS paid_amount,
+          'paid' AS status,
+          'sale' AS type,
+          NULL AS sales_invoice_id
+        FROM sales_invoices s
+        WHERE DATE(s.date) = ? AND s.customer_id IS NULL
   
-          UNION ALL
+        UNION ALL
   
-          SELECT
-            r.id,
-            r.date,
-            r.net_total,
-            r.net_total AS paid_amount,
-            NULL AS status,
-            'return' AS type
-          FROM sales_returns r
-          WHERE DATE(r.date) = ? AND r.customer_id IS NULL
-        )
-        ORDER BY date DESC, id DESC
-        LIMIT ? OFFSET ?
-        `
+        SELECT
+          r.id,
+          r.date,
+          r.net_total,
+          r.net_total AS paid_amount,
+          NULL AS status,
+          'return' AS type,
+          r.sales_invoice_id
+        FROM sales_returns r
+        WHERE DATE(r.date) = ? AND r.customer_id IS NULL
+      )
+      ORDER BY date DESC, id DESC
+      LIMIT ? OFFSET ?
+      `
       )
       .all(date, date, limit, offset);
 

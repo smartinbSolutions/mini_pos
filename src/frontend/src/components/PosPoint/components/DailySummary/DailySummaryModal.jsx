@@ -6,7 +6,13 @@ import InvoiceDetailsModal from "./InvoiceDetailsModal";
 import InvoiceReturnModal from "./InvoiceReturnModal";
 import ReturnInvoiceDetails from "./ReturnInvoiceDetails";
 
-export default function DailySummaryModal({ isOpen, onClose, t, money }) {
+export default function DailySummaryModal({
+  isOpen,
+  onClose,
+  t,
+  money,
+  funds,
+}) {
   const api = window.api;
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -191,6 +197,7 @@ export default function DailySummaryModal({ isOpen, onClose, t, money }) {
             <InvoiceReturnModal
               selectedInvoice={selectedInvoice}
               salesInvoicesItem={salesInvoicesItem}
+              funds={funds}
               money={money}
               t={t}
               onClose={onClose}

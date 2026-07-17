@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Minus,
   Plus,
@@ -6,47 +6,14 @@ import {
   RotateCcw,
   AlertCircle,
   ShoppingBag,
-  Wallet,
+  X,
 } from "lucide-react";
-
-// Mirrors the refund across the same funds the original sale was paid
-// through, proportional to how much of the sale is being returned. The
-// last fund absorbs any rounding remainder so the primary-currency total
-// always matches returnTotal exactly.
-function computeRefundAllocations(allocations, originalTotal, refundTotal) {
-  if (!allocations?.length || !originalTotal || refundTotal <= 0) return [];
-
-  let allocatedPrimary = 0;
-
-  return allocations
-    .map((alloc, idx) => {
-      const isLast = idx === allocations.length - 1;
-      const share = alloc.amount / originalTotal;
-
-      const amount = isLast
-        ? Number((refundTotal - allocatedPrimary).toFixed(2))
-        : Number((refundTotal * share).toFixed(2));
-
-      allocatedPrimary += amount;
-
-      const rate = alloc.amount > 0 ? alloc.fund_amount / alloc.amount : 1;
-      const fundAmount = Number((amount * rate).toFixed(2));
-
-      return {
-        fund_id: alloc.fund_id,
-        fund_name: alloc.fund_name,
-        currency_code: alloc.currency_code,
-        currency_symbol: alloc.currency_symbol,
-        amount,
-        fund_amount: fundAmount,
-      };
-    })
-    .filter((row) => row.amount > 0);
-}
+import UnifiedCheckoutModal from "../CheckoutCombinedModal";
 
 export default function InvoiceReturnModal({
   selectedInvoice,
   salesInvoicesItem,
+  funds,
   money,
   t,
   onClose,
@@ -55,6 +22,7 @@ export default function InvoiceReturnModal({
   const [returnQuantities, setReturnQuantities] = useState({});
   const [actionError, setActionError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
 
   useEffect(() => {
     if (salesInvoicesItem && salesInvoicesItem.length > 0) {
@@ -93,19 +61,8 @@ export default function InvoiceReturnModal({
     selectedInvoice.total ||
     0;
 
-  const refundAllocations = useMemo(
-    () =>
-      computeRefundAllocations(
-        selectedInvoice.allocations || [],
-        originalTotal,
-        returnTotal
-      ),
-    [selectedInvoice.allocations, originalTotal, returnTotal]
-  );
-
-  const handleConfirmReturn = async () => {
-    setActionError("");
-    const returnedItems = salesInvoicesItem
+  const getReturnedItems = () =>
+    salesInvoicesItem
       .map((item) => ({
         sales_invoice_item_id: item.id,
         product_id: item.product_id,
@@ -115,7 +72,8 @@ export default function InvoiceReturnModal({
       }))
       .filter((item) => item.quantity > 0);
 
-    if (returnedItems.length === 0) {
+  const openRefundModal = () => {
+    if (getReturnedItems().length === 0) {
       setActionError(
         t(
           "screens.pos.selectAtLeastOneItem",
@@ -124,63 +82,59 @@ export default function InvoiceReturnModal({
       );
       return;
     }
+    setActionError("");
+    setIsRefundModalOpen(true);
+  };
 
-    if (
-      !confirm(
-        t(
-          "screens.pos.confirmPartialReturn",
-          "هل أنت متأكد من رغبتك في إتمام عملية الإرجاع المحددة؟"
-        )
-      )
-    ) {
-      return;
-    }
+  // Called by the same fund-allocation modal used at checkout — the
+  // cashier chooses which fund(s) the refund comes out of, exactly like
+  // choosing which fund(s) collect a sale. No automatic split.
+  const handleConfirmRefund = async ({ payments }) => {
+    const returnedItems = getReturnedItems();
+    const taxPercent = selectedInvoice.tax || 0;
+    const taxValue = returnTotal * (taxPercent / 100);
+    const netTotal = returnTotal + taxValue;
 
+    const mappedPayments = payments.map((p) => ({
+      fund_id: p.fundId,
+      amount: p.amount,
+      amount_fund_currency: p.amount_fund_currency,
+      currency_code: p.currency_code,
+      exchange_rate: p.exchange_rate,
+      effective_rate: p.exchange_rate,
+      note: `Refund for Invoice #${selectedInvoice.id}`,
+    }));
+
+    const returnData = {
+      sales_invoice_id: selectedInvoice.id,
+      customer_id: selectedInvoice.customer_id,
+      invoice_name: `RTN-SLS-${selectedInvoice.id}`,
+      description: t(
+        "screens.pos.todayInvoiceReturn",
+        "مرتجع سريع من فواتير اليوم"
+      ),
+      date: new Date().toISOString().split("T")[0],
+      subtotal: returnTotal,
+      discount: 0,
+      tax: taxPercent,
+      taxValue,
+      net_total: netTotal,
+      created_by: selectedInvoice.created_by || 1,
+      items: returnedItems,
+      payments: mappedPayments,
+    };
+
+    setLoading(true);
     try {
-      setLoading(true);
-      const taxPercent = selectedInvoice.tax || 0;
-      const taxValue = returnTotal * (taxPercent / 100);
-      const netTotal = returnTotal + taxValue;
-
-      const payments = refundAllocations.map((alloc) => ({
-        fund_id: alloc.fund_id,
-        amount: alloc.amount,
-        amount_fund_currency: alloc.fund_amount,
-        currency_code: alloc.currency_code,
-        exchange_rate: alloc.amount > 0 ? alloc.fund_amount / alloc.amount : 1,
-        effective_rate: alloc.amount > 0 ? alloc.fund_amount / alloc.amount : 1,
-        note: `Refund via ${alloc.fund_name}`,
-      }));
-
-      const returnData = {
-        sales_invoice_id: selectedInvoice.id,
-        customer_id: selectedInvoice.customer_id,
-        invoice_name: `RTN-SLS-${selectedInvoice.id}`,
-        description: t(
-          "screens.pos.todayInvoiceReturn",
-          "مرتجع سريع من فواتير اليوم"
-        ),
-        date: new Date().toISOString().split("T")[0],
-        subtotal: returnTotal,
-        discount: 0,
-        tax: taxPercent,
-        taxValue,
-        net_total: netTotal,
-        created_by: selectedInvoice.created_by || 1,
-        items: returnedItems,
-        payments,
-      };
-
       const result = await window.api.createSalesReturn(returnData);
-      if (result.success) {
-        onSuccess();
-      } else {
-        setActionError(
-          result.error || t("errors.returnFailed", "فشلت عملية الإرجاع")
-        );
+      if (!result.success) {
+        throw new Error(result.error || t("errors.returnFailed"));
       }
+      setIsRefundModalOpen(false);
+      onSuccess();
     } catch (err) {
       setActionError(err.message || t("errors.returnFailed"));
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -295,41 +249,6 @@ export default function InvoiceReturnModal({
             </div>
           </div>
 
-          {/* REFUND GOES BACK TO — auto-mirrors the original payment split */}
-          {refundAllocations.length > 0 && (
-            <div className="rounded-2xl border border-stone-200 bg-white p-4">
-              <h4 className="mb-2.5 flex items-center gap-1.5 text-xs font-black uppercase text-stone-500">
-                <Wallet size={13} />
-                {t("screens.pos.refundGoesBackTo", "المبلغ يُرد إلى")}
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {refundAllocations.map((alloc) => (
-                  <div
-                    key={alloc.fund_id}
-                    className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-2"
-                  >
-                    <span className="text-sm font-bold text-stone-800">
-                      {alloc.fund_name}
-                    </span>
-                    <span className="text-stone-300">·</span>
-                    <span className="text-sm font-black text-rose-700">
-                      {Number(alloc.fund_amount).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}{" "}
-                      {alloc.currency_symbol || alloc.currency_code}
-                    </span>
-                    {alloc.fund_amount !== alloc.amount && (
-                      <span className="text-xs font-medium text-stone-500">
-                        (= {money(alloc.amount)})
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm">
             <div className="flex justify-between font-medium text-stone-600">
               <span>
@@ -366,13 +285,56 @@ export default function InvoiceReturnModal({
         <button
           type="button"
           disabled={loading || returnTotal === 0}
-          onClick={handleConfirmReturn}
+          onClick={openRefundModal}
           className="flex h-12 items-center gap-2 rounded-2xl bg-rose-600 px-6 text-sm font-black text-white shadow-md shadow-rose-200 transition hover:bg-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Undo2 size={17} />
-          {t("screens.pos.confirmAndRefund", "تأكيد وإرجاع الكميات المحددة")}
+          {t(
+            "screens.pos.chooseRefundMethod",
+            "متابعة واختيار طريقة الاسترجاع"
+          )}
         </button>
       </div>
+
+      {/* REFUND METHOD — same fund-allocation UI used at checkout,
+          just pointed at returnTotal instead of a sale total. The
+          cashier picks which fund(s) pay the refund out, same as
+          picking which fund(s) collect a sale. */}
+      {isRefundModalOpen && (
+        <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+          <div className="shrink-0 flex items-center justify-between border-b border-stone-200 px-6 py-4">
+            <div>
+              <h2 className="text-lg font-black text-stone-950">
+                {t(
+                  "screens.pos.chooseRefundMethod",
+                  "اختر طريقة استرجاع المبلغ"
+                )}
+              </h2>
+              <p className="text-xs text-stone-500">
+                {t("screens.pos.refundTotal", "المبلغ المسترد المتوقع")}:{" "}
+                {money(returnTotal)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsRefundModalOpen(false)}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-stone-100 text-stone-600 transition hover:bg-stone-200 active:scale-95"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <UnifiedCheckoutModal
+            funds={funds}
+            total={returnTotal}
+            checkingOut={loading}
+            onClose={() => setIsRefundModalOpen(false)}
+            onCheckout={handleConfirmRefund}
+            t={t}
+            money={money}
+          />
+        </div>
+      )}
     </div>
   );
 }

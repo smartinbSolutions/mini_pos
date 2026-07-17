@@ -660,6 +660,7 @@ export default function POSSystem() {
         onClose={() => setIsDailySummaryOpen(false)}
         t={t}
         money={money}
+        funds={funds}
       />
       <ToastContainer />
     </div>

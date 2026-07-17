@@ -260,148 +260,150 @@ export default function TodayInvoicesList({
       </div>
 
       {/* LIST — the main event, gets the remaining space */}
-
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="mx-auto max-w-5xl space-y-4">
-          <div className="space-y-2.5">
-            {filteredInvoices.length > 0 ? (
-              filteredInvoices.map((invoice) => (
-                <div
-                  key={`${invoice.type}-${invoice.id}`}
-                  className="rounded-2xl border border-stone-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"
-                >
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                          invoice.type === "return"
-                            ? "bg-rose-50 text-rose-600"
-                            : "bg-blue-50 text-blue-600"
-                        }`}
-                      >
-                        <Receipt size={20} />
-                      </div>
-
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-black text-stone-950">
-                            {invoice.invoice_number || invoice.id}
-                          </span>
-
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                              invoice.type === "return"
-                                ? "bg-rose-100 text-rose-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
-                          >
-                            {invoice.type === "return"
-                              ? t("ui.return", "مرتجع")
-                              : t("ui.sale", "مبيعات")}
-                          </span>
-                        </div>
-
-                        <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
-                          <Calendar size={12} />
-                          {invoice.date &&
-                            new Date(invoice.date).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          <span className="text-stone-300">|</span>
-                          <User size={12} />
-                          {t("screens.pos.walkInCustomer", "زبون سفري")}
-                        </p>
-                      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto p-4">
+        <div className="mx-auto max-w-6xl space-y-4">
+          {filteredInvoices.length > 0 ? (
+            filteredInvoices.map((invoice) => (
+              <div
+                key={`${invoice.type}-${invoice.id}`}
+                className="rounded-2xl border border-stone-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"
+              >
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                        invoice.type === "return"
+                          ? "bg-rose-50 text-rose-600"
+                          : "bg-blue-50 text-blue-600"
+                      }`}
+                    >
+                      <Receipt size={20} />
                     </div>
 
-                    {invoice.allocations?.length > 0 && (
-                      <div className="flex flex-1 flex-wrap items-center gap-1.5 border-x border-stone-100 px-4">
-                        {invoice.allocations.map((alloc) => {
-                          const sameCurrency =
-                            alloc.currency_code === primaryCurrency?.code;
-                          return (
-                            <span
-                              key={alloc.fund_id}
-                              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
-                                invoice.type === "return"
-                                  ? "bg-rose-50 text-rose-700"
-                                  : "bg-blue-50 text-blue-700"
-                              }`}
-                            >
-                              <span className="font-bold">
-                                {alloc.fund_name}
-                              </span>
-                              <span className="opacity-50">·</span>
-                              {sameCurrency ? (
-                                <span className="font-black">
-                                  {money(alloc.amount)}
-                                </span>
-                              ) : (
-                                <>
-                                  <span className="font-black">
-                                    {Number(alloc.fund_amount).toLocaleString(
-                                      undefined,
-                                      {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      }
-                                    )}{" "}
-                                    {alloc.currency_symbol ||
-                                      alloc.currency_code}
-                                  </span>
-                                  <span className="text-[11px] font-medium opacity-70">
-                                    (= {money(alloc.amount)})
-                                  </span>
-                                </>
-                              )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-stone-950">
+                          {invoice.invoice_number || invoice.id}
+                        </span>
+
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                            invoice.type === "return"
+                              ? "bg-rose-100 text-rose-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {invoice.type === "return"
+                            ? t("ui.return", "مرتجع")
+                            : t("ui.sale", "مبيعات")}
+                        </span>
+
+                        {invoice.type === "return" &&
+                          invoice.sales_invoice_id && (
+                            <span className="text-[11px] font-semibold text-stone-400">
+                              {t("screens.pos.fromInvoice", "من فاتورة")} #
+                              {invoice.sales_invoice_id}
                             </span>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-3 ltr:ml-auto rtl:mr-auto">
-                      <div className="text-right min-w-[80px]">
-                        <p className="text-[10px] font-semibold uppercase text-stone-500">
-                          {t("ui.netTotal", "الصافي")}
-                        </p>
-                        <b className="text-lg text-stone-950">
-                          {money(invoice.net_total || 0)}
-                        </b>
+                          )}
                       </div>
 
-                      <div className="flex gap-2">
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
+                        <Calendar size={12} />
+                        {invoice.date &&
+                          new Date(invoice.date).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        <span className="text-stone-300">|</span>
+                        <User size={12} />
+                        {t("screens.pos.walkInCustomer", "زبون سفري")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {invoice.allocations?.length > 0 && (
+                    <div className="flex flex-1 flex-wrap items-center gap-1.5 border-x border-stone-100 px-4">
+                      {invoice.allocations.map((alloc) => {
+                        const sameCurrency =
+                          alloc.currency_code === primaryCurrency?.code;
+                        return (
+                          <span
+                            key={alloc.fund_id}
+                            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
+                              invoice.type === "return"
+                                ? "bg-rose-50 text-rose-700"
+                                : "bg-blue-50 text-blue-700"
+                            }`}
+                          >
+                            <span className="font-bold">{alloc.fund_name}</span>
+                            <span className="opacity-50">·</span>
+                            {sameCurrency ? (
+                              <span className="font-black">
+                                {money(alloc.amount)}
+                              </span>
+                            ) : (
+                              <>
+                                <span className="font-black">
+                                  {Number(alloc.fund_amount).toLocaleString(
+                                    undefined,
+                                    {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    }
+                                  )}{" "}
+                                  {alloc.currency_symbol || alloc.currency_code}
+                                </span>
+                                <span className="text-[11px] font-medium opacity-70">
+                                  (= {money(alloc.amount)})
+                                </span>
+                              </>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 ltr:ml-auto rtl:mr-auto">
+                    <div className="text-right min-w-[80px]">
+                      <p className="text-[10px] font-semibold uppercase text-stone-500">
+                        {t("ui.netTotal", "الصافي")}
+                      </p>
+                      <b className="text-sm text-stone-950">
+                        {money(invoice.net_total || 0)}
+                      </b>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onSelectInvoice(invoice, "view")}
+                        className="flex h-11 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 active:scale-95"
+                      >
+                        <Eye size={16} />
+                        {t("common.view", "عرض")}
+                      </button>
+
+                      {invoice.type !== "return" && (
                         <button
                           type="button"
-                          onClick={() => onSelectInvoice(invoice, "view")}
-                          className="flex h-11 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 active:scale-95"
+                          onClick={() => onSelectInvoice(invoice, "return")}
+                          className="flex h-11 items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95"
                         >
-                          <Eye size={16} />
-                          {t("common.view", "عرض")}
+                          <RotateCcw size={16} />
+                          {t("screens.pos.return", "إرجاع")}
                         </button>
-
-                        {invoice.type !== "return" && (
-                          <button
-                            type="button"
-                            onClick={() => onSelectInvoice(invoice, "return")}
-                            className="flex h-11 items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95"
-                          >
-                            <RotateCcw size={16} />
-                            {t("screens.pos.return", "إرجاع")}
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="py-12 text-center text-sm font-semibold text-stone-400">
-                {t("common.noData", "لا توجد بيانات متاحة اليوم")}
               </div>
-            )}
-          </div>
+            ))
+          ) : (
+            <div className="py-12 text-center text-sm font-semibold text-stone-400">
+              {t("common.noData", "لا توجد بيانات متاحة اليوم")}
+            </div>
+          )}
         </div>
       </div>
 
