@@ -18,9 +18,12 @@ import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
+import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
+import SupplierFormModal from "../../Purchase/components/SupplierFormModal";
 
 export default function AddExpense() {
   const { t } = useTranslation();
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
 
   const {
     invoice,
@@ -38,8 +41,22 @@ export default function AddExpense() {
     saving,
     error,
     reset,
-  } = useAddExpense();
-
+  } = useAddExpense({ supplierModalOpen });
+  const {
+    submitDraft,
+    startEdit,
+    submitEdit,
+    setEditingId,
+    editingId,
+    setDraft,
+    draft,
+    actionError,
+    navigate,
+    openPaymentModel,
+    setOpenPaymentModel,
+    selecteSupplier,
+    setSelecteSupplier,
+  } = useSuppliersList();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();
@@ -131,23 +148,34 @@ export default function AddExpense() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <main className="space-y-6">
-            {/* Supplier */}
             <section className={panelClass}>
               <div className="grid gap-4 md:grid-cols-2">
-                <SearchableSelect
-                  placeholder={t("ui.selectSupplier")}
-                  options={supplierOptions}
-                  selectedValue={invoice.supplier_id}
-                  onChange={(e) =>
-                    setInvoice({ ...invoice, supplier_id: e.id })
-                  }
-                />
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <SearchableSelect
+                      placeholder={t("ui.selectSupplier")}
+                      options={supplierOptions}
+                      selectedValue={invoice.supplier_id}
+                      onChange={(e) =>
+                        setInvoice({ ...invoice, supplier_id: e.id })
+                      }
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSupplierModalOpen(true)}
+                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                  >
+                    <Plus size={18} />
+                    <span>{t("screens.contacts.addSupplier")}</span>
+                  </button>
+                </div>
 
                 <input
                   type="date"
                   className={inputClass}
                   value={invoice.date}
-                  // max={new Date().toISOString().slice(0, 10)}
                   onChange={(e) =>
                     setInvoice({ ...invoice, date: e.target.value })
                   }
@@ -162,6 +190,8 @@ export default function AddExpense() {
                     setInvoice({ ...invoice, invoice_name: e.target.value })
                   }
                 />
+
+                <div />
               </div>
 
               <textarea
@@ -431,6 +461,18 @@ export default function AddExpense() {
         </div>
       </div>
 
+      {supplierModalOpen && (
+        <SupplierFormModal
+          open={supplierModalOpen}
+          onClose={() => setSupplierModalOpen(false)}
+          draft={draft}
+          setDraft={setDraft}
+          onSubmit={submitDraft}
+          saving={saving}
+          actionError={actionError}
+          t={t}
+        />
+      )}
       <DeleteModal
         open={deleteItemIndex !== null}
         onClose={() => setDeleteItemIndex(null)}

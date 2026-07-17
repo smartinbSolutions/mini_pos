@@ -19,7 +19,7 @@ const emptyInvoice = {
   discount: 0,
 };
 
-export default function useAddSales() {
+export default function useAddSales({ customerModalOpen }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const api = window.api;
@@ -61,7 +61,7 @@ export default function useAddSales() {
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, [refetch, customerModalOpen]);
 
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem]);
@@ -114,7 +114,7 @@ export default function useAddSales() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id)
+              (i) => Number(i.product_id) === Number(product.id),
             );
 
             if (existingIndex !== -1) {
@@ -229,7 +229,7 @@ export default function useAddSales() {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t]
+    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t],
   );
 
   const reset = () => {

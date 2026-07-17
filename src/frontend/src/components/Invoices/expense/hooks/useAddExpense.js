@@ -17,7 +17,7 @@ const emptyInvoice = {
   date: new Date().toISOString().slice(0, 10),
 };
 
-const useAddExpense = () => {
+const useAddExpense = ({ supplierModalOpen }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const api = window.api;
@@ -60,7 +60,7 @@ const useAddExpense = () => {
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, [refetch, supplierModalOpen]);
 
   const supplierOptions = useMemo(
     () => [

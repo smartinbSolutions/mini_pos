@@ -21,10 +21,29 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import ProductFormModal from "../../../Products/components/ProductFormModal";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
+import ContactListHeader from "../../../../Global/Contactlistheader";
+import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
+import SupplierFormModal from "./SupplierFormModal";
 
 export default function AddPurchase() {
   const { t } = useTranslation();
   const catalog = useProductCatalog();
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+
+  const {
+    barcodesByProduct,
+    saving: productSaving,
+    openCreate,
+    activeProduct,
+    canManageBarcodes,
+    canUseUnits,
+    isFormOpen,
+    setIsFormOpen,
+    submitProduct,
+    units,
+    handleLogo,
+  } = catalog;
+
   const {
     invoice,
     setInvoice,
@@ -46,20 +65,23 @@ export default function AddPurchase() {
     api,
     setProducts,
     products,
-  } = useAddPurchase();
+    refetch,
+  } = useAddPurchase({ isFormOpen, supplierModalOpen });
   const {
-    barcodesByProduct,
-    saving: productSaving,
-    openCreate,
-    activeProduct,
-    canManageBarcodes,
-    canUseUnits,
-    isFormOpen,
-    setIsFormOpen,
-    submitProduct,
-    units,
-    handleLogo,
-  } = catalog;
+    submitDraft,
+    startEdit,
+    submitEdit,
+    setEditingId,
+    editingId,
+    setDraft,
+    draft,
+    actionError,
+    navigate,
+    openPaymentModel,
+    setOpenPaymentModel,
+    selecteSupplier,
+    setSelecteSupplier,
+  } = useSuppliersList();
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -159,14 +181,28 @@ export default function AddPurchase() {
             <section className={panelClass}>
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
-                  <SearchableSelect
-                    placeholder={t("ui.selectSupplier")}
-                    options={suppliers}
-                    selectedValue={invoice?.supplier_id}
-                    onChange={(e) =>
-                      setInvoice({ ...invoice, supplier_id: e.id })
-                    }
-                  />
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <SearchableSelect
+                        placeholder={t("ui.selectSupplier")}
+                        options={suppliers}
+                        selectedValue={invoice?.supplier_id}
+                        onChange={(e) =>
+                          setInvoice({ ...invoice, supplier_id: e.id })
+                        }
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSupplierModalOpen(true)}
+                      className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                    >
+                      <Plus size={16} />
+                      <span>{t("screens.contacts.addSupplier")}</span>
+                    </button>
+                  </div>
+
                   {!invoice.supplier_id && (
                     <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600">
                       <AlertCircle size={12} />
@@ -468,7 +504,7 @@ export default function AddPurchase() {
                     value={invoice.tax || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value)
+                        (tax) => tax.id === Number(e.target.value),
                       );
                       setInvoice((p) => ({
                         ...p,
@@ -589,7 +625,18 @@ export default function AddPurchase() {
         onSubmit={handlePaymentCollected}
         confirmLabel={t("screens.invoices.saveInvoice")}
       />
-
+      {supplierModalOpen && (
+        <SupplierFormModal
+          open={supplierModalOpen}
+          onClose={() => setSupplierModalOpen(false)}
+          draft={draft}
+          setDraft={setDraft}
+          onSubmit={submitDraft}
+          saving={saving}
+          actionError={actionError}
+          t={t}
+        />
+      )}
       {isFormOpen && (
         <ProductFormModal
           product={activeProduct}
@@ -600,7 +647,10 @@ export default function AddPurchase() {
           canManageBarcodes={canManageBarcodes}
           canUseUnits={canUseUnits}
           saving={productSaving}
-          onClose={() => setIsFormOpen(false)}
+          onClose={async () => {
+            setIsFormOpen(false);
+            await refetch();
+          }}
           onSubmit={submitProduct}
           handleLogo={handleLogo}
         />

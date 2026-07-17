@@ -18,7 +18,7 @@ const emptyInvoice = {
   tax: 0,
 };
 
-export default function useAddPurchase() {
+export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
   const { t } = useTranslation();
   const navigat = useNavigate();
   const api = window.api;
@@ -57,7 +57,7 @@ export default function useAddPurchase() {
 
   useEffect(() => {
     refetch();
-  }, [refetch]);
+  }, [refetch, isFormOpen, supplierModalOpen]);
 
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem]);
@@ -276,5 +276,6 @@ export default function useAddPurchase() {
     api,
     setProducts,
     products,
+    refetch,
   };
 }

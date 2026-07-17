@@ -18,9 +18,13 @@ import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
+import useCustomerList from "../../../Customer/hooks/useCustomerList";
+import CustomerFormModal from "./CustomerFormModal";
 
 export default function AddSales() {
   const { t } = useTranslation();
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+
   const {
     invoice,
     setInvoice,
@@ -43,8 +47,18 @@ export default function AddSales() {
     navigate,
     api,
     setProducts,
-  } = useAddSales();
-
+  } = useAddSales({ customerModalOpen });
+  const {
+    submitDraft,
+    startEdit,
+    setDraft,
+    draft,
+    actionError,
+    openPaymentModel,
+    setOpenPaymentModel,
+    selecteCustomer,
+    setSelecteCustomer,
+  } = useCustomerList();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();
@@ -140,32 +154,38 @@ export default function AddSales() {
           <main className="space-y-6">
             {/* Customer + date + name + description */}
             <section className={panelClass}>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <SearchableSelect
-                    placeholder={t("ui.selectCustomer")}
-                    options={customers}
-                    selectedValue={invoice.customer_id}
-                    onChange={(customer) =>
-                      setInvoice((p) => ({ ...p, customer_id: customer.id }))
-                    }
-                  />
-                  {!invoice.customer_id && (
-                    <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600">
-                      <AlertCircle size={12} />
-                      {t("errors.customer_required")}
-                    </p>
-                  )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <SearchableSelect
+                      placeholder={t("ui.selectCustomer")}
+                      options={customers}
+                      selectedValue={invoice.customer_id}
+                      onChange={(customer) =>
+                        setInvoice((p) => ({
+                          ...p,
+                          customer_id: customer.id,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCustomerModalOpen(true)}
+                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                  >
+                    <Plus size={16} />
+                    {t("screens.contacts.addCustomer")}
+                  </button>
                 </div>
 
-                <input
-                  type="date"
-                  className={inputClass}
-                  value={invoice.date || ""}
-                  onChange={(e) =>
-                    setInvoice((p) => ({ ...p, date: e.target.value }))
-                  }
-                />
+                {!invoice.customer_id && (
+                  <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600">
+                    <AlertCircle size={12} />
+                    {t("errors.customer_required")}
+                  </p>
+                )}
               </div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -455,7 +475,7 @@ export default function AddSales() {
                     value={invoice.tax_id || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value)
+                        (tax) => tax.id === Number(e.target.value),
                       );
                       setInvoice((p) => ({
                         ...p,
@@ -549,7 +569,21 @@ export default function AddSales() {
           </aside>
         </div>
       </div>
-
+      {customerModalOpen && (
+        <CustomerFormModal
+          open={customerModalOpen}
+          onClose={async () => {
+            setCustomerModalOpen(false);
+            await refetch();
+          }}
+          draft={draft}
+          setDraft={setDraft}
+          onSubmit={submitDraft}
+          saving={saving}
+          actionError={actionError}
+          t={t}
+        />
+      )}
       <DeleteModal
         open={deleteItemIndex !== null}
         onClose={() => setDeleteItemIndex(null)}
