@@ -28,6 +28,8 @@ jobs:
       - name: Build frontend
         working-directory: src/frontend
         run: npm run build
+        env:
+          CI: false
 
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild -f -w better-sqlite3
