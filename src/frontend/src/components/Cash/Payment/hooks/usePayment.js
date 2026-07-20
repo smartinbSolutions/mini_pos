@@ -6,7 +6,6 @@ import { useAuth } from "../../../../Global/AuthContext";
 const usePayment = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
-  console.log(user);
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState({
     income_count: 0,

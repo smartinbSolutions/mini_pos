@@ -35,7 +35,7 @@ export default function createPayment(db, data) {
     )
   `);
 
-  const paymentDate = data.date || new Date().toISOString();
+  const paymentDate = data.date;
 
   const result = insertPayment.run({
     type: data.type,

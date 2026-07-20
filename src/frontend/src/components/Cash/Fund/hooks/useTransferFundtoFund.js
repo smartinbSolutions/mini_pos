@@ -57,6 +57,15 @@ const useTransferFundtoFund = ({
     [funds, form.to_fund_id]
   );
 
+  // True only while editing AND both fund selections still match the
+  // transfer's original funds. Recomputed fresh every render — the moment
+  // either fund is actually changed, this is false immediately, no extra
+  // reselect step needed.
+  const isUnchangedFromOriginal =
+    isEditMode &&
+    Number(form.from_fund_id) === Number(transfer?.from_fund_id) &&
+    Number(form.to_fund_id) === Number(transfer?.to_fund_id);
+
   const refetch = useCallback(async () => {
     if (!api) return;
 
@@ -166,19 +175,51 @@ const useTransferFundtoFund = ({
   const sourceRate = Number(sourceFund?.currency_exchangeRate || 1);
   const targetRate = Number(targetFund?.currency_exchangeRate || 1);
 
-  // Same fund-currency cross-rate the backend computes server-side —
-  // shown here only for display, never sent as truth to the backend.
+  // Today's actual fund-to-fund cross-rate. Always live — this is purely
+  // informational ("what would this convert to right now"), never locked
+  // to a historical value, since the stored transfer.exchange_rate can be
+  // stale or simply wrong (funds re-rate over time) and showing a stale
+  // number here would be misleading, not helpful.
   const nominalRate = useMemo(() => {
     if (!sourceRate) return 1;
     return targetRate / sourceRate;
   }, [sourceRate, targetRate]);
 
+  // Whether this transfer actually crosses currencies. Deliberately based
+  // on the funds' currency codes, NOT on "is nominalRate !== 1" — a stored
+  // or live rate can coincidentally equal 1 (or be wrong, as seen with a
+  // saved exchange_rate of 1 on a USD→TL transfer) without the transfer
+  // being same-currency. Comparing currency codes directly is the only
+  // reliable signal.
+  const isCrossCurrency = Boolean(
+    sourceFund &&
+    targetFund &&
+    sourceFund.currency_code !== targetFund.currency_code
+  );
+
+  // The rate actually applied when the user edits the amount:
+  // - Same funds as the original transfer (edit mode, untouched): use the
+  //   transfer's own effective_rate, so nudging the amount preserves the
+  //   deal that was actually made (e.g. 200 USD -> 9700 TL, ratio 48.5),
+  //   instead of resetting to today's live fund rate or a stale stored one.
+  // - Anything else (create mode, or funds were changed): use today's live
+  //   nominal rate, same as before.
+  const workingRate = isUnchangedFromOriginal
+    ? Number(transfer?.effective_rate) || nominalRate
+    : nominalRate;
+
   // Recompute receive_amount whenever the *rate* changes (fund selection
-  // changed), using whatever amount currently exists — so switching funds
+  // changed) or, in edit mode, on first load — using whatever amount
+  // currently exists, so switching funds or opening an existing transfer
   // never leaves a stale receive_amount behind. Deliberately excludes
   // form.amount from deps: handleAmountChange already handles that case,
   // this effect only reacts to fund/rate changes.
   useEffect(() => {
+    // Edit mode, funds unchanged: the loaded receive_amount already
+    // reflects the real recorded deal — leave it alone until the user
+    // actually edits something.
+    if (isUnchangedFromOriginal) return;
+
     const amount = Number(form.amount || 0);
 
     if (!amount || !sourceFund || !targetFund) {
@@ -188,23 +229,22 @@ const useTransferFundtoFund = ({
 
     setForm((prev) => ({
       ...prev,
-      receive_amount: Number((amount * nominalRate).toFixed(4)),
+      receive_amount: Number((amount * workingRate).toFixed(4)),
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nominalRate, sourceFund, targetFund]);
-
-  const isCrossCurrency = sourceFund && targetFund && nominalRate !== 1;
+  }, [workingRate, sourceFund, targetFund, isUnchangedFromOriginal]);
 
   // Same pattern as AddPayment's amount_in_base / collected_amount:
-  // changing the deduct amount resets receive_amount to the freshly
-  // computed nominal value (overwriting any prior manual edit), while
-  // editing receive_amount directly is a separate, independent action.
+  // changing the deduct amount rescales receive_amount using workingRate
+  // (the transfer's own effective_rate while unchanged, otherwise today's
+  // live fund rate) — overwriting any prior manual edit — while editing
+  // receive_amount directly is a separate, independent action.
   const handleAmountChange = (val) => {
     const amount = val === "" ? "" : Number(val || 0);
     const receive =
       amount === "" || !sourceFund || !targetFund
         ? ""
-        : Number((amount * nominalRate).toFixed(4));
+        : Number((amount * workingRate).toFixed(4));
 
     setForm((prev) => ({
       ...prev,
@@ -225,9 +265,9 @@ const useTransferFundtoFund = ({
   const effectiveRate = useMemo(() => {
     const amount = Number(form.amount || 0);
     const receive = Number(form.receive_amount || 0);
-    if (!amount) return nominalRate;
+    if (!amount) return workingRate;
     return receive / amount;
-  }, [form.amount, form.receive_amount, nominalRate]);
+  }, [form.amount, form.receive_amount, workingRate]);
 
   // Live-generated note: "Transferred [amount] from [source] to
   // [destination]" — includes the receive amount too when cross-currency,

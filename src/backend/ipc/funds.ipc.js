@@ -169,7 +169,7 @@ function fetchFundHistory(
             END
           ) OVER (
             PARTITION BY h.fund_id
-            ORDER BY h.date, h.id
+            ORDER BY datetime(h.date), h.id
           ) AS running_balance
 
         FROM fund_history h
@@ -199,7 +199,7 @@ function fetchFundHistory(
       )
       SELECT * FROM full_history fh
       WHERE 1=1 ${dateFilter}
-      ORDER BY date DESC, id DESC
+      ORDER BY datetime(date) DESC, id DESC
       ${pagingClause}
       `
     )

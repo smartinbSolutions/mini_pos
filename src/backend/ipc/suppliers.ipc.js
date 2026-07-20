@@ -5,7 +5,7 @@ export default function registerSuppliersIPC() {
   // CREATE
   ipcMain.handle("create-supplier", (event, data) => {
     if (!data.name) {
-      return { success: false, error: "ERROR ENTER DATA" };
+      return { success: false, message: "ERROR ENTER DATA" };
     }
     const result = db
       .prepare(
@@ -184,7 +184,7 @@ export default function registerSuppliersIPC() {
 
   ipcMain.handle("update-supplier", (event, data) => {
     if (!data.name) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, message: "ERROR ENTER DATA" };
     }
     db.prepare(
       `

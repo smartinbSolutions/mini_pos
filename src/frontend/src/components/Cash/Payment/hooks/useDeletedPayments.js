@@ -30,7 +30,7 @@ const useDeletedPayments = () => {
       setLoading(true);
 
       let res = await api.getDeletedPayments({ page, limit, ...filters });
-      console.log(res);
+
       setDeletedPayments(res.data || []);
       setTotal(res?.total || 0);
       setTotalPages(res?.totalPages || 1);

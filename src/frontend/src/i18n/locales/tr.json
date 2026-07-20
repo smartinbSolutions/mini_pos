@@ -33,6 +33,8 @@
     "inventory": "Stok",
     "sales": "Satışlar",
     "purchase": "Satın Alma",
+    "fundRate": "Fon kuru",
+    "effectiveRate": "Efektif kur",
     "payment": "Ödeme",
     "products": "Ürünler",
     "product": "Ürün",
@@ -714,6 +716,7 @@
       "noTransfers": "Henüz transfer yok",
       "edit_transfer": "Transfer işlemi düzenleme",
       "save_changes": "Değişiklikleri kaydet",
+      "dateNotBefore": "{{date}} tarihinden önce olamaz",
       "auto_note": "{{source}} kaynağından {{destination}} hesabına {{amount}} aktarıldı",
       "auto_note_cross_currency": "{{source}} kaynağından {{deductAmount}} aktarıldı, {{destination}} hesabına {{receiveAmount}} olarak alındı"
     },
@@ -955,9 +958,12 @@
     "pinMismatch": "PIN onayı eşleşmiyor.",
     "returnQtyExceeded": "Satılan miktardan fazla iade yapılamaz",
     "noItemsSelected": "Lütfen iade edilecek en az bir ürün belirtin",
-    "invalidReturnTotal": "Toplam iade tutarı geçersiz"
+    "invalidReturnTotal": "Toplam iade tutarı geçersiz",
+    "supplierHasTransactions": "Bu tedarikçi silinemiyor çünkü mevcut işlemleri var."
   },
   "success": {
-    "updated": "{{field}} başarıyla güncellendi"
+    "created": "{{field}} başarıyla oluşturuldu",
+    "updated": "{{field}} başarıyla güncellendi",
+    "deleted": "{{field}} başarıyla silindi"
   }
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 
 const useSuppliersList = () => {
   const { t } = useTranslation();
@@ -65,7 +66,7 @@ const useSuppliersList = () => {
       console.error("Failed to load supplier list:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.supplier") }),
+        err?.message || t("errors.createFailed", { field: t("ui.supplier") })
       );
     } finally {
       setLoading(false);
@@ -84,7 +85,10 @@ const useSuppliersList = () => {
 
     setSaving(true);
     try {
-      await api.createSupplier(normalizeSupplier(sup));
+      const res = await api.createSupplier(normalizeSupplier(sup));
+      if (!res?.success) {
+        throw new Error(res?.message || res?.error);
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -99,7 +103,10 @@ const useSuppliersList = () => {
 
     setSaving(true);
     try {
-      await api.updateSupplier(normalizeSupplier(sup));
+      const res = await api.updateSupplier(normalizeSupplier(sup));
+      if (!res?.success) {
+        throw new Error(res?.message || res?.error);
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -109,7 +116,10 @@ const useSuppliersList = () => {
   const deleteSupplier = async (sup) => {
     setSaving(true);
     try {
-      await api.deleteSupplier(sup.id);
+      const res = await api.deleteSupplier(sup.id);
+      if (!res?.success) {
+        throw new Error(res?.message || res?.error);
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -120,10 +130,14 @@ const useSuppliersList = () => {
     try {
       await createSupplier(sup);
       setActionError("");
+      toast.success(t("success.created", { field: t("ui.supplier") }));
       return true;
     } catch (err) {
       console.error("Failed to create Supplier:", err);
-      setActionError(t("errors.createFailed", { field: t("ui.supplier") }));
+      const message =
+        err?.message || t("errors.createFailed", { field: t("ui.supplier") });
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
@@ -132,10 +146,14 @@ const useSuppliersList = () => {
     try {
       await updateSupplier(sup);
       setActionError("");
+      toast.success(t("success.updated", { field: t("ui.supplier") }));
       return true;
     } catch (err) {
       console.error("Failed to update Supplier:", err);
-      setActionError(t("errors.updateFailed", { field: t("ui.supplier") }));
+      const message =
+        err?.message || t("errors.updateFailed", { field: t("ui.supplier") });
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
@@ -146,9 +164,12 @@ const useSuppliersList = () => {
       setActionError("");
       setEditing(emptySupplier);
       setEditingId("");
+      toast.success(t("success.deleted", { field: t("ui.supplier") }));
     } catch (err) {
       console.error("Failed to delete Supplier:", err);
-      setActionError(t("errors.deleteHasData", { field: t("ui.supplier") }));
+      const message = t("errors.deleteHasData", { field: t("ui.supplier") });
+      setActionError(message);
+      toast.error(message);
     }
   };
 

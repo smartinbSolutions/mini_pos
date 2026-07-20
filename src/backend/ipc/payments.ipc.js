@@ -36,13 +36,23 @@ export default function registerPaymentIPC() {
         return { message: "INVALID PAYMENT TYPE", status: 400 };
       }
 
+      // Normalize once, here, so every downstream write (payments,
+      // party_history, fund_history) shares the exact same
+      // "YYYY-MM-DD HH:MM:SS" timestamp — same pattern as
+      // transfer-fund-to-fund. `data.date` from the UI is typically just a
+      // date (no time), so we stamp it with the current time; if it's
+      // missing entirely, both date and time default to now.
+      const dateOnly = (data.date || new Date().toISOString()).slice(0, 10);
+      const time = new Date().toTimeString().slice(0, 8);
+      const paymentDate = `${dateOnly} ${time}`;
+
       const transaction = db.transaction(() => {
         const result = createPayment(db, {
           type: data.type,
           party_type: data.party_type,
           party_id: data.party_id,
           fund_id: data.fund_id,
-          date: data.date || new Date().toISOString(),
+          date: paymentDate,
           amount: amount,
           note: data.note || null,
           currency_code: data.currency_code,
@@ -82,7 +92,6 @@ export default function registerPaymentIPC() {
             exchange_rate: data.exchange_rate,
             effective_rate: data.effective_rate,
             amount_fund_currency: data.collected_amount,
-            date: data.date || new Date().toISOString(),
           });
         }
 
@@ -93,7 +102,7 @@ export default function registerPaymentIPC() {
           movement_type: data.type === "income" ? "in" : "out",
           amount: data.collected_amount,
           note: data.note || "",
-          date: data.date || new Date().toISOString(),
+          date: paymentDate,
         });
 
         return paymentId;

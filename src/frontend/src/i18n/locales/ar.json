@@ -31,6 +31,8 @@
     "setup": "الإعداد",
     "contacts": "جهات الاتصال",
     "inventory": "المخزون",
+    "fundRate": "سعر الصندوق",
+    "effectiveRate": "السعر الفعلي",
     "sales": "المبيعات",
     "purchase": "المشتريات",
     "payment": "الدفع",
@@ -713,6 +715,7 @@
       "newTransfer": "تحويل جديد",
       "noTransfers": "لا يوجد تحويلات بعد",
       "edit_transfer": "تعديل عملية التحويل",
+      "dateNotBefore": "لا يمكن أن يكون قبل {{date}}",
       "save_changes": "حفظ التغييرات",
       "auto_note": "تم تحويل {{amount}} من {{source}} إلى {{destination}}",
       "auto_note_cross_currency": "تم تحويل {{deductAmount}} من {{source}}، وتم استلام {{receiveAmount}} في {{destination}}"
@@ -955,9 +958,12 @@
     "pinMismatch": "تأكيد رمز PIN غير مطابق.",
     "returnQtyExceeded": "لا يمكن إرجاع كمية أكبر من الكمية المباعة",
     "noItemsSelected": "يرجى تحديد منتج واحد على الأقل للإرجاع",
-    "invalidReturnTotal": "قيمة المرتجع الإجمالية غير صالحة"
+    "invalidReturnTotal": "قيمة المرتجع الإجمالية غير صالحة",
+    "supplierHasTransactions": "لا يمكن حذف هذا المورد لأنه يحتوي على معاملات موجودة."
   },
   "success": {
-    "updated": "تم تحديث {{field}} بنجاح"
+    "created": "تم إنشاء {{field}} بنجاح",
+    "updated": "تم تحديث {{field}} بنجاح",
+    "deleted": "تم حذف {{field}} بنجاح"
   }
 }
