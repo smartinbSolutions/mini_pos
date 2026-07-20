@@ -622,7 +622,13 @@
       "payFromFund": "Kasadan öde",
       "allocations": "Tahsisatlar",
       "collectedAmount": "Tahsil Edilen Tutar",
-      "summaryReceiving": "Kabul Özeti"
+      "summaryReceiving": "Kabul Özeti",
+      "activeTab": "Aktif",
+      "deletedTab": "Silinen",
+      "deletedNotice": "Silinen ödemeleri görüntülüyorsunuz. Bunlar yalnızca referans amaçlı saklanır, geri yüklenemez veya düzenlenemez.",
+      "deletedInfo": "Silme Bilgisi",
+      "emptyDeleted": "Silinen ödeme bulunamadı.",
+      "deleted": "Silindi"
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",

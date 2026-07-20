@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import { useAuth } from "../../../../Global/AuthContext";
 
 const usePayment = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  console.log(user);
   const [payments, setPayments] = useState([]);
   const [summary, setSummary] = useState({
     income_count: 0,
@@ -70,7 +73,7 @@ const usePayment = () => {
 
   const deletePayment = async (payment) => {
     try {
-      await api.deletePayment(payment.id);
+      await api.deletePayment(payment.id, user?.id);
       await refetch();
     } finally {
     }

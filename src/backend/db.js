@@ -451,7 +451,7 @@ CREATE TABLE IF NOT EXISTS payments (
   amount_fund_currency REAL, 
   note TEXT,
   date TEXT,
-    created_by INTEGER,
+  created_by INTEGER,
   invoice_type TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id),
@@ -472,6 +472,20 @@ CREATE TABLE IF NOT EXISTS payment_allocations (
 );
 `
 ).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS deleted_payments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  payment_id INTEGER NOT NULL,
+  payload TEXT NOT NULL, -- JSON snapshot of { payment, allocations } at time of deletion
+  deleted_by INTEGER,
+  deletedAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (deleted_by) REFERENCES users(id)
+)
+`
+).run();
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS party_history (

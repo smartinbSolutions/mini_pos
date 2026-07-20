@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import usePayment from "../hooks/usePayment";
+import useDeletedPayments from "../hooks/useDeletedPayments";
 import DeleteModal from "../../../../Global/DeleteModel";
 import Pagination from "../../../../Global/Pagination";
 
@@ -19,6 +20,7 @@ import {
   TrendingUp,
   TrendingDown,
   Eye,
+  Archive,
 } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -110,22 +112,55 @@ const PaymentList = () => {
   const isRtl = i18n.dir() === "rtl";
   const navigate = useNavigate();
 
+  const [view, setView] = useState("active"); // "active" | "deleted"
+
   const {
     payments = [],
     summary,
-    loading,
-    actionError,
-    refetch,
+    loading: activeLoading,
+    actionError: activeActionError,
+    refetch: refetchActive,
     handleDeletePayment,
-    page,
-    setPage,
-    limit,
-    setLimit,
-    total,
-    totalPages,
-    filters,
-    setFilters,
+    page: activePage,
+    setPage: setActivePage,
+    limit: activeLimit,
+    setLimit: setActiveLimit,
+    total: activeTotal,
+    totalPages: activeTotalPages,
+    filters: activeFilters,
+    setFilters: setActiveFilters,
   } = usePayment();
+
+  const {
+    deletedPayments = [],
+    loading: deletedLoading,
+    actionError: deletedActionError,
+    refetch: refetchDeleted,
+    page: deletedPage,
+    setPage: setDeletedPage,
+    limit: deletedLimit,
+    setLimit: setDeletedLimit,
+    total: deletedTotal,
+    totalPages: deletedTotalPages,
+    filters: deletedFilters,
+    setFilters: setDeletedFilters,
+  } = useDeletedPayments();
+
+  const isDeletedView = view === "deleted";
+
+  // Whichever dataset is active drives the table
+  const rows = isDeletedView ? deletedPayments : payments;
+  const loading = isDeletedView ? deletedLoading : activeLoading;
+  const actionError = isDeletedView ? deletedActionError : activeActionError;
+  const refetch = isDeletedView ? refetchDeleted : refetchActive;
+  const page = isDeletedView ? deletedPage : activePage;
+  const setPage = isDeletedView ? setDeletedPage : setActivePage;
+  const limit = isDeletedView ? deletedLimit : activeLimit;
+  const setLimit = isDeletedView ? setDeletedLimit : setActiveLimit;
+  const total = isDeletedView ? deletedTotal : activeTotal;
+  const totalPages = isDeletedView ? deletedTotalPages : activeTotalPages;
+  const filters = isDeletedView ? deletedFilters : activeFilters;
+  const setFilters = isDeletedView ? setDeletedFilters : setActiveFilters;
 
   const { primaryCurrency } = usePrimaryCurrency();
 
@@ -149,37 +184,64 @@ const PaymentList = () => {
   }, [api]);
   const { money } = usePrimaryCurrency();
 
-  const filteredPayments = payments.filter((pay) => {
+  const filteredPayments = rows.filter((pay) => {
     const partyName = pay.party_name?.toLowerCase() || "";
-    const paymentId = String(pay.id);
+    const paymentId = String(isDeletedView ? pay.payment_id : pay.id);
     const query = searchQuery.toLowerCase();
     return partyName.includes(query) || paymentId.includes(query);
   });
 
   const toggleExpand = async (payment) => {
-    const isExpanded = expandedRows[payment.id];
+    const rowId = isDeletedView ? payment.deleted_payment_id : payment.id;
+    const isExpanded = expandedRows[rowId];
 
-    setExpandedRows((prev) => ({ ...prev, [payment.id]: !isExpanded }));
+    setExpandedRows((prev) => ({ ...prev, [rowId]: !isExpanded }));
 
-    if (!isExpanded && !allocationsByPayment[payment.id]) {
-      setLoadingAllocations((prev) => ({ ...prev, [payment.id]: true }));
+    if (isDeletedView) {
+      // Allocations already came back with the snapshot, nothing to fetch
+      return;
+    }
+
+    if (!isExpanded && !allocationsByPayment[rowId]) {
+      setLoadingAllocations((prev) => ({ ...prev, [rowId]: true }));
       try {
         const res = await api.getPaymentAllocations(payment.id);
         setAllocationsByPayment((prev) => ({
           ...prev,
-          [payment.id]: res || [],
+          [rowId]: res || [],
         }));
       } catch (err) {
         console.error("Failed to load allocations:", err);
-        setAllocationsByPayment((prev) => ({ ...prev, [payment.id]: [] }));
+        setAllocationsByPayment((prev) => ({ ...prev, [rowId]: [] }));
       } finally {
-        setLoadingAllocations((prev) => ({ ...prev, [payment.id]: false }));
+        setLoadingAllocations((prev) => ({ ...prev, [rowId]: false }));
       }
     }
   };
 
   const handleFilterChange = (field, value) => {
     setFilters({ [field]: value || null });
+  };
+
+  const handleViewChange = (nextView) => {
+    setView(nextView);
+    setSearchQuery("");
+    setExpandedRows({});
+  };
+
+  const hasActiveFilters = Object.values(filters).some(
+    (value) => value !== null && value !== ""
+  );
+
+  const clearFilters = () => {
+    setFilters({
+      type: null,
+      party_type: null,
+      invoice_type: null,
+      fund_id: null,
+      dateFrom: null,
+      dateTo: null,
+    });
   };
 
   return (
@@ -226,18 +288,53 @@ const PaymentList = () => {
           </div>
 
           <div className="flex flex-col gap-3 border-t border-[#e5ebff] bg-white/60 p-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder={t("common.search")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-12 w-full rounded-2xl border border-[#dbe4ff] bg-white pl-11 pr-4 text-sm outline-none transition focus:border-[#4663ff] focus:ring-2 focus:ring-[#4663ff]/10"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder={t("common.search")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="h-12 w-full rounded-2xl border border-[#dbe4ff] bg-white pl-11 pr-4 text-sm outline-none transition focus:border-[#4663ff] focus:ring-2 focus:ring-[#4663ff]/10"
+                />
+              </div>
+
+              <div className="inline-flex h-12 items-center rounded-2xl border border-[#dbe4ff] bg-white p-1">
+                <button
+                  onClick={() => handleViewChange("active")}
+                  className={`inline-flex h-full items-center gap-2 rounded-xl px-4 text-sm font-bold transition ${
+                    !isDeletedView
+                      ? "bg-[#4663ff] text-white"
+                      : "text-slate-500 hover:text-[#4663ff]"
+                  }`}
+                >
+                  <Receipt size={15} />
+                  {t("screens.payments.activeTab")}
+                </button>
+                <button
+                  onClick={() => handleViewChange("deleted")}
+                  className={`inline-flex h-full items-center gap-2 rounded-xl px-4 text-sm font-bold transition ${
+                    isDeletedView
+                      ? "bg-[#4663ff] text-white"
+                      : "text-slate-500 hover:text-[#4663ff]"
+                  }`}
+                >
+                  <Archive size={15} />
+                  {t("screens.payments.deletedTab")}
+                </button>
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3">
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="h-11 rounded-xl border border-red-200 bg-red-50 px-3 text-sm font-bold text-red-600 transition hover:bg-red-100"
+                >
+                  {t("common.clear")}
+                </button>
+              )}
               <button
                 onClick={() => setShowFilters((prev) => !prev)}
                 className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${
@@ -336,6 +433,12 @@ const PaymentList = () => {
           </div>
         )}
 
+        {isDeletedView && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+            {t("screens.payments.deletedNotice")}
+          </div>
+        )}
+
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[1000px] text-start text-sm">
@@ -353,9 +456,15 @@ const PaymentList = () => {
                   <th className="px-5 py-4 text-start">
                     {t("screens.payments.rate")}
                   </th>
-                  <th className="px-5 py-4 text-start">
-                    {t("screens.payments.allocation")}
-                  </th>
+                  {isDeletedView ? (
+                    <th className="px-5 py-4 text-start">
+                      {t("screens.payments.deletedInfo")}
+                    </th>
+                  ) : (
+                    <th className="px-5 py-4 text-start">
+                      {t("screens.payments.allocation")}
+                    </th>
+                  )}
                   <th className="px-5 py-4 text-start">
                     {t("common.actions")}
                   </th>
@@ -372,21 +481,33 @@ const PaymentList = () => {
                 ) : filteredPayments.length === 0 ? (
                   <tr>
                     <td colSpan="8" className="p-8 text-start text-slate-500">
-                      {t("screens.payments.empty")}
+                      {isDeletedView
+                        ? t("screens.payments.emptyDeleted")
+                        : t("screens.payments.empty")}
                     </td>
                   </tr>
                 ) : (
                   filteredPayments.map((pay) => {
+                    const rowId = isDeletedView
+                      ? pay.deleted_payment_id
+                      : pay.id;
+                    const displayId = isDeletedView ? pay.payment_id : pay.id;
                     const canExpand = pay.party_type !== "partner";
-                    const isExpanded = expandedRows[pay.id];
-                    const allocations = allocationsByPayment[pay.id];
-                    const isLoadingAlloc = loadingAllocations[pay.id];
+                    const isExpanded = expandedRows[rowId];
+                    const allocations = isDeletedView
+                      ? pay.allocations
+                      : allocationsByPayment[rowId];
+                    const isLoadingAlloc = loadingAllocations[rowId];
                     const rateDiffers =
                       pay.exchange_rate !== pay.effective_rate;
 
                     return (
-                      <React.Fragment key={pay.id}>
-                        <tr className="transition hover:bg-[#f8faff]">
+                      <React.Fragment key={rowId}>
+                        <tr
+                          className={`transition hover:bg-[#f8faff] ${
+                            isDeletedView ? "opacity-75" : ""
+                          }`}
+                        >
                           <td className="px-5 py-4 text-start">
                             {canExpand && (
                               <button
@@ -403,12 +524,18 @@ const PaymentList = () => {
                           </td>
 
                           <td className="px-5 py-4 text-start">
-                            <span
-                              onClick={() => navigate(`/payments/${pay.id}`)}
-                              className="cursor-pointer rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff] transition hover:bg-[#dbe4ff]"
-                            >
-                              #{pay.id}
-                            </span>
+                            {isDeletedView ? (
+                              <span className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-500">
+                                #{displayId}
+                              </span>
+                            ) : (
+                              <span
+                                onClick={() => navigate(`/payments/${pay.id}`)}
+                                className="cursor-pointer rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff] transition hover:bg-[#dbe4ff]"
+                              >
+                                #{displayId}
+                              </span>
+                            )}
                           </td>
 
                           <td className="px-5 py-4">
@@ -458,26 +585,47 @@ const PaymentList = () => {
                             )}
                           </td>
 
-                          <td className="px-5 py-4">
-                            <AllocationBadge payment={pay} />
-                          </td>
+                          {isDeletedView ? (
+                            <td className="px-5 py-4 text-start text-xs font-semibold text-slate-500">
+                              <div className="text-slate-700">
+                                {pay.deleted_by_name || "-"}
+                              </div>
+                              <div className="text-slate-400">
+                                {pay.deletedAt?.slice(0, 16)}
+                              </div>
+                            </td>
+                          ) : (
+                            <td className="px-5 py-4">
+                              <AllocationBadge payment={pay} />
+                            </td>
+                          )}
 
                           <td className="px-5 py-4">
                             <div className="flex justify-start gap-1">
-                              <button
-                                onClick={() => navigate(`/payments/${pay.id}`)}
-                                className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
-                                title={t("common.view")}
-                              >
-                                <Eye size={16} />
-                              </button>
-                              <button
-                                onClick={() => setDeletePaymentId(pay)}
-                                className="rounded-xl p-2 text-red-500 hover:bg-red-50"
-                                title={t("common.delete")}
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {isDeletedView ? (
+                                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-400">
+                                  {t("screens.payments.deleted")}
+                                </span>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      navigate(`/payments/${pay.id}`)
+                                    }
+                                    className="rounded-xl p-2 text-[#4663ff] hover:bg-[#eef3ff]"
+                                    title={t("common.view")}
+                                  >
+                                    <Eye size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => setDeletePaymentId(pay)}
+                                    className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                                    title={t("common.delete")}
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>

@@ -96,7 +96,7 @@ const FundListHeader = ({
   const modal = (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 p-4"
-      onClick={() => setModalOpen(false)}
+      // onClick={() => setModalOpen(false)}
     >
       <div
         className="relative w-full max-w-lg rounded-[28px] border border-white/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.25)] backdrop-blur"

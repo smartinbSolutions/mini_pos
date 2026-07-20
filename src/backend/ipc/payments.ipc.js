@@ -191,7 +191,7 @@ export default function registerPaymentIPC() {
       ${whereClause}
       ORDER BY p.id DESC
       LIMIT ? OFFSET ?
-    `,
+    `
       )
       .all(...filterParams, limit, offset);
 
@@ -209,7 +209,7 @@ export default function registerPaymentIPC() {
         COALESCE(SUM(CASE WHEN p.type = 'expense' THEN p.amount END), 0) AS expense_total
       FROM payments p
       ${whereClause}
-    `,
+    `
       )
       .get(...filterParams);
 
@@ -220,6 +220,125 @@ export default function registerPaymentIPC() {
       total,
       totalPages: Math.ceil(total / limit),
       summary,
+    };
+  });
+
+  ipcMain.handle("get-deleted-payments", (event, params = {}) => {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const conditions = [];
+    const filterParams = [];
+
+    if (params.type) {
+      conditions.push(`json_extract(dp.payload, '$.payment.type') = ?`);
+      filterParams.push(params.type);
+    }
+
+    if (params.party_type) {
+      conditions.push(`json_extract(dp.payload, '$.payment.party_type') = ?`);
+      filterParams.push(params.party_type);
+    }
+
+    if (params.invoice_type) {
+      conditions.push(`json_extract(dp.payload, '$.payment.invoice_type') = ?`);
+      filterParams.push(params.invoice_type);
+    }
+
+    if (params.fund_id) {
+      conditions.push(
+        `CAST(json_extract(dp.payload, '$.payment.fund_id') AS INTEGER) = ?`
+      );
+      filterParams.push(Number(params.fund_id));
+    }
+
+    if (params.dateFrom) {
+      conditions.push(
+        `date(json_extract(dp.payload, '$.payment.date')) >= date(?)`
+      );
+      filterParams.push(params.dateFrom);
+    }
+
+    if (params.dateTo) {
+      conditions.push(
+        `date(json_extract(dp.payload, '$.payment.date')) <= date(?)`
+      );
+      filterParams.push(params.dateTo);
+    }
+
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
+    const deletedPayments = db
+      .prepare(
+        `
+      SELECT
+        dp.id AS deleted_payment_id,
+        dp.payment_id,
+        dp.deleted_by,
+        dp.deletedAt,
+        deleter.full_name AS deleted_by_name,
+
+        json_extract(dp.payload, '$.payment.type') AS type,
+        json_extract(dp.payload, '$.payment.party_type') AS party_type,
+        json_extract(dp.payload, '$.payment.party_id') AS party_id,
+        json_extract(dp.payload, '$.payment.fund_id') AS fund_id,
+        json_extract(dp.payload, '$.payment.amount') AS amount,
+        json_extract(dp.payload, '$.payment.currency_code') AS currency_code,
+        json_extract(dp.payload, '$.payment.exchange_rate') AS exchange_rate,
+        json_extract(dp.payload, '$.payment.effective_rate') AS effective_rate,
+        json_extract(dp.payload, '$.payment.amount_fund_currency') AS amount_fund_currency,
+        json_extract(dp.payload, '$.payment.note') AS note,
+        json_extract(dp.payload, '$.payment.date') AS date,
+        json_extract(dp.payload, '$.payment.invoice_type') AS invoice_type,
+        json_extract(dp.payload, '$.payment.createdAt') AS createdAt,
+
+        f.name AS fund_name,
+        c.code AS fund_currency_code,
+        c.symbol AS fund_currency_symbol,
+
+        COALESCE(cust.name, supp.name, part.name) AS party_name,
+
+        dp.payload AS payload
+      FROM deleted_payments dp
+      LEFT JOIN users deleter ON deleter.id = dp.deleted_by
+      LEFT JOIN funds f
+        ON f.id = CAST(json_extract(dp.payload, '$.payment.fund_id') AS INTEGER)
+      LEFT JOIN currencies c ON c.id = f.currency_id
+      LEFT JOIN customers cust
+        ON cust.id = CAST(json_extract(dp.payload, '$.payment.party_id') AS INTEGER)
+        AND json_extract(dp.payload, '$.payment.party_type') = 'customer'
+      LEFT JOIN suppliers supp
+        ON supp.id = CAST(json_extract(dp.payload, '$.payment.party_id') AS INTEGER)
+        AND json_extract(dp.payload, '$.payment.party_type') = 'supplier'
+      LEFT JOIN partners part
+        ON part.id = CAST(json_extract(dp.payload, '$.payment.party_id') AS INTEGER)
+        AND json_extract(dp.payload, '$.payment.party_type') = 'partner'
+      ${whereClause}
+      ORDER BY dp.deletedAt DESC
+      LIMIT ? OFFSET ?
+    `
+      )
+      .all(...filterParams, limit, offset);
+
+    const { total } = db
+      .prepare(
+        `SELECT COUNT(*) AS total FROM deleted_payments dp ${whereClause}`
+      )
+      .get(...filterParams);
+
+    return {
+      data: deletedPayments.map((row) => ({
+        ...row,
+        allocations: JSON.parse(row.payload).allocations,
+        payload: undefined,
+      })),
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
     };
   });
 
@@ -244,7 +363,7 @@ export default function registerPaymentIPC() {
         LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
         LEFT JOIN partners part ON part.id = p.party_id AND p.party_type = 'partner'
         WHERE p.id = ?
-        `,
+        `
       )
       .get(id);
 
@@ -252,7 +371,7 @@ export default function registerPaymentIPC() {
 
     const allocations = db
       .prepare(
-        `SELECT * FROM payment_allocations WHERE payment_id = ? ORDER BY id ASC`,
+        `SELECT * FROM payment_allocations WHERE payment_id = ? ORDER BY id ASC`
       )
       .all(id);
 
@@ -267,7 +386,7 @@ export default function registerPaymentIPC() {
         FROM payment_allocations
         WHERE payment_id = ?
         ORDER BY id ASC
-      `,
+      `
       )
       .all(paymentId);
   });
@@ -304,7 +423,7 @@ export default function registerPaymentIPC() {
       WHERE p.fund_id = ?
 
       ORDER BY p.id DESC
-    `,
+    `
       )
       .all(id);
   });
@@ -346,10 +465,10 @@ export default function registerPaymentIPC() {
 
         ORDER BY id DESC
         LIMIT ? OFFSET ?
-        `,
+        `
         )
         .all(partyId, partyType, limit, offset);
-    },
+    }
   );
 
   ipcMain.handle(
@@ -367,12 +486,12 @@ export default function registerPaymentIPC() {
         FROM payments
         WHERE party_id = ?
           AND party_type = ?
-        `,
+        `
         )
         .get(partyId, partyType);
 
       return row?.balance || 0;
-    },
+    }
   );
 
   ipcMain.handle("update-payment", (event, data) => {
@@ -387,7 +506,7 @@ export default function registerPaymentIPC() {
         amount = ?,
         note = ?
       WHERE id = ?
-    `,
+    `
     ).run(
       data.type,
       data.party_type,
@@ -395,13 +514,13 @@ export default function registerPaymentIPC() {
       data.fund_id,
       data.amount,
       data.note,
-      data.id,
+      data.id
     );
 
     return { success: true };
   });
 
-  ipcMain.handle("delete-payment", (event, id) => {
+  ipcMain.handle("delete-payment", (event, id, { deletedBy } = {}) => {
     const transaction = db.transaction(() => {
       const payment = db
         .prepare(
@@ -409,7 +528,7 @@ export default function registerPaymentIPC() {
         SELECT *
         FROM payments
         WHERE id = ?
-      `,
+      `
         )
         .get(id);
 
@@ -424,7 +543,7 @@ export default function registerPaymentIPC() {
         FROM party_history
         WHERE payment_id = ?
           AND record_type = 'payment'
-      `,
+      `
         )
         .all(id);
 
@@ -432,27 +551,51 @@ export default function registerPaymentIPC() {
         throw new Error("PAYMENT_HISTORY_NOT_FOUND");
       }
 
+      const allocations = db
+        .prepare(
+          `
+        SELECT *
+        FROM payment_allocations
+        WHERE payment_id = ?
+      `
+        )
+        .all(id);
+
       reversePayment(db, payment);
+
+      db.prepare(
+        `
+      INSERT INTO deleted_payments (payment_id, payload, deleted_by)
+      VALUES (?, ?, ?)
+    `
+      ).run(id, JSON.stringify({ payment, allocations }), deletedBy ?? null);
+
+      db.prepare(
+        `
+      DELETE FROM payment_allocations
+      WHERE payment_id = ?
+    `
+      ).run(id);
 
       db.prepare(
         `
       DELETE FROM party_history
       WHERE payment_id = ?
-    `,
+    `
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM fund_history
       WHERE payment_id = ?
-    `,
+    `
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM payments
       WHERE id = ?
-    `,
+    `
       ).run(id);
     });
 

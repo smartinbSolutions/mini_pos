@@ -67,7 +67,10 @@ contextBridge.exposeInMainWorld("api", {
   getPartyLedger: (params) => ipcRenderer.invoke("get-party-ledger", params),
   createPayment: (data) => ipcRenderer.invoke("create-payment", data),
   updatePayment: (data) => ipcRenderer.invoke("update-payment", data),
-  deletePayment: (id) => ipcRenderer.invoke("delete-payment", id),
+  deletePayment: (id, deletedBy) =>
+    ipcRenderer.invoke("delete-payment", id, { deletedBy }),
+  getDeletedPayments: (params) =>
+    ipcRenderer.invoke("get-deleted-payments", params),
 
   /* ================= PARTY HISTORY ================= */
   getPartyHistoryLedger: (params) =>

@@ -621,7 +621,13 @@
       "payFromFund": "Pay from fund",
       "allocations": "Allocations",
       "collectedAmount": "Collected Amount",
-      "summaryReceiving": "Receiving Summary"
+      "summaryReceiving": "Receiving Summary",
+      "activeTab": "Active",
+      "deletedTab": "Deleted",
+      "deletedNotice": "You're viewing deleted payments. These are kept for reference only and cannot be restored or edited.",
+      "deletedInfo": "Deleted",
+      "emptyDeleted": "No deleted payments found.",
+      "deleted": "Deleted"
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",

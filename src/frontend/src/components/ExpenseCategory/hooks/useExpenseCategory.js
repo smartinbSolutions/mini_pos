@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 const useExpenseCategory = () => {
   const { t } = useTranslation();
-  const emptyExpenseCategory = { name: "" };
+  const emptyExpenseCategory = { name: "", latinName: "" };
 
   const [saving, setSaving] = useState(false);
   const [expenseCategory, setExpenseCategory] = useState([]);

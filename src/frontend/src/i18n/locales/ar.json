@@ -622,7 +622,13 @@
       "payFromFund": "الدفع من الصندوق",
       "allocations": "تخصيصات",
       "collectedAmount": "المبلغ المحصَّل",
-      "summaryReceiving": "ملخص الاستلام"
+      "summaryReceiving": "ملخص الاستلام",
+      "activeTab": "نشطة",
+      "deletedTab": "محذوفة",
+      "deletedNotice": "أنت تعرض المدفوعات المحذوفة. يتم الاحتفاظ بها للرجوع إليها فقط، ولا يمكن استعادتها أو تعديلها.",
+      "deletedInfo": "بيانات الحذف",
+      "emptyDeleted": "لا توجد مدفوعات محذوفة.",
+      "deleted": "محذوف"
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
