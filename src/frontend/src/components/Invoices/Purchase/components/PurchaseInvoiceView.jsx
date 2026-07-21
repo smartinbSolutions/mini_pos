@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { useTranslation } from "react-i18next";
+import GoTo from "../../../../Global/GoTo";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-green-100", text: "text-green-700" },
@@ -137,7 +138,7 @@ export default function PurchaseInvoiceView() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
-                    <th className="p-3 text-left">{t("ui.product")}</th>
+                    <th className="p-3 text-center">{t("ui.product")}</th>
                     <th className="p-3 text-center">{t("ui.price")}</th>
                     <th className="p-3 text-center">{t("ui.qty")}</th>
                     <th className="p-3 text-center">{t("ui.total")}</th>
@@ -157,7 +158,7 @@ export default function PurchaseInvoiceView() {
                   ) : (
                     items.map((item) => (
                       <tr key={item.id}>
-                        <td className="p-3 font-bold text-slate-900">
+                        <td className="p-3 text-center">
                           {item.product_name || item.name || "-"}
                         </td>
                         <td className="p-3 text-center">{money(item.price)}</td>
@@ -192,12 +193,16 @@ export default function PurchaseInvoiceView() {
                         className="flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
                       >
                         <div>
-                          <div className="font-bold text-slate-800">
-                            {alloc.fund_name || "-"}
+                          <div className="flex items-center gap-2 font-bold text-slate-800">
+                            <GoTo type="fund" id={alloc.fund_id}>
+                              {alloc.fund_name || "-"}
+                            </GoTo>
                           </div>
-                          <div className="text-xs text-slate-400">
-                            {formatDate(alloc.date)} · {t("ui.payment")} #
-                            {alloc.payment_id}
+                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                            {formatDate(alloc.date)} ·{" "}
+                            <GoTo type="payment" id={alloc.payment_id}>
+                              {t("ui.payment")} #{alloc.payment_id}
+                            </GoTo>
                           </div>
                         </div>
                         <div className="tabular-nums text-emerald-700">

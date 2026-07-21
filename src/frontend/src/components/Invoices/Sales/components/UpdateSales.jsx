@@ -44,6 +44,7 @@ export default function UpdateSales() {
     setProducts,
     status,
   } = useUpdateSales();
+  console.log(invoice);
 
   const { money } = usePrimaryCurrency();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
@@ -334,7 +335,7 @@ export default function UpdateSales() {
                 <span className="text-slate-500">{t("ui.tax")}</span>
                 <select
                   className={`${inputClass} w-36`}
-                  value={invoice.tax_id}
+                  value={invoice.tax}
                   disabled={isLocked}
                   onChange={(e) => {
                     const selected = taxes.find(
@@ -343,7 +344,7 @@ export default function UpdateSales() {
 
                     setInvoice({
                       ...invoice,
-                      tax_id: selected?.id || "",
+                      tax: selected?.id || "",
                       tax_rate: selected?.rate || 0,
                     });
                   }}

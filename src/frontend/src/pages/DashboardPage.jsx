@@ -116,6 +116,7 @@ export default function Dashboard() {
       try {
         setLoading(true);
         const res = await window.api.getDashboardStats();
+        console.log(res);
         setData((current) => ({ ...current, ...(res || {}) }));
       } catch (err) {
         console.error(err);
@@ -378,49 +379,90 @@ export default function Dashboard() {
         <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           <div className="rounded-[28px] border border-white/80 bg-white/85 p-6 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
             <h2 className="mb-5 text-lg font-black text-slate-900">
-              {t("dashboard.profit_loss", "Profit & Loss")}
+              {t("dashboard.profit_loss", "الأرباح والخسائر")}
             </h2>
             <div className="space-y-3 text-sm">
+              {/* Revenue */}
               <div className="flex items-center justify-between">
-                <span className="text-slate-500">
-                  {t("dashboard.revenue", "Revenue")}
+                <span className="font-bold text-slate-700">
+                  {t("dashboard.revenue", "الإيرادات")}
                 </span>
                 <Num className="font-bold text-slate-900">
-                  {money(data.sales.total)}
+                  {money(data.profitLoss.sales.total)}
                 </Num>
               </div>
-              <div className="flex items-center justify-between">
+
+              {data.profitLoss.sales.returns > 0 && (
+                <div className="ms-3 space-y-2 border-s-2 border-slate-100 ps-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">
+                      {t("dashboard.from_sales", "من المبيعات")}
+                    </span>
+                    <Num className="font-semibold text-slate-500">
+                      {money(data.profitLoss.sales.gross)}
+                    </Num>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">
+                      {t("dashboard.less_returns", "بعد خصم المرتجعات")}
+                      <span className="ms-1 text-slate-300">
+                        ({data.profitLoss.sales.returnCount})
+                      </span>
+                    </span>
+                    <Num className="font-semibold text-rose-500">
+                      -{money(data.profitLoss.sales.returns)}
+                    </Num>
+                  </div>
+                </div>
+              )}
+
+              {/* Cost of goods */}
+              <div className="flex items-center justify-between pt-1">
                 <span className="text-slate-500">
-                  {t("dashboard.cost_of_goods_sold", "Cost of goods sold")}
+                  {t("dashboard.cost_of_goods_sold", "تكلفة البضائع المباعة")}
                 </span>
                 <Num className="font-bold text-rose-600">
-                  -{money(data.profitLoss.cogs)}
+                  -{money(data.profitLoss.profitLoss.cogs)}
                 </Num>
               </div>
+
+              {data.profitLoss.profitLoss.cogsReturned > 0 && (
+                <div className="ms-3 flex items-center justify-between border-s-2 border-slate-100 ps-3 text-xs">
+                  <span className="text-slate-400">
+                    {t(
+                      "dashboard.cogs_note",
+                      "تكلفة البضائع التي رجعت للمخزون تم خصمها تلقائيًا"
+                    )}
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
                 <span className="font-bold text-slate-700">
-                  {t("dashboard.gross_profit", "Gross profit")}
+                  {t("dashboard.gross_profit", "إجمالي الربح")}
                 </span>
                 <Num className="font-bold text-slate-900">
-                  {money(data.profitLoss.grossProfit)}
+                  {money(data.profitLoss.profitLoss.grossProfit)}
                 </Num>
               </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">
-                  {t("dashboard.expenses", "Expenses")}
+                  {t("dashboard.expenses", "المصروفات")}
                 </span>
                 <Num className="font-bold text-rose-600">
-                  -{money(data.expense.total)}
+                  -{money(data.profitLoss.expense.total)}
                 </Num>
               </div>
+
               <div className="flex items-center justify-between rounded-2xl bg-[#f8faff] px-4 py-3">
                 <span className="font-black text-slate-900">
-                  {t("dashboard.net_profit", "Net profit")}
+                  {t("dashboard.net_profit", "صافي الربح")}
                 </span>
                 <Num
-                  className={`text-lg font-black ${data.profitLoss.netProfit >= 0 ? "text-emerald-700" : "text-rose-600"}`}
+                  className={`text-lg font-black ${data.profitLoss.profitLoss.netProfit >= 0 ? "text-emerald-700" : "text-rose-600"}`}
                 >
-                  {money(data.profitLoss.netProfit)}
+                  {money(data.profitLoss.profitLoss.netProfit)}
                 </Num>
               </div>
             </div>

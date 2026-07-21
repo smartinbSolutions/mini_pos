@@ -4,7 +4,10 @@ import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
-import { buildDefaultInvoiceName } from "../utils/helpers";
+import {
+  buildDefaultInvoiceName,
+  buildDefaultPaymentNote,
+} from "../utils/helpers";
 import { applyPartyCredit } from "../utils/partyCredit";
 export default function registerPurchaseInvoicesIPC() {
   // CREATE
@@ -21,13 +24,27 @@ export default function registerPurchaseInvoicesIPC() {
         }
 
         const subtotal = Number(data.subtotal || 0);
-        const netTotal = Number(data.net_total || 0);
         const discount = Number(data.discount || 0);
-        const tax = Number(data.tax || 0);
+        const taxId = data.tax ?? null;
 
-        if (subtotal <= 0 || netTotal <= 0) {
+        if (subtotal <= 0) {
           throw new Error("INVALID TOTALS");
         }
+
+        let taxRate = 0;
+        if (taxId) {
+          const taxRow = db
+            .prepare(`SELECT rate FROM taxes WHERE id = ?`)
+            .get(taxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          taxRate = Number(taxRow.rate || 0);
+        }
+
+        const taxableAmount = subtotal - discount;
+        const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
+        const netTotal = Number((taxableAmount + taxValue).toFixed(2));
 
         const payment = data.payment || null;
         const isPaid = !!payment;
@@ -79,9 +96,9 @@ export default function registerPurchaseInvoicesIPC() {
             fullDateTime,
             subtotal,
             discount,
-            tax,
+            taxId,
             netTotal,
-            data.taxValue,
+            taxValue,
             data.created_by
           );
 
@@ -168,7 +185,7 @@ export default function registerPurchaseInvoicesIPC() {
             effective_rate: payment.effective_rate,
             invoice_id: invoiceId,
             invoice_type: payment.mode,
-            note: `${invoiceName}`,
+            note: invoiceName,
             fundOperation: "subtract",
             date: fullDateTime,
             created_by: data.created_by,
@@ -180,7 +197,7 @@ export default function registerPurchaseInvoicesIPC() {
             movement_type: "out",
             amount: payment.collected_amount,
             date: fullDateTime,
-            note: `Payment for ${invoiceName}`,
+            note: buildDefaultPaymentNote(db, "payment", invoiceName),
           });
         }
 
@@ -283,37 +300,42 @@ export default function registerPurchaseInvoicesIPC() {
         s.phone AS supplier_phone,
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
+        t.name AS tax_name,
+        t.rate AS tax_rate,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
-  
+    
         p.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-  
+    
         CASE
           WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
         END AS status,
-  
+    
         CASE
           WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
           WHEN ret.total_returned >= ret.total_quantity THEN 'full'
           ELSE 'partial'
         END AS return_status
-  
+    
       FROM purchase_invoices p
-  
+    
       LEFT JOIN suppliers s
         ON s.id = p.supplier_id
-  
+    
+      LEFT JOIN taxes t
+        ON t.id = p.tax
+    
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = p.id
        AND pa.invoice_type = 'purchase'
-  
+    
       LEFT JOIN users creator
         ON creator.id = p.created_by
-  
+    
       LEFT JOIN users updater
         ON updater.id = p.updated_by
-  
+    
       LEFT JOIN (
         SELECT
           pi.invoice_id,
@@ -327,13 +349,13 @@ export default function registerPurchaseInvoicesIPC() {
         ) pri ON pri.purchase_invoice_item_id = pi.id
         GROUP BY pi.invoice_id
       ) ret ON ret.invoice_id = p.id
-  
+    
         ${whereClause}
       GROUP BY p.id
         ${havingClause}
-  
+    
       ORDER BY p.id DESC
-  
+    
       LIMIT ? OFFSET ?
       `
       )
@@ -492,8 +514,7 @@ export default function registerPurchaseInvoicesIPC() {
       !data.date ||
       !Array.isArray(data.items) ||
       data.items.length === 0 ||
-      Number(data.subtotal) <= 0 ||
-      Number(data.net_total) <= 0
+      Number(data.subtotal) <= 0
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
@@ -514,7 +535,6 @@ export default function registerPurchaseInvoicesIPC() {
         .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
         .all(data.id);
 
-      // ---- Aggregate old vs new quantity per product ----
       const oldByProduct = new Map();
       for (const item of oldItems) {
         const cur = oldByProduct.get(item.product_id) || {
@@ -553,7 +573,6 @@ export default function registerPurchaseInvoicesIPC() {
         WHERE reference_type = 'purchase_invoice' AND reference_id = ? AND product_id = ?
       `);
 
-      // ---- Removed products: reverse stock fully, delete their movement ----
       for (const [productId, old] of oldByProduct) {
         if (!newByProduct.has(productId)) {
           adjustStock.run(-old.quantity, productId);
@@ -565,7 +584,6 @@ export default function registerPurchaseInvoicesIPC() {
       const time = new Date().toTimeString().slice(0, 8);
       const fullDateTime = `${dateOnly} ${time}`;
 
-      // ---- Present in new set: adjust stock by delta, update movement in place ----
       for (const [productId, next] of newByProduct) {
         const old = oldByProduct.get(productId);
         const oldQty = old ? old.quantity : 0;
@@ -597,7 +615,6 @@ export default function registerPurchaseInvoicesIPC() {
         }
       }
 
-      // ---- Replace line items ----
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
         data.id
       );
@@ -620,26 +637,48 @@ export default function registerPurchaseInvoicesIPC() {
         );
       }
 
-      // ---- Update the invoice row ----
+      // ---- Derive tax/net_total server-side ----
+      const subtotal = Number(data.subtotal || 0);
+      const discount = Number(data.discount || 0);
+      const taxId = data.tax ?? null;
+
+      let taxRate = 0;
+      if (taxId) {
+        const taxRow = db
+          .prepare(`SELECT rate FROM taxes WHERE id = ?`)
+          .get(taxId);
+        if (!taxRow) {
+          throw new Error("INVALID_TAX_ID");
+        }
+        taxRate = Number(taxRow.rate || 0);
+      }
+
+      const taxableAmount = subtotal - discount;
+      const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
+      const netTotal = Number((taxableAmount + taxValue).toFixed(2));
+
+      // ---- Invoice name: keep user-edited name, else fall back to existing ----
+      const invoiceName = data.invoice_name?.trim() || oldInvoice.invoice_name;
+
       db.prepare(
         `
         UPDATE purchase_invoices
-        SET supplier_id = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?, updated_by = ?
+        SET supplier_id = ?, invoice_name = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?, updated_by = ?
         WHERE id = ?
       `
       ).run(
         newSupplierId,
+        invoiceName,
         fullDateTime,
-        data.subtotal || 0,
-        data.discount || 0,
-        data.tax || 0,
-        data.net_total || 0,
-        data.taxValue || 0,
+        subtotal,
+        discount,
+        taxId,
+        netTotal,
+        taxValue,
         data.updated_by,
         data.id
       );
 
-      // ---- Supplier party_history reconciliation for the invoice amount ----
       if (oldSupplierId && oldSupplierId === newSupplierId) {
         db.prepare(
           `
@@ -647,12 +686,7 @@ export default function registerPurchaseInvoicesIPC() {
           SET amount = ?, date = ?, note = ?
           WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
         `
-        ).run(
-          data.net_total,
-          fullDateTime,
-          `Purchase Invoice #${data.id}`,
-          data.id
-        );
+        ).run(netTotal, fullDateTime, invoiceName, data.id);
       } else {
         if (oldSupplierId) {
           db.prepare(
@@ -671,9 +705,9 @@ export default function registerPurchaseInvoicesIPC() {
             invoice_type: "purchase",
             record_type: "invoice",
             movement_type: "increase",
-            amount: data.net_total,
+            amount: netTotal,
             date: fullDateTime,
-            note: `Purchase Invoice #${data.id}`,
+            note: invoiceName,
           });
         }
       }

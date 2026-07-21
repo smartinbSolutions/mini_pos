@@ -21,7 +21,6 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import ProductFormModal from "../../../Products/components/ProductFormModal";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
-import ContactListHeader from "../../../../Global/Contactlistheader";
 import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
 import SupplierFormModal from "./SupplierFormModal";
 
@@ -67,21 +66,7 @@ export default function AddPurchase() {
     products,
     refetch,
   } = useAddPurchase({ isFormOpen, supplierModalOpen });
-  const {
-    submitDraft,
-    startEdit,
-    submitEdit,
-    setEditingId,
-    editingId,
-    setDraft,
-    draft,
-    actionError,
-    navigate,
-    openPaymentModel,
-    setOpenPaymentModel,
-    selecteSupplier,
-    setSelecteSupplier,
-  } = useSuppliersList();
+  const { submitDraft, setDraft, draft, actionError } = useSuppliersList();
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -504,7 +489,7 @@ export default function AddPurchase() {
                     value={invoice.tax || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value),
+                        (tax) => tax.id === Number(e.target.value)
                       );
                       setInvoice((p) => ({
                         ...p,

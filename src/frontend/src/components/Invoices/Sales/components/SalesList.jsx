@@ -193,15 +193,15 @@ const SalesList = () => {
 
   const totalNet = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
-    0,
+    0
   );
   const totalTax = salesInvoices.reduce(
     (sum, inv) => sum + Number(inv.taxValue || 0),
-    0,
+    0
   );
 
   const unpaidCount = salesInvoices.filter(
-    (inv) => inv.status !== "paid",
+    (inv) => inv.status !== "paid"
   ).length;
 
   return (
@@ -330,7 +330,7 @@ const SalesList = () => {
                               </div>
 
                               <div className="text-[11px] font-semibold text-slate-400">
-                                {inv.tax}%
+                                {inv.tax_rate}%
                               </div>
                             </div>
                           ) : (

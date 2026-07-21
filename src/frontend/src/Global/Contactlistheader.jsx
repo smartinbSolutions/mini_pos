@@ -155,6 +155,7 @@ const ContactListHeader = ({
             <input
               type="number"
               step="0.01"
+              min="0"
               value={draft.opening_balance}
               onChange={(e) =>
                 setDraft({ ...draft, opening_balance: e.target.value })

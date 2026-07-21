@@ -472,14 +472,14 @@ export default function AddSales() {
                   </label>
                   <select
                     className={`${inputClass} text-right`}
-                    value={invoice.tax_id || ""}
+                    value={invoice.tax || ""}
                     onChange={(e) => {
                       const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value),
+                        (tax) => tax.id === Number(e.target.value)
                       );
                       setInvoice((p) => ({
                         ...p,
-                        tax_id: selected?.id || "",
+                        tax: selected?.id || "",
                         tax_rate: selected?.rate || 0,
                       }));
                     }}

@@ -42,21 +42,7 @@ export default function AddExpense() {
     error,
     reset,
   } = useAddExpense({ supplierModalOpen });
-  const {
-    submitDraft,
-    startEdit,
-    submitEdit,
-    setEditingId,
-    editingId,
-    setDraft,
-    draft,
-    actionError,
-    navigate,
-    openPaymentModel,
-    setOpenPaymentModel,
-    selecteSupplier,
-    setSelecteSupplier,
-  } = useSuppliersList();
+  const { submitDraft, setDraft, draft, actionError } = useSuppliersList();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();

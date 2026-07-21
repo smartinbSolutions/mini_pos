@@ -117,7 +117,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {
@@ -245,7 +245,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue],
+    [api, invoice, items, subtotal, netTotal, taxValue]
   );
 
   const reset = () => {

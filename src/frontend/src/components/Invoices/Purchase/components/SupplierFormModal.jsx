@@ -134,6 +134,7 @@ export default function SupplierFormModal({
             <input
               type="number"
               value={draft.opening_balance}
+              min="0"
               onChange={(e) =>
                 setDraft((p) => ({
                   ...p,
@@ -221,6 +222,6 @@ export default function SupplierFormModal({
         </form>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 }

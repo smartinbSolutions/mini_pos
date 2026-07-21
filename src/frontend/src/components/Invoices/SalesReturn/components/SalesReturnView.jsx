@@ -3,6 +3,7 @@ import { Printer, ArrowLeft, Undo2, HandCoins } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
+import GoTo from "../../../../Global/GoTo";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-green-100", text: "text-green-700" },
@@ -164,7 +165,7 @@ export default function SalesReturnView() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
-                    <th className="p-3 text-left">{t("ui.product")}</th>
+                    <th className="p-3 text-center">{t("ui.product")}</th>
                     <th className="p-3 text-center">
                       {t("ui.returnPrice", "سعر الإرجاع")}
                     </th>
@@ -188,7 +189,7 @@ export default function SalesReturnView() {
                   ) : (
                     items.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50/40">
-                        <td className="p-3 font-bold text-slate-900">
+                        <td className="p-3 text-center">
                           {item.product_name || item.name || "-"}
                         </td>
                         <td className="p-3 text-center tabular-nums">
@@ -225,20 +226,23 @@ export default function SalesReturnView() {
                   <div className="space-y-2">
                     {allocations.map((alloc) => (
                       <div
-                        key={alloc.id}
+                        key={alloc.payment_id}
                         className="flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
                       >
                         <div>
-                          <div className="font-bold text-slate-800">
+                          <GoTo type="fund" id={alloc.fund_id}>
                             {alloc.fund_name || "-"}
-                          </div>
-                          <div className="text-xs text-slate-400 mt-0.5">
-                            {formatDate(alloc.date)} · {t("ui.receipt", "سند")}{" "}
-                            #{alloc.payment_id}
+                          </GoTo>
+                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                            {formatDate(alloc.date)} ·{" "}
+                            <GoTo type="payment" id={alloc.payment_id}>
+                              {t("ui.payment")} #{alloc.payment_id}
+                            </GoTo>
                           </div>
                         </div>
-                        <div className="tabular-nums font-bold text-red-600">
-                          - {money(alloc.amount)}
+
+                        <div className="font-black text-emerald-700">
+                          {money(alloc.amount)}
                         </div>
                       </div>
                     ))}
@@ -283,12 +287,12 @@ export default function SalesReturnView() {
 
                 {status !== "unpaid" && (
                   <>
-                    <div className="flex justify-between border-t border-dashed border-[#dbe4ff] pt-3 text-xs text-slate-500">
+                    {/* <div className="flex justify-between border-t border-dashed border-[#dbe4ff] pt-3 text-xs text-slate-500">
                       <span>{t("ui.cashRefunded", "المسترد نقداً")}</span>
                       <span className="font-bold text-red-600">
                         {money(returnInvoice.refunded_amount)}
                       </span>
-                    </div>
+                    </div> */}
                     {status === "partial" && (
                       <div className="flex justify-between text-xs text-slate-500">
                         <span>

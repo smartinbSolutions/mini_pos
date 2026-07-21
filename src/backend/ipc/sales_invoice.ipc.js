@@ -4,7 +4,10 @@ import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
-import { buildDefaultInvoiceName } from "../utils/helpers";
+import {
+  buildDefaultInvoiceName,
+  buildDefaultPaymentNote,
+} from "../utils/helpers";
 import { applyPartyCredit } from "../utils/partyCredit";
 
 const receiptLabels = {
@@ -73,12 +76,27 @@ export default function registerSalesInvoiceIPC() {
         }
 
         const subtotal = Number(data.subtotal || 0);
-        const netTotal = Number(data.net_total || 0);
         const discount = Number(data.discount || 0);
+        const taxId = data.tax ?? null;
 
-        if (subtotal <= 0 || netTotal <= 0) {
+        if (subtotal <= 0) {
           throw new Error("INVALID TOTALS");
         }
+
+        let taxRate = 0;
+        if (taxId) {
+          const taxRow = db
+            .prepare(`SELECT rate FROM taxes WHERE id = ?`)
+            .get(taxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          taxRate = Number(taxRow.rate || 0);
+        }
+
+        const taxableAmount = subtotal - discount;
+        const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
+        const netTotal = Number((taxableAmount + taxValue).toFixed(2));
 
         const payment = data.payment || null;
         const isPaid = !!payment;
@@ -121,17 +139,14 @@ export default function registerSalesInvoiceIPC() {
             fullDateTime,
             subtotal,
             discount,
-            data.tax_rate || 0,
+            taxId,
             netTotal,
-            data.taxValue || 0,
+            taxValue,
             data.created_by || ""
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
 
-        // Fall back to "Sales Invoice #<id>" if no name was given,
-        // and persist it so the DB row itself carries the default
-        // (not just an in-memory fallback used for notes).
         let invoiceName = data.invoice_name?.trim();
         if (!invoiceName) {
           invoiceName = buildDefaultInvoiceName(db, "sales", invoiceId);
@@ -221,7 +236,9 @@ export default function registerSalesInvoiceIPC() {
             effective_rate: payment.effective_rate,
             invoice_id: invoiceId,
             invoice_type: payment.mode,
-            note: `${payment.note} #${invoiceId}`,
+            note:
+              payment.note ||
+              buildDefaultPaymentNote(db, "payment", invoiceName),
             fundOperation: "add",
             date: fullDateTime,
             created_by: data.created_by,
@@ -234,7 +251,7 @@ export default function registerSalesInvoiceIPC() {
             movement_type: "in",
             amount: payment.collected_amount,
             date: fullDateTime,
-            note: `Payment for ${invoiceName}`,
+            note: buildDefaultPaymentNote(db, "payment", invoiceName),
           });
         }
 
@@ -337,37 +354,42 @@ export default function registerSalesInvoiceIPC() {
         c.phone AS customer_phone,
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
+        t.name AS tax_name,
+        t.rate AS tax_rate,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
-  
+    
         s.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-  
+    
         CASE
           WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
         END AS status,
-  
+    
         CASE
           WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
           WHEN ret.total_returned >= ret.total_quantity THEN 'full'
           ELSE 'partial'
         END AS return_status
-  
+    
       FROM sales_invoices s
-  
+    
       LEFT JOIN customers c
         ON c.id = s.customer_id
-  
+    
+      LEFT JOIN taxes t
+        ON t.id = s.tax
+    
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = s.id
        AND pa.invoice_type = 'sales'
-  
+    
       LEFT JOIN users creator
         ON creator.id = s.created_by
-  
+    
       LEFT JOIN users updater
         ON updater.id = s.updated_by
-  
+    
       LEFT JOIN (
         SELECT
           si.invoice_id,
@@ -381,13 +403,13 @@ export default function registerSalesInvoiceIPC() {
         ) sri ON sri.sales_invoice_item_id = si.id
         GROUP BY si.invoice_id
       ) ret ON ret.invoice_id = s.id
-  
+    
          ${whereClause}
       GROUP BY s.id
          ${havingClause}
-  
+    
       ORDER BY s.id DESC
-  
+    
       LIMIT ? OFFSET ?
       `
       )
@@ -549,8 +571,7 @@ WHERE si.invoice_id = ?
       !data.date ||
       !Array.isArray(data.items) ||
       data.items.length === 0 ||
-      Number(data.subtotal) <= 0 ||
-      Number(data.net_total) <= 0
+      Number(data.subtotal) <= 0
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
@@ -581,7 +602,6 @@ WHERE si.invoice_id = ?
           UPDATE products SET quantity = quantity - ? WHERE id = ?
         `);
 
-        // Reverse old stock movement fully — items are being replaced wholesale
         for (const item of oldItems) {
           reverseStock.run(item.quantity || 0, item.product_id);
         }
@@ -602,8 +622,28 @@ WHERE si.invoice_id = ?
           VALUES (?, ?, ?, ?, ?, ?)
         `);
 
-        const newNetTotal = Number(data.net_total || 0);
         const newSubtotal = Number(data.subtotal || 0);
+        const discount = Number(data.discount || 0);
+        const taxId = data.tax ?? null;
+
+        let taxRate = 0;
+        if (taxId) {
+          const taxRow = db
+            .prepare(`SELECT rate FROM taxes WHERE id = ?`)
+            .get(taxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          taxRate = Number(taxRow.rate || 0);
+        }
+
+        const taxableAmount = newSubtotal - discount;
+        const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
+        const newNetTotal = Number((taxableAmount + taxValue).toFixed(2));
+
+        // ---- Invoice name: keep user-edited name, else fall back to existing ----
+        const invoiceName =
+          data.invoice_name?.trim() || oldInvoice.invoice_name;
 
         for (const item of data.items) {
           if (!item.product_id) continue;
@@ -658,19 +698,18 @@ WHERE si.invoice_id = ?
         `
         ).run(
           newCustomerId,
-          data.invoice_name || null,
+          invoiceName,
           data.description || null,
           fullDateTime,
           newSubtotal,
-          data.discount || 0,
-          data.tax_rate || null,
+          discount,
+          taxId,
           newNetTotal,
-          data.taxValue || 0,
-          data.updated_by, // was data.id
-          data.id // was data.updated_by
+          taxValue,
+          data.updated_by,
+          data.id
         );
 
-        // Customer party_history reconciliation for the invoice amount
         if (oldCustomerId && oldCustomerId === newCustomerId) {
           db.prepare(
             `
@@ -678,12 +717,7 @@ WHERE si.invoice_id = ?
             SET amount = ?, date = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
           `
-          ).run(
-            newNetTotal,
-            fullDateTime,
-            `Sales Invoice #${data.id}`,
-            data.id
-          );
+          ).run(newNetTotal, fullDateTime, invoiceName, data.id);
         } else {
           if (oldCustomerId) {
             db.prepare(
@@ -704,7 +738,7 @@ WHERE si.invoice_id = ?
               movement_type: "increase",
               amount: newNetTotal,
               date: fullDateTime,
-              note: `Sales Invoice #${data.id}`,
+              note: invoiceName,
             });
           }
         }

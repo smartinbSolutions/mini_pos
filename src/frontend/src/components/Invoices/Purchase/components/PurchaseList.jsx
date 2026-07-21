@@ -285,7 +285,7 @@ const PurchaseList = () => {
                               + {money(inv.taxValue)}
                             </div>
                             <div className="text-[11px] font-semibold text-slate-400">
-                              {inv.tax}%
+                              {inv.tax_rate}%
                             </div>
                           </div>
                         ) : (

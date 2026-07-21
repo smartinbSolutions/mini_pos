@@ -4,6 +4,10 @@ import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
 import createProductMovement from "../utils/createPorductMovment";
+import {
+  buildDefaultPaymentNote,
+  buildDefaultReturnNote,
+} from "../utils/helpers";
 
 export default function registerPurchaseReturnIPC() {
   // CREATE
@@ -21,13 +25,27 @@ export default function registerPurchaseReturnIPC() {
         }
 
         const subtotal = Number(data.subtotal || 0);
-        const netTotal = Number(data.net_total || 0);
         const discount = Number(data.discount || 0);
-        const tax = Number(data.tax || 0);
+        const taxId = data.tax ?? null;
 
-        if (subtotal <= 0 || netTotal <= 0) {
+        if (subtotal <= 0) {
           throw new Error("INVALID TOTALS");
         }
+
+        let taxRate = 0;
+        if (taxId) {
+          const taxRow = db
+            .prepare(`SELECT rate FROM taxes WHERE id = ?`)
+            .get(taxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          taxRate = Number(taxRow.rate || 0);
+        }
+
+        const taxableAmount = subtotal - discount;
+        const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
+        const netTotal = Number((taxableAmount + taxValue).toFixed(2));
 
         const payment = data.payment || null;
         const isRefunded = !!payment;
@@ -114,8 +132,8 @@ export default function registerPurchaseReturnIPC() {
             fullDateTime,
             subtotal,
             discount,
-            tax,
-            data.taxValue || 0,
+            taxId,
+            taxValue,
             netTotal,
             data.created_by
           );
@@ -178,7 +196,12 @@ export default function registerPurchaseReturnIPC() {
           movement_type: "decrease",
           amount: netTotal,
           date: fullDateTime,
-          note: `Purchase Return #${returnId} for Invoice #${data.purchase_invoice_id}`,
+          note: buildDefaultReturnNote(
+            db,
+            "purchase_return",
+            returnId,
+            data.purchase_invoice_id
+          ),
         });
 
         let insertPaymentId = null;
@@ -196,7 +219,8 @@ export default function registerPurchaseReturnIPC() {
             effective_rate: payment.effective_rate,
             invoice_id: returnId,
             invoice_type: "purchase_return",
-            note: `${payment.note || "Refund"} #${returnId}`,
+            note:
+              payment.note || buildDefaultPaymentNote(db, "refund", returnId),
             fundOperation: "add",
             date: fullDateTime,
           });
@@ -208,7 +232,7 @@ export default function registerPurchaseReturnIPC() {
             movement_type: "in",
             amount: payment.collected_amount,
             date: fullDateTime,
-            note: `Refund received for Purchase Return #${returnId}`,
+            note: buildDefaultPaymentNote(db, "refund", returnId),
           });
         }
 

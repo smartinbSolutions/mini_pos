@@ -50,7 +50,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
       cancelled = true;
     };
   }, [id, isOpen]);
-
+  console.log(invoice);
   useEffect(() => {
     if (invoice && invoice.items) {
       const itemsWithReturnQty = invoice.items.map((item) => ({
@@ -59,7 +59,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
         maxAvailable: item.available_quantity,
       }));
       setReturnItems(itemsWithReturnQty);
-      setTaxPercent(invoice.tax || 0);
+      setTaxPercent(invoice.tax_rate || 0);
       setDiscount(0);
       setNote("");
       setValidationError("");

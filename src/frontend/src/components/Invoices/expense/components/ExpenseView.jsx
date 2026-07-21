@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { useTranslation } from "react-i18next";
+import GoTo from "../../../../Global/GoTo";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-green-100", text: "text-green-700" },
@@ -192,15 +193,19 @@ export default function ExpenseView() {
                     {allocations.map((alloc) => (
                       <div
                         key={alloc.id}
-                        className="flex items-start justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
+                        className="flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
                       >
                         <div>
-                          <div className="font-bold text-slate-800">
-                            {alloc.fund_name || "-"}
+                          <div className="flex items-center gap-2 font-bold text-slate-800">
+                            <GoTo type="fund" id={alloc.fund_id}>
+                              {alloc.fund_name || "-"}
+                            </GoTo>
                           </div>
-                          <div className="text-xs text-slate-400">
-                            {formatDate(alloc.date)} · {t("ui.payment")} #
-                            {alloc.payment_id}
+                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                            {formatDate(alloc.date)} ·{" "}
+                            <GoTo type="payment" id={alloc.payment_id}>
+                              {t("ui.payment")} #{alloc.payment_id}
+                            </GoTo>
                           </div>
                         </div>
                         <div className="tabular-nums text-emerald-700">

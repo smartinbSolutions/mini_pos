@@ -168,7 +168,7 @@ export default function SalesInvoiceView() {
               <table className="w-full min-w-[720px] text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
-                    <th className="p-3 text-left">{t("ui.product")}</th>
+                    <th className="p-3 text-center">{t("ui.product")}</th>
                     <th className="p-3 text-center">{t("ui.price")}</th>
                     <th className="p-3 text-center">{t("ui.qty")}</th>
                     <th className="p-3 text-center">{t("ui.total")}</th>
@@ -188,7 +188,7 @@ export default function SalesInvoiceView() {
                   ) : (
                     items.map((item) => (
                       <tr key={item.id}>
-                        <td className="p-3 font-bold text-slate-900">
+                        <td className="p-3 text-center">
                           {item.product_name || item.name || "-"}
                         </td>
                         <td className="p-3 text-center">{money(item.price)}</td>
@@ -234,9 +234,11 @@ export default function SalesInvoiceView() {
                           <GoTo type="fund" id={alloc.fund_id}>
                             {alloc.fund_name || "-"}
                           </GoTo>
-                          <div className="text-xs text-slate-400">
-                            {formatDate(alloc.createdAt)} · {t("ui.payment")} #
-                            {alloc.payment_id}
+                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                            {formatDate(alloc.date)} ·{" "}
+                            <GoTo type="payment" id={alloc.payment_id}>
+                              {t("ui.payment")} #{alloc.payment_id}
+                            </GoTo>
                           </div>
                         </div>
 

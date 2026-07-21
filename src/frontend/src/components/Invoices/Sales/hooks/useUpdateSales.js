@@ -104,7 +104,7 @@ export default function useUpdateSales() {
 
           setItems((prev) => {
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {
@@ -212,7 +212,7 @@ export default function useUpdateSales() {
         setSaving(false);
       }
     },
-    [api, id, invoice, items, subtotal, netTotal, taxValue, navigate, t],
+    [api, id, invoice, items, subtotal, netTotal, taxValue, navigate, t]
   );
 
   return {
