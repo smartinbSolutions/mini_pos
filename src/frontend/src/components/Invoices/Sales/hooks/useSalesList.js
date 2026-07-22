@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 
 const DEFAULT_FILTERS = {
   dateFrom: "",
@@ -86,15 +87,55 @@ const useSalesList = () => {
       .catch(() => setCustomers([]));
   }, [api]);
 
+  // Maps backend error codes to translated, user-facing messages.
+  // Falls back to the raw message (or a generic one) for anything unmapped.
+  const getDeleteErrorMessage = (err) => {
+    const code = err?.message || "";
+
+    if (code.includes("CANNOT_DELETE_INVOICE_WITH_RETURN")) {
+      return t(
+        "screens.errors.cannotDeleteInvoiceWithReturn",
+        "This invoice has a return and cannot be deleted."
+      );
+    }
+    if (code.includes("CANNOT_DELETE_PAID_INVOICE")) {
+      return t(
+        "screens.errors.cannotDeletePaidInvoice",
+        "This invoice has a payment and cannot be deleted."
+      );
+    }
+    if (code.includes("SALES INVOICE NOT FOUND")) {
+      return t(
+        "screens.errors.invoiceNotFound",
+        "This invoice no longer exists."
+      );
+    }
+
+    return err?.message || t("errors.deleteFailed", { field: t("ui.invoice") });
+  };
+
   const deleteSales = async (id) => {
     try {
       setSaving(true);
-      await api.deleteSalesInvoice(id);
+      const res = await api.deleteSalesInvoice(id);
+      console.log(res);
+
+      if (res?.success === false) {
+        // Handler returned a structured failure rather than throwing
+        const message = getDeleteErrorMessage({ message: res.error });
+        setError(message);
+        toast.error(message);
+        return;
+      }
+
+      toast.success(
+        t("screens.invoices.deletedSuccessfully", "Invoice deleted.")
+      );
       await refetch();
     } catch (err) {
-      setError(
-        err?.message || t("errors.deleteFailed", { field: t("ui.invoice") })
-      );
+      const message = getDeleteErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }

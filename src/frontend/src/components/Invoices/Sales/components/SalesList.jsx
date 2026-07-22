@@ -22,6 +22,7 @@ import FormattedDate from "../../../../Global/FormattedDate";
 import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
 import GoTo from "../../../../Global/GoTo";
 import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
+import { ToastContainer } from "react-toastify";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -363,17 +364,20 @@ const SalesList = () => {
                             >
                               <Eye size={16} />
                             </button>
-                            {inv.status === "unpaid" && (
-                              <button
-                                onClick={() =>
-                                  navigate(`/edit-sales/${inv.id}`)
-                                }
-                                className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                title={t("common.edit")}
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                            )}
+
+                            {inv.status === "unpaid" &&
+                              inv.return_status === "none" && (
+                                <button
+                                  onClick={() =>
+                                    navigate(`/edit-sales/${inv.id}`)
+                                  }
+                                  className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                  title={t("common.edit")}
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                              )}
+
                             {inv.status !== "paid" && (
                               <button
                                 onClick={() => {
@@ -398,15 +402,16 @@ const SalesList = () => {
                                 <Undo2 size={16} />
                               </button>
                             )}
-                            {inv.status === "unpaid" && (
-                              <button
-                                onClick={() => setDeleteInvoice(inv)}
-                                className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
-                                title={t("common.delete")}
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
+                            {inv.status === "unpaid" &&
+                              inv.return_status === "none" && (
+                                <button
+                                  onClick={() => setDeleteInvoice(inv)}
+                                  className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
+                                  title={t("common.delete")}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              )}
                           </div>
                         </td>
                       </tr>
@@ -456,6 +461,7 @@ const SalesList = () => {
         title={t("deleteModal.title")}
         message={t("deleteModal.message")}
       />
+      <ToastContainer />
     </div>
   );
 };

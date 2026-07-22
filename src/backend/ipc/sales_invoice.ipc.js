@@ -467,13 +467,13 @@ export default function registerSalesInvoiceIPC() {
       updater.full_name AS updated_by_name,
       COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
       sa.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
-
+  
       CASE
         WHEN COALESCE(pa_sum.paid_amount, 0) >= sa.net_total THEN 'paid'
         WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
         ELSE 'unpaid'
       END AS status
-
+  
     FROM sales_invoices sa
     LEFT JOIN customers c ON c.id = sa.customer_id
     
@@ -503,28 +503,41 @@ export default function registerSalesInvoiceIPC() {
     SELECT
   si.*,
   p.name,
-
+  
   COALESCE(r.returned_quantity, 0) AS returned_quantity,
-
+  
   (
     si.quantity - COALESCE(r.returned_quantity, 0)
-  ) AS available_quantity
-
-FROM sales_invoice_items si
-
-LEFT JOIN products p
+  ) AS available_quantity,
+  
+  -- Profit on what's still actually sold (returned units earn nothing)
+  (
+    (si.quantity - COALESCE(r.returned_quantity, 0)) * (si.price - si.buyingPrice)
+  ) AS item_profit,
+  
+  (si.price - si.buyingPrice) AS item_profit_per_unit,
+  
+  CASE
+    WHEN si.price > 0 THEN
+      ROUND(((si.price - si.buyingPrice) / si.price) * 100, 2)
+    ELSE 0
+  END AS item_margin_percent
+  
+  FROM sales_invoice_items si
+  
+  LEFT JOIN products p
   ON p.id = si.product_id
-
-LEFT JOIN (
+  
+  LEFT JOIN (
   SELECT
     sales_invoice_item_id,
     SUM(quantity) AS returned_quantity
   FROM sales_return_items
   GROUP BY sales_invoice_item_id
-) r
+  ) r
   ON r.sales_invoice_item_id = si.id
-
-WHERE si.invoice_id = ?
+  
+  WHERE si.invoice_id = ?
     `
       )
       .all(id);
@@ -557,10 +570,29 @@ WHERE si.invoice_id = ?
       )
       .all(id);
 
+    // ---- Invoice-level profit summary, derived from items (never trusted from client) ----
+    const revenue = items.reduce(
+      (sum, i) => sum + i.available_quantity * i.price,
+      0
+    );
+    const cogs = items.reduce(
+      (sum, i) => sum + i.available_quantity * i.buyingPrice,
+      0
+    );
+    const grossProfit = Number((revenue - cogs).toFixed(2));
+    const marginPercent =
+      revenue > 0 ? Number(((grossProfit / revenue) * 100).toFixed(2)) : 0;
+
     return {
       ...invoice,
       items,
       allocations,
+      profitSummary: {
+        revenue: Number(revenue.toFixed(2)),
+        cogs: Number(cogs.toFixed(2)),
+        grossProfit,
+        marginPercent,
+      },
     };
   });
 
@@ -586,6 +618,22 @@ WHERE si.invoice_id = ?
 
         if (!oldInvoice) {
           throw new Error("SALES INVOICE NOT FOUND");
+        }
+
+        const hasReturn = db
+          .prepare(
+            `
+            SELECT 1
+            FROM sales_return_items sri
+            JOIN sales_invoice_items sii ON sii.id = sri.sales_invoice_item_id
+            WHERE sii.invoice_id = ?
+            LIMIT 1
+          `
+          )
+          .get(data.id);
+
+        if (hasReturn) {
+          throw new Error("CANNOT_MODIFY_INVOICE_WITH_RETURN");
         }
 
         const oldCustomerId = oldInvoice.customer_id || null;
@@ -641,7 +689,6 @@ WHERE si.invoice_id = ?
         const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
         const newNetTotal = Number((taxableAmount + taxValue).toFixed(2));
 
-        // ---- Invoice name: keep user-edited name, else fall back to existing ----
         const invoiceName =
           data.invoice_name?.trim() || oldInvoice.invoice_name;
 
@@ -679,8 +726,6 @@ WHERE si.invoice_id = ?
           });
         }
 
-        // Sales invoice can only reach this handler while unpaid (guard above),
-        // so paid_amount/remaining_amount/status stay at their unpaid defaults.
         db.prepare(
           `
           UPDATE sales_invoices
@@ -756,10 +801,6 @@ WHERE si.invoice_id = ?
   ipcMain.handle("delete-sales-invoice", (event, id) => {
     try {
       const transaction = db.transaction(() => {
-        const items = db
-          .prepare(`SELECT * FROM sales_invoice_items WHERE invoice_id = ?`)
-          .all(id);
-
         const invoice = db
           .prepare(`SELECT * FROM sales_invoices WHERE id = ?`)
           .get(id);
@@ -767,6 +808,40 @@ WHERE si.invoice_id = ?
         if (!invoice) {
           throw new Error("SALES INVOICE NOT FOUND");
         }
+
+        const hasReturn = db
+          .prepare(
+            `
+            SELECT 1
+            FROM sales_return_items sri
+            JOIN sales_invoice_items sii ON sii.id = sri.sales_invoice_item_id
+            WHERE sii.invoice_id = ?
+            LIMIT 1
+          `
+          )
+          .get(id);
+
+        if (hasReturn) {
+          throw new Error("CANNOT_DELETE_INVOICE_WITH_RETURN");
+        }
+
+        const hasPayment = db
+          .prepare(
+            `
+            SELECT 1 FROM payment_allocations
+            WHERE invoice_id = ? AND invoice_type = 'sales'
+            LIMIT 1
+          `
+          )
+          .get(id);
+
+        if (hasPayment) {
+          throw new Error("CANNOT_DELETE_PAID_INVOICE");
+        }
+
+        const items = db
+          .prepare(`SELECT * FROM sales_invoice_items WHERE invoice_id = ?`)
+          .all(id);
 
         const reverseStock = db.prepare(`
           UPDATE products SET quantity = quantity + ? WHERE id = ?

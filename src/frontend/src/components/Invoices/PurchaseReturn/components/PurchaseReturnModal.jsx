@@ -50,7 +50,7 @@ const PurchaseReturnModal = ({ isOpen, onClose, id }) => {
       cancelled = true;
     };
   }, [id, isOpen]);
-  console.log(invoice);
+
   useEffect(() => {
     if (invoice && invoice.items) {
       const itemsWithReturnQty = invoice.items.map((item) => ({

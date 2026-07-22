@@ -44,7 +44,6 @@ export default function UpdateSales() {
     setProducts,
     status,
   } = useUpdateSales();
-  console.log(invoice);
 
   const { money } = usePrimaryCurrency();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
@@ -53,7 +52,8 @@ export default function UpdateSales() {
   const customerName =
     customers?.data?.find((c) => c.id === invoice?.customer_id)?.name || "";
 
-  const isLocked = status === "paid" || status === "partial";
+  const hasReturn = items.some((i) => Number(i.returned_quantity || 0) > 0);
+  const isLocked = status === "paid" || status === "partial" || hasReturn;
   const hasUsableItems = items.some((i) => i.product_id);
   const canSave =
     !!invoice?.customer_id && hasUsableItems && !saving && !isLocked;
@@ -149,7 +149,14 @@ export default function UpdateSales() {
         {isLocked && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             <Lock size={18} className="mt-0.5 shrink-0" />
-            <span>{t("screens.invoices.lockedAfterPayment")}</span>
+            <span>
+              {hasReturn
+                ? t(
+                    "screens.invoices.lockedAfterReturn",
+                    "This invoice has a return and can no longer be edited."
+                  )
+                : t("screens.invoices.lockedAfterPayment")}
+            </span>
           </div>
         )}
 

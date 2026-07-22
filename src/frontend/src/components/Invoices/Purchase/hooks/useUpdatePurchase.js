@@ -190,8 +190,9 @@ export default function useUpdatePurchase() {
   const submit = async () => {
     try {
       setSaving(true);
+      setError("");
 
-      await api.updatePurchaseInvoice({
+      const res = await api.updatePurchaseInvoice({
         ...invoice,
         items,
         subtotal,
@@ -199,10 +200,17 @@ export default function useUpdatePurchase() {
         taxValue,
         updated_by: user.id,
       });
+
+      if (res?.success === false) {
+        setError(res.error || t("errors.saveFailed"));
+        return { success: false, error: res.error };
+      }
+
       navigat("/purchase");
-      return true;
+      return { success: true };
     } catch (err) {
       setError(err.message);
+      return { success: false, error: err.message };
     } finally {
       setSaving(false);
     }
@@ -230,5 +238,6 @@ export default function useUpdatePurchase() {
     netTotal,
     api,
     setProducts,
+    status: invoice?.status || "unpaid",
   };
 }

@@ -21,6 +21,7 @@ import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 import PurchaseReturnModal from "../../PurchaseReturn/components/PurchaseReturnModal";
+import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -295,20 +296,24 @@ const PurchaseList = () => {
                       <td className="px-5 py-4 text-right  tabular-nums text-emerald-700">
                         {money(inv.net_total || 0)}
                       </td>
-                      <td className="px-5 py-4 text-center">
-                        <StatusBadge
-                          status={inv.status}
-                          paidAmount={inv.paid_amount}
-                          remainingAmount={inv.remaining_amount}
-                          money={money}
-                          t={t}
-                        />
+                      <td className="px-5 py-4 text-start">
+                        <div className="flex  items-start gap-1.5">
+                          <StatusBadge
+                            status={inv.status}
+                            paidAmount={inv.paid_amount}
+                            remainingAmount={inv.remaining_amount}
+                            money={money}
+                            t={t}
+                          />
+                          <ReturnStatusBadge status={inv.return_status} />
+                        </div>
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex justify-start gap-1">
                           <button
                             onClick={() => navigate(`/view-purchase/${inv.id}`)}
                             className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                            title={t("common.view")}
                           >
                             <Eye size={16} />
                           </button>
@@ -320,37 +325,48 @@ const PurchaseList = () => {
                                 setOpenPaymentModel(true);
                               }}
                               className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              title={t("ui.payment")}
                             >
                               <HandCoins size={16} />
                             </button>
                           )}
-                          <button
-                            onClick={() => {
-                              setSelecteInvoice(inv);
-                              setOpenRefundModel(true);
-                            }}
-                            className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                          >
-                            <Undo2 size={16} />
-                          </button>
-                          {inv.status === "unpaid" && (
-                            <>
+
+                          {inv.return_status !== "full" && (
+                            <button
+                              onClick={() => {
+                                setSelecteInvoice(inv);
+                                setOpenRefundModel(true);
+                              }}
+                              className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              title={t("ui.createPurchaseReturn")}
+                            >
+                              <Undo2 size={16} />
+                            </button>
+                          )}
+
+                          {inv.status === "unpaid" &&
+                            inv.return_status === "none" && (
                               <button
                                 onClick={() =>
                                   navigate(`/edit-purchase/${inv.id}`)
                                 }
                                 className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                title={t("common.edit")}
                               >
                                 <Edit2 size={16} />
                               </button>
+                            )}
+
+                          {inv.status === "unpaid" &&
+                            inv.return_status === "none" && (
                               <button
                                 onClick={() => setDeleteInvoice(inv)}
                                 className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                                title={t("common.delete")}
                               >
                                 <Trash2 size={16} />
                               </button>
-                            </>
-                          )}
+                            )}
                         </div>
                       </td>
                     </tr>

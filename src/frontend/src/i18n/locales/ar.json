@@ -28,6 +28,10 @@
     "clear": "مسح الفلتر"
   },
   "ui": {
+    "profit": "الربح",
+    "cogs": "تكلفة البضاعة",
+    "grossProfit": "إجمالي الربح",
+    "margin": "الهامش",
     "setup": "الإعداد",
     "contacts": "جهات الاتصال",
     "inventory": "المخزون",
@@ -326,6 +330,10 @@
       }
     },
     "invoices": {
+      "returnedQty": "مرتجع {{qty}}",
+      "profitBreakdown": "تفاصيل الربح",
+      "perItemProfit": "ربح كل منتج",
+      "profitHidden": "تفاصيل الأرباح تظهر للمدير فقط",
       "salesTitle": "فواتير المبيعات",
       "salesSubtitle": "تتبع فواتير العملاء والمدفوعات والأرصدة المستحقة.",
       "purchaseTitle": "فواتير الشراء",
@@ -374,6 +382,7 @@
       "addItemToStart": "أضف منتجاً لبدء هذه الفاتورة.",
       "keepOneItem": "يجب الإبقاء على عنصر واحد على الأقل",
       "lockedAfterPayment": "لا يمكن تعديل الفواتير المدفوعة أو المدفوعة جزئياً.",
+      "lockedAfterReturn": "تم إجراء مرتجع على هذه الفاتورة ولا يمكن تعديلها بعد الآن.",
       "noItemsYet": "لا توجد عناصر بعد",
       "savedPaid": "تم حفظ الفاتورة ودفعها",
       "savedUnpaid": "تم حفظ الفاتورة",
@@ -435,7 +444,10 @@
       "pinMismatch": "الرمزان غير متطابقين",
       "emailInvalid": "أدخل بريداً إلكترونياً صالحاً",
       "Product name already exists": "اسم المنتج موجود بالفعل",
-      "Barcode already used by another product": "هذا الباركود مستخدم بالفعل لمنتج آخر"
+      "Barcode already used by another product": "هذا الباركود مستخدم بالفعل لمنتج آخر",
+      "cannotDeleteInvoiceWithReturn": "تم إجراء مرتجع على هذه الفاتورة ولا يمكن حذفها.",
+      "cannotDeletePaidInvoice": "توجد دفعة على هذه الفاتورة ولا يمكن حذفها.",
+      "invoiceNotFound": "هذه الفاتورة لم تعد موجودة."
     },
     "pos": {
       "loading": "جار تحميل نظام نقاط البيع...",

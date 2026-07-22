@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { ArrowLeft, Plus, Trash2, Save, Receipt } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Save,
+  Receipt,
+  AlertCircle,
+  Lock,
+} from "lucide-react";
 import useUpdatePurchase from "../hooks/useUpdatePurchase";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -28,12 +36,16 @@ export default function UpdatePurchase() {
     loading,
     api,
     setProducts,
+    status,
   } = useUpdatePurchase();
   const { money } = usePrimaryCurrency();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
 
+  const hasReturn = items.some((i) => Number(i.returned_quantity || 0) > 0);
+  const isLocked = status === "paid" || status === "partial" || hasReturn;
+
   const inputClass =
-    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100";
   const panelClass =
     "rounded-[28px] border border-white/80 bg-white/85 p-5 shadow-[0_18px_60px_rgba(70,99,255,0.10)]";
 
@@ -66,19 +78,46 @@ export default function UpdatePurchase() {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-          >
-            <ArrowLeft size={16} />
-            {t("common.back")}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={`rounded-xl px-3 py-1.5 text-xs font-black ${
+                status === "paid"
+                  ? "bg-green-100 text-green-700"
+                  : status === "partial"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-red-100 text-red-600"
+              }`}
+            >
+              {t(`screens.invoices.${status}`)}
+            </span>
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+            >
+              <ArrowLeft size={16} />
+              {t("common.back")}
+            </button>
+          </div>
         </section>
 
         {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {error}
+          </div>
+        )}
+
+        {isLocked && (
+          <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+            <Lock size={18} className="mt-0.5 shrink-0" />
+            <span>
+              {hasReturn
+                ? t(
+                    "screens.invoices.lockedAfterReturn",
+                    "This invoice has a return and can no longer be edited."
+                  )
+                : t("screens.invoices.lockedAfterPayment")}
+            </span>
           </div>
         )}
 
@@ -93,11 +132,13 @@ export default function UpdatePurchase() {
                   onChange={(e) =>
                     setInvoice({ ...invoice, supplier_id: e.id })
                   }
+                  disabled={isLocked}
                 />
                 <input
                   type="date"
                   className={inputClass}
                   value={invoice?.date?.slice(0, 10)}
+                  disabled={isLocked}
                   onChange={(e) =>
                     setInvoice({ ...invoice, date: e.target.value })
                   }
@@ -118,7 +159,8 @@ export default function UpdatePurchase() {
                 <button
                   type="button"
                   onClick={addItem}
-                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20"
+                  disabled={isLocked}
+                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <Plus size={16} />
                   {t("screens.invoices.addItem")}
@@ -146,6 +188,7 @@ export default function UpdatePurchase() {
                             options={products}
                             selectedValue={item.product_id}
                             selectedLabel={item.name}
+                            disabled={isLocked}
                             onChange={(e) => {
                               updateItem(index, "product_id", e.id);
                             }}
@@ -171,6 +214,7 @@ export default function UpdatePurchase() {
                             type="number"
                             className={`${inputClass} mx-auto w-24 text-center`}
                             value={item.quantity}
+                            disabled={isLocked}
                             onChange={(e) =>
                               updateItem(index, "quantity", e.target.value)
                             }
@@ -181,6 +225,7 @@ export default function UpdatePurchase() {
                             type="number"
                             className={`${inputClass} mx-auto w-28 text-center`}
                             value={item.price}
+                            disabled={isLocked}
                             onChange={(e) =>
                               updateItem(index, "price", e.target.value)
                             }
@@ -193,7 +238,8 @@ export default function UpdatePurchase() {
                           <button
                             type="button"
                             onClick={() => setDeleteItemIndex(index)}
-                            className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                            disabled={items.length === 1 || isLocked}
+                            className="rounded-xl p-2 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -220,6 +266,7 @@ export default function UpdatePurchase() {
                   min="0"
                   className={`${inputClass} w-36`}
                   value={invoice.discount || ""}
+                  disabled={isLocked}
                   onChange={(e) =>
                     setInvoice({
                       ...invoice,
@@ -234,6 +281,7 @@ export default function UpdatePurchase() {
                 <select
                   className={`${inputClass} w-36`}
                   value={invoice.tax}
+                  disabled={isLocked}
                   onChange={(e) => {
                     const selected = taxes.find(
                       (t) => t.id === Number(e.target.value)
@@ -274,15 +322,19 @@ export default function UpdatePurchase() {
               </div>
             </section>
 
-            <button
-              type="button"
-              onClick={submit}
-              disabled={saving}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 hover:bg-[#3854e8] disabled:opacity-60"
-            >
-              <Save size={16} />
-              {saving ? t("common.saving") : t("screens.invoices.saveInvoice")}
-            </button>
+            {!isLocked && (
+              <button
+                type="button"
+                onClick={submit}
+                disabled={saving}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 hover:bg-[#3854e8] disabled:opacity-60"
+              >
+                <Save size={16} />
+                {saving
+                  ? t("common.saving")
+                  : t("screens.invoices.saveInvoice")}
+              </button>
+            )}
           </aside>
         </div>
       </div>

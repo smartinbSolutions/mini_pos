@@ -14,7 +14,10 @@ const toAppFileUrl = (filePath) =>
 // Dashboard stats helpers
 // ---------------------------------------------------------------------------
 
-function getModuleStats(db, { table, invoiceType, dateColumn = "date" }) {
+function getModuleStats(
+  db,
+  { table, invoiceType, dateColumn = "date", returnTable = null }
+) {
   const total =
     db
       .prepare(`SELECT COALESCE(SUM(net_total), 0) AS value FROM ${table}`)
@@ -71,6 +74,37 @@ function getModuleStats(db, { table, invoiceType, dateColumn = "date" }) {
     )
     .get(invoiceType);
 
+  let returns = null;
+  if (returnTable) {
+    const returnsTotal =
+      db
+        .prepare(
+          `SELECT COALESCE(SUM(net_total), 0) AS value FROM ${returnTable}`
+        )
+        .get()?.value || 0;
+
+    const returnsToday =
+      db
+        .prepare(
+          `
+          SELECT COALESCE(SUM(net_total), 0) AS value
+          FROM ${returnTable}
+          WHERE date(${dateColumn}) = date('now')
+        `
+        )
+        .get()?.value || 0;
+
+    const returnsCount =
+      db.prepare(`SELECT COUNT(*) AS value FROM ${returnTable}`).get()?.value ||
+      0;
+
+    returns = {
+      total: returnsTotal,
+      today: returnsToday,
+      count: returnsCount,
+    };
+  }
+
   return {
     total,
     today,
@@ -79,6 +113,8 @@ function getModuleStats(db, { table, invoiceType, dateColumn = "date" }) {
     paid: statusBreakdown?.paid || 0,
     partial: statusBreakdown?.partial || 0,
     unpaid: statusBreakdown?.unpaid || 0,
+    returns, // null for expense, populated object for sales/purchase
+    netTotal: returns ? total - returns.total : total,
   };
 }
 
@@ -229,6 +265,8 @@ function getFundBalances(db) {
         f.name,
         c.code AS currency_code,
         c.symbol AS currency_symbol,
+        c.exchangeRate AS exchange_rate,
+        c.isPrimary AS is_primary,
         COALESCE(SUM(
           CASE WHEN fh.movement_type = 'in' THEN fh.amount ELSE -fh.amount END
         ), 0) AS balance
@@ -404,10 +442,12 @@ export default function registerCompanySettingsIPC() {
     const sales = getModuleStats(db, {
       table: "sales_invoices",
       invoiceType: "sales",
+      returnTable: "sales_returns",
     });
     const purchase = getModuleStats(db, {
       table: "purchase_invoices",
       invoiceType: "purchase",
+      returnTable: "purchase_returns",
     });
     const expense = getModuleStats(db, {
       table: "expense",

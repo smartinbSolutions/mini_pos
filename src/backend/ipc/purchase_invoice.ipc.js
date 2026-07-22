@@ -527,6 +527,22 @@ export default function registerPurchaseInvoicesIPC() {
       return { success: false, error: "Invoice not found" };
     }
 
+    const hasReturn = db
+      .prepare(
+        `
+        SELECT 1
+        FROM purchase_return_items pri
+        JOIN purchase_invoice_items pii ON pii.id = pri.purchase_invoice_item_id
+        WHERE pii.invoice_id = ?
+        LIMIT 1
+      `
+      )
+      .get(data.id);
+
+    if (hasReturn) {
+      return { success: false, error: "CANNOT_MODIFY_INVOICE_WITH_RETURN" };
+    }
+
     const oldSupplierId = oldInvoice.supplier_id || null;
     const newSupplierId = data.supplier_id || null;
 
@@ -637,7 +653,6 @@ export default function registerPurchaseInvoicesIPC() {
         );
       }
 
-      // ---- Derive tax/net_total server-side ----
       const subtotal = Number(data.subtotal || 0);
       const discount = Number(data.discount || 0);
       const taxId = data.tax ?? null;
@@ -657,7 +672,6 @@ export default function registerPurchaseInvoicesIPC() {
       const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
       const netTotal = Number((taxableAmount + taxValue).toFixed(2));
 
-      // ---- Invoice name: keep user-edited name, else fall back to existing ----
       const invoiceName = data.invoice_name?.trim() || oldInvoice.invoice_name;
 
       db.prepare(
@@ -721,9 +735,46 @@ export default function registerPurchaseInvoicesIPC() {
       return { success: false, error: err.message || String(err) };
     }
   });
-
   // DELETE
   ipcMain.handle("delete-purchase-invoice", (event, id) => {
+    const invoice = db
+      .prepare(`SELECT * FROM purchase_invoices WHERE id = ?`)
+      .get(id);
+
+    if (!invoice) {
+      return { success: false, error: "PURCHASE INVOICE NOT FOUND" };
+    }
+
+    const hasReturn = db
+      .prepare(
+        `
+        SELECT 1
+        FROM purchase_return_items pri
+        JOIN purchase_invoice_items pii ON pii.id = pri.purchase_invoice_item_id
+        WHERE pii.invoice_id = ?
+        LIMIT 1
+      `
+      )
+      .get(id);
+
+    if (hasReturn) {
+      return { success: false, error: "CANNOT_DELETE_INVOICE_WITH_RETURN" };
+    }
+
+    const hasPayment = db
+      .prepare(
+        `
+        SELECT 1 FROM payment_allocations
+        WHERE invoice_id = ? AND invoice_type = 'purchase'
+        LIMIT 1
+      `
+      )
+      .get(id);
+
+    if (hasPayment) {
+      return { success: false, error: "CANNOT_DELETE_PAID_INVOICE" };
+    }
+
     const transaction = db.transaction(() => {
       const items = db
         .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
@@ -742,14 +793,12 @@ export default function registerPurchaseInvoicesIPC() {
         String(now.getMinutes()).padStart(2, "0") +
         ":" +
         String(now.getSeconds()).padStart(2, "0");
-      const invoice = db
-        .prepare(`SELECT * FROM purchase_invoices WHERE id = ?`)
-        .get(id);
+
       const reverseStock = db.prepare(`
-      UPDATE products
-      SET quantity = quantity - ?
-      WHERE id = ?
-    `);
+        UPDATE products
+        SET quantity = quantity - ?
+        WHERE id = ?
+      `);
 
       for (const item of items) {
         reverseStock.run(item.quantity || 0, item.product_id);
@@ -769,7 +818,12 @@ export default function registerPurchaseInvoicesIPC() {
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
         id
       );
-      db.prepare(`DELETE FROM party_history WHERE invoice_id = ?`).run(id);
+      db.prepare(
+        `
+        DELETE FROM party_history
+        WHERE invoice_id = ? AND invoice_type = 'purchase'
+      `
+      ).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);
     });
 

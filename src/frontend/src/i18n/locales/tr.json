@@ -28,6 +28,10 @@
     "clear": "Filtreyi Temizle"
   },
   "ui": {
+    "profit": "Kâr",
+    "cogs": "Malın maliyeti",
+    "grossProfit": "Brüt kâr",
+    "margin": "Marj",
     "setup": "Kurulum",
     "contacts": "Kişiler",
     "inventory": "Stok",
@@ -325,6 +329,10 @@
       }
     },
     "invoices": {
+      "returnedQty": "{{qty}} iade edildi",
+      "profitBreakdown": "Kâr Dökümü",
+      "perItemProfit": "Ürün başına kâr",
+      "profitHidden": "Kâr detayları yalnızca yöneticilere gösterilir",
       "salesTitle": "Satış faturaları",
       "salesSubtitle": "Müşteri faturalarını, ödemeleri ve açık bakiyeleri takip edin.",
       "purchaseTitle": "Satın alma faturaları",
@@ -373,6 +381,7 @@
       "addItemToStart": "Bu faturayı başlatmak için bir ürün ekleyin.",
       "keepOneItem": "En az bir kalem gereklidir",
       "lockedAfterPayment": "Ödenmiş veya kısmen ödenmiş faturalar düzenlenemez.",
+      "lockedAfterReturn": "Bu faturada iade yapıldığı için artık düzenlenemez.",
       "noItemsYet": "Henüz kalem yok",
       "savedPaid": "Fatura kaydedildi ve ödendi",
       "savedUnpaid": "Fatura kaydedildi",
@@ -434,7 +443,10 @@
       "pinMismatch": "PIN kodları eşleşmiyor",
       "emailInvalid": "Geçerli bir e-posta adresi girin",
       "Product name already exists": "Ürün adı zaten mevcut",
-      "Barcode already used by another product": "Barkod zaten başka bir ürün tarafından kullanılıyor"
+      "Barcode already used by another product": "Barkod zaten başka bir ürün tarafından kullanılıyor",
+      "cannotDeleteInvoiceWithReturn": "Bu faturada iade olduğu için silinemez.",
+      "cannotDeletePaidInvoice": "Bu faturada ödeme olduğu için silinemez.",
+      "invoiceNotFound": "Bu fatura artık mevcut değil."
     },
     "pos": {
       "loading": "POS Sistemi yükleniyor...",

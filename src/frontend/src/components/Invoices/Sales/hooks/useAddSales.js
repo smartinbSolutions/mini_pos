@@ -77,7 +77,7 @@ export default function useAddSales({ customerModalOpen }) {
       let item = { ...copy[index] };
 
       item[key] = value;
-      console.log(products);
+
       if (key === "product_id") {
         const product = products?.data?.find((p) => p.id == value);
         if (product) {

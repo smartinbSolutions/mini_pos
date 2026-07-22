@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Printer, ArrowLeft, Receipt } from "lucide-react";
+import { Printer, ArrowLeft, Receipt, TrendingUp } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import GoTo from "../../../../Global/GoTo";
+import { useAuth } from "../../../../Global/AuthContext";
 
 export default function SalesInvoiceView() {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,11 +53,7 @@ export default function SalesInvoiceView() {
   const handlePrint = async (invoice) => {
     try {
       setIsPrinting(true);
-
       await api.printSalesInvoice(invoice);
-
-      // أو إذا كنت تستخدم window.api
-      // await window.api.printInvoice(invoice.id);
     } catch (err) {
       console.error(err);
     } finally {
@@ -71,6 +70,7 @@ export default function SalesInvoiceView() {
   const items = invoice?.items || [];
   const allocations = invoice?.allocations || [];
   const status = invoice?.status || "unpaid";
+  const profitSummary = invoice?.profitSummary || null;
 
   const statusStyle = {
     unpaid: {
@@ -118,15 +118,6 @@ export default function SalesInvoiceView() {
             <ArrowLeft size={18} />
             {t("common.back")}
           </button>
-
-          {/* <button
-            type="button"
-            onClick={printInvoice}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20"
-          >
-            <Printer size={18} />
-            Print
-          </button> */}
         </div>
 
         <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(70,99,255,0.14)] print:rounded-none print:border-none print:shadow-none">
@@ -172,6 +163,11 @@ export default function SalesInvoiceView() {
                     <th className="p-3 text-center">{t("ui.price")}</th>
                     <th className="p-3 text-center">{t("ui.qty")}</th>
                     <th className="p-3 text-center">{t("ui.total")}</th>
+                    {isAdmin && (
+                      <th className="p-3 text-center">
+                        {t("ui.profit", "Profit")}
+                      </th>
+                    )}
                   </tr>
                 </thead>
 
@@ -180,7 +176,7 @@ export default function SalesInvoiceView() {
                     <tr>
                       <td
                         className="p-5 text-center text-slate-500"
-                        colSpan={5}
+                        colSpan={isAdmin ? 5 : 4}
                       >
                         {t("screens.invoices.noItems")}
                       </td>
@@ -190,6 +186,14 @@ export default function SalesInvoiceView() {
                       <tr key={item.id}>
                         <td className="p-3 text-center">
                           {item.product_name || item.name || "-"}
+                          {item.returned_quantity > 0 && (
+                            <div className="mt-0.5 text-xs font-semibold text-rose-500">
+                              {t("screens.invoices.returnedQty", {
+                                qty: item.returned_quantity,
+                                defaultValue: "{{qty}} returned",
+                              })}
+                            </div>
+                          )}
                         </td>
                         <td className="p-3 text-center">{money(item.price)}</td>
                         <td className="p-3 text-center">
@@ -198,20 +202,25 @@ export default function SalesInvoiceView() {
                         <td className="p-3 text-center font-black">
                           {money(item.total)}
                         </td>
+                        {isAdmin && (
+                          <td className="p-3 text-center">
+                            <span
+                              className={`font-bold ${item.item_profit >= 0 ? "text-emerald-700" : "text-rose-600"}`}
+                            >
+                              {money(item.item_profit)}
+                            </span>
+                            <div className="text-xs font-medium text-slate-400">
+                              {item.item_margin_percent}%
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
                 </tbody>
               </table>
             </div>
-            {/* <button
-              onClick={() => handlePrint(id)}
-              disabled={isPrinting}
-              className={`rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] ${isPrinting ? "opacity-50 cursor-not-allowed" : ""}`}
-              title={t("common.print") || "Print"}
-            >
-              <Printer size={16} />
-            </button> */}
+
             <div className="mt-6 flex flex-col-reverse gap-6 lg:flex-row lg:justify-between">
               {/* PAYMENT HISTORY */}
               <div className="flex-1">
@@ -273,7 +282,6 @@ export default function SalesInvoiceView() {
 
                 <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl font-black">
                   <span>{t("ui.total")}</span>
-
                   <span className="text-[#4663ff]">
                     {money(invoice.net_total)}
                   </span>
@@ -285,7 +293,6 @@ export default function SalesInvoiceView() {
                       <span className="text-slate-500">
                         {t("screens.invoices.paid")}
                       </span>
-
                       <span className="font-bold text-emerald-700">
                         {money(invoice.paid_amount)}
                       </span>
@@ -296,7 +303,6 @@ export default function SalesInvoiceView() {
                         <span className="text-slate-500">
                           {t("ui.remaining")}
                         </span>
-
                         <span className="font-bold text-amber-600">
                           {money(invoice.remaining_amount)}
                         </span>
@@ -306,6 +312,91 @@ export default function SalesInvoiceView() {
                 )}
               </div>
             </div>
+            {isAdmin && profitSummary && (
+              <div className="mt-6 overflow-hidden rounded-[24px] border border-emerald-100 bg-emerald-50/40">
+                <div className="flex items-center justify-between border-b border-emerald-100 bg-emerald-50/60 px-5 py-3">
+                  <h3 className="flex items-center gap-2 text-sm font-black text-emerald-800">
+                    <TrendingUp size={16} />
+                    {t("screens.invoices.profitBreakdown", "Profit Breakdown")}
+                  </h3>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-black ${
+                      profitSummary.grossProfit >= 0
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-rose-100 text-rose-600"
+                    }`}
+                  >
+                    {profitSummary.marginPercent}% {t("ui.margin", "Margin")}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase text-slate-400">
+                      {t("ui.total", "Revenue")}
+                    </p>
+                    <p className="text-lg font-black text-slate-900">
+                      {money(profitSummary.revenue)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase text-slate-400">
+                      {t("ui.cogs", "Cost of goods")}
+                    </p>
+                    <p className="text-lg font-black text-rose-600">
+                      -{money(profitSummary.cogs)}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-white/70 p-3 sm:bg-transparent sm:p-0">
+                    <p className="text-xs font-bold uppercase text-slate-400">
+                      {t("ui.grossProfit", "Gross profit")}
+                    </p>
+                    <p
+                      className={`text-lg font-black ${
+                        profitSummary.grossProfit >= 0
+                          ? "text-emerald-700"
+                          : "text-rose-600"
+                      }`}
+                    >
+                      {money(profitSummary.grossProfit)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Per-item breakdown — expandable list, not a cramped table column */}
+                <details className="border-t border-emerald-100 px-5 py-3">
+                  <summary className="cursor-pointer text-xs font-bold text-emerald-700">
+                    {t("screens.invoices.perItemProfit", "Per-item profit")}
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    {items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm"
+                      >
+                        <span className="text-slate-600">
+                          {item.product_name || item.name || "-"}
+                        </span>
+                        <div className="text-right">
+                          <span
+                            className={`font-bold ${
+                              item.item_profit >= 0
+                                ? "text-emerald-700"
+                                : "text-rose-600"
+                            }`}
+                          >
+                            {money(item.item_profit)}
+                          </span>
+                          <span className="ms-2 text-xs text-slate-400">
+                            ({item.item_margin_percent}%)
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              </div>
+            )}
           </div>
         </div>
       </div>

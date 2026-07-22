@@ -53,7 +53,7 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
       }));
 
       setReturnItems(itemsWithReturnQty);
-      setTaxPercent(invoice.tax || 0);
+      setTaxPercent(invoice.tax_rate || 0);
       setDiscount(0);
       setNote("");
       setValidationError("");

@@ -69,7 +69,6 @@ export default function usePosCheckout({ weight } = {}) {
       if (productsResult.status === "rejected") {
         throw productsResult.reason;
       }
-      console.log(customersResult);
 
       if (customersResult.status === "rejected") {
         console.error("Failed to load customers:", customersResult.reason);
@@ -85,20 +84,20 @@ export default function usePosCheckout({ weight } = {}) {
       setCustomers(
         customersResult.status === "fulfilled"
           ? customersResult.value.data || []
-          : [],
+          : []
       );
       setFunds(
-        fundsResult.status === "fulfilled" ? fundsResult.value || [] : [],
+        fundsResult.status === "fulfilled" ? fundsResult.value || [] : []
       );
 
       setCurrencies(currencyResult.value?.[0] || []);
 
       setError(
         [customersResult, fundsResult].some(
-          (result) => result.status === "rejected",
+          (result) => result.status === "rejected"
         )
           ? t("errors.partialLoad", { field: t("ui.products") })
-          : "",
+          : ""
       );
     } catch (err) {
       console.error("Failed to load POS data:", err);
@@ -135,7 +134,7 @@ export default function usePosCheckout({ weight } = {}) {
                 ...item,
                 qty: replaceQuantity ? qty : toNumber(item.qty) + qty,
               }
-            : item,
+            : item
         );
       }
 
@@ -157,8 +156,8 @@ export default function usePosCheckout({ weight } = {}) {
       quantity === -1
         ? current.filter((item) => item.id !== productId)
         : current.map((item) =>
-            item.id === productId ? { ...item, qty: quantity } : item,
-          ),
+            item.id === productId ? { ...item, qty: quantity } : item
+          )
     );
   };
 
@@ -166,8 +165,8 @@ export default function usePosCheckout({ weight } = {}) {
     const price = Math.max(0, toNumber(nextPrice));
     setCart((current) =>
       current.map((item) =>
-        item.id === productId ? { ...item, price: price } : item,
-      ),
+        item.id === productId ? { ...item, price: price } : item
+      )
     );
   };
 
@@ -188,9 +187,9 @@ export default function usePosCheckout({ weight } = {}) {
     () =>
       cart.reduce(
         (total, item) => total + toNumber(item.price) * toNumber(item.qty),
-        0,
+        0
       ),
-    [cart],
+    [cart]
   );
 
   const discountAmount = useMemo(() => {
@@ -223,7 +222,7 @@ export default function usePosCheckout({ weight } = {}) {
           (payment) =>
             payment.fundId &&
             payment.amount > 0 &&
-            payment.amount_fund_currency > 0,
+            payment.amount_fund_currency > 0
         );
 
       const payload = {
@@ -290,7 +289,7 @@ export default function usePosCheckout({ weight } = {}) {
             const scannedQuantity =
               Math.max(0, toNumber(weightRef.current)) || 1;
             const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id),
+              (i) => Number(i.product_id) === Number(product.id)
             );
 
             if (existingIndex !== -1) {

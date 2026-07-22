@@ -28,6 +28,10 @@
     "clear": "Clear"
   },
   "ui": {
+    "profit": "Profit",
+    "cogs": "Cost of goods",
+    "grossProfit": "Gross profit",
+    "margin": "Margin",
     "setup": "Setup",
     "contacts": "Contacts",
     "inventory": "Inventory",
@@ -325,6 +329,10 @@
       }
     },
     "invoices": {
+      "returnedQty": "{{qty}} returned",
+      "profitBreakdown": "Profit Breakdown",
+      "perItemProfit": "Per-item profit",
+      "profitHidden": "Profit details are only visible to admins",
       "salesTitle": "Sales",
       "salesSubtitle": "Track customer invoices, payments, and outstanding balances.",
       "purchaseTitle": "Purchase",
@@ -373,6 +381,7 @@
       "addItemToStart": "Add a product to start this invoice.",
       "keepOneItem": "At least one item is required",
       "lockedAfterPayment": "Paid or partially paid invoices cannot be edited.",
+      "lockedAfterReturn": "This invoice has a return and can no longer be edited.",
       "noItemsYet": "No items yet",
       "savedPaid": "Invoice saved and paid",
       "savedUnpaid": "Invoice saved",
@@ -434,7 +443,10 @@
       "pinMismatch": "PIN codes do not match",
       "emailInvalid": "Enter a valid email address",
       "Product name already exists": "Product name already exists",
-      "Barcode already used by another product": "Barcode already used by another product"
+      "Barcode already used by another product": "Barcode already used by another product",
+      "cannotDeleteInvoiceWithReturn": "This invoice has a return and cannot be deleted.",
+      "cannotDeletePaidInvoice": "This invoice has a payment and cannot be deleted.",
+      "invoiceNotFound": "This invoice no longer exists."
     },
     "pos": {
       "loading": "Loading POS System...",

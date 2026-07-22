@@ -116,7 +116,7 @@ export default function Dashboard() {
       try {
         setLoading(true);
         const res = await window.api.getDashboardStats();
-        console.log(res);
+
         setData((current) => ({ ...current, ...(res || {}) }));
       } catch (err) {
         console.error(err);
@@ -179,8 +179,13 @@ export default function Dashboard() {
     )
   );
 
-  const totalFundBalance = useMemo(
-    () => data.fundBalances.reduce((sum, f) => sum + Number(f.balance || 0), 0),
+  const totalFundBalancePrimary = useMemo(
+    () =>
+      data.fundBalances.reduce((sum, f) => {
+        const rate = Number(f.exchange_rate) || 1;
+        const balanceInPrimary = Number(f.balance || 0) / rate;
+        return sum + balanceInPrimary;
+      }, 0),
     [data.fundBalances]
   );
 
@@ -219,7 +224,7 @@ export default function Dashboard() {
                   : "text-rose-600"
               }`}
             >
-              {money(data.profitLoss.netProfit)}
+              {money(data.profitLoss.profitLoss.netProfit)}
             </Num>
           </div>
 
@@ -243,8 +248,11 @@ export default function Dashboard() {
               {t("dashboard.total_fund_balance", "Total fund balance")}
             </div>
             <Num className="text-xl font-black text-slate-900">
-              {money(totalFundBalance)}
+              {money(totalFundBalancePrimary)}
             </Num>
+            <div className="text-xs font-medium text-slate-400">
+              {t("dashboard.approx_total", "≈ تقريبي")}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-white/80 bg-white/85 p-4 shadow-[0_12px_40px_rgba(70,99,255,0.08)]">
@@ -302,6 +310,8 @@ export default function Dashboard() {
               1,
               ...stat.trend.map((d) => Number(d.total || 0))
             );
+            const displayTotal = stat.returns ? stat.netTotal : stat.total;
+            const hasReturns = stat.returns && stat.returns.total > 0;
 
             return (
               <div
@@ -314,7 +324,7 @@ export default function Dashboard() {
                       {t(`dashboard.${key}`, key)}
                     </p>
                     <Num className={`text-2xl font-black ${tone.text}`}>
-                      {money(stat.total)}
+                      {money(displayTotal)}
                     </Num>
                     <p className="mt-1 text-xs font-semibold text-slate-400">
                       {t("dashboard.today", "Today")}:{" "}
@@ -325,6 +335,20 @@ export default function Dashboard() {
                     <Icon size={20} className={tone.text} />
                   </div>
                 </div>
+
+                {hasReturns && (
+                  <div className="mx-5 mb-1 flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-xs">
+                    <span className="text-rose-600">
+                      {t("dashboard.returns", "Returns")}
+                      <span className="ms-1 text-rose-400">
+                        ({stat.returns.count})
+                      </span>
+                    </span>
+                    <Num className="font-bold text-rose-600">
+                      -{money(stat.returns.total)}
+                    </Num>
+                  </div>
+                )}
 
                 <div className="flex h-14 items-end gap-1 px-5">
                   {stat.trend.map((d) => (
