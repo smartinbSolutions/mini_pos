@@ -185,7 +185,9 @@ export default function registerPurchaseInvoicesIPC() {
             effective_rate: payment.effective_rate,
             invoice_id: invoiceId,
             invoice_type: payment.mode,
-            note: invoiceName,
+            note:
+              payment.note ||
+              buildDefaultPaymentNote(db, "payment", invoiceName),
             fundOperation: "subtract",
             date: fullDateTime,
             created_by: data.created_by,

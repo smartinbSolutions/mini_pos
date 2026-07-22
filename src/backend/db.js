@@ -62,12 +62,28 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT,
   latinName TEXT,
   costPrice REAL DEFAULT 0,
-  price REAL DEFAULT 0,
   quantity REAL DEFAULT 0,
   logo TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   unit_id INTEGER,
-  FOREIGN KEY (unit_id) REFERENCES unit(id)
+  tax_id INTEGER,
+  FOREIGN KEY (unit_id) REFERENCES unit(id),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
+)
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS product_units (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL,
+  unit_name TEXT NOT NULL,
+  conversion_factor REAL NOT NULL DEFAULT 1,
+  is_base INTEGER NOT NULL DEFAULT 0,
+  sale_price REAL NOT NULL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (product_id) REFERENCES products(id)
 )
 `
 ).run();
@@ -205,7 +221,8 @@ db.prepare(
 CREATE TABLE IF NOT EXISTS taxes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
-  rate REAL DEFAULT 0
+  rate REAL DEFAULT 0,
+  category TEXT NOT NULL DEFAULT 'product' CHECK (category IN ('product', 'invoice', 'both'))
 )
 `
 ).run();

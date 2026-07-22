@@ -9,10 +9,9 @@ import {
   BanknoteArrowDown,
   ArrowRightLeft,
   Receipt,
+  Package,
 } from "lucide-react";
 
-// Central place for "given a type + id, where does it lead" — add new types here
-// once, and every consumer (fund history, party ledger, payment list, etc.) benefits.
 const ROUTES = {
   customer: (id) => `/payment/customer/${id}`,
   supplier: (id) => `/payment/supplier/${id}`,
@@ -25,6 +24,11 @@ const ROUTES = {
   expense: (id) => `/view-expense/${id}`,
   payment: (id) => `/payments/${id}`,
   transfer: (id) => `/funds/transfers/${id}`,
+
+  // product_movements.reference_type actual values
+  products: (id) => `/products/${id}`,
+  purchase_invoice: (id) => `/view-purchase/${id}`,
+  sales_invoice: (id) => `/view-sales/${id}`,
 };
 
 const ICONS = {
@@ -37,6 +41,10 @@ const ICONS = {
   expense: BanknoteArrowDown,
   payment: Receipt,
   transfer: ArrowRightLeft,
+
+  products: Package,
+  purchase_invoice: CreditCard,
+  sales_invoice: ShoppingCart,
 };
 
 export default function GoTo({ type, id, children, className = "" }) {

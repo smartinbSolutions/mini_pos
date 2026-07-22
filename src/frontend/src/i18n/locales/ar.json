@@ -196,7 +196,13 @@
       "createSubtitle": "إضافة معدل ضريبة",
       "namePlaceholder": "اسم الضريبة",
       "ratePlaceholder": "النسبة %",
-      "addButton": "إضافة ضريبة"
+      "addButton": "إضافة ضريبة",
+      "category": "الفئة",
+      "categoryOption": {
+        "product": "منتج",
+        "invoice": "فاتورة",
+        "both": "كلاهما"
+      }
     },
     "currency": {
       "title": "إدارة العملات",
@@ -258,6 +264,26 @@
       "youOweThem": "مستحق عليهم"
     },
     "products": {
+      "notFound": "المنتج غير موجود.",
+      "tab": {
+        "details": "التفاصيل",
+        "movements": "الحركات"
+      },
+      "baseUnitBadge": "أساسي",
+      "baseUnitHint": "ستكون هذه هي وحدة البيع الافتراضية للمنتج.",
+      "baseSalePrice": "سعر البيع الأساسي",
+      "sellingUnits": "وحدات البيع",
+      "sellingUnitsHint": "أضف وحدات إضافية مثل علبة أو كرتون بسعر خاص بكل منها.",
+      "noSellingUnits": "لا توجد وحدات بيع إضافية بعد.",
+      "unitNamePlaceholder": "اسم الوحدة (مثال: علبة)",
+      "conversionPlaceholder": "عدد القطع في الوحدة",
+      "unitSalePricePlaceholder": "سعر البيع",
+      "removeUnit": "حذف الوحدة",
+      "extraUnitsCount_one": "وحدة إضافية واحدة",
+      "extraUnitsCount_two": "وحدتان إضافيتان",
+      "extraUnitsCount_few": "{{count}} وحدات إضافية",
+      "extraUnitsCount_many": "{{count}} وحدة إضافية",
+      "extraUnitsCount_other": "{{count}} وحدة إضافية",
       "loading": "جار تحميل كتالوج المنتجات...",
       "title": "إدارة المنتجات",
       "subtitle": "تصفح المخزون والأسعار والوحدات والباركود في مساحة واحدة.",
@@ -447,7 +473,9 @@
       "Barcode already used by another product": "هذا الباركود مستخدم بالفعل لمنتج آخر",
       "cannotDeleteInvoiceWithReturn": "تم إجراء مرتجع على هذه الفاتورة ولا يمكن حذفها.",
       "cannotDeletePaidInvoice": "توجد دفعة على هذه الفاتورة ولا يمكن حذفها.",
-      "invoiceNotFound": "هذه الفاتورة لم تعد موجودة."
+      "invoiceNotFound": "هذه الفاتورة لم تعد موجودة.",
+      "taxInUse": "هذه الضريبة محددة كافتراضية لمنتج واحد أو أكثر ولا يمكن حذفها.",
+      "productInUse": "هذا المنتج مرتبط بعمليات بيع أو شراء ولا يمكن حذفه."
     },
     "pos": {
       "loading": "جار تحميل نظام نقاط البيع...",

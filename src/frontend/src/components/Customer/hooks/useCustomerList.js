@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
 
 const useCustomerList = () => {
   const { t } = useTranslation();
@@ -108,9 +109,18 @@ const useCustomerList = () => {
   const deleteCustomer = async (cust) => {
     setSaving(true);
     try {
-      await api.deleteCustomer(cust.id);
+      const res = await api.deleteCustomer(cust.id);
+
+      if (res?.success === false) {
+        throw new Error(
+          res.message ||
+            res.error ||
+            t("errors.deleteHasData", { field: t("ui.customer") })
+        );
+      }
 
       await refetch();
+      return res;
     } finally {
       setSaving(false);
     }
@@ -120,12 +130,14 @@ const useCustomerList = () => {
     try {
       await createCustomer(cust);
       setActionError("");
+      toast.success(t("success.created", { field: t("ui.customer") }));
       return true;
     } catch (err) {
       console.error("Failed to create Customer:", err);
-      setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.customer") })
-      );
+      const message =
+        err?.message || t("errors.createFailed", { field: t("ui.customer") });
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
@@ -134,28 +146,31 @@ const useCustomerList = () => {
     try {
       await updateCustomer(cust);
       setActionError("");
+      toast.success(t("success.updated", { field: t("ui.customer") }));
       return true;
     } catch (err) {
       console.error("Failed to update Customer:", err);
-      setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.customer") })
-      );
+      const message =
+        err?.message || t("errors.updateFailed", { field: t("ui.customer") });
+      setActionError(message);
+      toast.error(message);
       return false;
     }
   };
 
   const handleDeleteCustomer = async (cust) => {
-    // const confirmed = window.confirm(`Delete Customer "${sup.name}"?`);
-    // if (!confirmed) return;
-
     try {
       await deleteCustomer(cust);
       setActionError("");
       setEditing(emptyCustomer);
       setEditingId("");
+      toast.success(t("success.deleted", { field: t("ui.customer") }));
     } catch (err) {
       console.error("Failed to delete Customer:", err);
-      setActionError(t("errors.deleteHasData", { field: t("ui.customer") }));
+      const message =
+        t("errors.deleteHasData", { field: t("ui.customer") }) || err?.message;
+      setActionError(message);
+      toast.error(message);
     }
   };
 
@@ -186,7 +201,7 @@ const useCustomerList = () => {
       setEditing(emptyCustomer);
     }
   };
-
+  console.log(actionError);
   return {
     createCustomer,
     updateCustomer,

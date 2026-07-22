@@ -4,6 +4,8 @@ import useTax from "../hooks/useTax";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
 
+const CATEGORY_OPTIONS = ["product", "invoice", "both"];
+
 const TaxList = () => {
   const { t } = useTranslation();
   const {
@@ -32,6 +34,12 @@ const TaxList = () => {
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
   const primaryButtonClass =
     "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
+
+  const categoryBadgeClass = {
+    product: "bg-[#eef3ff] text-[#4663ff]",
+    invoice: "bg-amber-100 text-amber-700",
+    both: "bg-slate-100 text-slate-700",
+  };
 
   const filteredTaxes = useMemo(() => {
     return taxes.filter((t) =>
@@ -70,9 +78,10 @@ const TaxList = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase  text-slate-400">
+          <div className="grid grid-cols-4 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase  text-slate-400">
             <span>{t("ui.name")}</span>
             <span>{t("ui.rate")}</span>
+            <span>{t("screens.taxes.category")}</span>
             <span className="text-right">{t("common.actions")}</span>
           </div>
 
@@ -82,7 +91,7 @@ const TaxList = () => {
                 <form
                   key={tax.id}
                   onSubmit={submitEdit}
-                  className="grid grid-cols-3 items-center border-b bg-[#f8faff] px-5 py-3"
+                  className="grid grid-cols-4 items-center border-b bg-[#f8faff] px-5 py-3 gap-2"
                 >
                   <input
                     required
@@ -103,6 +112,20 @@ const TaxList = () => {
                     className={`${inputClass} w-24`}
                   />
 
+                  <select
+                    value={editing.category}
+                    onChange={(e) =>
+                      setEditing({ ...editing, category: e.target.value })
+                    }
+                    className={inputClass}
+                  >
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {t(`screens.taxes.categoryOption.${option}`)}
+                      </option>
+                    ))}
+                  </select>
+
                   <div className="flex justify-end gap-2">
                     <button className="rounded-xl bg-[#4663ff] p-2 text-white shadow-lg shadow-[#4663ff]/20">
                       <Save size={14} />
@@ -119,7 +142,7 @@ const TaxList = () => {
               ) : (
                 <div
                   key={tax.id}
-                  className="group grid grid-cols-3 items-center border-b px-5 py-3 transition hover:bg-[#f8faff]"
+                  className="group grid grid-cols-4 items-center border-b px-5 py-3 transition hover:bg-[#f8faff]"
                 >
                   <div className="text-sm font-bold text-slate-900">
                     {tax.name}
@@ -128,6 +151,19 @@ const TaxList = () => {
                   <div>
                     <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
                       {tax.rate}%
+                    </span>
+                  </div>
+
+                  <div>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-bold ${
+                        categoryBadgeClass[tax.category] ||
+                        categoryBadgeClass.product
+                      }`}
+                    >
+                      {t(
+                        `screens.taxes.categoryOption.${tax.category || "product"}`
+                      )}
                     </span>
                   </div>
 
@@ -189,6 +225,18 @@ const TaxList = () => {
               className={`w-full ${inputClass}`}
               placeholder={t("screens.taxes.ratePlaceholder")}
             />
+
+            <select
+              value={draft.category}
+              onChange={(e) => setDraft({ ...draft, category: e.target.value })}
+              className={`w-full ${inputClass}`}
+            >
+              {CATEGORY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {t(`screens.taxes.categoryOption.${option}`)}
+                </option>
+              ))}
+            </select>
 
             <button
               disabled={saving}

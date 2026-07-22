@@ -137,37 +137,6 @@ const useAddPayment = ({
       refetchMinDate();
       setUseCredit(false);
 
-      let defaultNote = "";
-      if (isPurchase) {
-        defaultNote = t("screens.payments.paymentForPurchase", {
-          id: invoice?.id,
-        });
-      } else if (isSales) {
-        defaultNote = t("screens.payments.paymentForSales", {
-          id: invoice?.id,
-        });
-      } else if (isExpense) {
-        defaultNote = t("screens.payments.paymentForExpense", {
-          id: invoice?.id,
-        });
-      } else if (isPurchaseReturn) {
-        defaultNote = t("screens.payments.paymentForPurchaseReturn", {
-          id: invoice?.id,
-        });
-      } else if (isSalesReturn) {
-        defaultNote = t("screens.payments.paymentForSalesReturn", {
-          id: invoice?.id,
-        });
-      } else if (isCustomer) {
-        defaultNote = `${t("screens.payments.receipt_from_customer")}: ${partyName}`;
-      } else if (isSupplier) {
-        defaultNote = `${t("screens.payments.settlement_supplier")}: ${partyName}`;
-      } else {
-        defaultNote = t("screens.payments.partnerTransaction", {
-          name: partyName,
-        });
-      }
-
       setForm({
         fund_id: "",
         fund_exchangeRate: 1,
@@ -175,7 +144,7 @@ const useAddPayment = ({
         collected_amount: initialBaseAmount,
         currency_code: "",
         currency_symbol: "",
-        note: defaultNote,
+        note: "",
         partner_transaction_type: "income",
         date: invoice?.date ? invoice.date.slice(0, 10) : todayStr(),
       });
@@ -188,17 +157,7 @@ const useAddPayment = ({
     refetchCredit,
     refetchMinDate,
     invoice,
-    isPurchase,
-    isExpense,
-    isSales,
-    isPurchaseReturn,
-    isSalesReturn,
-    isPartner,
-    isCustomer,
-    isSupplier,
-    partyName,
     initialBaseAmount,
-    t,
   ]);
 
   // If the floor arrives after the form's default date was set (async fetch),

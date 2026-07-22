@@ -81,7 +81,7 @@ export default function registerCustomersIPC() {
        AND ph.party_id = c.id
   
       GROUP BY c.id
-      ORDER BY c.name
+      ORDER BY c.createdAt DESC, c.id DESC
   
       LIMIT ? OFFSET ?
       `

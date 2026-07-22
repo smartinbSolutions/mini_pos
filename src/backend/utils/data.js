@@ -11,7 +11,76 @@ const TRANSLATIONS = {
     { en: "Carton", ar: "كرتون", tr: "Karton", code: "CTN" },
     { en: "Set", ar: "طقم", tr: "Set", code: "SET" },
   ],
-  vatLabel: { en: "VAT", ar: "ضريبة القيمة المضافة", tr: "KDV" },
+  taxes: [
+    // Product-level: applied per line item (e.g. VAT on a specific product)
+    {
+      en: "Standard VAT 18%",
+      ar: "ضريبة القيمة المضافة القياسية 18%",
+      tr: "Standart KDV %18",
+      rate: 18,
+      category: "product",
+    },
+    {
+      en: "Reduced VAT 5%",
+      ar: "ضريبة القيمة المضافة المخفضة 5%",
+      tr: "İndirimli KDV %5",
+      rate: 5,
+      category: "product",
+    },
+    {
+      en: "Zero-Rated VAT 0%",
+      ar: "ضريبة القيمة المضافة الصفرية 0%",
+      tr: "Sıfır Oranlı KDV %0",
+      rate: 0,
+      category: "product",
+    },
+
+    // Invoice-level: applied once to the whole invoice (service/delivery style charges)
+    {
+      en: "Service Charge 5%",
+      ar: "رسوم الخدمة 5%",
+      tr: "Hizmet Bedeli %5",
+      rate: 5,
+      category: "invoice",
+    },
+    {
+      en: "Delivery Tax 2%",
+      ar: "ضريبة التوصيل 2%",
+      tr: "Teslimat Vergisi %2",
+      rate: 2,
+      category: "invoice",
+    },
+    {
+      en: "Stamp Duty 1%",
+      ar: "رسم الدمغة 1%",
+      tr: "Damga Vergisi %1",
+      rate: 1,
+      category: "invoice",
+    },
+
+    // Both: usable at either the product line or the invoice header
+    {
+      en: "General VAT 10%",
+      ar: "ضريبة القيمة المضافة العامة 10%",
+      tr: "Genel KDV %10",
+      rate: 10,
+      category: "both",
+    },
+    {
+      en: "Municipal Tax 3%",
+      ar: "الضريبة البلدية 3%",
+      tr: "Belediye Vergisi %3",
+      rate: 3,
+      category: "both",
+    },
+    {
+      en: "Excise Tax 20%",
+      ar: "ضريبة الإنتاج 20%",
+      tr: "Özel Tüketim Vergisi %20",
+      rate: 20,
+      category: "both",
+    },
+  ],
   expenseCategories: [
     { en: "Employee Salaries", ar: "مرتبات الموظفين", tr: "Personel Maaşları" },
     { en: "Services", ar: "خدمات", tr: "Hizmetler" },
@@ -55,15 +124,13 @@ export function seedData(db, { language = "ar", currencyId } = {}) {
   });
 
   const insertTax = db.prepare(`
-    INSERT OR IGNORE INTO taxes(name, rate)
-    VALUES (?, ?)
+    INSERT OR IGNORE INTO taxes(name, rate, category)
+    VALUES (?, ?, ?)
   `);
 
-  const vatLabel = TRANSLATIONS.vatLabel[lang];
-  [0, 1, 5, 10, 18, 20].forEach((rate) => {
-    const name =
-      lang === "tr" ? `${vatLabel} %${rate}` : `${vatLabel} ${rate}%`;
-    insertTax.run(name, rate);
+  TRANSLATIONS.taxes.forEach((tax) => {
+    const name = tax[lang] || tax.en;
+    insertTax.run(name, tax.rate, tax.category);
   });
 
   const insertFund = db.prepare(`
@@ -85,7 +152,7 @@ export function seedData(db, { language = "ar", currencyId } = {}) {
   // Sample product for testing, using the "Piece" unit seeded above
   const pieceUnitCode = "PCS";
   const pieceUnit = db
-    .prepare(`SELECT id FROM unit WHERE code = ?`)
+    .prepare(`SELECT id, name FROM unit WHERE code = ?`)
     .get(pieceUnitCode);
 
   const existingTestProduct = db
@@ -95,20 +162,30 @@ export function seedData(db, { language = "ar", currencyId } = {}) {
   if (!existingTestProduct && pieceUnit) {
     const [name, latinName] = localize(TRANSLATIONS.testProduct, lang);
     const costPrice = 50;
+    const salePrice = 100;
     const quantity = 10;
 
     const result = db
       .prepare(
         `
-      INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `
+        INSERT INTO products (name, latinName, costPrice, quantity, unit_id)
+        VALUES (?, ?, ?, ?, ?)
+      `
       )
-      .run(name, latinName, costPrice, 100, quantity, pieceUnit.id);
+      .run(name, latinName, costPrice, quantity, pieceUnit.id);
+
+    const productId = result.lastInsertRowid;
+
+    db.prepare(
+      `
+        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
+        VALUES (?, ?, 1, 1, ?)
+      `
+    ).run(productId, pieceUnit.name || "Piece", salePrice);
 
     createProductMovement(db, {
-      product_id: result.lastInsertRowid,
-      reference_id: result.lastInsertRowid,
+      product_id: productId,
+      reference_id: productId,
       reference_type: "products",
       action: "create",
       type: "in",

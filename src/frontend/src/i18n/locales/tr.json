@@ -195,7 +195,13 @@
       "createSubtitle": "Vergi oranı ekle",
       "namePlaceholder": "Vergi adı",
       "ratePlaceholder": "Oran %",
-      "addButton": "Vergi Ekle"
+      "addButton": "Vergi Ekle",
+      "category": "Kategori",
+      "categoryOption": {
+        "product": "Ürün",
+        "invoice": "Fatura",
+        "both": "Her İkisi"
+      }
     },
     "currency": {
       "title": "Para Birimi Yönetimi",
@@ -257,6 +263,22 @@
       "youOweThem": "Onlara borçlusunuz"
     },
     "products": {
+      "notFound": "Ürün bulunamadı.",
+      "tab": {
+        "details": "Detaylar",
+        "movements": "Hareketler"
+      },
+      "baseUnitBadge": "Temel",
+      "baseUnitHint": "Bu, ürünün varsayılan satış birimi olacaktır.",
+      "baseSalePrice": "Temel Satış Fiyatı",
+      "sellingUnits": "Satış Birimleri",
+      "sellingUnitsHint": "Kutu veya Karton gibi ek birimleri kendi fiyatlarıyla ekleyin.",
+      "noSellingUnits": "Henüz ek satış birimi yok.",
+      "unitNamePlaceholder": "Birim adı (örn. Kutu)",
+      "conversionPlaceholder": "Birim başına adet",
+      "unitSalePricePlaceholder": "Satış fiyatı",
+      "removeUnit": "Birimi kaldır",
+      "extraUnitsCount_other": "{{count}} ek birim",
       "loading": "Ürün kataloğu yükleniyor...",
       "title": "Ürün yönetim merkezi",
       "subtitle": "Stok, fiyat, birim ve barkodları tek bir alanda görüntüleyin.",
@@ -446,7 +468,9 @@
       "Barcode already used by another product": "Barkod zaten başka bir ürün tarafından kullanılıyor",
       "cannotDeleteInvoiceWithReturn": "Bu faturada iade olduğu için silinemez.",
       "cannotDeletePaidInvoice": "Bu faturada ödeme olduğu için silinemez.",
-      "invoiceNotFound": "Bu fatura artık mevcut değil."
+      "invoiceNotFound": "Bu fatura artık mevcut değil.",
+      "taxInUse": "Bu vergi bir veya daha fazla ürün için varsayılan olarak ayarlanmış ve silinemez.",
+      "productInUse": "Bu ürünün satış veya alış geçmişi var ve silinemez."
     },
     "pos": {
       "loading": "POS Sistemi yükleniyor...",

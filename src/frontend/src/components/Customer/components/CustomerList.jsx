@@ -7,6 +7,7 @@ import DeleteModal from "../../../Global/DeleteModel";
 import AddPayment from "../../Cash/Payment/components/AddPayment";
 import ContactListHeader from "../../../Global/Contactlistheader";
 import Pagination from "../../../Global/Pagination";
+import { ToastContainer } from "react-toastify";
 
 const BalanceCell = ({ total, paid, balance, money, t }) => {
   const isSettled = balance <= 0;
@@ -66,6 +67,8 @@ export const CustomerList = () => {
     total,
     totalPages,
   } = useCustomerList();
+  console.log(actionError);
+
   const { money } = usePrimaryCurrency();
 
   const [search, setSearch] = useState("");
@@ -298,6 +301,7 @@ export const CustomerList = () => {
         title={t("deleteModal.title")}
         message={t("deleteModal.message")}
       />
+      <ToastContainer />
     </div>
   );
 };

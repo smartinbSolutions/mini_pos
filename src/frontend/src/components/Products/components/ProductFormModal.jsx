@@ -8,6 +8,8 @@ import {
   Barcode,
   ImagePlus,
   Boxes,
+  Layers,
+  Percent,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
@@ -18,20 +20,25 @@ const emptyForm = {
   name: "",
   latinName: "",
   costPrice: "",
-  price: "",
+  salePrice: "",
   quantity: 0,
   unit_id: "",
+  tax_id: "",
   logo: "",
   barcodes: [{ barcode: "" }],
+  productUnits: [],
   oldQuantity: 0,
 };
 
 export default function ProductFormModal({
   product,
   units,
+  taxes,
   barcodes,
+  productUnits,
   canManageBarcodes,
   canUseUnits,
+  canUseTaxes,
   saving,
   onClose,
   onSubmit,
@@ -48,17 +55,27 @@ export default function ProductFormModal({
         name: product.name || "",
         latinName: product.latinName || "",
         costPrice: Number(product.costPrice ?? 0),
-        price: Number(product.price ?? 0),
+        salePrice: Number(product.salePrice ?? 0),
         quantity: Number(product.quantity ?? 0),
         unit_id: product.unit_id ? Number(product.unit_id) : "",
+        tax_id: product.tax_id ? Number(product.tax_id) : "",
         logo: product.logo || "",
         barcodes: barcodes?.length > 0 ? barcodes : [{ barcode: "" }],
+        productUnits:
+          productUnits
+            ?.filter((u) => !u.is_base)
+            .map((u) => ({
+              id: u.id,
+              unit_name: u.unit_name,
+              conversion_factor: u.conversion_factor,
+              sale_price: u.sale_price,
+            })) || [],
         oldQuantity: Number(product.quantity ?? 0),
       });
     } else {
       setForm(emptyForm);
     }
-  }, [product, barcodes]);
+  }, [product, barcodes, productUnits]);
 
   const updateField = (field, value) => {
     setForm((current) => ({
@@ -95,6 +112,46 @@ export default function ProductFormModal({
     }));
   };
 
+  // ---- Selling units (non-base) handlers, mirrors barcode pattern ----
+  const addProductUnit = () => {
+    setForm((current) => ({
+      ...current,
+      productUnits: [
+        ...current.productUnits,
+        { unit_name: "", conversion_factor: "", sale_price: "" },
+      ],
+    }));
+  };
+
+  const updateProductUnit = (index, field, value) => {
+    setForm((current) => ({
+      ...current,
+      productUnits: current.productUnits.map((unit, currentIndex) => {
+        if (currentIndex !== index) return unit;
+
+        const updated = { ...unit, [field]: value };
+
+        if (field === "conversion_factor" && !unit.sale_price) {
+          const factor = Number(value) || 0;
+          const basePrice = Number(form.salePrice) || 0;
+          updated.sale_price =
+            factor > 0 ? (basePrice * factor).toString() : "";
+        }
+
+        return updated;
+      }),
+    }));
+  };
+
+  const removeProductUnit = (index) => {
+    setForm((current) => ({
+      ...current,
+      productUnits: current.productUnits.filter(
+        (_, currentIndex) => currentIndex !== index
+      ),
+    }));
+  };
+
   const uploadLogo = async (event) => {
     try {
       const file = event.target.files?.[0];
@@ -127,18 +184,29 @@ export default function ProductFormModal({
       return;
     }
 
-    if (Number(form.price) <= 0) {
+    if (Number(form.salePrice) <= 0) {
       toast.error(t("screens.products.validSale"));
       return;
     }
+
+    const cleanedUnits = form.productUnits
+      .filter((u) => u.unit_name.trim() && Number(u.conversion_factor) > 0)
+      .map((u) => ({
+        ...(u.id ? { id: u.id } : {}),
+        unit_name: u.unit_name.trim(),
+        conversion_factor: Number(u.conversion_factor),
+        sale_price: Number(u.sale_price || 0),
+      }));
 
     await onSubmit({
       ...form,
       quantity: Number(form.quantity || 0),
       costPrice: Number(form.costPrice || 0),
-      price: Number(form.price || 0),
+      salePrice: Number(form.salePrice || 0),
       unit_id: form.unit_id ? Number(form.unit_id) : null,
+      tax_id: form.tax_id ? Number(form.tax_id) : null,
       barcodes: form.barcodes.filter((item) => item.barcode.trim()),
+      productUnits: cleanedUnits,
       oldQuantity: form.oldQuantity || 0,
     });
   };
@@ -227,7 +295,7 @@ export default function ProductFormModal({
                   {t("ui.salePrice")}
                 </p>
                 <p className="mt-1 text-xl font-black text-emerald-700">
-                  {form.price || 0}
+                  {form.salePrice || 0}
                 </p>
               </div>
             </div>
@@ -326,6 +394,9 @@ export default function ProductFormModal({
                           </option>
                         ))}
                       </select>
+                      <p className="text-xs font-semibold text-slate-400">
+                        {t("screens.products.baseUnitHint")}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -362,19 +433,150 @@ export default function ProductFormModal({
                     </div>
 
                     <div className="space-y-2">
-                      <label className={labelClass}>{t("ui.salePrice")}</label>
+                      <label className={labelClass}>
+                        {t("screens.products.baseSalePrice")}
+                      </label>
                       <input
                         required
                         type="number"
                         min="0"
                         step="0.01"
-                        value={form.price}
+                        value={form.salePrice}
                         onChange={(event) =>
-                          updateField("price", event.target.value)
+                          updateField("salePrice", event.target.value)
                         }
                         className={inputClass}
                       />
                     </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <label className={labelClass}>{t("ui.tax")}</label>
+                      <select
+                        value={form.tax_id}
+                        onChange={(event) =>
+                          updateField("tax_id", event.target.value)
+                        }
+                        disabled={!canUseTaxes}
+                        className={inputClass}
+                      >
+                        <option value="">
+                          {canUseTaxes
+                            ? t("screens.products.noTaxOption")
+                            : t("screens.products.taxesUnavailable")}
+                        </option>
+
+                        {taxes?.map((tax) => (
+                          <option key={tax.id} value={tax.id}>
+                            {tax.name} ({tax.rate}%)
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs font-semibold text-slate-400">
+                        {t("screens.products.taxHint")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={panelClass}>
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
+                        <Layers size={19} />
+                      </span>
+                      <div>
+                        <h3 className="font-black text-slate-950">
+                          {t("screens.products.sellingUnits")}
+                        </h3>
+                        <p className="text-sm text-slate-500">
+                          {t("screens.products.sellingUnitsHint")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={addProductUnit}
+                      className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-3 text-sm font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                    >
+                      <Plus size={15} />
+                      {t("common.add")}
+                    </button>
+                  </div>
+
+                  {form.productUnits.length === 0 && (
+                    <p className="text-sm font-semibold text-slate-400">
+                      {t("screens.products.noSellingUnits")}
+                    </p>
+                  )}
+
+                  <div className="grid gap-3">
+                    {form.productUnits.map((unit, index) => (
+                      <div
+                        key={unit.id || index}
+                        className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2"
+                      >
+                        <input
+                          value={unit.unit_name}
+                          onChange={(event) =>
+                            updateProductUnit(
+                              index,
+                              "unit_name",
+                              event.target.value
+                            )
+                          }
+                          placeholder={t(
+                            "screens.products.unitNamePlaceholder"
+                          )}
+                          className={inputClass}
+                        />
+
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={unit.conversion_factor}
+                          onChange={(event) =>
+                            updateProductUnit(
+                              index,
+                              "conversion_factor",
+                              event.target.value
+                            )
+                          }
+                          placeholder={t(
+                            "screens.products.conversionPlaceholder"
+                          )}
+                          className={inputClass}
+                        />
+
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={unit.sale_price}
+                          onChange={(event) =>
+                            updateProductUnit(
+                              index,
+                              "sale_price",
+                              event.target.value
+                            )
+                          }
+                          placeholder={t(
+                            "screens.products.unitSalePricePlaceholder"
+                          )}
+                          className={inputClass}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => removeProductUnit(index)}
+                          className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-red-600 transition hover:bg-red-50"
+                          aria-label={t("screens.products.removeUnit")}
+                        >
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
 

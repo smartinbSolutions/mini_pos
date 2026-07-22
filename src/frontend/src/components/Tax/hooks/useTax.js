@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 
 export default function useTax() {
   const { t } = useTranslation();
-  const emptyTax = { name: "", rate: 0 };
+  const emptyTax = { name: "", rate: 0, category: "product" };
 
   const [saving, setSaving] = useState(false);
   const [taxes, setTaxes] = useState([]);
@@ -21,6 +21,9 @@ export default function useTax() {
     ...tax,
     name: String(tax.name || "").trim(),
     rate: Number(tax.rate),
+    category: ["product", "invoice", "both"].includes(tax.category)
+      ? tax.category
+      : "product",
   });
 
   const validateTax = (tax) => {
@@ -54,7 +57,9 @@ export default function useTax() {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || t("errors.createFailed", { field: t("ui.tax") }));
+      setError(
+        err?.message || t("errors.createFailed", { field: t("ui.tax") })
+      );
     } finally {
       setLoading(false);
     }
@@ -72,7 +77,12 @@ export default function useTax() {
 
     setSaving(true);
     try {
-      await api.createTax(normalizeTax(tax));
+      const result = await api.createTax(normalizeTax(tax));
+      if (result?.status && result.status !== 200) {
+        throw new Error(
+          result.message || t("errors.createFailed", { field: t("ui.tax") })
+        );
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -87,7 +97,12 @@ export default function useTax() {
 
     setSaving(true);
     try {
-      await api.updateTax(normalizeTax(tax));
+      const result = await api.updateTax(normalizeTax(tax));
+      if (result?.status && result.status !== 200) {
+        throw new Error(
+          result.message || t("errors.updateFailed", { field: t("ui.tax") })
+        );
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -97,7 +112,10 @@ export default function useTax() {
   const deleteTax = async (tax) => {
     setSaving(true);
     try {
-      await api.deleteTax(tax.id);
+      const result = await api.deleteTax(tax.id);
+      if (result?.status && result.status !== 200) {
+        throw new Error(result.message);
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -111,7 +129,9 @@ export default function useTax() {
       return true;
     } catch (err) {
       console.error("Failed to create tax:", err);
-      setActionError(err?.message || t("errors.createFailed", { field: t("ui.tax") }));
+      setActionError(
+        err?.message || t("errors.createFailed", { field: t("ui.tax") })
+      );
       return false;
     }
   };
@@ -123,21 +143,25 @@ export default function useTax() {
       return true;
     } catch (err) {
       console.error("Failed to update tax:", err);
-      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.tax") }));
+      setActionError(
+        err?.message || t("errors.updateFailed", { field: t("ui.tax") })
+      );
       return false;
     }
   };
 
   const handleDeleteTax = async (tax) => {
-    // const confirmed = window.confirm(`Delete tax "${tax.name}"?`);
-    // if (!confirmed) return;
-
     try {
       await deleteTax(tax);
       setActionError("");
     } catch (err) {
       console.error("Failed to delete tax:", err);
-      setActionError(t("errors.deleteHasData", { field: t("ui.tax") }));
+      // Surface the specific "tax in use" reason instead of a generic message
+      setActionError(
+        err?.message === "ERROR TAX IN USE"
+          ? t("errors.taxInUse")
+          : t("errors.deleteHasData", { field: t("ui.tax") })
+      );
     }
   };
 
@@ -155,6 +179,7 @@ export default function useTax() {
       id: tax.id,
       name: tax.name || "",
       rate: tax.rate || "",
+      category: tax.category || "product",
     });
   };
 

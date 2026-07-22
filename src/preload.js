@@ -85,7 +85,8 @@ contextBridge.exposeInMainWorld("api", {
   /* ================= PRODUCT BARCODE ================= */
   getProductBarcodes: () => ipcRenderer.invoke("get-product-barcodes"),
   getProductBarcode: (id) => ipcRenderer.invoke("get-product-barcode", id),
-  getProductMovements: (id) => ipcRenderer.invoke("get-product-movements", id),
+  getProductMovements: (params) =>
+    ipcRenderer.invoke("get-product-movements", params),
   createProductBarcode: (data) =>
     ipcRenderer.invoke("create-product-barcode", data),
   updateProductBarcode: (data) =>
@@ -174,7 +175,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("get-supplier-credit", supplierId),
 
   /* ================= TAX ================= */
-  getTaxes: () => ipcRenderer.invoke("get-taxes"),
+  getTaxes: (params) => ipcRenderer.invoke("get-taxes", params),
   getTax: (id) => ipcRenderer.invoke("get-tax", id),
   createTax: (data) => ipcRenderer.invoke("create-tax", data),
   updateTax: (data) => ipcRenderer.invoke("update-tax", data),

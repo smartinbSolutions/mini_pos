@@ -78,7 +78,7 @@ export default function registerSuppliersIPC() {
        AND ph.party_id = s.id
   
       GROUP BY s.id
-      ORDER BY s.name
+      ORDER BY s.createdAt DESC, s.id DESC
   
       LIMIT ? OFFSET ?
       `

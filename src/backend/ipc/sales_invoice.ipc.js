@@ -946,8 +946,8 @@ export default function registerSalesInvoiceIPC() {
 
     const insertInvoice = db.prepare(`
       INSERT INTO sales_invoices
-      (customer_id, date, subtotal, discount, tax, net_total, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertItem = db.prepare(`
@@ -963,6 +963,8 @@ export default function registerSalesInvoiceIPC() {
     const transaction = db.transaction(() => {
       const invoiceResult = insertInvoice.run(
         data.customer_id || null,
+        data.invoice_name?.trim() || null,
+        data.description || null,
         fullDateTime,
         data.subtotal || 0,
         data.discount || 0,
@@ -972,6 +974,14 @@ export default function registerSalesInvoiceIPC() {
       );
 
       const invoiceId = invoiceResult.lastInsertRowid;
+
+      let invoiceName = data.invoice_name?.trim();
+      if (!invoiceName) {
+        invoiceName = buildDefaultInvoiceName(db, "sales", invoiceId);
+        db.prepare(
+          `UPDATE sales_invoices SET invoice_name = ? WHERE id = ?`
+        ).run(invoiceName, invoiceId);
+      }
 
       for (const item of data.items) {
         const quantity = Number(item.qty || 0);
@@ -1009,7 +1019,7 @@ export default function registerSalesInvoiceIPC() {
           movement_type: "increase",
           amount: data.net_total,
           date: fullDateTime,
-          note: `POS Invoice #${invoiceId}`,
+          note: invoiceName,
         });
       }
 
@@ -1026,7 +1036,7 @@ export default function registerSalesInvoiceIPC() {
           effective_rate: payment.exchangeRate,
           invoice_id: invoiceId,
           invoice_type: "sales",
-          note: `POS Invoice`,
+          note: invoiceName,
           fundOperation: "add",
           date: fullDateTime,
         });
@@ -1038,7 +1048,7 @@ export default function registerSalesInvoiceIPC() {
           movement_type: "in",
           amount: payment.amountFundCurrency,
           date: fullDateTime,
-          note: `Payment for POS Invoice #${invoiceId}`,
+          note: buildDefaultPaymentNote(db, "payment", invoiceName),
         });
 
         if (data.customer_id) {
@@ -1051,7 +1061,7 @@ export default function registerSalesInvoiceIPC() {
             payment_id: paymentId,
             amount: payment.amount,
             date: fullDateTime,
-            note: `Payment for POS Invoice #${invoiceId}`,
+            note: buildDefaultPaymentNote(db, "payment", invoiceName),
           });
         }
       }

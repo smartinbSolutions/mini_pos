@@ -1,8 +1,10 @@
 import {
   Barcode,
   Edit2,
+  Eye,
   FileSpreadsheet,
   History,
+  Layers,
   Package,
   PackagePlus,
   RefreshCw,
@@ -11,7 +13,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import ProductFormModal from "./ProductFormModal";
-import ProductMovementsModal from "./ProductMovementsModal";
 import useProductCatalog from "../hooks/useProductCatalog";
 import useProductMovements from "../hooks/useProductMovements";
 import DeleteModal from "../../../Global/DeleteModel";
@@ -21,9 +22,11 @@ import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import ProductImportModal from "./ProductImportModal";
 import Pagination from "../../../Global/Pagination";
+import { useNavigate } from "react-router-dom";
 
 export default function ProductList() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const catalog = useProductCatalog();
   const movementsHook = useProductMovements();
   const { money } = usePrimaryCurrency();
@@ -46,9 +49,11 @@ export default function ProductList() {
     activeProduct,
     canManageBarcodes,
     canUseUnits,
+    canUseTaxes,
     setIsFormOpen,
     submitProduct,
     units,
+    taxes,
     openDeleteModel,
     setOpenDeleteModel,
     setSelectDeleteProduct,
@@ -74,12 +79,12 @@ export default function ProductList() {
 
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0,
+    0
   );
   const totalValue = products.reduce(
     (total, product) =>
-      total + Number(product.quantity || 0) * Number(product.price || 0),
-    0,
+      total + Number(product.quantity || 0) * Number(product.salePrice || 0),
+    0
   );
 
   return (
@@ -204,6 +209,10 @@ export default function ProductList() {
                     <th className="px-5 py-3 text-start">{t("ui.qty")}</th>
                     <th className="px-5 py-3 text-start">{t("ui.cost")}</th>
                     <th className="px-5 py-3 text-start">{t("ui.price")}</th>
+                    <th className="px-5 py-3 text-start">{t("ui.tax")}</th>
+                    <th className="px-5 py-3 text-start">
+                      {t("screens.products.sellingUnits")}
+                    </th>
                     <th className="px-5 py-3 text-start">{t("ui.barcodes")}</th>
                     <th className="px-5 py-3 text-start">
                       {t("common.actions")}
@@ -233,10 +242,9 @@ export default function ProductList() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              {/* الاسم العربي الأساسي */}
                               <div
                                 className="truncate font-bold text-slate-950 text-sm"
-                                title={product.name || t("ui.unnamedProduct")} // يظهر عند تمرير الفأرة فوق الاسم المقطوع
+                                title={product.name || t("ui.unnamedProduct")}
                               >
                                 {product.name || t("ui.unnamedProduct")}
                               </div>
@@ -264,7 +272,30 @@ export default function ProductList() {
                           {money(product.costPrice || 0)}
                         </td>
                         <td className="px-5 py-3 text-start font-bold tabular-nums text-emerald-600">
-                          {money(product.price || 0)}
+                          {money(product.salePrice || 0)}
+                        </td>
+                        <td className="px-5 py-3 text-slate-600">
+                          {product.tax_name ? (
+                            <span className="font-semibold">
+                              {product.tax_name} ({product.tax_rate}%)
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">
+                              {t("ui.noTax")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-start text-slate-500">
+                          {Number(product.unitCount || 0) > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-[#eef3ff] px-2.5 py-1 text-xs font-bold text-[#4663ff]">
+                              <Layers size={12} />
+                              {t("screens.products.extraUnitsCount", {
+                                count: product.unitCount,
+                              })}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                         <td className="px-5 py-3 text-start text-slate-500">
                           {productBarcodes.length}
@@ -273,12 +304,15 @@ export default function ProductList() {
                           <div className="flex items-center justify-start gap-1.5">
                             <button
                               type="button"
-                              onClick={() => openMovements(product)}
+                              onClick={() =>
+                                navigate(`/products/${product.id}`)
+                              }
                               className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               aria-label={t("screens.products.movementsAria")}
                             >
-                              <History size={15} />
+                              <Eye size={15} />
                             </button>
+
                             <button
                               type="button"
                               onClick={() => openEdit(product)}
@@ -325,11 +359,14 @@ export default function ProductList() {
         <ProductFormModal
           product={activeProduct}
           units={units}
+          taxes={taxes}
           barcodes={
             activeProduct ? barcodesByProduct[activeProduct.id] || [] : []
           }
+          productUnits={activeProduct?.productUnits || []}
           canManageBarcodes={canManageBarcodes}
           canUseUnits={canUseUnits}
+          canUseTaxes={canUseTaxes}
           saving={saving}
           onClose={() => setIsFormOpen(false)}
           onSubmit={submitProduct}
@@ -337,13 +374,6 @@ export default function ProductList() {
         />
       )}
 
-      <ProductMovementsModal
-        product={activeMovementsProduct}
-        movements={movements}
-        loading={movementsLoading}
-        error={movementsError}
-        onClose={closeMovements}
-      />
       <ProductImportModal
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}

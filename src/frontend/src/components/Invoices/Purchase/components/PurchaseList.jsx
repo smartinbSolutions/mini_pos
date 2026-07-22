@@ -22,6 +22,7 @@ import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
 import PurchaseReturnModal from "../../PurchaseReturn/components/PurchaseReturnModal";
 import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
+import FormattedDate from "../../../../Global/FormattedDate";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -267,7 +268,10 @@ const PurchaseList = () => {
                       <td className="px-5 py-4 font-bold text-slate-900">
                         {inv.supplier_name || "-"}
                       </td>
-                      <td className="px-5 py-4 text-slate-500">{inv.date}</td>
+                      <td className="px-5 py-4 text-slate-500">
+                        {" "}
+                        <FormattedDate value={inv.date} />
+                      </td>
                       <td className="px-5 py-4 text-right">
                         <div className="font-semibold tabular-nums text-slate-700">
                           {money(inv.subtotal || 0)}

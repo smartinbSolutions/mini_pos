@@ -1,47 +1,49 @@
 import { useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
 
-export default function useProductMovements() {
-  const { t } = useTranslation();
-  const api = window.api;
-
+export default function useProductMovements(productId) {
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [activeMovementsProduct, setActiveMovementsProduct] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const api = window.api;
 
-  const openMovements = useCallback(
-    async (product) => {
-      setActiveMovementsProduct(product);
+  const fetchMovements = useCallback(async () => {
+    if (!api || !productId) return;
+
+    try {
       setLoading(true);
       setError("");
 
-      try {
-        const result = await api.getProductMovements(product.id);
-        setMovements(result || []);
-      } catch (err) {
-        console.error("Failed to load product movements:", err);
-        setError(err?.message || t("errors.loadError"));
-        setMovements([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [api, t]
-  );
+      const res = await api.getProductMovements({
+        product_id: productId,
+        page,
+        limit,
+      });
 
-  const closeMovements = () => {
-    setActiveMovementsProduct(null);
-    setMovements([]);
-    setError("");
-  };
+      setMovements(res?.data || []);
+      setTotal(res?.total || 0);
+      setTotalPages(res?.totalPages || 1);
+    } catch (err) {
+      console.error("Failed to load product movements:", err);
+      setError(err?.message || "errors.loadError");
+    } finally {
+      setLoading(false);
+    }
+  }, [api, productId, page, limit]);
 
   return {
     movements,
     loading,
     error,
-    activeMovementsProduct,
-    openMovements,
-    closeMovements,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+    fetchMovements,
   };
 }

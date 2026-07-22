@@ -195,7 +195,13 @@
       "createSubtitle": "Add a tax rate",
       "namePlaceholder": "Tax name",
       "ratePlaceholder": "Rate %",
-      "addButton": "Add Tax"
+      "addButton": "Add Tax",
+      "category": "Category",
+      "categoryOption": {
+        "product": "Product",
+        "invoice": "Invoice",
+        "both": "Both"
+      }
     },
     "currency": {
       "title": "Currency Management",
@@ -257,6 +263,23 @@
       "youOweThem": "You owe them"
     },
     "products": {
+      "notFound": "Product not found.",
+      "tab": {
+        "details": "Details",
+        "movements": "Movements"
+      },
+      "baseUnitBadge": "Base",
+      "baseUnitHint": "This becomes the product's default selling unit.",
+      "baseSalePrice": "Base Sale Price",
+      "sellingUnits": "Selling Units",
+      "sellingUnitsHint": "Add extra units like Box or Carton with their own price.",
+      "noSellingUnits": "No additional selling units yet.",
+      "unitNamePlaceholder": "Unit name (e.g. Box)",
+      "conversionPlaceholder": "Pieces per unit",
+      "unitSalePricePlaceholder": "Sale price",
+      "removeUnit": "Remove unit",
+      "extraUnitsCount_one": "{{count}} extra unit",
+      "extraUnitsCount_other": "{{count}} extra units",
       "loading": "Loading product catalog...",
       "title": "Product command center",
       "subtitle": "Browse stock, pricing, units, and barcodes in one calmer workspace.",
@@ -446,7 +469,9 @@
       "Barcode already used by another product": "Barcode already used by another product",
       "cannotDeleteInvoiceWithReturn": "This invoice has a return and cannot be deleted.",
       "cannotDeletePaidInvoice": "This invoice has a payment and cannot be deleted.",
-      "invoiceNotFound": "This invoice no longer exists."
+      "invoiceNotFound": "This invoice no longer exists.",
+      "taxInUse": "This tax is set as the default on one or more products and can't be deleted.",
+      "productInUse": "This product has sales or purchase history and can't be deleted."
     },
     "pos": {
       "loading": "Loading POS System...",
