@@ -6,6 +6,7 @@ import {
   generateProductImportTemplate,
   parseProductImport,
 } from "../utils/productImport";
+import { deleteLogoFile } from "../utils/helpers";
 
 export default function registerProductIPC() {
   ipcMain.handle("create-product", (event, data) => {
@@ -77,15 +78,34 @@ export default function registerProductIPC() {
       return productId;
     });
 
-    const productId = createProductTxn(data);
+    try {
+      const productId = createProductTxn(data);
+      return { success: true, id: productId };
+    } catch (err) {
+      // The transaction rolled back, so no product row references data.logo.
+      // If a file was already uploaded via save-logo before this call, it's
+      // now an orphan — clean it up. Best-effort, never throws further.
+      if (data.logo) {
+        deleteLogoFile(data.logo);
+      }
 
-    return { success: true, id: productId };
+      console.error("Failed to create product:", err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("update-product", (event, data) => {
     if (!data.name || !data.unit_id || data.costPrice <= 0) {
       return { message: "ERROR ENTER DATA", status: 500 };
     }
+
+    // Captured before the transaction runs, so we know what (if anything) to
+    // clean up afterward — never delete a file before its DB reference is
+    // confirmed changed/gone.
+    const existing = db
+      .prepare(`SELECT logo FROM products WHERE id = ?`)
+      .get(data.id);
+    const oldLogo = existing?.logo || null;
 
     const updateProductTxn = db.transaction((data) => {
       db.prepare(
@@ -183,7 +203,52 @@ export default function registerProductIPC() {
 
     updateProductTxn(data);
 
+    // File cleanup happens only after the DB commit succeeds, and only if the
+    // logo actually changed — avoids deleting a file still in active use.
+    if (oldLogo && oldLogo !== data.logo) {
+      deleteLogoFile(oldLogo);
+    }
+
     return { success: true };
+  });
+  ipcMain.handle("update-product-tax", (event, data) => {
+    if (!data?.product_id) {
+      return { success: false, error: "product_id is required" };
+    }
+
+    // tax_id is allowed to be null — lets a user clear the product's default
+    // tax entirely, not just switch between two taxes.
+    const taxId = data.tax_id || null;
+
+    try {
+      if (taxId !== null) {
+        const taxExists = db
+          .prepare(`SELECT id FROM taxes WHERE id = ?`)
+          .get(taxId);
+
+        if (!taxExists) {
+          return { success: false, error: "Tax not found" };
+        }
+      }
+
+      const result = db
+        .prepare(
+          `
+          UPDATE products
+          SET tax_id = ?
+          WHERE id = ?
+        `
+        )
+        .run(taxId, data.product_id);
+
+      if (result.changes === 0) {
+        return { success: false, error: "Product not found" };
+      }
+
+      return { success: true, id: data.product_id, tax_id: taxId };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("get-products", (event, params = {}) => {
@@ -304,6 +369,11 @@ export default function registerProductIPC() {
 
   ipcMain.handle("delete-product", (event, id) => {
     try {
+      const existing = db
+        .prepare(`SELECT logo FROM products WHERE id = ?`)
+        .get(id);
+      const logoToDelete = existing?.logo || null;
+
       const transaction = db.transaction(() => {
         const usedInPurchase = db
           .prepare(
@@ -329,6 +399,12 @@ export default function registerProductIPC() {
       });
 
       transaction();
+
+      // Only reached if the transaction committed without throwing.
+      if (logoToDelete) {
+        deleteLogoFile(logoToDelete);
+      }
+
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message || String(err) };

@@ -10,6 +10,8 @@
     "save": "Save",
     "refresh": "Refresh",
     "back": "Back",
+    "yes": "Yes",
+    "no": "No",
     "next": "Next",
     "add": "Add",
     "edit": "Edit",
@@ -25,7 +27,8 @@
     "create": "Create",
     "print": "Print",
     "filters": "Filters",
-    "clear": "Clear"
+    "clear": "Clear",
+    "confirm": "Confirm"
   },
   "ui": {
     "profit": "Profit",
@@ -268,6 +271,7 @@
         "details": "Details",
         "movements": "Movements"
       },
+      "selectBaseUnitFirst": "Select a base unit first",
       "baseUnitBadge": "Base",
       "noTaxOption": "No tax",
       "baseUnitHint": "This becomes the product's default selling unit.",
@@ -332,11 +336,13 @@
         "return": "Return"
       },
       "refType": {
-        "sales_invoice": "Sales invoice",
-        "purchase_invoice": "Purchase invoice",
-        "products": "Products",
-        "sales_return": "Sales Return",
-        "purchase_return": "Purchase Return"
+        "purchase": "Purchase",
+        "purchase_return": "Purchase return",
+        "sale": "Sale",
+        "sale_return": "Sale return",
+        "initial": "Initial stock",
+        "import": "Import",
+        "adjustment": "Adjustment"
       },
       "importHistory": {
         "title": "Import History",
@@ -353,6 +359,20 @@
       }
     },
     "invoices": {
+      "addTax": "Add tax",
+      "discountPercent": "Discount %",
+      "itemDiscountAt": "Item discount at {{rate}}%",
+      "itemTaxAt": "Item tax at {{rate}}%",
+      "invoiceDiscountRate": "Invoice discount",
+      "invoiceDiscountAmount": "Invoice discount amount",
+      "invoiceTaxAmount": "Invoice tax amount",
+      "addDiscount": "Add discount",
+      "addInvoiceDiscount": "Add invoice discount",
+      "addInvoiceTax": "Add invoice tax",
+      "unitConversionDetail": "{{enteredQty}} {{unitName}} × {{factor}} = {{baseQty}} base unit",
+      "updateProductTaxTitle": "Update default tax?",
+      "updateProductTaxSetMessage": "Also set {{taxName}} as the default tax for {{productName}}?",
+      "updateProductTaxRemoveMessage": "Also remove the default tax from {{productName}}?",
       "returnedQty": "{{qty}} returned",
       "profitBreakdown": "Profit Breakdown",
       "perItemProfit": "Per-item profit",

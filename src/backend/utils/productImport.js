@@ -7,22 +7,45 @@ export async function generateProductImportTemplate(db) {
     .all()
     .map((u) => u.code);
 
+  const taxRows = db
+    .prepare(
+      `SELECT name, rate FROM taxes
+       WHERE category IN ('product', 'both') AND name IS NOT NULL
+       ORDER BY name`
+    )
+    .all();
+  const taxLabels = taxRows.map((t) => `${t.name} (${t.rate}%)`);
+
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Products");
+
   const unitsSheet = workbook.addWorksheet("Units");
   unitsSheet.state = "veryHidden";
 
+  const taxesSheet = workbook.addWorksheet("Taxes");
+  taxesSheet.state = "veryHidden";
+
   units.forEach((code, i) => {
     unitsSheet.getCell(`A${i + 1}`).value = code;
+  });
+
+  taxLabels.forEach((label, i) => {
+    taxesSheet.getCell(`A${i + 1}`).value = label;
   });
 
   sheet.columns = [
     { header: "name", key: "name", width: 24 },
     { header: "latinName", key: "latinName", width: 24 },
     { header: "unit_code", key: "unit_code", width: 14 },
-    { header: "costPrice", key: "costPrice", width: 14 },
-    { header: "price", key: "price", width: 14 },
-    { header: "quantity", key: "quantity", width: 14 },
+    {
+      header: "costPrice",
+      key: "costPrice",
+      width: 14,
+      style: { numFmt: "@" },
+    },
+    { header: "price", key: "price", width: 14, style: { numFmt: "@" } },
+    { header: "tax", key: "tax", width: 20 },
+    { header: "quantity", key: "quantity", width: 14, style: { numFmt: "@" } },
     { header: "barcodes", key: "barcodes", width: 32 },
   ];
   sheet.getRow(1).font = { bold: true };
@@ -38,6 +61,17 @@ export async function generateProductImportTemplate(db) {
     }
   }
 
+  if (taxLabels.length > 0) {
+    const ref = `Taxes!$A$1:$A$${taxLabels.length}`;
+    for (let row = 2; row <= 500; row++) {
+      sheet.getCell(`F${row}`).dataValidation = {
+        type: "list",
+        allowBlank: true,
+        formulae: [ref],
+      };
+    }
+  }
+
   return workbook.xlsx.writeBuffer();
 }
 
@@ -46,12 +80,18 @@ export async function parseProductImport(db, filePath, fileName) {
   await workbook.xlsx.readFile(filePath);
   const sheet = workbook.worksheets[0];
 
-  const unitByCode = new Map(
+  const unitRows = db.prepare(`SELECT id, code, name FROM unit`).all();
+  const unitByCode = new Map(unitRows.map((u) => [u.code, u]));
+
+  const taxByName = new Map(
     db
-      .prepare(`SELECT id, code FROM unit`)
+      .prepare(
+        `SELECT id, name FROM taxes WHERE category IN ('product', 'both')`
+      )
       .all()
-      .map((u) => [u.code, u.id])
+      .map((t) => [t.name, t.id])
   );
+
   const existingBarcodes = new Set(
     db
       .prepare(`SELECT barcode FROM product_barcodes`)
@@ -60,8 +100,12 @@ export async function parseProductImport(db, filePath, fileName) {
   );
 
   const insertProduct = db.prepare(`
-        INSERT INTO products (name, latinName, costPrice, price, quantity, unit_id)
+        INSERT INTO products (name, latinName, costPrice, quantity, unit_id, tax_id)
         VALUES (?, ?, ?, ?, ?, ?)
+      `);
+  const insertBaseProductUnit = db.prepare(`
+        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
+        VALUES (?, ?, 1, 1, ?)
       `);
   const insertBarcode = db.prepare(`
         INSERT INTO product_barcodes (product_id, barcode) VALUES (?, ?)
@@ -87,6 +131,37 @@ export async function parseProductImport(db, filePath, fileName) {
   const skippedBarcodes = [];
   let totalRows = 0;
 
+  const stripTaxLabel = (raw) =>
+    String(raw || "")
+      .replace(/\s*\([^)]*\)\s*$/, "")
+      .trim();
+
+  // Distinguishes "blank/zero, that's on the user" from "malformed input we
+  // can't trust" (e.g. a cell Excel silently reinterpreted as a Date, turning
+  // 7.5 into a multi-trillion epoch-timestamp number). Blank cells pass
+  // through as 0; anything that looks like a misread value fails validation.
+  const parseNumberCell = (raw) => {
+    if (raw === null || raw === undefined || raw === "") {
+      return { value: 0, valid: true };
+    }
+
+    if (raw instanceof Date) {
+      return { value: null, valid: false };
+    }
+
+    // Text-formatted cells can come back with a comma decimal separator
+    // depending on the user's Excel locale (e.g. "7,5" instead of "7.5").
+    const normalized =
+      typeof raw === "string" ? raw.trim().replace(",", ".") : raw;
+
+    const n = Number(normalized);
+
+    if (!Number.isFinite(n)) {
+      return { value: null, valid: false };
+    }
+
+    return { value: n, valid: true };
+  };
   const transaction = db.transaction(() => {
     const importResult = insertImport.run(fileName);
     const importId = importResult.lastInsertRowid;
@@ -101,10 +176,36 @@ export async function parseProductImport(db, filePath, fileName) {
 
       const latinName = String(row.getCell(2).value || "").trim();
       const unitCode = String(row.getCell(3).value || "").trim();
-      const costPrice = Number(row.getCell(4).value || 0);
-      const price = Number(row.getCell(5).value || 0);
-      const quantity = Number(row.getCell(6).value || 0);
-      const barcodesRaw = String(row.getCell(7).value || "");
+      const taxName = stripTaxLabel(row.getCell(6).value);
+      const barcodesRaw = String(row.getCell(8).value || "");
+
+      const costPriceCell = parseNumberCell(row.getCell(4).value);
+      const priceCell = parseNumberCell(row.getCell(5).value);
+      const quantityCell = parseNumberCell(row.getCell(7).value);
+
+      if (!costPriceCell.valid || !priceCell.valid || !quantityCell.valid) {
+        const badField = !costPriceCell.valid
+          ? "costPrice"
+          : !priceCell.valid
+            ? "price"
+            : "quantity";
+        const reason = `Invalid number in ${badField}`;
+        skippedProducts.push({ row: rowNumber, name, reason });
+        insertImportItem.run(
+          importId,
+          rowNumber,
+          "skipped_product",
+          null,
+          name,
+          null,
+          reason
+        );
+        return;
+      }
+
+      const costPrice = costPriceCell.value;
+      const price = priceCell.value;
+      const quantity = quantityCell.value;
 
       if (getProductByName.get(name)) {
         const reason = "Product name already exists";
@@ -121,16 +222,40 @@ export async function parseProductImport(db, filePath, fileName) {
         return;
       }
 
-      const unitId = unitByCode.get(unitCode) || null;
+      const matchedUnit = unitByCode.get(unitCode) || null;
+      if (!matchedUnit) {
+        const reason = unitCode
+          ? "Unit code not found"
+          : "Unit code is required";
+        skippedProducts.push({ row: rowNumber, name, reason });
+        insertImportItem.run(
+          importId,
+          rowNumber,
+          "skipped_product",
+          null,
+          name,
+          null,
+          reason
+        );
+        return;
+      }
+
+      const unitId = matchedUnit.id;
+      const baseUnitName = matchedUnit.name || "Unit";
+
+      const taxId = taxName ? taxByName.get(taxName) || null : null;
+
       const result = insertProduct.run(
         name,
         latinName,
         costPrice,
-        price,
         quantity,
-        unitId
+        unitId,
+        taxId
       );
       const productId = result.lastInsertRowid;
+
+      insertBaseProductUnit.run(productId, baseUnitName, price);
 
       const barcodes = barcodesRaw
         .split(",")

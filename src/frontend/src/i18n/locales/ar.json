@@ -10,6 +10,8 @@
     "save": "حفظ",
     "refresh": "تحديث",
     "back": "رجوع",
+    "yes": "نعم",
+    "no": "لا",
     "next": "التالي",
     "add": "إضافة",
     "edit": "تعديل",
@@ -25,7 +27,8 @@
     "create": "إنشاء",
     "print": "طباعة",
     "filters": "التصفيات",
-    "clear": "مسح الفلتر"
+    "clear": "مسح الفلتر",
+    "confirm": "تأكيد"
   },
   "ui": {
     "profit": "الربح",
@@ -335,12 +338,15 @@
         "edit": "تعديل",
         "return": "مرتجع"
       },
+      "selectBaseUnitFirst": "اختر الوحدة الأساسية أولاً",
       "refType": {
-        "sales_invoice": "فاتورة مبيعات",
-        "purchase_invoice": "فاتورة مشتريات",
-        "products": "المنتجات",
-        "sales_return": "مرتجع مبيعات",
-        "purchase_return": "مرتجع مشتريات"
+        "purchase": "مشتريات",
+        "purchase_return": "مرتجع مشتريات",
+        "sale": "مبيعات",
+        "sale_return": "مرتجع مبيعات",
+        "initial": "رصيد ابتدائي",
+        "import": "استيراد",
+        "adjustment": "تسوية"
       },
       "importHistory": {
         "title": "سجل الاستيراد",
@@ -357,6 +363,20 @@
       }
     },
     "invoices": {
+      "addTax": "إضافة ضريبة",
+      "discountPercent": "نسبة الخصم",
+      "itemDiscountAt": "خصم الصنف بنسبة {{rate}}%",
+      "itemTaxAt": "ضريبة الصنف بنسبة {{rate}}%",
+      "invoiceDiscountRate": "خصم الفاتورة",
+      "invoiceDiscountAmount": "قيمة خصم الفاتورة",
+      "invoiceTaxAmount": "قيمة ضريبة الفاتورة",
+      "addDiscount": "إضافة خصم",
+      "addInvoiceDiscount": "إضافة خصم على الفاتورة",
+      "addInvoiceTax": "إضافة ضريبة على الفاتورة",
+      "unitConversionDetail": "{{enteredQty}} {{unitName}} × {{factor}} = {{baseQty}} بالوحدة الأساسية",
+      "updateProductTaxTitle": "تحديث الضريبة الافتراضية؟",
+      "updateProductTaxSetMessage": "هل تريد أيضًا جعل {{taxName}} الضريبة الافتراضية لـ {{productName}}؟",
+      "updateProductTaxRemoveMessage": "هل تريد أيضًا إزالة الضريبة الافتراضية من {{productName}}؟",
       "returnedQty": "مرتجع {{qty}}",
       "profitBreakdown": "تفاصيل الربح",
       "perItemProfit": "ربح كل منتج",

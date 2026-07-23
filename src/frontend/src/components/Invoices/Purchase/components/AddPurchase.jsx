@@ -4,11 +4,14 @@ import {
   Plus,
   Trash2,
   Save,
-  Receipt,
   HandCoins,
   PackageOpen,
   AlertCircle,
   Loader2,
+  X,
+  Receipt,
+  Percent,
+  Tag,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import useAddPurchase from "../hooks/useAddPurchase";
@@ -17,11 +20,101 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
+import ConfirmModal from "../../../../Global/ConfirmModal";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
 import SupplierFormModal from "./SupplierFormModal";
+
+// ---- Shared, module-level so re-renders never remount them (avoids the
+// focus-loss bug we hit earlier with in-body component definitions) ----
+
+const inputClass =
+  "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+const smallInputClass =
+  "h-8 w-full rounded-lg border border-[#e1e7fb] bg-white px-2 text-xs font-semibold text-slate-900 outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12";
+const panelClass =
+  "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
+const panelBodyClass = "p-4";
+
+function AccentRule({ colorClass }) {
+  return <div className={`absolute inset-x-0 top-0 h-[3px] ${colorClass}`} />;
+}
+
+// A single "+" trigger that reveals only the options still applicable
+// (e.g. "Add tax" hidden once tax is already active on that row/invoice).
+function AddOptionsMenu({ options, align = "right" }) {
+  const [open, setOpen] = useState(false);
+  const visibleOptions = options.filter((o) => o.visible !== false);
+
+  if (visibleOptions.length === 0) return null;
+
+  return (
+    <div className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-slate-200 text-slate-400 transition hover:border-[#4663ff]/50 hover:bg-[#f6f8fd] hover:text-[#4663ff]"
+        aria-label="Add"
+      >
+        <Plus size={14} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div
+            className={`absolute top-full right-[10%] z-20 mt-1.5 min-w-[10rem] overflow-hidden rounded-xl border border-[#e9edfb] bg-white py-1 shadow-[0_10px_28px_rgba(15,23,42,0.14)] ${
+              align === "right" ? "right-0" : "left-0"
+            }`}
+          >
+            {visibleOptions.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => {
+                  option.onClick();
+                  setOpen(false);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-slate-600 transition hover:bg-[#f6f8fd] hover:text-[#4663ff]"
+              >
+                {option.icon}
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Small labeled chip for an active discount or tax on a row — replaces raw
+// bare selects/inputs floating in the row with a clearly-bounded, removable
+// unit of UI.
+function AdjustmentChip({ icon, tone, children, onRemove }) {
+  const toneClasses =
+    tone === "danger"
+      ? "border-red-100 bg-red-50/60"
+      : "border-emerald-100 bg-emerald-50/60";
+
+  return (
+    <div
+      className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 ${toneClasses}`}
+    >
+      {icon}
+      {children}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="ml-0.5 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
 
 export default function AddPurchase() {
   const { t } = useTranslation();
@@ -42,18 +135,32 @@ export default function AddPurchase() {
   const {
     invoice,
     setInvoice,
+    setInvoiceTax,
+    clearInvoiceTax,
+    setInvoiceDiscountRate,
+    setInvoiceDiscountAmount,
+    clearInvoiceDiscount,
     items,
     suppliers,
     taxes,
     addItem,
     removeItem,
     updateItem,
+    updateItemUnit,
+    updateItemDiscountRate,
+    updateItemDiscountAmount,
+    clearItemDiscount,
+    updateItemTax,
+    enableItemTax,
+    disableItemTax,
     setItemProduct,
     addItemWithProduct,
     submit,
     subtotal,
-    taxableAmount,
-    taxValue,
+    itemDiscountSummary,
+    itemTaxSummary,
+    invoiceDiscount,
+    invoiceTaxValue,
     netTotal,
     loading,
     saving,
@@ -68,6 +175,16 @@ export default function AddPurchase() {
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [pendingTaxConfirm, setPendingTaxConfirm] = useState(null);
+  const [confirmingTaxUpdate, setConfirmingTaxUpdate] = useState(false);
+
+  // UI-only reveal state — not invoice data, kept local to this component.
+  const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
+    () => new Set()
+  );
+  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(false);
+  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
+
   const { money } = usePrimaryCurrency();
 
   const supplierName =
@@ -76,15 +193,18 @@ export default function AddPurchase() {
   const hasUsableItems = items.some((i) => i.product_id);
   const canSave = !!invoice.supplier_id && hasUsableItems && !saving;
 
-  const inputClass =
-    "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
-  const panelClass =
-    "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
-  const panelBodyClass = "p-4";
-
-  const accentRule = (colorClass) => (
-    <div className={`absolute inset-x-0 top-0 h-[3px] ${colorClass}`} />
-  );
+  const toggleItemDiscount = (index, revealed) => {
+    setRevealedItemDiscounts((prev) => {
+      const next = new Set(prev);
+      if (revealed) {
+        next.delete(index);
+        clearItemDiscount(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   const handleSaveUnpaid = async () => {
     if (!canSave) return;
@@ -110,6 +230,40 @@ export default function AddPurchase() {
     const res = await submit(paymentData);
     if (res?.success) {
       toast.success(t("screens.invoices.savedPaid"));
+    }
+  };
+
+  const handleItemTaxChange = (index, item, newTaxId) => {
+    const selectedTax = productTaxes?.find((tx) => tx.id === newTaxId) || null;
+    const changed = updateItemTax(index, newTaxId, selectedTax?.rate || 0);
+
+    if (changed && item.product_id) {
+      setPendingTaxConfirm({
+        productId: item.product_id,
+        productName: item.name,
+        newTaxId,
+        newTaxName: selectedTax?.name || null,
+      });
+    }
+  };
+
+  const handleConfirmProductTaxUpdate = async () => {
+    if (!pendingTaxConfirm) return;
+
+    setConfirmingTaxUpdate(true);
+
+    try {
+      await api.updateProductTax({
+        product_id: pendingTaxConfirm.productId,
+        tax_id: pendingTaxConfirm.newTaxId,
+      });
+      await refetch();
+    } catch (err) {
+      console.error("Failed to update product default tax:", err);
+      toast.error(t("errors.saveError"));
+    } finally {
+      setConfirmingTaxUpdate(false);
+      setPendingTaxConfirm(null);
     }
   };
 
@@ -164,7 +318,7 @@ export default function AddPurchase() {
           <main className="space-y-4">
             {/* Supplier + date */}
             <section className={panelClass}>
-              {accentRule("bg-[#4663ff]")}
+              <AccentRule colorClass="bg-[#4663ff]" />
               <div className={panelBodyClass}>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div>
@@ -212,7 +366,7 @@ export default function AddPurchase() {
 
             {/* Items */}
             <section className={panelClass}>
-              {accentRule("bg-violet-500")}
+              <AccentRule colorClass="bg-violet-500" />
               <div className="flex items-center justify-between gap-3 border-b border-[#eef1ff] px-4 py-3">
                 <div className="flex items-center gap-2">
                   <h2 className="text-[13px] font-black text-slate-900">
@@ -273,124 +427,67 @@ export default function AddPurchase() {
                   </button>
                 </div>
               ) : (
-                <>
-                  {/* Desktop table */}
-                  <div className="hidden overflow-x-auto md:block">
-                    <table className="w-full min-w-[720px] text-sm">
-                      <thead className="bg-[#f8faff] text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                        <tr>
-                          <th className="p-2.5 text-left">{t("ui.product")}</th>
-                          <th className="p-2.5">{t("ui.qty")}</th>
-                          <th className="p-2.5">{t("ui.price")}</th>
-                          <th className="p-2.5">{t("ui.total")}</th>
-                          <th className="p-2.5"></th>
-                        </tr>
-                      </thead>
+                <div className="divide-y divide-[#eef1ff] pb-[5rem]">
+                  {items.map((item, index) => {
+                    const afterDiscount =
+                      (item.total || 0) - (item.discount || 0);
+                    const lineTotal = afterDiscount + (item.taxValue || 0);
+                    const hasProduct = Boolean(item.product_id);
+                    const hasTax = hasProduct && item.tax_capable;
+                    const isNonBaseUnit =
+                      item.unit_conversion_factor &&
+                      item.unit_conversion_factor !== 1;
+                    const discountRevealed = revealedItemDiscounts.has(index);
 
-                      <tbody className="divide-y divide-[#eef1ff]">
-                        {items.map((item, index) => (
-                          <tr
-                            key={index}
-                            className="transition hover:bg-[#f8faff]"
-                          >
-                            <td className="p-1.5">
-                              <SearchableSelect
-                                placeholder={t("ui.selectProduct")}
-                                options={products}
-                                selectedValue={item.product_id}
-                                selectedLabel={item.name}
-                                onChange={(e) => {
-                                  updateItem(index, "product_id", e.id);
-                                }}
-                                onInputChange={async (value) => {
-                                  if (!value.trim()) return;
+                    return (
+                      <div
+                        key={index}
+                        className="space-y-2.5 p-3.5 transition hover:bg-[#fafbff]"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="flex-1">
+                            <SearchableSelect
+                              placeholder={t("ui.selectProduct")}
+                              options={products}
+                              selectedValue={item.product_id}
+                              selectedLabel={item.name}
+                              onChange={(e) => {
+                                updateItem(index, "product_id", e.id);
+                              }}
+                              onInputChange={async (value) => {
+                                if (!value.trim()) return;
 
-                                  try {
-                                    const res = await api.getProducts({
-                                      page: 1,
-                                      limit: 50,
-                                      search: value,
-                                    });
+                                try {
+                                  const res = await api.getProducts({
+                                    page: 1,
+                                    limit: 50,
+                                    search: value,
+                                  });
 
-                                    setProducts(res?.data || []);
-                                  } catch (err) {
-                                    console.error(err);
-                                  }
-                                }}
-                              />
-                            </td>
-                            <td className="p-1.5">
-                              <input
-                                type="number"
-                                min="0"
-                                className={inputClass}
-                                value={item.quantity}
-                                onChange={(e) =>
-                                  updateItem(index, "quantity", e.target.value)
+                                  setProducts(res?.data || []);
+                                } catch (err) {
+                                  console.error(err);
                                 }
-                              />
-                            </td>
-                            <td className="p-1.5">
-                              <input
-                                type="number"
-                                min="0"
-                                className={inputClass}
-                                value={item.price}
-                                onChange={(e) =>
-                                  updateItem(index, "price", e.target.value)
-                                }
-                              />
-                            </td>
-                            <td className="p-1.5 text-center text-sm font-black tabular-nums">
-                              {money(item.total)}
-                            </td>
-                            <td className="p-1.5 text-center">
-                              <button
-                                type="button"
-                                onClick={() => setDeleteItemIndex(index)}
-                                disabled={items.length === 1}
-                                title={
-                                  items.length === 1
-                                    ? t("screens.invoices.keepOneItem")
-                                    : undefined
-                                }
-                                className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                              }}
+                            />
+                          </div>
 
-                  {/* Mobile stacked cards */}
-                  <div className="divide-y divide-[#eef1ff] md:hidden">
-                    {items.map((item, index) => (
-                      <div key={index} className="space-y-2.5 p-3.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-black uppercase tracking-wide text-slate-400">
-                            {t("ui.product")} #{index + 1}
-                          </span>
                           <button
                             type="button"
                             onClick={() => setDeleteItemIndex(index)}
                             disabled={items.length === 1}
-                            className="rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed"
+                            title={
+                              items.length === 1
+                                ? t("screens.invoices.keepOneItem")
+                                : undefined
+                            }
+                            className="mt-0.5 rounded-lg p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
-                        <SearchableSelect
-                          placeholder={t("ui.selectProduct")}
-                          options={products}
-                          selectedValue={item.product_id}
-                          onChange={(e) =>
-                            updateItem(index, "product_id", e.id)
-                          }
-                        />
-                        <div className="grid grid-cols-2 gap-2">
+
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                           <div>
                             <label className="mb-1 block text-[11px] font-bold text-slate-400">
                               {t("ui.qty")}
@@ -399,12 +496,17 @@ export default function AddPurchase() {
                               type="number"
                               min="0"
                               className={inputClass}
-                              value={item.quantity}
+                              value={item.entered_quantity}
                               onChange={(e) =>
-                                updateItem(index, "quantity", e.target.value)
+                                updateItem(
+                                  index,
+                                  "entered_quantity",
+                                  e.target.value
+                                )
                               }
                             />
                           </div>
+
                           <div>
                             <label className="mb-1 block text-[11px] font-bold text-slate-400">
                               {t("ui.price")}
@@ -413,25 +515,187 @@ export default function AddPurchase() {
                               type="number"
                               min="0"
                               className={inputClass}
-                              value={item.price}
+                              value={item.entered_price}
                               onChange={(e) =>
-                                updateItem(index, "price", e.target.value)
+                                updateItem(
+                                  index,
+                                  "entered_price",
+                                  e.target.value
+                                )
                               }
                             />
                           </div>
+
+                          <div>
+                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
+                              {t("ui.unit")}
+                            </label>
+                            {item.available_units?.length > 0 ? (
+                              <select
+                                className={inputClass}
+                                value={item.unit_id || ""}
+                                onChange={(e) =>
+                                  updateItemUnit(index, e.target.value)
+                                }
+                              >
+                                {item.available_units.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.unit_name}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <div className="flex h-9 items-center rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs text-slate-400">
+                                {item.unit_name || "—"}
+                              </div>
+                            )}
+                          </div>
+
+                          <div>
+                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
+                              {t("ui.total")}
+                            </label>
+                            <div className="flex h-9 items-center rounded-xl bg-[#f6f8fd] px-3 text-sm font-black tabular-nums text-[#4663ff]">
+                              {money(lineTotal)}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex justify-between rounded-lg bg-[#f8faff] px-3 py-1.5 text-sm">
-                          <span className="text-slate-500">
-                            {t("ui.total")}
-                          </span>
-                          <span className="font-black">
-                            {money(item.total)}
-                          </span>
+
+                        {isNonBaseUnit && (
+                          <p className="flex items-center gap-1.5 rounded-lg bg-[#f6f8fd] px-2.5 py-1.5 text-[11px] font-semibold text-slate-500">
+                            <Tag
+                              size={11}
+                              className="shrink-0 text-slate-400"
+                            />
+                            {t("screens.invoices.unitConversionDetail", {
+                              enteredQty: item.entered_quantity,
+                              unitName: item.unit_name,
+                              factor: item.unit_conversion_factor,
+                              baseQty: item.quantity,
+                            })}
+                          </p>
+                        )}
+
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {hasTax && (
+                            <AdjustmentChip
+                              icon={
+                                <Receipt
+                                  size={12}
+                                  className="shrink-0 text-emerald-600"
+                                />
+                              }
+                              tone="success"
+                              onRemove={() => disableItemTax(index)}
+                            >
+                              <select
+                                className="h-6 border-none bg-transparent text-xs font-bold text-emerald-700 outline-none"
+                                value={item.tax_id || ""}
+                                onChange={(e) => {
+                                  const newTaxId = e.target.value
+                                    ? Number(e.target.value)
+                                    : null;
+                                  handleItemTaxChange(index, item, newTaxId);
+                                }}
+                              >
+                                <option value="">
+                                  {t("screens.products.noTaxOption")}
+                                </option>
+                                {productTaxes
+                                  ?.filter(
+                                    (tax) =>
+                                      tax.category === "product" ||
+                                      tax.category === "both"
+                                  )
+                                  .map((tax) => (
+                                    <option key={tax.id} value={tax.id}>
+                                      {tax.name} ({tax.rate}%)
+                                    </option>
+                                  ))}
+                              </select>
+                            </AdjustmentChip>
+                          )}
+
+                          {discountRevealed && (
+                            <AdjustmentChip
+                              icon={
+                                <Percent
+                                  size={12}
+                                  className="shrink-0 text-red-500"
+                                />
+                              }
+                              tone="danger"
+                              onRemove={() => toggleItemDiscount(index, true)}
+                            >
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                value={item.discount_rate || ""}
+                                onChange={(e) =>
+                                  updateItemDiscountRate(index, e.target.value)
+                                }
+                                placeholder="0"
+                              />
+                              <span className="text-[10px] text-red-400">
+                                % =
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                value={
+                                  item.discount ? item.discount.toFixed(2) : ""
+                                }
+                                onChange={(e) =>
+                                  updateItemDiscountAmount(
+                                    index,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="0"
+                              />
+                            </AdjustmentChip>
+                          )}
+
+                          {hasProduct && (
+                            <AddOptionsMenu
+                              align="left"
+                              options={[
+                                {
+                                  key: "tax",
+                                  label: t("screens.invoices.addTax"),
+                                  icon: (
+                                    <Receipt
+                                      size={13}
+                                      className="text-emerald-600"
+                                    />
+                                  ),
+                                  visible: !item.tax_capable,
+                                  onClick: () => enableItemTax(index),
+                                },
+                                {
+                                  key: "discount",
+                                  label: t("screens.invoices.addDiscount"),
+                                  icon: (
+                                    <Percent
+                                      size={13}
+                                      className="text-red-500"
+                                    />
+                                  ),
+                                  visible: !discountRevealed,
+                                  onClick: () =>
+                                    toggleItemDiscount(index, false),
+                                },
+                              ]}
+                            />
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </>
+                    );
+                  })}
+                </div>
               )}
             </section>
           </main>
@@ -439,7 +703,7 @@ export default function AddPurchase() {
           <aside className="space-y-4">
             {/* Summary */}
             <section className={panelClass}>
-              {accentRule("bg-emerald-500")}
+              <AccentRule colorClass="bg-emerald-500" />
               <div className={panelBodyClass}>
                 <div className="mb-3 flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
@@ -460,69 +724,185 @@ export default function AddPurchase() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
-                    <label className="text-xs font-semibold text-slate-500">
-                      {t("ui.discount")}
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      className={`${inputClass} text-right tabular-nums`}
-                      value={invoice.discount || ""}
-                      onChange={(e) =>
-                        setInvoice((p) => ({ ...p, discount: e.target.value }))
-                      }
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
-                    <label className="text-xs font-semibold text-slate-500">
-                      {t("ui.tax")}
-                    </label>
-                    <select
-                      className={`${inputClass} text-right`}
-                      value={invoice.tax || ""}
-                      onChange={(e) => {
-                        const selected = taxes.find(
-                          (tax) => tax.id === Number(e.target.value)
-                        );
-                        setInvoice((p) => ({
-                          ...p,
-                          tax: selected?.id || "",
-                          tax_rate: selected?.rate || 0,
-                        }));
-                      }}
+                  {itemDiscountSummary.map((group) => (
+                    <div
+                      key={`item-discount-${group.rate}`}
+                      className="grid grid-cols-[1fr_7.5rem] items-center gap-2"
                     >
-                      <option value="">{t("ui.selectTax")}</option>
-                      {taxes.map((tax) => (
-                        <option key={tax.id} value={tax.id}>
-                          {tax.name} ({tax.rate}%)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.itemDiscountAt", {
+                          rate: group.rate,
+                        })}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-red-500">
+                        -{money(group.amount)}
+                      </span>
+                    </div>
+                  ))}
+
+                  {itemTaxSummary.map((group) => (
+                    <div
+                      key={`item-tax-${group.tax_id}`}
+                      className="grid grid-cols-[1fr_7.5rem] items-center gap-2"
+                    >
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.itemTaxAt", { rate: group.rate })}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
+                        +{money(group.value)}
+                      </span>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="my-3 h-px bg-[#eef1ff]" />
 
+                {/* Invoice-level discount/tax — unified "+" reveals options */}
                 <div className="space-y-2">
-                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500">
-                      {t("screens.invoices.taxableAmount")}
-                    </span>
-                    <span className="text-right text-sm font-bold tabular-nums">
-                      {money(taxableAmount)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500">
-                      {t("screens.invoices.taxAmount")}
-                    </span>
-                    <span className="text-right text-sm font-bold tabular-nums text-emerald-700">
-                      {money(taxValue)}
-                    </span>
-                  </div>
+                  {invoiceDiscountRevealed && (
+                    <div className="space-y-1.5 rounded-xl border border-red-100 bg-red-50/40 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-red-600">
+                          <Percent size={12} />
+                          {t("screens.invoices.invoiceDiscountRate")}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearInvoiceDiscount();
+                            setInvoiceDiscountRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative flex-1">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            className={`${smallInputClass} pr-5 text-right tabular-nums`}
+                            value={invoice.discount_rate || ""}
+                            onChange={(e) =>
+                              setInvoiceDiscountRate(e.target.value)
+                            }
+                            placeholder="0"
+                          />
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
+                            %
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-300">=</span>
+                        <input
+                          type="number"
+                          min="0"
+                          className={`${smallInputClass} flex-1 text-right tabular-nums`}
+                          value={
+                            invoiceDiscount ? invoiceDiscount.toFixed(2) : ""
+                          }
+                          onChange={(e) =>
+                            setInvoiceDiscountAmount(e.target.value)
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {invoiceTaxRevealed && (
+                    <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                          <Receipt size={12} />
+                          {t("ui.tax")}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearInvoiceTax();
+                            setInvoiceTaxRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                      <select
+                        className={`${smallInputClass} text-right`}
+                        value={invoice.tax || ""}
+                        onChange={(e) => {
+                          const selected = taxes.find(
+                            (tax) => tax.id === Number(e.target.value)
+                          );
+                          setInvoiceTax(selected);
+                        }}
+                      >
+                        <option value="">{t("ui.selectTax")}</option>
+                        {taxes
+                          .filter(
+                            (tax) =>
+                              tax.category === "invoice" ||
+                              tax.category === "both"
+                          )
+                          .map((tax) => (
+                            <option key={tax.id} value={tax.id}>
+                              {tax.name} ({tax.rate}%)
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {(!invoiceDiscountRevealed || !invoiceTaxRevealed) && (
+                    <div className="flex justify-end">
+                      <AddOptionsMenu
+                        options={[
+                          {
+                            key: "invoice-discount",
+                            label: t("screens.invoices.addInvoiceDiscount"),
+                            icon: (
+                              <Percent size={13} className="text-red-500" />
+                            ),
+                            visible: !invoiceDiscountRevealed,
+                            onClick: () => setInvoiceDiscountRevealed(true),
+                          },
+                          {
+                            key: "invoice-tax",
+                            label: t("screens.invoices.addInvoiceTax"),
+                            icon: (
+                              <Receipt size={13} className="text-emerald-600" />
+                            ),
+                            visible: !invoiceTaxRevealed,
+                            onClick: () => setInvoiceTaxRevealed(true),
+                          },
+                        ]}
+                      />
+                    </div>
+                  )}
+
+                  {invoiceDiscount > 0 && (
+                    <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.invoiceDiscountAmount")}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-red-500">
+                        -{money(invoiceDiscount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {invoiceTaxValue > 0 && (
+                    <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.invoiceTaxAmount")}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
+                        +{money(invoiceTaxValue)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-3 grid grid-cols-[1fr_7.5rem] items-center gap-2 rounded-xl bg-[#f6f8fd] px-3 py-2.5">
@@ -538,7 +918,7 @@ export default function AddPurchase() {
 
             {/* Payment choice */}
             <section className={panelClass}>
-              {accentRule("bg-amber-500")}
+              <AccentRule colorClass="bg-amber-500" />
               <div className={`${panelBodyClass} space-y-2.5`}>
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
@@ -597,6 +977,26 @@ export default function AddPurchase() {
         message={t("deleteModal.message")}
       />
 
+      <ConfirmModal
+        open={Boolean(pendingTaxConfirm)}
+        onClose={() => setPendingTaxConfirm(null)}
+        onConfirm={handleConfirmProductTaxUpdate}
+        confirming={confirmingTaxUpdate}
+        title={t("screens.invoices.updateProductTaxTitle")}
+        message={
+          pendingTaxConfirm
+            ? pendingTaxConfirm.newTaxId
+              ? t("screens.invoices.updateProductTaxSetMessage", {
+                  taxName: pendingTaxConfirm.newTaxName,
+                  productName: pendingTaxConfirm.productName,
+                })
+              : t("screens.invoices.updateProductTaxRemoveMessage", {
+                  productName: pendingTaxConfirm.productName,
+                })
+            : ""
+        }
+      />
+
       <AddPayment
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
@@ -640,18 +1040,25 @@ export default function AddPurchase() {
             try {
               const result = await submitProduct(form);
               const targetIndex = items.findIndex((i) => !i.product_id);
+              const matchedTax = productTaxes?.find(
+                (tx) => tx.id === form.tax_id
+              );
 
               if (targetIndex === -1) {
                 addItemWithProduct({
                   id: result.id,
                   name: form.name,
                   price: form.costPrice,
+                  tax_id: form.tax_id,
+                  tax_rate: matchedTax?.rate || 0,
                 });
               } else {
                 setItemProduct(targetIndex, {
                   id: result.id,
                   name: form.name,
                   price: form.costPrice,
+                  tax_id: form.tax_id,
+                  tax_rate: matchedTax?.rate || 0,
                 });
               }
 

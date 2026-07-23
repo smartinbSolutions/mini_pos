@@ -17,6 +17,82 @@ import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import useProductCatalog from "../hooks/useProductCatalog";
 
+// ---- Shared style tokens ----
+const inputClass =
+  "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400";
+const inputWithPrefixClass = inputClass + " pl-6";
+const labelClass =
+  "flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-slate-400";
+const smallRemoveBtnClass =
+  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-red-50 hover:text-red-600";
+
+// Panel accent recipe: { icon bg/text, top rule, section chip }
+const accents = {
+  identity: {
+    icon: "bg-[#eef1ff] text-[#4663ff]",
+    rule: "bg-[#4663ff]",
+  },
+  pricing: {
+    icon: "bg-emerald-50 text-emerald-600",
+    rule: "bg-emerald-500",
+  },
+  units: {
+    icon: "bg-violet-50 text-violet-600",
+    rule: "bg-violet-500",
+  },
+  barcodes: {
+    icon: "bg-amber-50 text-amber-600",
+    rule: "bg-amber-500",
+  },
+};
+
+const Panel = ({ accent, icon, title, action, children }) => (
+  <div className="relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
+    <div
+      className={`absolute inset-x-0 top-0 h-[3px] ${accents[accent].rule}`}
+    />
+    <div className="flex items-center justify-between gap-2 px-4 pb-2.5 pt-4">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`flex h-7 w-7 items-center justify-center rounded-lg ${accents[accent].icon}`}
+        >
+          {icon}
+        </span>
+        <h3 className="text-[13px] font-black text-slate-900">{title}</h3>
+      </div>
+      {action}
+    </div>
+    <div className="px-4 pb-4">{children}</div>
+  </div>
+);
+
+const AddButton = ({ onClick, colorClass, label, disabled, tooltip }) => {
+  const button = (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex h-7 items-center justify-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${colorClass}`}
+    >
+      <Plus size={13} />
+      {label}
+    </button>
+  );
+
+  if (disabled && tooltip) {
+    return (
+      <span className="group relative inline-flex">
+        {button}
+        <span className="pointer-events-none absolute top-full left-1/2 z-20 mt-1.5 -translate-x-1/3 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+          {tooltip}
+        </span>
+      </span>
+    );
+  }
+
+  return button;
+};
+
 const emptyForm = {
   name: "",
   latinName: "",
@@ -165,7 +241,7 @@ export default function ProductFormPage() {
 
         const updated = { ...unit, [field]: value };
 
-        if (field === "conversion_factor" && !unit.sale_price) {
+        if (field === "conversion_factor") {
           const factor = Number(value) || 0;
           const basePrice = Number(form.salePrice) || 0;
           updated.sale_price =
@@ -243,66 +319,6 @@ export default function ProductFormPage() {
       oldQuantity: form.oldQuantity || 0,
     });
   };
-
-  // ---- Shared style tokens ----
-  const inputClass =
-    "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400";
-  const inputWithPrefixClass = inputClass + " pl-6";
-  const labelClass =
-    "flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-slate-400";
-  const smallRemoveBtnClass =
-    "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-red-50 hover:text-red-600";
-
-  // Panel accent recipe: { icon bg/text, top rule, section chip }
-  const accents = {
-    identity: {
-      icon: "bg-[#eef1ff] text-[#4663ff]",
-      rule: "bg-[#4663ff]",
-    },
-    pricing: {
-      icon: "bg-emerald-50 text-emerald-600",
-      rule: "bg-emerald-500",
-    },
-    units: {
-      icon: "bg-violet-50 text-violet-600",
-      rule: "bg-violet-500",
-    },
-    barcodes: {
-      icon: "bg-amber-50 text-amber-600",
-      rule: "bg-amber-500",
-    },
-  };
-
-  const Panel = ({ accent, icon, title, action, children }) => (
-    <div className="relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition hover:shadow-[0_4px_16px_rgba(15,23,42,0.06)]">
-      <div
-        className={`absolute inset-x-0 top-0 h-[3px] ${accents[accent].rule}`}
-      />
-      <div className="flex items-center justify-between gap-2 px-4 pb-2.5 pt-4">
-        <div className="flex items-center gap-2.5">
-          <span
-            className={`flex h-7 w-7 items-center justify-center rounded-lg ${accents[accent].icon}`}
-          >
-            {icon}
-          </span>
-          <h3 className="text-[13px] font-black text-slate-900">{title}</h3>
-        </div>
-        {action}
-      </div>
-      <div className="px-4 pb-4">{children}</div>
-    </div>
-  );
-
-  const AddButton = ({ onClick, colorClass }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`inline-flex h-7 items-center justify-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition ${colorClass}`}
-    >
-      <Plus size={13} />
-      {t("common.add")}
-    </button>
-  );
 
   if (initializing) {
     return (
@@ -569,6 +585,13 @@ export default function ProductFormPage() {
                 <AddButton
                   onClick={addProductUnit}
                   colorClass="bg-violet-50 text-violet-600 hover:bg-violet-100"
+                  label={t("common.add")}
+                  disabled={!form.unit_id}
+                  tooltip={
+                    !form.unit_id
+                      ? t("screens.products.selectBaseUnitFirst")
+                      : undefined
+                  }
                 />
               }
             >
@@ -655,6 +678,7 @@ export default function ProductFormPage() {
                   <AddButton
                     onClick={addBarcode}
                     colorClass="bg-amber-50 text-amber-600 hover:bg-amber-100"
+                    label={t("common.add")}
                   />
                 }
               >

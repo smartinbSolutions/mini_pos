@@ -30,6 +30,37 @@ const FOR_INVOICE_LABEL = {
   tr: "faturası için",
 };
 
+export const toAppFileUrl = (filePath) =>
+  `app-file://local/${encodeURIComponent(filePath)}`;
+
+export const fromAppFileUrl = (url) => {
+  const prefix = "app-file://local/";
+  if (typeof url !== "string" || !url.startsWith(prefix)) {
+    return null;
+  }
+  try {
+    return decodeURIComponent(url.slice(prefix.length));
+  } catch {
+    return null;
+  }
+};
+
+// Best-effort logo cleanup. Never throws — a stray orphaned file on disk is a
+// minor, recoverable problem; failing the product update/delete the user is
+// waiting on because a filesystem op hiccuped is not an acceptable tradeoff.
+export function deleteLogoFile(logoValue) {
+  const fs = require("fs");
+
+  try {
+    const filePath = fromAppFileUrl(logoValue);
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (err) {
+    console.error("Failed to delete logo file:", logoValue, err);
+  }
+}
+
 export function getCompanyLanguage(db) {
   const row = db
     .prepare(`SELECT language FROM company_settings ORDER BY id LIMIT 1`)

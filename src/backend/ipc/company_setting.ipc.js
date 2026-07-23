@@ -7,8 +7,7 @@ import {
   isPinTaken,
 } from "../utils/authCrypto";
 import { seedData } from "../utils/data";
-const toAppFileUrl = (filePath) =>
-  `app-file://local/${encodeURIComponent(filePath)}`;
+import { toAppFileUrl } from "../utils/helpers";
 
 // ---------------------------------------------------------------------------
 // Dashboard stats helpers

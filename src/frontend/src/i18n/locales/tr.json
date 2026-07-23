@@ -10,6 +10,8 @@
     "save": "Kaydet",
     "refresh": "Yenile",
     "back": "Geri",
+    "yes": "Evet",
+    "no": "Hayır",
     "next": "İleri",
     "add": "Ekle",
     "edit": "Düzenle",
@@ -25,7 +27,8 @@
     "create": "Oluştur",
     "print": "Yazdır",
     "filters": "Filtreler",
-    "clear": "Filtreyi Temizle"
+    "clear": "Filtreyi Temizle",
+    "confirm": "Onayla"
   },
   "ui": {
     "profit": "Kâr",
@@ -330,6 +333,7 @@
         "edit": "Düzenleme",
         "return": "İade"
       },
+      "selectBaseUnitFirst": "Önce temel birimi seçin",
       "refType": {
         "sales_invoice": "Satış faturası",
         "purchase_invoice": "Satın alma faturası",
@@ -352,6 +356,20 @@
       }
     },
     "invoices": {
+      "addTax": "Vergi ekle",
+      "discountPercent": "İndirim %",
+      "itemDiscountAt": "Ürün indirimi %{{rate}}",
+      "itemTaxAt": "Ürün vergisi %{{rate}}",
+      "invoiceDiscountRate": "Fatura indirimi",
+      "invoiceDiscountAmount": "Fatura indirim tutarı",
+      "invoiceTaxAmount": "Fatura vergi tutarı",
+      "addDiscount": "İndirim ekle",
+      "addInvoiceDiscount": "Fatura indirimi ekle",
+      "addInvoiceTax": "Fatura vergisi ekle",
+      "unitConversionDetail": "{{enteredQty}} {{unitName}} × {{factor}} = {{baseQty}} temel birim",
+      "updateProductTaxTitle": "Varsayılan vergi güncellensin mi?",
+      "updateProductTaxSetMessage": "{{productName}} için varsayılan vergi olarak {{taxName}} de ayarlansın mı?",
+      "updateProductTaxRemoveMessage": "{{productName}} ürününden varsayılan vergi de kaldırılsın mı?",
       "returnedQty": "{{qty}} iade edildi",
       "profitBreakdown": "Kâr Dökümü",
       "perItemProfit": "Ürün başına kâr",

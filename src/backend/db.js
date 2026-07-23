@@ -229,7 +229,7 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS taxes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
+  name TEXT UNIQUE,
   rate REAL DEFAULT 0,
   category TEXT NOT NULL DEFAULT 'product' CHECK (category IN ('product', 'invoice', 'both'))
 )
@@ -326,9 +326,11 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
   supplier_id INTEGER,
   date TEXT,
   subtotal REAL DEFAULT 0,
-  discount REAL DEFAULT 0,
   tax REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
+  taxRate REAL DEFAULT 0,
+    discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
   net_total REAL DEFAULT 0, 
   created_by INTEGER,
   updated_by INTEGER,
@@ -340,6 +342,38 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
 );
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS purchase_invoice_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id INTEGER NOT NULL,
+  product_id INTEGER NOT NULL,
+  quantity REAL NOT NULL,
+  price REAL NOT NULL,
+  total REAL NOT NULL,
+  product_name TEXT,
+  unit_name TEXT,
+  unit_conversion_factor REAL DEFAULT 1,
+  tax_id INTEGER,
+  tax_rate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (invoice_id)
+    REFERENCES purchase_invoices(id)
+    ON DELETE CASCADE,
+
+  FOREIGN KEY (product_id)
+    REFERENCES products(id)
+    ON DELETE RESTRICT,
+
+  FOREIGN KEY (tax_id)
+    REFERENCES taxes(id)
+)
 `
 ).run();
 db.prepare(
@@ -436,29 +470,6 @@ CREATE TABLE IF NOT EXISTS expense_items (
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (expense_id) REFERENCES expense(id)
 )
-`
-).run();
-
-db.prepare(
-  `
-CREATE TABLE IF NOT EXISTS purchase_invoice_items (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  invoice_id INTEGER NOT NULL,
-  product_id INTEGER NOT NULL,
-  quantity REAL NOT NULL,
-  price REAL NOT NULL,
-  total REAL NOT NULL,
-  product_name TEXT,
-  unit_name TEXT,
-  createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (invoice_id)
-    REFERENCES purchase_invoices(id)
-    ON DELETE CASCADE,
-
-  FOREIGN KEY (product_id)
-    REFERENCES products(id)
-    ON DELETE RESTRICT
-);
 `
 ).run();
 

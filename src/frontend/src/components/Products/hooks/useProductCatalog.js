@@ -188,6 +188,10 @@ export default function useProductCatalog() {
 
     try {
       const result = await api.createProduct(productPayload(form));
+      if (!result?.success) {
+        throw new Error(result?.error || t("errors.saveError"));
+      }
+
       const productId = result?.id;
 
       for (const barcode of normalizeBarcodes(form.barcodes)) {
@@ -209,6 +213,11 @@ export default function useProductCatalog() {
 
     try {
       const result = await api.updateProduct(productPayload(form));
+      if (!result?.success) {
+        throw new Error(
+          result?.error || result?.message || t("errors.saveError")
+        );
+      }
 
       const nextBarcodes = normalizeBarcodes(form.barcodes);
       const existingBarcodes = barcodesByProduct[form.id] || [];
