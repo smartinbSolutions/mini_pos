@@ -9,7 +9,6 @@ import {
   PackageOpen,
   AlertCircle,
   Loader2,
-  CheckCircle2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import useAddPurchase from "../hooks/useAddPurchase";
@@ -19,7 +18,7 @@ import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
-import ProductFormModal from "../../../Products/components/ProductFormModal";
+import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
 import SupplierFormModal from "./SupplierFormModal";
@@ -30,17 +29,14 @@ export default function AddPurchase() {
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
 
   const {
-    barcodesByProduct,
     saving: productSaving,
-    openCreate,
-    activeProduct,
-    canManageBarcodes,
     canUseUnits,
+    canUseTaxes,
     isFormOpen,
     setIsFormOpen,
     submitProduct,
     units,
-    handleLogo,
+    taxes: productTaxes,
   } = catalog;
 
   const {
@@ -52,6 +48,8 @@ export default function AddPurchase() {
     addItem,
     removeItem,
     updateItem,
+    setItemProduct,
+    addItemWithProduct,
     submit,
     subtotal,
     taxableAmount,
@@ -79,9 +77,14 @@ export default function AddPurchase() {
   const canSave = !!invoice.supplier_id && hasUsableItems && !saving;
 
   const inputClass =
-    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100";
+    "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
   const panelClass =
-    "rounded-[28px] border border-white/80 bg-white/85 p-5 shadow-[0_18px_60px_rgba(70,99,255,0.10)]";
+    "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
+  const panelBodyClass = "p-4";
+
+  const accentRule = (colorClass) => (
+    <div className={`absolute inset-x-0 top-0 h-[3px] ${colorClass}`} />
+  );
 
   const handleSaveUnpaid = async () => {
     if (!canSave) return;
@@ -111,24 +114,21 @@ export default function AddPurchase() {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <section className="flex flex-col gap-4 rounded-[32px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
-            <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#4663ff] text-white shadow-lg shadow-[#4663ff]/20">
-              <Receipt size={24} />
+    <div className="min-h-screen bg-[#f6f8fd] text-slate-900">
+      <div className="mx-auto max-w-7xl space-y-4 p-5">
+        {/* Compact header */}
+        <section className="flex flex-col gap-3 rounded-2xl border border-[#e9edfb] bg-white px-5 py-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25">
+              <Receipt size={18} />
             </span>
             <div>
-              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
+              <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
                 {t("ui.purchase")}
               </p>
-              <h1 className="text-3xl font-black text-slate-950">
+              <h1 className="text-lg font-black leading-tight text-slate-950">
                 {t("screens.invoices.createPurchase")}
               </h1>
-              <p className="text-sm text-slate-500">
-                {t("screens.invoices.manageItemsPayments")}
-              </p>
             </div>
           </div>
 
@@ -137,7 +137,7 @@ export default function AddPurchase() {
               type="button"
               onClick={reset}
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
             >
               {t("common.refresh")}
             </button>
@@ -145,129 +145,130 @@ export default function AddPurchase() {
               type="button"
               onClick={() => window.history.back()}
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={14} />
               {t("common.back")}
             </button>
           </div>
         </section>
 
         {error && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-bold text-red-700">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <main className="space-y-6">
+        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <main className="space-y-4">
             {/* Supplier + date */}
             <section className={panelClass}>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <SearchableSelect
-                        placeholder={t("ui.selectSupplier")}
-                        options={suppliers}
-                        selectedValue={invoice?.supplier_id}
-                        onChange={(e) =>
-                          setInvoice({ ...invoice, supplier_id: e.id })
-                        }
-                      />
+              {accentRule("bg-[#4663ff]")}
+              <div className={panelBodyClass}>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <SearchableSelect
+                          placeholder={t("ui.selectSupplier")}
+                          options={suppliers}
+                          selectedValue={invoice?.supplier_id}
+                          onChange={(e) =>
+                            setInvoice({ ...invoice, supplier_id: e.id })
+                          }
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSupplierModalOpen(true)}
+                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+                      >
+                        <Plus size={14} />
+                        <span>{t("screens.contacts.addSupplier")}</span>
+                      </button>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSupplierModalOpen(true)}
-                      className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
-                    >
-                      <Plus size={16} />
-                      <span>{t("screens.contacts.addSupplier")}</span>
-                    </button>
+                    {!invoice.supplier_id && (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-amber-600">
+                        <AlertCircle size={12} />
+                        {t("errors.supplierRequired")}
+                      </p>
+                    )}
                   </div>
 
-                  {!invoice.supplier_id && (
-                    <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-amber-600">
-                      <AlertCircle size={12} />
-                      {t("errors.supplierRequired")}
-                    </p>
-                  )}
+                  <input
+                    type="date"
+                    className={inputClass}
+                    value={invoice.date}
+                    onChange={(e) =>
+                      setInvoice({ ...invoice, date: e.target.value })
+                    }
+                  />
                 </div>
-
-                <input
-                  type="date"
-                  className={inputClass}
-                  value={invoice.date}
-                  onChange={(e) =>
-                    setInvoice({ ...invoice, date: e.target.value })
-                  }
-                />
               </div>
             </section>
 
             {/* Items */}
-            <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
-              <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
-                <div>
-                  <h2 className="flex items-center gap-2 text-lg font-black text-slate-950">
+            <section className={panelClass}>
+              {accentRule("bg-violet-500")}
+              <div className="flex items-center justify-between gap-3 border-b border-[#eef1ff] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-[13px] font-black text-slate-900">
                     {t("ui.items")}
-                    {items.length > 0 && (
-                      <span className="rounded-full bg-[#eef3ff] px-2 py-0.5 text-xs font-bold text-[#4663ff]">
-                        {items.length}
-                      </span>
-                    )}
                   </h2>
-                  <p className="text-sm text-slate-500">
-                    {t("screens.invoices.productsOnInvoice")}
-                  </p>
+                  {items.length > 0 && (
+                    <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-600">
+                      {items.length}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={addItem}
-                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
                   >
-                    <Plus size={16} />
+                    <Plus size={13} />
                     {t("screens.invoices.addItem")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsFormOpen(true)}
-                    className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-600 transition hover:bg-violet-100"
                   >
-                    <Plus size={16} />
+                    <Plus size={13} />
                     {t("screens.products.create")}
                   </button>
                 </div>
               </div>
 
               {loading ? (
-                <div className="flex flex-col items-center justify-center gap-3 p-12 text-slate-400">
-                  <Loader2 size={28} className="animate-spin" />
-                  <p className="text-sm font-medium">{t("common.loading")}</p>
+                <div className="flex flex-col items-center justify-center gap-2.5 p-10 text-slate-400">
+                  <Loader2 size={22} className="animate-spin" />
+                  <p className="text-xs font-bold">{t("common.loading")}</p>
                 </div>
               ) : items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
-                    <PackageOpen size={26} />
+                <div className="flex flex-col items-center justify-center gap-2.5 p-10 text-center">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4663ff]">
+                    <PackageOpen size={20} />
                   </span>
                   <div>
-                    <p className="font-bold text-slate-700">
+                    <p className="text-sm font-bold text-slate-700">
                       {t("screens.invoices.noItemsYet")}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {t("screens.invoices.addItemToStart")}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={addItem}
-                    className="mt-1 inline-flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 py-2 text-sm font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-[#dbe4ff] bg-white px-3 py-1.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
                   >
-                    <Plus size={16} />
+                    <Plus size={13} />
                     {t("screens.invoices.addItem")}
                   </button>
                 </div>
@@ -275,24 +276,24 @@ export default function AddPurchase() {
                 <>
                   {/* Desktop table */}
                   <div className="hidden overflow-x-auto md:block">
-                    <table className="w-full min-w-[760px] text-sm">
-                      <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
+                    <table className="w-full min-w-[720px] text-sm">
+                      <thead className="bg-[#f8faff] text-[11px] font-bold uppercase tracking-wide text-slate-400">
                         <tr>
-                          <th className="p-3 text-left">{t("ui.product")}</th>
-                          <th className="p-3">{t("ui.qty")}</th>
-                          <th className="p-3">{t("ui.price")}</th>
-                          <th className="p-3">{t("ui.total")}</th>
-                          <th className="p-3"></th>
+                          <th className="p-2.5 text-left">{t("ui.product")}</th>
+                          <th className="p-2.5">{t("ui.qty")}</th>
+                          <th className="p-2.5">{t("ui.price")}</th>
+                          <th className="p-2.5">{t("ui.total")}</th>
+                          <th className="p-2.5"></th>
                         </tr>
                       </thead>
 
-                      <tbody className="divide-y divide-[#e5ebff]">
+                      <tbody className="divide-y divide-[#eef1ff]">
                         {items.map((item, index) => (
                           <tr
                             key={index}
                             className="transition hover:bg-[#f8faff]"
                           >
-                            <td className="p-2">
+                            <td className="p-1.5">
                               <SearchableSelect
                                 placeholder={t("ui.selectProduct")}
                                 options={products}
@@ -318,7 +319,7 @@ export default function AddPurchase() {
                                 }}
                               />
                             </td>
-                            <td className="p-2">
+                            <td className="p-1.5">
                               <input
                                 type="number"
                                 min="0"
@@ -329,7 +330,7 @@ export default function AddPurchase() {
                                 }
                               />
                             </td>
-                            <td className="p-2">
+                            <td className="p-1.5">
                               <input
                                 type="number"
                                 min="0"
@@ -340,10 +341,10 @@ export default function AddPurchase() {
                                 }
                               />
                             </td>
-                            <td className="p-2 text-center font-black">
+                            <td className="p-1.5 text-center text-sm font-black tabular-nums">
                               {money(item.total)}
                             </td>
-                            <td className="p-2 text-center">
+                            <td className="p-1.5 text-center">
                               <button
                                 type="button"
                                 onClick={() => setDeleteItemIndex(index)}
@@ -353,9 +354,9 @@ export default function AddPurchase() {
                                     ? t("screens.invoices.keepOneItem")
                                     : undefined
                                 }
-                                className="rounded-xl p-2 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
+                                className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
-                                <Trash2 size={16} />
+                                <Trash2 size={15} />
                               </button>
                             </td>
                           </tr>
@@ -365,20 +366,20 @@ export default function AddPurchase() {
                   </div>
 
                   {/* Mobile stacked cards */}
-                  <div className="divide-y divide-[#e5ebff] md:hidden">
+                  <div className="divide-y divide-[#eef1ff] md:hidden">
                     {items.map((item, index) => (
-                      <div key={index} className="space-y-3 p-4">
+                      <div key={index} className="space-y-2.5 p-3.5">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase  text-slate-400">
+                          <span className="text-[11px] font-black uppercase tracking-wide text-slate-400">
                             {t("ui.product")} #{index + 1}
                           </span>
                           <button
                             type="button"
                             onClick={() => setDeleteItemIndex(index)}
                             disabled={items.length === 1}
-                            className="rounded-xl p-1.5 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300"
+                            className="rounded-lg p-1 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={15} />
                           </button>
                         </div>
                         <SearchableSelect
@@ -391,7 +392,7 @@ export default function AddPurchase() {
                         />
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="mb-1 block text-xs font-semibold text-slate-500">
+                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
                               {t("ui.qty")}
                             </label>
                             <input
@@ -405,7 +406,7 @@ export default function AddPurchase() {
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-xs font-semibold text-slate-500">
+                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
                               {t("ui.price")}
                             </label>
                             <input
@@ -419,7 +420,7 @@ export default function AddPurchase() {
                             />
                           </div>
                         </div>
-                        <div className="flex justify-between rounded-xl bg-[#f8faff] px-3 py-2 text-sm">
+                        <div className="flex justify-between rounded-lg bg-[#f8faff] px-3 py-1.5 text-sm">
                           <span className="text-slate-500">
                             {t("ui.total")}
                           </span>
@@ -438,151 +439,148 @@ export default function AddPurchase() {
           <aside className="space-y-4">
             {/* Summary */}
             <section className={panelClass}>
-              <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
-                  <HandCoins size={19} />
-                </span>
-                <div>
-                  <h3 className="font-black text-slate-950">
+              {accentRule("bg-emerald-500")}
+              <div className={panelBodyClass}>
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <HandCoins size={15} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
                     {t("ui.summary")}
                   </h3>
-                  <p className="text-sm text-slate-500">
-                    {t("screens.invoices.purchaseTotal")}
-                  </p>
-                </div>
-              </div>
-
-              {/* Editable inputs — label left, control right, fixed control width so
-      every row's right edge lines up regardless of input vs select */}
-              <div className="space-y-3">
-                <div className="grid grid-cols-[1fr_9rem] items-center gap-3">
-                  <span className="text-sm text-slate-500">
-                    {t("ui.subtotal")}
-                  </span>
-                  <span className="text-right text-sm font-bold tabular-nums">
-                    {money(subtotal)}
-                  </span>
                 </div>
 
-                <div className="grid grid-cols-[1fr_9rem] items-center gap-3">
-                  <label className="text-sm text-slate-500">
-                    {t("ui.discount")}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    className={`${inputClass} text-right tabular-nums`}
-                    value={invoice.discount || ""}
-                    onChange={(e) =>
-                      setInvoice((p) => ({ ...p, discount: e.target.value }))
-                    }
-                    placeholder="0"
-                  />
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">
+                      {t("ui.subtotal")}
+                    </span>
+                    <span className="text-right text-sm font-black tabular-nums">
+                      {money(subtotal)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                    <label className="text-xs font-semibold text-slate-500">
+                      {t("ui.discount")}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      className={`${inputClass} text-right tabular-nums`}
+                      value={invoice.discount || ""}
+                      onChange={(e) =>
+                        setInvoice((p) => ({ ...p, discount: e.target.value }))
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                    <label className="text-xs font-semibold text-slate-500">
+                      {t("ui.tax")}
+                    </label>
+                    <select
+                      className={`${inputClass} text-right`}
+                      value={invoice.tax || ""}
+                      onChange={(e) => {
+                        const selected = taxes.find(
+                          (tax) => tax.id === Number(e.target.value)
+                        );
+                        setInvoice((p) => ({
+                          ...p,
+                          tax: selected?.id || "",
+                          tax_rate: selected?.rate || 0,
+                        }));
+                      }}
+                    >
+                      <option value="">{t("ui.selectTax")}</option>
+                      {taxes.map((tax) => (
+                        <option key={tax.id} value={tax.id}>
+                          {tax.name} ({tax.rate}%)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-[1fr_9rem] items-center gap-3">
-                  <label className="text-sm text-slate-500">
-                    {t("ui.tax")}
-                  </label>
-                  <select
-                    className={`${inputClass} text-right`}
-                    value={invoice.tax || ""}
-                    onChange={(e) => {
-                      const selected = taxes.find(
-                        (tax) => tax.id === Number(e.target.value)
-                      );
-                      setInvoice((p) => ({
-                        ...p,
-                        tax: selected?.id || "",
-                        tax_rate: selected?.rate || 0,
-                      }));
-                    }}
-                  >
-                    <option value="">{t("ui.selectTax")}</option>
-                    {taxes.map((tax) => (
-                      <option key={tax.id} value={tax.id}>
-                        {tax.name} ({tax.rate}%)
-                      </option>
-                    ))}
-                  </select>
+                <div className="my-3 h-px bg-[#eef1ff]" />
+
+                <div className="space-y-2">
+                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">
+                      {t("screens.invoices.taxableAmount")}
+                    </span>
+                    <span className="text-right text-sm font-bold tabular-nums">
+                      {money(taxableAmount)}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">
+                      {t("screens.invoices.taxAmount")}
+                    </span>
+                    <span className="text-right text-sm font-bold tabular-nums text-emerald-700">
+                      {money(taxValue)}
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="my-4 h-px bg-[#e5ebff]" />
-
-              {/* Computed values — same grid, no inputs, so the two blocks visually
-      align on the same right edge without looking editable */}
-              <div className="space-y-2.5">
-                <div className="grid grid-cols-[1fr_9rem] items-center gap-3">
-                  <span className="text-sm text-slate-500">
-                    {t("screens.invoices.taxableAmount")}
+                <div className="mt-3 grid grid-cols-[1fr_7.5rem] items-center gap-2 rounded-xl bg-[#f6f8fd] px-3 py-2.5">
+                  <span className="text-xs font-black text-slate-700">
+                    {t("ui.total")}
                   </span>
-                  <span className="text-right text-sm font-bold tabular-nums">
-                    {money(taxableAmount)}
+                  <span className="text-right text-lg font-black tabular-nums text-[#4663ff]">
+                    {money(netTotal)}
                   </span>
                 </div>
-                <div className="grid grid-cols-[1fr_9rem] items-center gap-3">
-                  <span className="text-sm text-slate-500">
-                    {t("screens.invoices.taxAmount")}
-                  </span>
-                  <span className="text-right text-sm font-bold tabular-nums text-emerald-700">
-                    {money(taxValue)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Total — pulled into its own highlighted block so it reads as the
-      final answer, not just another row in the list */}
-              <div className="mt-4 grid grid-cols-[1fr_9rem] items-center gap-3 rounded-2xl bg-[#f8faff] px-4 py-3">
-                <span className="text-sm font-bold text-slate-700">
-                  {t("ui.total")}
-                </span>
-                <span className="text-right text-xl font-black tabular-nums text-[#4663ff]">
-                  {money(netTotal)}
-                </span>
               </div>
             </section>
 
             {/* Payment choice */}
-            <section className={`${panelClass} space-y-3`}>
-              <div>
-                <h3 className="font-black">{t("ui.payment")}</h3>
-                <p className="text-xs text-slate-500">
-                  {t("screens.invoices.paymentHelper")}
-                </p>
-              </div>
+            <section className={panelClass}>
+              {accentRule("bg-amber-500")}
+              <div className={`${panelBodyClass} space-y-2.5`}>
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                    <Save size={14} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
+                    {t("ui.payment")}
+                  </h3>
+                </div>
 
-              <div className="grid gap-2">
-                <button
-                  type="button"
-                  onClick={handleSaveUnpaid}
-                  disabled={!canSave}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white py-3 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {saving ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : null}
-                  {t("screens.invoices.saveUnpaid")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenPayModal}
-                  disabled={!canSave}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Save size={16} />
-                  {t("screens.invoices.saveAndPay")}
-                </button>
-              </div>
+                <div className="grid gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveUnpaid}
+                    disabled={!canSave}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : null}
+                    {t("screens.invoices.saveUnpaid")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenPayModal}
+                    disabled={!canSave}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Save size={15} />
+                    {t("screens.invoices.saveAndPay")}
+                  </button>
+                </div>
 
-              {!canSave && !saving && (
-                <p className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                  <AlertCircle size={12} />
-                  {!invoice.supplier_id
-                    ? t("errors.supplierRequired")
-                    : t("errors.addOneItem")}
-                </p>
-              )}
+                {!canSave && !saving && (
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                    <AlertCircle size={12} />
+                    {!invoice.supplier_id
+                      ? t("errors.supplierRequired")
+                      : t("errors.addOneItem")}
+                  </p>
+                )}
+              </div>
             </section>
           </aside>
         </div>
@@ -610,34 +608,59 @@ export default function AddPurchase() {
         onSubmit={handlePaymentCollected}
         confirmLabel={t("screens.invoices.saveInvoice")}
       />
+
       {supplierModalOpen && (
         <SupplierFormModal
           open={supplierModalOpen}
           onClose={() => setSupplierModalOpen(false)}
           draft={draft}
           setDraft={setDraft}
-          onSubmit={submitDraft}
+          onSubmit={async (event) => {
+            const result = await submitDraft(event);
+            if (result && result.id) {
+              setInvoice((prev) => ({ ...prev, supplier_id: result.id }));
+              setSupplierModalOpen(false);
+            }
+          }}
           saving={saving}
           actionError={actionError}
           t={t}
         />
       )}
+
       {isFormOpen && (
-        <ProductFormModal
-          product={activeProduct}
+        <ProductQuickAddModal
           units={units}
-          barcodes={
-            activeProduct ? barcodesByProduct[activeProduct.id] || [] : []
-          }
-          canManageBarcodes={canManageBarcodes}
+          taxes={productTaxes}
           canUseUnits={canUseUnits}
+          canUseTaxes={canUseTaxes}
           saving={productSaving}
-          onClose={async () => {
-            setIsFormOpen(false);
-            await refetch();
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={async (form) => {
+            try {
+              const result = await submitProduct(form);
+              const targetIndex = items.findIndex((i) => !i.product_id);
+
+              if (targetIndex === -1) {
+                addItemWithProduct({
+                  id: result.id,
+                  name: form.name,
+                  price: form.costPrice,
+                });
+              } else {
+                setItemProduct(targetIndex, {
+                  id: result.id,
+                  name: form.name,
+                  price: form.costPrice,
+                });
+              }
+
+              setIsFormOpen(false);
+              await refetch();
+            } catch {
+              // actionError already set inside submitProduct/useProductCatalog
+            }
           }}
-          onSubmit={submitProduct}
-          handleLogo={handleLogo}
         />
       )}
 

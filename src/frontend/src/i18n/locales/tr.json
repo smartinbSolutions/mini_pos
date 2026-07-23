@@ -269,6 +269,7 @@
         "movements": "Hareketler"
       },
       "baseUnitBadge": "Temel",
+      "noTaxOption": "Vergisiz",
       "baseUnitHint": "Bu, ürünün varsayılan satış birimi olacaktır.",
       "baseSalePrice": "Temel Satış Fiyatı",
       "sellingUnits": "Satış Birimleri",

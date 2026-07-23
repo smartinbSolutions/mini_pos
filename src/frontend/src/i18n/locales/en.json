@@ -269,6 +269,7 @@
         "movements": "Movements"
       },
       "baseUnitBadge": "Base",
+      "noTaxOption": "No tax",
       "baseUnitHint": "This becomes the product's default selling unit.",
       "baseSalePrice": "Base Sale Price",
       "sellingUnits": "Selling Units",

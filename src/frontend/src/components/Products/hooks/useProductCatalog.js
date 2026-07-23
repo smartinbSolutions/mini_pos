@@ -208,7 +208,7 @@ export default function useProductCatalog() {
     setSaving(true);
 
     try {
-      await api.updateProduct(productPayload(form));
+      const result = await api.updateProduct(productPayload(form));
 
       const nextBarcodes = normalizeBarcodes(form.barcodes);
       const existingBarcodes = barcodesByProduct[form.id] || [];
@@ -238,6 +238,7 @@ export default function useProductCatalog() {
       }
 
       await refetch();
+      return result;
     } finally {
       setSaving(false);
     }
@@ -260,19 +261,22 @@ export default function useProductCatalog() {
 
   const submitProduct = async (form) => {
     try {
+      let result;
       if (activeProduct) {
-        await updateProduct(form);
+        result = await updateProduct(form);
       } else {
-        await createProduct(form);
+        result = await createProduct(form);
       }
 
       setIsFormOpen(false);
       setActiveProduct(null);
       setActionError("");
       await refetch();
+      return result;
     } catch (err) {
       console.error("Failed to save product:", err);
       setActionError(err?.message || t("errors.saveError"));
+      throw err;
     }
   };
 

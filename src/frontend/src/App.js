@@ -77,6 +77,7 @@ import SalesReturnView from "./components/Invoices/SalesReturn/components/SalesR
 import PaymentDocumentPage from "./components/Cash/Payment/components/PaymentDocumentPage";
 import FundTransferDocumentPage from "./components/Cash/Fund/components/FundTransferDocumentPage";
 import ProductDetailPage from "./components/Products/components/ProductDetailPage";
+import ProductFormPage from "./components/Products/components/ProductFormPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -234,6 +235,8 @@ export default function App() {
 
               {/* ================= PRODUCTS ================= */}
               <Route path="products" element={<ProductList />} />
+              <Route path="products/new" element={<ProductFormPage />} />
+              <Route path="products/:id/edit" element={<ProductFormPage />} />
               <Route path="products/:id" element={<ProductDetailPage />} />
               <Route path="import-reports" element={<ImportSummary />} />
 

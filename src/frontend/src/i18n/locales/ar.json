@@ -270,6 +270,7 @@
         "movements": "الحركات"
       },
       "baseUnitBadge": "أساسي",
+      "noTaxOption": "بدون ضريبة",
       "baseUnitHint": "ستكون هذه هي وحدة البيع الافتراضية للمنتج.",
       "baseSalePrice": "سعر البيع الأساسي",
       "sellingUnits": "وحدات البيع",

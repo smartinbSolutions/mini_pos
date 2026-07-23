@@ -92,18 +92,27 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS product_movements (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  product_id INTEGER,
+  product_id INTEGER NOT NULL,
   reference_id INTEGER,
-  reference_type TEXT, -- purchase / sale / expense,
-  type TEXT, -- in / out,
+  reference_type TEXT NOT NULL CHECK (
+    reference_type IN (
+      'purchase',
+      'purchase_return',
+      'sale',
+      'sale_return',
+      'initial',
+      'import',
+      'adjustment'
+    )
+  ),
+  type TEXT NOT NULL CHECK (type IN ('in', 'out')),
   action TEXT NOT NULL,
   enterPrice REAL DEFAULT 0,
-  date REAL DEFAULT 0,
   outPrice REAL DEFAULT 0,
-  quantity REAL DEFAULT 0,
+  quantity REAL NOT NULL DEFAULT 0,
+  date TEXT DEFAULT (datetime('now')),
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (product_id) REFERENCES products(id)
- 
 )
 `
 ).run();

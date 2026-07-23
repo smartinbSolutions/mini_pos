@@ -67,7 +67,7 @@ export default function registerProductIPC() {
       createProductMovement(db, {
         product_id: productId,
         reference_id: productId,
-        reference_type: "products",
+        reference_type: "initial",
         action: "create",
         type: "in",
         quantity: data.quantity,
@@ -110,7 +110,7 @@ export default function registerProductIPC() {
         createProductMovement(db, {
           product_id: data.id,
           reference_id: data.id,
-          reference_type: "products",
+          reference_type: "adjustment",
           action: "update",
           type: delta > 0 ? "in" : "out",
           quantity: Math.abs(delta),

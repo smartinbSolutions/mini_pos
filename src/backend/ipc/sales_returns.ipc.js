@@ -130,7 +130,7 @@ export default function registerSalesReturnsIpc() {
           createProductMovement(db, {
             product_id: item.product_id,
             reference_id: returnId,
-            reference_type: "sales_return",
+            reference_type: "sale_return",
             type: "in",
             action: "return",
             quantity,

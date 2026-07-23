@@ -41,8 +41,8 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
 
     try {
       setLoading(true);
-      const res = await api.getProducts();
-      setProducts(res || []);
+      const res = await api.getProducts({ limit: 100 });
+      setProducts(res?.data || []);
       const taxResult = await api.getTaxes();
       setTaxes(taxResult || []);
       const suppliersResult = await api.getSuppliers();
@@ -75,7 +75,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
       item[key] = value;
 
       if (key === "product_id") {
-        const product = products?.data?.find((p) => p.id == value);
+        const product = products?.find((p) => p.id == value);
 
         if (product) {
           item.price = product.costPrice || 0;
@@ -92,6 +92,42 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
 
       return copy;
     });
+  };
+
+  // Directly applies a known product (id/name/price) to an existing row without
+  // depending on `products` state — avoids the stale-closure race when a product
+  // was just created via the quick-add modal and hasn't landed in `products` yet.
+  const setItemProduct = (index, { id, name, price }) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index] };
+
+      item.product_id = id;
+      item.name = name || "";
+      item.price = Number(price || 0);
+
+      const q = Number(item.quantity || 0);
+      item.total = q * item.price;
+
+      copy[index] = item;
+
+      return copy;
+    });
+  };
+
+  // Appends a brand-new row pre-filled with a known product — used when there's
+  // no empty row left to reuse (e.g. quick-adding a second, third, etc. product).
+  const addItemWithProduct = ({ id, name, price }) => {
+    setItems((prev) => [
+      ...prev,
+      {
+        product_id: id,
+        name: name || "",
+        quantity: 1,
+        price: Number(price || 0),
+        total: Number(price || 0),
+      },
+    ]);
   };
 
   const subtotal = useMemo(() => {
@@ -264,6 +300,8 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
     addItem,
     removeItem,
     updateItem,
+    setItemProduct,
+    addItemWithProduct,
     submit,
     reset,
     subtotal,
@@ -275,7 +313,6 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
     error,
     api,
     setProducts,
-    products,
     refetch,
   };
 }

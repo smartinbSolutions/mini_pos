@@ -186,7 +186,7 @@ export function seedData(db, { language = "ar", currencyId } = {}) {
     createProductMovement(db, {
       product_id: productId,
       reference_id: productId,
-      reference_type: "products",
+      reference_type: "initial",
       action: "create",
       type: "in",
       quantity,

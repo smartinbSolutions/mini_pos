@@ -90,6 +90,7 @@ const useSuppliersList = () => {
         throw new Error(res?.message || res?.error);
       }
       await refetch();
+      return res;
     } finally {
       setSaving(false);
     }
@@ -128,10 +129,10 @@ const useSuppliersList = () => {
 
   const handleCreateSupplier = async (sup) => {
     try {
-      await createSupplier(sup);
+      const result = await createSupplier(sup);
       setActionError("");
       toast.success(t("success.created", { field: t("ui.supplier") }));
-      return true;
+      return result;
     } catch (err) {
       console.error("Failed to create Supplier:", err);
       const message =
@@ -176,7 +177,7 @@ const useSuppliersList = () => {
   const submitDraft = async (event) => {
     event.preventDefault();
     const saved = await handleCreateSupplier(draft);
-    if (saved) {
+    if (saved && saved !== false) {
       setDraft(emptySupplier);
     }
     return saved;

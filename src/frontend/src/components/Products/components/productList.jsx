@@ -12,7 +12,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import ProductFormModal from "./ProductFormModal";
 import useProductCatalog from "../hooks/useProductCatalog";
 import useProductMovements from "../hooks/useProductMovements";
 import DeleteModal from "../../../Global/DeleteModel";
@@ -28,7 +27,6 @@ export default function ProductList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const catalog = useProductCatalog();
-  const movementsHook = useProductMovements();
   const { money } = usePrimaryCurrency();
 
   const [importModalOpen, setImportModalOpen] = useState(false);
@@ -41,24 +39,12 @@ export default function ProductList() {
     refetch,
     search,
     setSearch,
-    openCreate,
     actionError,
-    openEdit,
     handleDeleteProduct,
-    isFormOpen,
-    activeProduct,
-    canManageBarcodes,
-    canUseUnits,
-    canUseTaxes,
-    setIsFormOpen,
-    submitProduct,
-    units,
-    taxes,
     openDeleteModel,
     setOpenDeleteModel,
     setSelectDeleteProduct,
     selectDeleteProduct,
-    handleLogo,
     page,
     setPage,
     limit,
@@ -68,22 +54,8 @@ export default function ProductList() {
     totalCost,
   } = catalog;
 
-  const {
-    movements,
-    loading: movementsLoading,
-    error: movementsError,
-    activeMovementsProduct,
-    openMovements,
-    closeMovements,
-  } = movementsHook;
-
   const totalQuantity = products.reduce(
     (total, product) => total + Number(product.quantity || 0),
-    0
-  );
-  const totalValue = products.reduce(
-    (total, product) =>
-      total + Number(product.quantity || 0) * Number(product.salePrice || 0),
     0
   );
 
@@ -168,7 +140,7 @@ export default function ProductList() {
               </button>
               <button
                 type="button"
-                onClick={openCreate}
+                onClick={() => navigate("/products/new")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
               >
                 <PackagePlus size={17} />
@@ -281,7 +253,7 @@ export default function ProductList() {
                             </span>
                           ) : (
                             <span className="text-slate-400">
-                              {t("ui.noTax")}
+                              {t("screens.products.noTaxOption")}
                             </span>
                           )}
                         </td>
@@ -315,7 +287,9 @@ export default function ProductList() {
 
                             <button
                               type="button"
-                              onClick={() => openEdit(product)}
+                              onClick={() =>
+                                navigate(`/products/${product.id}/edit`)
+                              }
                               className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               aria-label={t("screens.products.editAria")}
                             >
@@ -354,25 +328,6 @@ export default function ProductList() {
           )}
         </section>
       </main>
-
-      {isFormOpen && (
-        <ProductFormModal
-          product={activeProduct}
-          units={units}
-          taxes={taxes}
-          barcodes={
-            activeProduct ? barcodesByProduct[activeProduct.id] || [] : []
-          }
-          productUnits={activeProduct?.productUnits || []}
-          canManageBarcodes={canManageBarcodes}
-          canUseUnits={canUseUnits}
-          canUseTaxes={canUseTaxes}
-          saving={saving}
-          onClose={() => setIsFormOpen(false)}
-          onSubmit={submitProduct}
-          handleLogo={handleLogo}
-        />
-      )}
 
       <ProductImportModal
         isOpen={importModalOpen}

@@ -140,7 +140,7 @@ export default function registerPurchaseInvoicesIPC() {
           createProductMovement(db, {
             product_id: item.product_id,
             reference_id: invoiceId,
-            reference_type: "purchase_invoice",
+            reference_type: "purchase",
             type: "in",
             action: "create",
             quantity: quantity,
@@ -623,7 +623,7 @@ export default function registerPurchaseInvoicesIPC() {
           createProductMovement(db, {
             product_id: productId,
             reference_id: data.id,
-            reference_type: "purchase_invoice",
+            reference_type: "purchase",
             action: "create",
             type: "in",
             quantity: next.quantity,
@@ -808,7 +808,7 @@ export default function registerPurchaseInvoicesIPC() {
         createProductMovement(db, {
           product_id: item.product_id,
           reference_id: id,
-          reference_type: "purchase_invoice",
+          reference_type: "purchase",
           action: "delete",
           type: "out",
           quantity: item.quantity,

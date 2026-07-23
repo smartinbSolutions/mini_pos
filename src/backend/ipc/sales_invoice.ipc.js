@@ -189,7 +189,7 @@ export default function registerSalesInvoiceIPC() {
           createProductMovement(db, {
             product_id: item.product_id,
             reference_id: invoiceId,
-            reference_type: "sales_invoice",
+            reference_type: "sale",
             type: "out",
             action: "create",
             quantity,
@@ -717,7 +717,7 @@ export default function registerSalesInvoiceIPC() {
           createProductMovement(db, {
             product_id: item.product_id,
             reference_id: data.id,
-            reference_type: "sales_invoice",
+            reference_type: "sale",
             action: "update",
             type: "out",
             quantity,
@@ -866,7 +866,7 @@ export default function registerSalesInvoiceIPC() {
           createProductMovement(db, {
             product_id: item.product_id,
             reference_id: id,
-            reference_type: "sales_invoice",
+            reference_type: "sale",
             action: "delete",
             type: "in",
             quantity: item.quantity,
@@ -1000,7 +1000,7 @@ export default function registerSalesInvoiceIPC() {
         createProductMovement(db, {
           product_id: item.id,
           reference_id: invoiceId,
-          reference_type: "sales_invoice",
+          reference_type: "sale",
           type: "out",
           action: "create",
           quantity,

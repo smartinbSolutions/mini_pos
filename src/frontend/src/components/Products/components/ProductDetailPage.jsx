@@ -176,7 +176,7 @@ export default function ProductDetailPage() {
                     {t("ui.tax")}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-slate-400">
-                    {t("ui.noTax")}
+                    {t("creens.products.noTaxOption")}
                   </p>
                 </div>
               )}

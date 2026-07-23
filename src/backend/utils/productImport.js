@@ -158,7 +158,7 @@ export async function parseProductImport(db, filePath, fileName) {
       createProductMovement(db, {
         product_id: productId,
         reference_id: productId,
-        reference_type: "products",
+        reference_type: "import",
         action: "create",
         type: "in",
         quantity,
