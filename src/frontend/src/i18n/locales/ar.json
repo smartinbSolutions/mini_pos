@@ -31,6 +31,7 @@
     "confirm": "تأكيد"
   },
   "ui": {
+    "available": "المتاح",
     "profit": "الربح",
     "cogs": "تكلفة البضاعة",
     "grossProfit": "إجمالي الربح",
@@ -363,6 +364,14 @@
       }
     },
     "invoices": {
+      "itemDiscount": "خصم الصنف",
+      "invoiceDiscount": "خصم الفاتورة",
+      "itemTax": "ضريبة الصنف",
+      "invoiceTax": "ضريبة الفاتورة",
+      "addNote": "إضافة ملاحظة",
+      "addInvoiceNote": "إضافة ملاحظة للفاتورة",
+      "invoiceNote": "ملاحظة الفاتورة",
+      "notePlaceholder": "اكتب ملاحظة...",
       "addTax": "إضافة ضريبة",
       "discountPercent": "نسبة الخصم",
       "itemDiscountAt": "خصم الصنف بنسبة {{rate}}%",
@@ -373,7 +382,7 @@
       "addDiscount": "إضافة خصم",
       "addInvoiceDiscount": "إضافة خصم على الفاتورة",
       "addInvoiceTax": "إضافة ضريبة على الفاتورة",
-      "unitConversionDetail": "{{enteredQty}} {{unitName}} × {{factor}} = {{baseQty}} بالوحدة الأساسية",
+      "unitConversionDetail": "{{enteredQty}} {{unitName}} تُعادل {{baseQty}} بالوحدة الأساسية (كل وحدة = {{factor}})",
       "updateProductTaxTitle": "تحديث الضريبة الافتراضية؟",
       "updateProductTaxSetMessage": "هل تريد أيضًا جعل {{taxName}} الضريبة الافتراضية لـ {{productName}}؟",
       "updateProductTaxRemoveMessage": "هل تريد أيضًا إزالة الضريبة الافتراضية من {{productName}}؟",

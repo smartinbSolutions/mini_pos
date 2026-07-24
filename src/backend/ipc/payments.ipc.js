@@ -36,6 +36,54 @@ export default function registerPaymentIPC() {
         return { message: "INVALID PAYMENT TYPE", status: 400 };
       }
 
+      // Guard: if a specific invoice/expense was targeted, the payment amount
+      // must not exceed what that one record actually still owes. Front-end
+      // already caps this, but this check protects against a bypassed/stale
+      // client, race conditions, or a direct IPC call.
+      if (data.invoiceId && data.mode) {
+        const invoiceType = data.mode;
+        let table;
+
+        if (invoiceType === "expense") {
+          table = "expense";
+        } else if (invoiceType === "purchase") {
+          table = "purchase_invoices";
+        } else if (invoiceType === "sales") {
+          table = "sales_invoices";
+        }
+
+        if (table) {
+          const targetInvoice = db
+            .prepare(
+              `
+              SELECT
+                id,
+                net_total,
+                net_total - COALESCE((
+                  SELECT SUM(amount)
+                  FROM payment_allocations
+                  WHERE invoice_id = ${table}.id
+                    AND invoice_type = ?
+                ), 0) AS remaining
+              FROM ${table}
+              WHERE id = ?
+              `
+            )
+            .get(invoiceType, data.invoiceId);
+
+          if (!targetInvoice) {
+            return { message: "INVOICE NOT FOUND", status: 400 };
+          }
+
+          if (amount > Number(targetInvoice.remaining) + 0.001) {
+            return {
+              message: "PAYMENT_EXCEEDS_INVOICE_REMAINING",
+              status: 400,
+            };
+          }
+        }
+      }
+
       // Normalize once, here, so every downstream write (payments,
       // party_history, fund_history) shares the exact same
       // "YYYY-MM-DD HH:MM:SS" timestamp — same pattern as
@@ -78,6 +126,8 @@ export default function registerPaymentIPC() {
             exchange_rate: data.exchange_rate,
             effective_rate: data.effective_rate,
             amount_fund_currency: data.collected_amount,
+            invoiceId: data.invoiceId || null,
+            invoiceType: data.mode || null,
           });
         }
 
@@ -92,6 +142,8 @@ export default function registerPaymentIPC() {
             exchange_rate: data.exchange_rate,
             effective_rate: data.effective_rate,
             amount_fund_currency: data.collected_amount,
+            invoiceId: data.invoiceId || null,
+            invoiceType: data.mode || null,
           });
         }
 

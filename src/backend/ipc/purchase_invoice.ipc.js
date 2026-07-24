@@ -23,29 +23,124 @@ export default function registerPurchaseInvoicesIPC() {
           throw new Error("ERROR ENTER DATA");
         }
 
-        const subtotal = Number(data.subtotal || 0);
-        const discount = Number(data.discount || 0);
-        const taxId = data.tax ?? null;
+        const dateOnly = data.date.slice(0, 10);
+        const now = new Date();
+        const time = now.toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
+
+        // ---- Resolve invoice-level tax (if any) — never trust a client-sent
+        // rate, always re-derive from the taxes table ----
+        const invoiceTaxId = data.tax || null;
+        let invoiceTaxRate = 0;
+
+        if (invoiceTaxId) {
+          const taxRow = db
+            .prepare(
+              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+            )
+            .get(invoiceTaxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          invoiceTaxRate = Number(taxRow.rate || 0);
+        }
+
+        const invoiceDiscountRate = Number(data.discount_rate || 0);
+
+        // ---- Per-item cascade, recomputed from raw inputs only ----
+        // item.quantity/item.price here mean BASE-UNIT values — always derived
+        // from entered_quantity/entered_price via the unit's conversion_factor,
+        // regardless of which unit the row was entered in.
+        const preparedItems = [];
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        let itemTaxTotal = 0;
+
+        for (const item of data.items) {
+          const enteredQuantity = Number(item.entered_quantity || 0);
+          const enteredPrice = Number(item.entered_price || 0);
+          const factor = Number(item.unit_conversion_factor || 1);
+
+          if (!item.product_id || enteredQuantity <= 0 || enteredPrice < 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
+
+          // Re-derive base-unit quantity/price server-side — never trust
+          // whatever the client computed for item.quantity/item.price directly.
+          const baseQuantity = enteredQuantity * factor;
+          const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
+          const total = enteredQuantity * enteredPrice; // == baseQuantity * basePrice
+
+          const discountRate = Number(item.discount_rate || 0);
+          const discount = Number(((total * discountRate) / 100).toFixed(2));
+          const afterDiscount = total - discount;
+
+          let taxId = null;
+          let taxRate = 0;
+
+          if (item.tax_id) {
+            const taxRow = db
+              .prepare(
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+              )
+              .get(item.tax_id);
+            if (!taxRow) {
+              throw new Error("INVALID_ITEM_TAX_ID");
+            }
+            taxId = item.tax_id;
+            taxRate = Number(taxRow.rate || 0);
+          }
+
+          const taxValue = Number(((afterDiscount * taxRate) / 100).toFixed(2));
+
+          subtotal += total;
+          itemDiscountTotal += discount;
+          itemTaxTotal += taxValue;
+
+          preparedItems.push({
+            product_id: item.product_id,
+            product_name: item.name || null,
+            unit_name: item.unit_name || null,
+            unit_conversion_factor: factor,
+            baseQuantity,
+            basePrice,
+            total,
+            discount_rate: discountRate,
+            discount,
+            tax_id: taxId,
+            tax_rate: taxRate,
+            taxValue,
+            description: item.description || null,
+          });
+        }
+
+        subtotal = Number(subtotal.toFixed(2));
+        itemDiscountTotal = Number(itemDiscountTotal.toFixed(2));
+        itemTaxTotal = Number(itemTaxTotal.toFixed(2));
 
         if (subtotal <= 0) {
           throw new Error("INVALID TOTALS");
         }
 
-        let taxRate = 0;
-        if (taxId) {
-          const taxRow = db
-            .prepare(`SELECT rate FROM taxes WHERE id = ?`)
-            .get(taxId);
-          if (!taxRow) {
-            throw new Error("INVALID_TAX_ID");
-          }
-          taxRate = Number(taxRow.rate || 0);
-        }
+        const afterItemDiscounts = subtotal - itemDiscountTotal;
 
-        const taxableAmount = subtotal - discount;
-        const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
-        const netTotal = Number((taxableAmount + taxValue).toFixed(2));
+        const invoiceDiscount = Number(
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+        );
+        const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
+        const invoiceTaxValue = Number(
+          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        );
+
+        const netTotal = Number(
+          Math.max(
+            0,
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+          ).toFixed(2)
+        );
+
+        // ---- Payment validation (unchanged from before) ----
         const payment = data.payment || null;
         const isPaid = !!payment;
         const isCredit = payment?.source === "credit";
@@ -67,11 +162,7 @@ export default function registerPurchaseInvoicesIPC() {
           throw new Error("INVALID_CREDIT_AMOUNT");
         }
 
-        const dateOnly = data.date.slice(0, 10);
-        const now = new Date();
-        const time = now.toTimeString().slice(0, 8);
-        const fullDateTime = `${dateOnly} ${time}`;
-
+        // ---- Insert invoice header ----
         const invoiceResult = db
           .prepare(
             `
@@ -79,26 +170,32 @@ export default function registerPurchaseInvoicesIPC() {
             (
               supplier_id,
               invoice_name,
+              description,
               date,
               subtotal,
               discount,
+              discount_rate,
               tax,
-              net_total,
+              taxRate,
               taxValue,
+              net_total,
               created_by
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `
           )
           .run(
             data.supplier_id,
             data.invoice_name?.trim() || null,
+            data.description?.trim() || null,
             fullDateTime,
             subtotal,
-            discount,
-            taxId,
+            invoiceDiscount,
+            invoiceDiscountRate,
+            invoiceTaxId,
+            invoiceTaxRate,
+            invoiceTaxValue,
             netTotal,
-            taxValue,
             data.created_by
           );
 
@@ -112,30 +209,46 @@ export default function registerPurchaseInvoicesIPC() {
           ).run(invoiceName, invoiceId);
         }
 
+        // ---- Insert items + update stock + record movements ----
         const insertItem = db.prepare(`
           INSERT INTO purchase_invoice_items
-          (invoice_id, product_id, quantity, price, total)
-          VALUES (?, ?, ?, ?, ?)
+          (
+            invoice_id, product_id, quantity, price, total,
+            product_name, unit_name, unit_conversion_factor,
+            tax_id, tax_rate, taxValue,
+            discount, discount_rate, description
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
+        // costPrice is always the BASE-UNIT price, regardless of which unit the
+        // purchase was entered in — matches the agreed "always convert to base"
+        // rule.
         const updateStock = db.prepare(`
           UPDATE products
           SET quantity = quantity + ?, costPrice = ?
           WHERE id = ?
         `);
 
-        for (const item of data.items) {
-          const quantity = Number(item.quantity || 0);
-          const price = Number(item.price || 0);
+        for (const item of preparedItems) {
+          insertItem.run(
+            invoiceId,
+            item.product_id,
+            item.baseQuantity,
+            item.basePrice,
+            item.total,
+            item.product_name,
+            item.unit_name,
+            item.unit_conversion_factor,
+            item.tax_id,
+            item.tax_rate,
+            item.taxValue,
+            item.discount,
+            item.discount_rate,
+            item.description
+          );
 
-          if (!item.product_id || quantity <= 0 || price < 0) {
-            throw new Error("INVALID ITEM DATA");
-          }
-
-          const total = quantity * price;
-
-          insertItem.run(invoiceId, item.product_id, quantity, price, total);
-          updateStock.run(quantity, price, item.product_id);
+          updateStock.run(item.baseQuantity, item.basePrice, item.product_id);
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -143,12 +256,13 @@ export default function registerPurchaseInvoicesIPC() {
             reference_type: "purchase",
             type: "in",
             action: "create",
-            quantity: quantity,
-            enterPrice: price,
+            quantity: item.baseQuantity,
+            enterPrice: item.basePrice,
             date: fullDateTime,
           });
         }
 
+        // ---- Party history, payment/credit (unchanged) ----
         createPartyHistory(db, {
           party_type: "supplier",
           party_id: data.supplier_id,
@@ -266,23 +380,23 @@ export default function registerPurchaseInvoicesIPC() {
 
     if (params.status) {
       havingConditions.push(`
-        CASE
-          WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
-          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
-          ELSE 'unpaid'
-        END = ?
-      `);
+      CASE
+        WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
+        WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+        ELSE 'unpaid'
+      END = ?
+    `);
       havingParams.push(params.status);
     }
 
     if (params.returnStatus) {
       havingConditions.push(`
-        CASE
-          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
-          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
-          ELSE 'partial'
-        END = ?
-      `);
+      CASE
+        WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+        WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+        ELSE 'partial'
+      END = ?
+    `);
       havingParams.push(params.returnStatus);
     }
 
@@ -296,99 +410,112 @@ export default function registerPurchaseInvoicesIPC() {
     const invoices = db
       .prepare(
         `
+    SELECT
+      p.*,
+      s.name AS supplier_name,
+      s.phone AS supplier_phone,
+      creator.full_name AS created_by_name,
+      updater.full_name AS updated_by_name,
+      t.name AS tax_name,
+      COALESCE(SUM(pa.amount), 0) AS paid_amount,
+
+      COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
+      COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
+      (p.taxValue + COALESCE(itemAgg.item_tax_total, 0)) AS total_tax_value,
+      (p.discount + COALESCE(itemAgg.item_discount_total, 0)) AS total_discount_value,
+
+      p.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
+
+      CASE
+        WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
+        WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+        ELSE 'unpaid'
+      END AS status,
+
+      CASE
+        WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+        WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+        ELSE 'partial'
+      END AS return_status
+
+    FROM purchase_invoices p
+
+    LEFT JOIN suppliers s
+      ON s.id = p.supplier_id
+
+    LEFT JOIN taxes t
+      ON t.id = p.tax
+
+    LEFT JOIN payment_allocations pa
+      ON pa.invoice_id = p.id
+     AND pa.invoice_type = 'purchase'
+
+    LEFT JOIN users creator
+      ON creator.id = p.created_by
+
+    LEFT JOIN users updater
+      ON updater.id = p.updated_by
+
+    LEFT JOIN (
       SELECT
-        p.*,
-        s.name AS supplier_name,
-        s.phone AS supplier_phone,
-        creator.full_name AS created_by_name,
-        updater.full_name AS updated_by_name,
-        t.name AS tax_name,
-        t.rate AS tax_rate,
-        COALESCE(SUM(pa.amount), 0) AS paid_amount,
-    
-        p.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-    
-        CASE
-          WHEN COALESCE(SUM(pa.amount), 0) >= p.net_total THEN 'paid'
-          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
-          ELSE 'unpaid'
-        END AS status,
-    
-        CASE
-          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
-          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
-          ELSE 'partial'
-        END AS return_status
-    
-      FROM purchase_invoices p
-    
-      LEFT JOIN suppliers s
-        ON s.id = p.supplier_id
-    
-      LEFT JOIN taxes t
-        ON t.id = p.tax
-    
-      LEFT JOIN payment_allocations pa
-        ON pa.invoice_id = p.id
-       AND pa.invoice_type = 'purchase'
-    
-      LEFT JOIN users creator
-        ON creator.id = p.created_by
-    
-      LEFT JOIN users updater
-        ON updater.id = p.updated_by
-    
+        invoice_id,
+        SUM(taxValue) AS item_tax_total,
+        SUM(discount) AS item_discount_total
+      FROM purchase_invoice_items
+      GROUP BY invoice_id
+    ) itemAgg ON itemAgg.invoice_id = p.id
+
+    LEFT JOIN (
+      SELECT
+        pi.invoice_id,
+        SUM(pi.quantity) AS total_quantity,
+        SUM(COALESCE(pri.returned_qty, 0)) AS total_returned
+      FROM purchase_invoice_items pi
       LEFT JOIN (
-        SELECT
-          pi.invoice_id,
-          SUM(pi.quantity) AS total_quantity,
-          SUM(COALESCE(pri.returned_qty, 0)) AS total_returned
-        FROM purchase_invoice_items pi
-        LEFT JOIN (
-          SELECT purchase_invoice_item_id, SUM(quantity) AS returned_qty
-          FROM purchase_return_items
-          GROUP BY purchase_invoice_item_id
-        ) pri ON pri.purchase_invoice_item_id = pi.id
-        GROUP BY pi.invoice_id
-      ) ret ON ret.invoice_id = p.id
-    
-        ${whereClause}
-      GROUP BY p.id
-        ${havingClause}
-    
-      ORDER BY p.id DESC
-    
-      LIMIT ? OFFSET ?
-      `
+        SELECT purchase_invoice_item_id, SUM(quantity) AS returned_qty
+        FROM purchase_return_items
+        GROUP BY purchase_invoice_item_id
+      ) pri ON pri.purchase_invoice_item_id = pi.id
+      GROUP BY pi.invoice_id
+    ) ret ON ret.invoice_id = p.id
+
+      ${whereClause}
+    GROUP BY p.id
+      ${havingClause}
+
+    ORDER BY p.id DESC
+
+    LIMIT ? OFFSET ?
+    `
       )
       .all(...whereParams, ...havingParams, limit, offset);
 
     const { total } = db
       .prepare(
         `
-        SELECT COUNT(*) AS total FROM (
-          SELECT p.id
-          FROM purchase_invoices p
-          LEFT JOIN payment_allocations pa
-            ON pa.invoice_id = p.id AND pa.invoice_type = 'purchase'
+      SELECT COUNT(*) AS total FROM (
+        SELECT p.id
+        FROM purchase_invoices p
+        LEFT JOIN payment_allocations pa
+          ON pa.invoice_id = p.id AND pa.invoice_type = 'purchase'
+        LEFT JOIN (
+          SELECT
+            pi.invoice_id,
+            SUM(pi.quantity) AS total_quantity,
+            SUM(COALESCE(pri.returned_qty, 0)) AS total_returned
+          FROM purchase_invoice_items pi
           LEFT JOIN (
-            SELECT
-              pi.invoice_id,
-              SUM(pi.quantity) AS total_quantity,
-              SUM(COALESCE(pri.returned_qty, 0)) AS total_returned
-            FROM purchase_invoice_items pi
-            LEFT JOIN (
-              SELECT purchase_invoice_item_id, SUM(quantity) AS returned_qty
-              FROM purchase_return_items
-              GROUP BY purchase_invoice_item_id
-            ) pri ON pri.purchase_invoice_item_id = pi.id
-            GROUP BY pi.invoice_id
-          ) ret ON ret.invoice_id = p.id
-          ${whereClause}
-          GROUP BY p.id
-          ${havingClause}
-        ) t
-        `
+            SELECT purchase_invoice_item_id, SUM(quantity) AS returned_qty
+            FROM purchase_return_items
+            GROUP BY purchase_invoice_item_id
+          ) pri ON pri.purchase_invoice_item_id = pi.id
+          GROUP BY pi.invoice_id
+        ) ret ON ret.invoice_id = p.id
+        ${whereClause}
+        GROUP BY p.id
+        ${havingClause}
+      ) t
+      `
       )
       .get(...whereParams, ...havingParams);
 
@@ -400,45 +527,46 @@ export default function registerPurchaseInvoicesIPC() {
       totalPages: Math.ceil(total / limit),
     };
   });
+
   // GET ONE
   ipcMain.handle("get-purchase-invoice", (event, id) => {
     const invoice = db
       .prepare(
         `
-      SELECT 
-        pi.*,
-        s.name AS supplier_name,
-        s.phone AS supplier_phone,
-        t.rate AS tax_rate,
-        creator.full_name AS created_by_name,
-        updater.full_name AS updated_by_name,
-        COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
-        pi.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
-  
-        CASE
-          WHEN COALESCE(pa_sum.paid_amount, 0) >= pi.net_total THEN 'paid'
-          WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
-          ELSE 'unpaid'
-        END AS status
-  
-      FROM purchase_invoices pi
-      LEFT JOIN suppliers s ON s.id = pi.supplier_id
+    SELECT 
+      pi.*,
+      s.name AS supplier_name,
+      s.phone AS supplier_phone,
+      t.name AS tax_name,
+      creator.full_name AS created_by_name,
+      updater.full_name AS updated_by_name,
+      COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
+      pi.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
+
+      CASE
+        WHEN COALESCE(pa_sum.paid_amount, 0) >= pi.net_total THEN 'paid'
+        WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
+        ELSE 'unpaid'
+      END AS status
+
+    FROM purchase_invoices pi
+    LEFT JOIN suppliers s ON s.id = pi.supplier_id
 
     LEFT JOIN users creator
     ON creator.id = pi.created_by
-    
+
     LEFT JOIN users updater
     ON updater.id = pi.updated_by
 
-      LEFT JOIN taxes t ON t.id = pi.tax
-      LEFT JOIN (
-        SELECT invoice_id, SUM(amount) AS paid_amount
-        FROM payment_allocations
-        WHERE invoice_type = 'purchase'
-        GROUP BY invoice_id
-      ) pa_sum ON pa_sum.invoice_id = pi.id
-      WHERE pi.id = ?
-    `
+    LEFT JOIN taxes t ON t.id = pi.tax
+    LEFT JOIN (
+      SELECT invoice_id, SUM(amount) AS paid_amount
+      FROM payment_allocations
+      WHERE invoice_type = 'purchase'
+      GROUP BY invoice_id
+    ) pa_sum ON pa_sum.invoice_id = pi.id
+    WHERE pi.id = ?
+  `
       )
       .get(id);
 
@@ -447,58 +575,61 @@ export default function registerPurchaseInvoicesIPC() {
     const items = db
       .prepare(
         `
+  SELECT
+    pii.*,
+    p.name AS name,
+    t.name AS tax_name,
+
+    COALESCE(r.returned_quantity, 0) AS returned_quantity,
+
+    (
+      pii.quantity - COALESCE(r.returned_quantity, 0)
+    ) AS available_quantity
+
+  FROM purchase_invoice_items pii
+
+  LEFT JOIN products p
+    ON p.id = pii.product_id
+
+  LEFT JOIN taxes t
+    ON t.id = pii.tax_id
+
+  LEFT JOIN (
     SELECT
-      pii.*,
-      p.name AS name,
+      pri.purchase_invoice_item_id,
+      SUM(pri.quantity) AS returned_quantity
+    FROM purchase_return_items pri
+    INNER JOIN purchase_returns pr
+      ON pr.id = pri.return_id
+    GROUP BY pri.purchase_invoice_item_id
+  ) r
+    ON r.purchase_invoice_item_id = pii.id
 
-      COALESCE(r.returned_quantity, 0) AS returned_quantity,
-
-      (
-        pii.quantity - COALESCE(r.returned_quantity, 0)
-      ) AS available_quantity
-
-    FROM purchase_invoice_items pii
-
-    LEFT JOIN products p
-      ON p.id = pii.product_id
-
-
-    LEFT JOIN (
-      SELECT
-        pri.purchase_invoice_item_id,
-        SUM(pri.quantity) AS returned_quantity
-      FROM purchase_return_items pri
-      INNER JOIN purchase_returns pr
-        ON pr.id = pri.return_id
-      GROUP BY pri.purchase_invoice_item_id
-    ) r
-      ON r.purchase_invoice_item_id = pii.id
-
-    WHERE pii.invoice_id = ?
-    `
+  WHERE pii.invoice_id = ?
+  `
       )
       .all(id);
 
     const allocations = db
       .prepare(
         `
-      SELECT
-        pa.id,
-        pa.payment_id,
-        pa.amount,
-        p.date,
-        p.fund_id,
-        f.name AS fund_name,
-        c.code AS fund_currency_code,
-        c.symbol AS fund_currency_symbol
-      FROM payment_allocations pa
-      LEFT JOIN payments p ON p.id = pa.payment_id
-      LEFT JOIN funds f ON f.id = p.fund_id
-      LEFT JOIN currencies c ON c.id = f.currency_id
-      WHERE pa.invoice_id = ?
-        AND pa.invoice_type = 'purchase'
-      ORDER BY pa.id ASC
-    `
+    SELECT
+      pa.id,
+      pa.payment_id,
+      pa.amount,
+      p.date,
+      p.fund_id,
+      f.name AS fund_name,
+      c.code AS fund_currency_code,
+      c.symbol AS fund_currency_symbol
+    FROM payment_allocations pa
+    LEFT JOIN payments p ON p.id = pa.payment_id
+    LEFT JOIN funds f ON f.id = p.fund_id
+    LEFT JOIN currencies c ON c.id = f.currency_id
+    WHERE pa.invoice_id = ?
+      AND pa.invoice_type = 'purchase'
+    ORDER BY pa.id ASC
+  `
       )
       .all(id);
 
@@ -515,8 +646,7 @@ export default function registerPurchaseInvoicesIPC() {
       !data.supplier_id ||
       !data.date ||
       !Array.isArray(data.items) ||
-      data.items.length === 0 ||
-      Number(data.subtotal) <= 0
+      data.items.length === 0
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
@@ -548,188 +678,312 @@ export default function registerPurchaseInvoicesIPC() {
     const oldSupplierId = oldInvoice.supplier_id || null;
     const newSupplierId = data.supplier_id || null;
 
-    const transaction = db.transaction(() => {
-      const oldItems = db
-        .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
-        .all(data.id);
+    try {
+      const transaction = db.transaction(() => {
+        const dateOnly = data.date.slice(0, 10);
+        const time = new Date().toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
 
-      const oldByProduct = new Map();
-      for (const item of oldItems) {
-        const cur = oldByProduct.get(item.product_id) || {
-          quantity: 0,
-          price: item.price,
-        };
-        oldByProduct.set(item.product_id, {
-          quantity: cur.quantity + Number(item.quantity || 0),
-          price: item.price,
-        });
-      }
+        // ---- Resolve invoice-level tax — never trust client-sent rate ----
+        const invoiceTaxId = data.tax || null;
+        let invoiceTaxRate = 0;
 
-      const newByProduct = new Map();
-      for (const item of data.items) {
-        if (!item.product_id) continue;
-        const cur = newByProduct.get(item.product_id) || {
-          quantity: 0,
-          price: item.price,
-        };
-        newByProduct.set(item.product_id, {
-          quantity: cur.quantity + Number(item.quantity || 0),
-          price: item.price,
-        });
-      }
-
-      const adjustStock = db.prepare(
-        `UPDATE products SET quantity = quantity + ? WHERE id = ?`
-      );
-      const updateMovement = db.prepare(`
-        UPDATE product_movements
-        SET quantity = ?, enterPrice = ?, action = 'update', date = ?
-        WHERE reference_type = 'purchase_invoice' AND reference_id = ? AND product_id = ?
-      `);
-      const deleteMovement = db.prepare(`
-        DELETE FROM product_movements
-        WHERE reference_type = 'purchase_invoice' AND reference_id = ? AND product_id = ?
-      `);
-
-      for (const [productId, old] of oldByProduct) {
-        if (!newByProduct.has(productId)) {
-          adjustStock.run(-old.quantity, productId);
-          deleteMovement.run(data.id, productId);
-        }
-      }
-
-      const dateOnly = data.date.slice(0, 10);
-      const time = new Date().toTimeString().slice(0, 8);
-      const fullDateTime = `${dateOnly} ${time}`;
-
-      for (const [productId, next] of newByProduct) {
-        const old = oldByProduct.get(productId);
-        const oldQty = old ? old.quantity : 0;
-        const delta = next.quantity - oldQty;
-
-        if (delta !== 0) {
-          adjustStock.run(delta, productId);
+        if (invoiceTaxId) {
+          const taxRow = db
+            .prepare(
+              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+            )
+            .get(invoiceTaxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          invoiceTaxRate = Number(taxRow.rate || 0);
         }
 
-        if (old) {
-          updateMovement.run(
-            next.quantity,
+        const invoiceDiscountRate = Number(data.discount_rate || 0);
+
+        // ---- Per-item cascade, recomputed from raw inputs only ----
+        const preparedItems = [];
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        let itemTaxTotal = 0;
+
+        for (const item of data.items) {
+          if (!item.product_id) continue;
+
+          const enteredQuantity = Number(item.entered_quantity || 0);
+          const enteredPrice = Number(item.entered_price || 0);
+          const factor = Number(item.unit_conversion_factor || 1);
+
+          if (enteredQuantity <= 0 || enteredPrice < 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
+
+          const baseQuantity = enteredQuantity * factor;
+          const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
+          const total = enteredQuantity * enteredPrice;
+
+          const discountRate = Number(item.discount_rate || 0);
+          const discount = Number(((total * discountRate) / 100).toFixed(2));
+          const afterDiscount = total - discount;
+
+          let taxId = null;
+          let taxRate = 0;
+
+          if (item.tax_id) {
+            const taxRow = db
+              .prepare(
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+              )
+              .get(item.tax_id);
+            if (!taxRow) {
+              throw new Error("INVALID_ITEM_TAX_ID");
+            }
+            taxId = item.tax_id;
+            taxRate = Number(taxRow.rate || 0);
+          }
+
+          const taxValue = Number(((afterDiscount * taxRate) / 100).toFixed(2));
+
+          subtotal += total;
+          itemDiscountTotal += discount;
+          itemTaxTotal += taxValue;
+
+          preparedItems.push({
+            product_id: item.product_id,
+            product_name: item.name || null,
+            unit_name: item.unit_name || null,
+            unit_conversion_factor: factor,
+            baseQuantity,
+            basePrice,
+            total,
+            discount_rate: discountRate,
+            discount,
+            tax_id: taxId,
+            tax_rate: taxRate,
+            taxValue,
+            description: item.description || null,
+          });
+        }
+
+        subtotal = Number(subtotal.toFixed(2));
+        itemDiscountTotal = Number(itemDiscountTotal.toFixed(2));
+        itemTaxTotal = Number(itemTaxTotal.toFixed(2));
+
+        if (subtotal <= 0) {
+          throw new Error("INVALID TOTALS");
+        }
+
+        const afterItemDiscounts = subtotal - itemDiscountTotal;
+
+        const invoiceDiscount = Number(
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+        );
+        const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
+
+        const invoiceTaxValue = Number(
+          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        );
+
+        const netTotal = Number(
+          Math.max(
+            0,
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+          ).toFixed(2)
+        );
+
+        // ---- Aggregate old vs new BASE quantities per product, for stock diff.
+        // Base quantity/price are what matter here — never the raw entered
+        // values — since stock is always tracked in base units. ----
+        const oldItems = db
+          .prepare(`SELECT * FROM purchase_invoice_items WHERE invoice_id = ?`)
+          .all(data.id);
+
+        const oldByProduct = new Map();
+        for (const item of oldItems) {
+          const cur = oldByProduct.get(item.product_id) || {
+            quantity: 0,
+            price: item.price,
+          };
+          oldByProduct.set(item.product_id, {
+            quantity: cur.quantity + Number(item.quantity || 0),
+            price: item.price,
+          });
+        }
+
+        const newByProduct = new Map();
+        for (const item of preparedItems) {
+          const cur = newByProduct.get(item.product_id) || {
+            quantity: 0,
+            price: item.basePrice,
+          };
+          newByProduct.set(item.product_id, {
+            quantity: cur.quantity + item.baseQuantity,
+            price: item.basePrice,
+          });
+        }
+
+        const adjustStock = db.prepare(
+          `UPDATE products SET quantity = quantity + ? WHERE id = ?`
+        );
+
+        // Fixed: reference_type must be 'purchase' (matches how these
+        // movements were actually created) — the old 'purchase_invoice' value
+        // never matched anything, silently leaving stale movement rows on
+        // every edit.
+        const updateMovement = db.prepare(`
+          UPDATE product_movements
+          SET quantity = ?, enterPrice = ?, action = 'update', date = ?
+          WHERE reference_type = 'purchase' AND reference_id = ? AND product_id = ?
+        `);
+        const deleteMovement = db.prepare(`
+          DELETE FROM product_movements
+          WHERE reference_type = 'purchase' AND reference_id = ? AND product_id = ?
+        `);
+
+        for (const [productId, old] of oldByProduct) {
+          if (!newByProduct.has(productId)) {
+            adjustStock.run(-old.quantity, productId);
+            deleteMovement.run(data.id, productId);
+          }
+        }
+
+        for (const [productId, next] of newByProduct) {
+          const old = oldByProduct.get(productId);
+          const oldQty = old ? old.quantity : 0;
+          const delta = next.quantity - oldQty;
+
+          if (delta !== 0) {
+            adjustStock.run(delta, productId);
+          }
+
+          // Always keep costPrice in sync with the latest base-unit purchase
+          // price, same rule as create-purchase-invoice.
+          db.prepare(`UPDATE products SET costPrice = ? WHERE id = ?`).run(
             next.price,
-            fullDateTime,
-            data.id,
             productId
           );
-        } else {
-          createProductMovement(db, {
-            product_id: productId,
-            reference_id: data.id,
-            reference_type: "purchase",
-            action: "create",
-            type: "in",
-            quantity: next.quantity,
-            enterPrice: next.price,
-            date: fullDateTime,
-          });
+
+          if (old) {
+            updateMovement.run(
+              next.quantity,
+              next.price,
+              fullDateTime,
+              data.id,
+              productId
+            );
+          } else {
+            createProductMovement(db, {
+              product_id: productId,
+              reference_id: data.id,
+              reference_type: "purchase",
+              action: "create",
+              type: "in",
+              quantity: next.quantity,
+              enterPrice: next.price,
+              date: fullDateTime,
+            });
+          }
         }
-      }
 
-      db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        data.id
-      );
+        // ---- Replace items ----
+        db.prepare(
+          `DELETE FROM purchase_invoice_items WHERE invoice_id = ?`
+        ).run(data.id);
 
-      const insertItem = db.prepare(`
-        INSERT INTO purchase_invoice_items (invoice_id, product_id, quantity, price, total)
-        VALUES (?, ?, ?, ?, ?)
-      `);
+        const insertItem = db.prepare(`
+          INSERT INTO purchase_invoice_items
+          (
+            invoice_id, product_id, quantity, price, total,
+            product_name, unit_name, unit_conversion_factor,
+            tax_id, tax_rate, taxValue,
+            discount, discount_rate, description
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
 
-      for (const item of data.items) {
-        if (!item.product_id) continue;
-        const quantity = Number(item.quantity || 0);
-        const price = Number(item.price || 0);
-        insertItem.run(
-          data.id,
-          item.product_id,
-          quantity,
-          price,
-          quantity * price
-        );
-      }
-
-      const subtotal = Number(data.subtotal || 0);
-      const discount = Number(data.discount || 0);
-      const taxId = data.tax ?? null;
-
-      let taxRate = 0;
-      if (taxId) {
-        const taxRow = db
-          .prepare(`SELECT rate FROM taxes WHERE id = ?`)
-          .get(taxId);
-        if (!taxRow) {
-          throw new Error("INVALID_TAX_ID");
+        for (const item of preparedItems) {
+          insertItem.run(
+            data.id,
+            item.product_id,
+            item.baseQuantity,
+            item.basePrice,
+            item.total,
+            item.product_name,
+            item.unit_name,
+            item.unit_conversion_factor,
+            item.tax_id,
+            item.tax_rate,
+            item.taxValue,
+            item.discount,
+            item.discount_rate,
+            item.description
+          );
         }
-        taxRate = Number(taxRow.rate || 0);
-      }
 
-      const taxableAmount = subtotal - discount;
-      const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
-      const netTotal = Number((taxableAmount + taxValue).toFixed(2));
+        // ---- Update invoice header ----
+        const invoiceName =
+          data.invoice_name?.trim() || oldInvoice.invoice_name;
 
-      const invoiceName = data.invoice_name?.trim() || oldInvoice.invoice_name;
-
-      db.prepare(
-        `
-        UPDATE purchase_invoices
-        SET supplier_id = ?, invoice_name = ?, date = ?, subtotal = ?, discount = ?, tax = ?, net_total = ?, taxValue = ?, updated_by = ?
-        WHERE id = ?
-      `
-      ).run(
-        newSupplierId,
-        invoiceName,
-        fullDateTime,
-        subtotal,
-        discount,
-        taxId,
-        netTotal,
-        taxValue,
-        data.updated_by,
-        data.id
-      );
-
-      if (oldSupplierId && oldSupplierId === newSupplierId) {
         db.prepare(
           `
-          UPDATE party_history
-          SET amount = ?, date = ?, note = ?
-          WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
+          UPDATE purchase_invoices
+          SET supplier_id = ?, invoice_name = ?, description = ?, date = ?,
+              subtotal = ?, discount = ?, discount_rate = ?,
+              tax = ?, taxRate = ?, taxValue = ?, net_total = ?, updated_by = ?
+          WHERE id = ?
         `
-        ).run(netTotal, fullDateTime, invoiceName, data.id);
-      } else {
-        if (oldSupplierId) {
+        ).run(
+          newSupplierId,
+          invoiceName,
+          data.description?.trim() || null,
+          fullDateTime,
+          subtotal,
+          invoiceDiscount,
+          invoiceDiscountRate,
+          invoiceTaxId,
+          invoiceTaxRate,
+          invoiceTaxValue,
+          netTotal,
+          data.updated_by,
+          data.id
+        );
+
+        // ---- Party history ----
+        if (oldSupplierId && oldSupplierId === newSupplierId) {
           db.prepare(
             `
-            DELETE FROM party_history
+            UPDATE party_history
+            SET amount = ?, date = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
           `
-          ).run(data.id);
-        }
+          ).run(netTotal, fullDateTime, invoiceName, data.id);
+        } else {
+          if (oldSupplierId) {
+            db.prepare(
+              `
+              DELETE FROM party_history
+              WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
+            `
+            ).run(data.id);
+          }
 
-        if (newSupplierId) {
-          createPartyHistory(db, {
-            party_type: "supplier",
-            party_id: newSupplierId,
-            invoice_id: data.id,
-            invoice_type: "purchase",
-            record_type: "invoice",
-            movement_type: "increase",
-            amount: netTotal,
-            date: fullDateTime,
-            note: invoiceName,
-          });
+          if (newSupplierId) {
+            createPartyHistory(db, {
+              party_type: "supplier",
+              party_id: newSupplierId,
+              invoice_id: data.id,
+              invoice_type: "purchase",
+              record_type: "invoice",
+              movement_type: "increase",
+              amount: netTotal,
+              date: fullDateTime,
+              note: invoiceName,
+            });
+          }
         }
-      }
-    });
+      });
 
-    try {
       transaction();
       return { success: true };
     } catch (err) {

@@ -6,26 +6,77 @@ import { useAuth } from "../../../../Global/AuthContext";
 const emptyItem = {
   product_id: "",
   name: "",
+  entered_quantity: 1,
+  entered_price: 0,
+  buyingPrice: 0,
   quantity: 1,
   price: 0,
   total: 0,
+  available_units: [],
+  unit_id: null,
+  unit_name: "",
+  unit_conversion_factor: 1,
+  discount_rate: 0,
+  discount: 0,
+  tax_id: null,
+  tax_rate: 0,
+  taxValue: 0,
+  tax_capable: false,
+  description: "",
 };
 
 const emptyInvoice = {
   customer_id: "",
   invoice_name: "",
-  description: "",
   date: new Date().toISOString().slice(0, 10),
+  discount_rate: 0,
   discount: 0,
+  tax: "",
+  taxRate: 0,
+  taxValue: 0,
+  description: "",
 };
 
-export default function useAddSales({ customerModalOpen }) {
+// Same shape as purchase: total = entered_quantity × entered_price
+// (unaffected by unit choice); quantity/price are the derived BASE-UNIT
+// values used for stock/record; discount/taxValue layer on top of total.
+function recalcItem(item) {
+  const enteredQuantity = Number(item.entered_quantity || 0);
+  const enteredPrice = Number(item.entered_price || 0);
+  const factor = Number(item.unit_conversion_factor || 1);
+
+  const total = enteredQuantity * enteredPrice;
+  const quantity = enteredQuantity * factor;
+  const price = factor > 0 ? enteredPrice / factor : enteredPrice;
+
+  const discountRate = Number(item.discount_rate || 0);
+  const discount = total * (discountRate / 100);
+  const afterDiscount = total - discount;
+
+  const taxRate = Number(item.tax_rate || 0);
+  const taxValue = afterDiscount * (taxRate / 100);
+
+  return {
+    ...item,
+    entered_quantity: enteredQuantity,
+    entered_price: enteredPrice,
+    quantity,
+    price,
+    total,
+    discount_rate: discountRate,
+    discount,
+    tax_rate: taxRate,
+    taxValue,
+  };
+}
+
+export default function useAddSales({ customerModalOpen, isFormOpen }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const api = window.api;
   const { user } = useAuth();
 
-  const [invoice, setInvoice] = useState(emptyInvoice);
+  const [invoice, setInvoiceState] = useState(emptyInvoice);
   const [items, setItems] = useState([emptyItem]);
   const [products, setProducts] = useState([]);
   const [taxes, setTaxes] = useState([]);
@@ -34,6 +85,12 @@ export default function useAddSales({ customerModalOpen }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const setInvoice = (updater) => {
+    setInvoiceState((prev) =>
+      typeof updater === "function" ? updater(prev) : { ...prev, ...updater }
+    );
+  };
+
   const refetch = useCallback(async () => {
     if (!api) return;
 
@@ -41,17 +98,15 @@ export default function useAddSales({ customerModalOpen }) {
       setLoading(true);
 
       const [res, taxRes, custRes] = await Promise.all([
-        api.getProducts({
-          page: 1,
-          limit: 200,
-        }),
+        api.getProducts({ page: 1, limit: 200 }),
         api.getTaxes(),
         api.getCustomers(),
       ]);
 
-      setProducts(res || []);
+      setProducts(res?.data || []);
       setTaxes(taxRes || []);
       setCustomers(custRes || []);
+      setError("");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -61,7 +116,7 @@ export default function useAddSales({ customerModalOpen }) {
 
   useEffect(() => {
     refetch();
-  }, [refetch, customerModalOpen]);
+  }, [refetch, customerModalOpen, isFormOpen]);
 
   const addItem = () => {
     setItems((prev) => [...prev, emptyItem]);
@@ -71,35 +126,241 @@ export default function useAddSales({ customerModalOpen }) {
     setItems((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const updateItem = (index, key, value) => {
+  // Full product detail (with productUnits) is needed for the unit
+  // dropdown — each unit carries its OWN sale_price (unlike purchase,
+  // where alt units are derived by multiplying the base cost).
+  const selectProductForItem = async (index, productId) => {
+    if (!productId) return;
+
+    try {
+      const fullProduct = await api.getProduct(productId);
+      if (!fullProduct) return;
+
+      const productUnits = fullProduct.productUnits || [];
+      const baseUnit = productUnits.find((u) => u.is_base) || null;
+
+      setItems((prev) => {
+        const copy = [...prev];
+        const current = copy[index];
+
+        copy[index] = recalcItem({
+          ...current,
+          product_id: fullProduct.id,
+          name: fullProduct.name,
+          available_units: productUnits,
+          unit_id: baseUnit?.id ?? null,
+          unit_name: baseUnit?.unit_name || "",
+          unit_conversion_factor: 1,
+          entered_quantity: current.entered_quantity || 1,
+          entered_price: Number(baseUnit?.sale_price || 0),
+          buyingPrice: Number(fullProduct.costPrice || 0),
+          tax_id: fullProduct.tax_id || null,
+          tax_rate: Number(fullProduct.tax_rate || 0),
+          tax_capable: Boolean(fullProduct.tax_id),
+        });
+
+        return copy;
+      });
+    } catch (err) {
+      console.error("Failed to load product detail:", err);
+    }
+  };
+
+  // Switches the unit a line is denominated in. Each unit already has its
+  // own registered sale_price — no calculation needed, just look it up.
+  const updateItemUnit = (index, unitId) => {
     setItems((prev) => {
       const copy = [...prev];
-      let item = { ...copy[index] };
+      const item = copy[index];
+      const selectedUnit = item.available_units?.find(
+        (u) => u.id === Number(unitId)
+      );
 
-      item[key] = value;
+      if (!selectedUnit) return prev;
 
-      if (key === "product_id") {
-        const product = products?.data?.find((p) => p.id == value);
-        if (product) {
-          item.price = product.price;
-          item.name = product.name;
-        }
-      }
+      const factor = selectedUnit.is_base
+        ? 1
+        : Number(selectedUnit.conversion_factor || 1);
 
-      const q = Number(item.quantity || 0);
-      const p = Number(item.price || 0);
-      item.total = q * p;
+      copy[index] = recalcItem({
+        ...item,
+        unit_id: selectedUnit.id,
+        unit_name: selectedUnit.unit_name,
+        unit_conversion_factor: factor,
+        entered_price: Number(selectedUnit.sale_price || 0),
+      });
 
-      copy[index] = item;
       return copy;
     });
   };
 
-  // Barcode scanning — unrelated to payment refactor, unchanged
+  const updateItem = (index, key, value) => {
+    if (key === "product_id") {
+      selectProductForItem(index, value);
+      return;
+    }
+
+    setItems((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index], [key]: value };
+      copy[index] = recalcItem(item);
+      return copy;
+    });
+  };
+
+  // Directly applies a known product to a row without depending on
+  // `products` state — used by the quick-add modal. No unit list is
+  // available for a freshly created product yet.
+  const setItemProduct = (
+    index,
+    { id, name, price, buyingPrice, tax_id, tax_rate }
+  ) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index] };
+
+      item.product_id = id;
+      item.name = name || "";
+      item.entered_price = Number(price || 0);
+      item.buyingPrice = Number(buyingPrice || 0);
+      item.available_units = [];
+      item.unit_id = null;
+      item.unit_name = "";
+      item.unit_conversion_factor = 1;
+      item.tax_id = tax_id || null;
+      item.tax_rate = Number(tax_rate || 0);
+      item.tax_capable = Boolean(tax_id);
+
+      copy[index] = recalcItem(item);
+
+      return copy;
+    });
+  };
+
+  const addItemWithProduct = ({
+    id,
+    name,
+    price,
+    buyingPrice,
+    tax_id,
+    tax_rate,
+  }) => {
+    setItems((prev) => [
+      ...prev,
+      recalcItem({
+        ...emptyItem,
+        product_id: id,
+        name: name || "",
+        entered_quantity: 1,
+        entered_price: Number(price || 0),
+        buyingPrice: Number(buyingPrice || 0),
+        tax_id: tax_id || null,
+        tax_rate: Number(tax_rate || 0),
+        tax_capable: Boolean(tax_id),
+      }),
+    ]);
+  };
+
+  // ---- Item discount: hidden by default, revealed via "+", dual %/value ----
+
+  const updateItemDiscountRate = (index, rate) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = recalcItem({
+        ...copy[index],
+        discount_rate: Number(rate || 0),
+      });
+      return copy;
+    });
+  };
+
+  const updateItemDiscountAmount = (index, amount) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      const item = copy[index];
+      const total = item.total || 0;
+      const amt = Number(amount || 0);
+      const rate = total > 0 ? (amt / total) * 100 : 0;
+
+      copy[index] = recalcItem({ ...item, discount_rate: rate, discount: amt });
+      return copy;
+    });
+  };
+
+  const clearItemDiscount = (index) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = recalcItem({
+        ...copy[index],
+        discount_rate: 0,
+        discount: 0,
+      });
+      return copy;
+    });
+  };
+
+  const updateItemDescription = (index, description) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], description };
+      return copy;
+    });
+  };
+
+  const updateItemTax = (index, taxId, taxRate) => {
+    const normalizedNewId = taxId || null;
+    let changed = false;
+
+    setItems((prev) => {
+      const current = prev[index];
+      const normalizedCurrentId = current.tax_id || null;
+
+      if (normalizedNewId === normalizedCurrentId) {
+        return prev;
+      }
+
+      changed = true;
+
+      const copy = [...prev];
+      copy[index] = recalcItem({
+        ...current,
+        tax_id: normalizedNewId,
+        tax_rate: Number(taxRate || 0),
+      });
+      return copy;
+    });
+
+    return changed;
+  };
+
+  const enableItemTax = (index) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], tax_capable: true };
+      return copy;
+    });
+  };
+
+  const disableItemTax = (index) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = recalcItem({
+        ...copy[index],
+        tax_capable: false,
+        tax_id: null,
+        tax_rate: 0,
+      });
+      return copy;
+    });
+  };
+
+  // Barcode scanning — unchanged behavior, adapted to new item shape
   useEffect(() => {
     let barcode = "";
 
     const handleKeyDown = async (e) => {
+      if (e.target?.tagName === "TEXTAREA") return;
+
       if (e.key === "Enter") {
         if (!barcode) return;
 
@@ -119,29 +380,33 @@ export default function useAddSales({ customerModalOpen }) {
 
             if (existingIndex !== -1) {
               const updated = [...prev];
-              const item = updated[existingIndex];
-              const newQuantity = Number(item.quantity) + 1;
-
-              updated[existingIndex] = {
-                ...item,
-                quantity: newQuantity,
-                total: newQuantity * Number(item.price),
-              };
-
+              const item = { ...updated[existingIndex] };
+              item.entered_quantity = Number(item.entered_quantity) + 1;
+              updated[existingIndex] = recalcItem(item);
               return updated;
             }
 
-            return [
-              ...prev,
-              {
-                product_id: product.id,
-                name: product.name,
-                quantity: 1,
-                price: product.price || 0,
-                total: product.price || 0,
-                buyingPrice: product.costPrice,
-              },
-            ];
+            const existingEmpty = prev.findIndex((i) => !i.product_id);
+
+            const built = recalcItem({
+              ...emptyItem,
+              product_id: product.id,
+              name: product.name,
+              entered_quantity: 1,
+              entered_price: Number(product.salePrice || 0),
+              buyingPrice: Number(product.costPrice || 0),
+              tax_id: product.tax_id || null,
+              tax_rate: Number(product.tax_rate || 0),
+              tax_capable: Boolean(product.tax_id),
+            });
+
+            if (existingEmpty !== -1) {
+              const updated = [...prev];
+              updated[existingEmpty] = built;
+              return updated;
+            }
+
+            return [...prev, built];
           });
 
           barcode = "";
@@ -158,28 +423,115 @@ export default function useAddSales({ customerModalOpen }) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [api]);
+  }, [api, t]);
+
+  // ---- Invoice-level cascade — identical to purchase ----
 
   const subtotal = useMemo(() => {
-    return items.reduce((sum, i) => sum + (i.total || 0), 0);
+    return items.reduce((sum, item) => sum + (item.total || 0), 0);
   }, [items]);
 
-  const taxableAmount = useMemo(() => {
-    return Math.max(0, subtotal - Number(invoice.discount || 0));
-  }, [subtotal, invoice.discount]);
+  const itemDiscountTotal = useMemo(() => {
+    return items.reduce((sum, item) => sum + (item.discount || 0), 0);
+  }, [items]);
 
-  const taxValue = useMemo(() => {
-    return (taxableAmount * Number(invoice.tax_rate || 0)) / 100;
-  }, [taxableAmount, invoice.tax_rate]);
+  const afterItemDiscounts = useMemo(() => {
+    return subtotal - itemDiscountTotal;
+  }, [subtotal, itemDiscountTotal]);
+
+  const itemTaxTotal = useMemo(() => {
+    return items.reduce((sum, item) => sum + (item.taxValue || 0), 0);
+  }, [items]);
+
+  const itemTaxSummary = useMemo(() => {
+    const groups = new Map();
+
+    for (const item of items) {
+      if (!item.tax_id || !item.tax_rate) continue;
+
+      const afterDiscount = (item.total || 0) - (item.discount || 0);
+      const key = item.tax_id;
+
+      if (!groups.has(key)) {
+        groups.set(key, {
+          tax_id: item.tax_id,
+          rate: item.tax_rate,
+          base: 0,
+          value: 0,
+        });
+      }
+
+      const group = groups.get(key);
+      group.base += afterDiscount;
+      group.value += item.taxValue || 0;
+    }
+
+    return Array.from(groups.values());
+  }, [items]);
+
+  const itemDiscountSummary = useMemo(() => {
+    const groups = new Map();
+
+    for (const item of items) {
+      const rate = Number(item.discount_rate || 0);
+      if (!rate) continue;
+
+      if (!groups.has(rate)) {
+        groups.set(rate, { rate, base: 0, amount: 0 });
+      }
+
+      const group = groups.get(rate);
+      group.base += item.total || 0;
+      group.amount += item.discount || 0;
+    }
+
+    return Array.from(groups.values());
+  }, [items]);
+
+  const invoiceDiscount = useMemo(() => {
+    const rate = Number(invoice.discount_rate || 0);
+    return afterItemDiscounts * (rate / 100);
+  }, [afterItemDiscounts, invoice.discount_rate]);
+
+  const afterInvoiceDiscount = useMemo(() => {
+    return afterItemDiscounts - invoiceDiscount;
+  }, [afterItemDiscounts, invoiceDiscount]);
+
+  const setInvoiceDiscountRate = (rate) => {
+    setInvoice((prev) => ({ ...prev, discount_rate: Number(rate || 0) }));
+  };
+
+  const setInvoiceDiscountAmount = (amount) => {
+    const amt = Number(amount || 0);
+    const rate = afterItemDiscounts > 0 ? (amt / afterItemDiscounts) * 100 : 0;
+    setInvoice((prev) => ({ ...prev, discount_rate: rate }));
+  };
+
+  const clearInvoiceDiscount = () => {
+    setInvoice((prev) => ({ ...prev, discount_rate: 0 }));
+  };
+
+  const invoiceTaxValue = useMemo(() => {
+    const rate = Number(invoice.taxRate || 0);
+    return afterInvoiceDiscount * (rate / 100);
+  }, [afterInvoiceDiscount, invoice.taxRate]);
+
+  const setInvoiceTax = (selectedTax) => {
+    setInvoice((prev) => ({
+      ...prev,
+      tax: selectedTax?.id ?? "",
+      taxRate: Number(selectedTax?.rate || 0),
+    }));
+  };
+
+  const clearInvoiceTax = () => {
+    setInvoice((prev) => ({ ...prev, tax: "", taxRate: 0 }));
+  };
 
   const netTotal = useMemo(() => {
-    return Math.max(0, taxableAmount + taxValue);
-  }, [taxableAmount, taxValue]);
+    return Math.max(0, afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue);
+  }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
 
-  // submit optionally takes paymentData collected by InvoicePaymentModal in
-  // collector mode. No fund/status/paid_amount state lives in this hook
-  // anymore — the modal collects it, the backend's centralized payment
-  // service applies it.
   const submit = useCallback(
     async (paymentData = null) => {
       if (!api) {
@@ -203,9 +555,10 @@ export default function useAddSales({ customerModalOpen }) {
 
         const payload = {
           ...invoice,
+          discount: invoiceDiscount,
+          taxValue: invoiceTaxValue,
           subtotal,
           net_total: netTotal,
-          taxValue,
           items,
           payment: paymentData,
           created_by: user.id,
@@ -229,7 +582,18 @@ export default function useAddSales({ customerModalOpen }) {
         setSaving(false);
       }
     },
-    [api, invoice, items, subtotal, netTotal, taxValue, navigate, t]
+    [
+      api,
+      invoice,
+      items,
+      subtotal,
+      netTotal,
+      invoiceDiscount,
+      invoiceTaxValue,
+      navigate,
+      t,
+      user,
+    ]
   );
 
   const reset = () => {
@@ -241,6 +605,11 @@ export default function useAddSales({ customerModalOpen }) {
   return {
     invoice,
     setInvoice,
+    setInvoiceTax,
+    clearInvoiceTax,
+    setInvoiceDiscountRate,
+    setInvoiceDiscountAmount,
+    clearInvoiceDiscount,
     items,
     products,
     customers,
@@ -248,11 +617,27 @@ export default function useAddSales({ customerModalOpen }) {
     addItem,
     removeItem,
     updateItem,
+    updateItemUnit,
+    updateItemDiscountRate,
+    updateItemDiscountAmount,
+    clearItemDiscount,
+    updateItemTax,
+    enableItemTax,
+    disableItemTax,
+    updateItemDescription,
+    setItemProduct,
+    addItemWithProduct,
     submit,
     reset,
     subtotal,
-    taxableAmount,
-    taxValue,
+    itemDiscountTotal,
+    itemDiscountSummary,
+    afterItemDiscounts,
+    itemTaxTotal,
+    itemTaxSummary,
+    invoiceDiscount,
+    afterInvoiceDiscount,
+    invoiceTaxValue,
     netTotal,
     loading,
     saving,
@@ -260,5 +645,6 @@ export default function useAddSales({ customerModalOpen }) {
     navigate,
     api,
     setProducts,
+    refetch,
   };
 }

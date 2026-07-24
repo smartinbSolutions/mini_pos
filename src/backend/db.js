@@ -245,17 +245,19 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   date TEXT,
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
   tax REAL DEFAULT 0,
+  taxRate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
   description TEXT,
   created_by INTEGER,
-updated_by INTEGER,
-  taxValue REAL DEFAULT 0,
+  updated_by INTEGER,
   net_total REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (customer_id) REFERENCES customers(id),
-   FOREIGN KEY (created_by) REFERENCES users(id),
+  FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
-)
+);
 `
 ).run();
 
@@ -263,16 +265,26 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS sales_invoice_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  invoice_id INTEGER,
-  product_id INTEGER,
-  quantity REAL,
-  price REAL,
-  buyingPrice REAL,
-  total REAL,
+  invoice_id INTEGER NOT NULL,
+  product_id INTEGER NOT NULL,
+  quantity REAL NOT NULL,
+  price REAL NOT NULL,
+  buyingPrice REAL DEFAULT 0,
+  total REAL NOT NULL,
+  product_name TEXT,
+  unit_name TEXT,
+  unit_conversion_factor REAL DEFAULT 1,
+  tax_id INTEGER,
+  tax_rate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  description TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id),
-  FOREIGN KEY (product_id) REFERENCES products(id)
-)
+  FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
+);
 `
 ).run();
 db.prepare(
@@ -329,7 +341,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
   tax REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
   taxRate REAL DEFAULT 0,
-    discount REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
   discount_rate REAL DEFAULT 0,
   net_total REAL DEFAULT 0, 
   created_by INTEGER,
@@ -362,6 +374,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoice_items (
   taxValue REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   discount_rate REAL DEFAULT 0,
+  description TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (invoice_id)
     REFERENCES purchase_invoices(id)
@@ -376,6 +389,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoice_items (
 )
 `
 ).run();
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS purchase_returns (
@@ -387,10 +401,12 @@ CREATE TABLE IF NOT EXISTS purchase_returns (
   date TEXT,
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
   tax REAL DEFAULT 0,
+  taxRate REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
-    created_by INTEGER,
+  created_by INTEGER,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (purchase_invoice_id)
     REFERENCES purchase_invoices(id)
@@ -400,8 +416,7 @@ CREATE TABLE IF NOT EXISTS purchase_returns (
     REFERENCES suppliers(id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES users(id)
-    
+  FOREIGN KEY (created_by) REFERENCES users(id)
 );
 `
 ).run();
@@ -415,8 +430,16 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
   product_id INTEGER,
   quantity REAL NOT NULL,
   price REAL NOT NULL,
-  buyingPrice REAL DEFAULT 0,
   total REAL NOT NULL,
+  product_name TEXT,
+  unit_name TEXT,
+  unit_conversion_factor REAL DEFAULT 1,
+  tax_id INTEGER,
+  tax_rate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  description TEXT,
   FOREIGN KEY (purchase_invoice_item_id)
     REFERENCES purchase_invoice_items(id),
   FOREIGN KEY (return_id)
@@ -425,7 +448,9 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
   FOREIGN KEY (product_id)
     REFERENCES products(id)
     ON DELETE RESTRICT
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  FOREIGN KEY (tax_id)
+    REFERENCES taxes(id)
 );
 `
 ).run();

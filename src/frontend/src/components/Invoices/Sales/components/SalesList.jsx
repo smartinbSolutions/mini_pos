@@ -22,7 +22,33 @@ import FormattedDate from "../../../../Global/FormattedDate";
 import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
 import GoTo from "../../../../Global/GoTo";
 import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
+import HoverTooltip from "../../../../Global/HoverTooltip";
 import { ToastContainer } from "react-toastify";
+
+function BreakdownTooltip({ trigger, rows }) {
+  const hasAnyValue = rows.some((r) => Number(r.value) > 0);
+  if (!hasAnyValue) return trigger;
+
+  return (
+    <HoverTooltip
+      trigger={trigger}
+      content={rows.map(
+        (row, i) =>
+          Number(row.value) > 0 && (
+            <div
+              key={i}
+              className={`flex justify-between ${i > 0 ? "mt-1" : ""}`}
+            >
+              <span>{row.label}</span>
+              <span className={`font-bold ${row.className || ""}`}>
+                {row.display}
+              </span>
+            </div>
+          )
+      )}
+    />
+  );
+}
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -42,41 +68,37 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
 
   const current = config[status] || config.unpaid;
 
-  return (
-    <div className="group relative inline-block">
-      <span
-        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] uppercase  ${current.classes}`}
-      >
-        {current.label}
-      </span>
+  const badge = (
+    <span
+      className={`inline-flex items-center rounded-lg px-2 py-1 text-[10px] font-bold uppercase ${current.classes}`}
+    >
+      {current.label}
+    </span>
+  );
 
-      {status === "partial" && (
-        <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
+  if (status !== "partial") return badge;
+
+  return (
+    <HoverTooltip
+      trigger={badge}
+      content={
+        <>
           <div className="flex justify-between">
             <span>{t("ui.paid")}</span>
             <span className="font-bold text-emerald-600">
               {money(paidAmount)}
             </span>
           </div>
-
           <div className="mt-1 flex justify-between">
             <span>{t("ui.remaining", "Remaining")}</span>
             <span className="font-bold text-amber-600">
               {money(remainingAmount)}
             </span>
           </div>
-        </div>
-      )}
-    </div>
+        </>
+      }
+    />
   );
-};
-const splitDateTime = (value) => {
-  if (!value) return { dateLabel: "-", fullLabel: "" };
-  const [datePart, timePart] = String(value).split(/[ T]/);
-  return {
-    dateLabel: datePart || "-",
-    fullLabel: timePart ? `${datePart} ${timePart.slice(0, 8)}` : datePart,
-  };
 };
 
 const SalesList = () => {
@@ -168,14 +190,12 @@ const SalesList = () => {
         .some((v) => String(v).toLowerCase().includes(term));
     });
   }, [salesInvoices, search]);
+
   const [isPrinting, setIsPrinting] = useState(false);
   const handlePrint = async (invoice) => {
     try {
       setIsPrinting(true);
-
       await api.printSalesInvoice(invoice.id);
-
-      // await window.api.printInvoice(invoice.id);
     } catch (err) {
       console.error(err);
     } finally {
@@ -197,7 +217,7 @@ const SalesList = () => {
     0
   );
   const totalTax = salesInvoices.reduce(
-    (sum, inv) => sum + Number(inv.taxValue || 0),
+    (sum, inv) => sum + Number(inv.total_tax_value || inv.taxValue || 0),
     0
   );
 
@@ -210,6 +230,7 @@ const SalesList = () => {
       <div className="mx-auto max-w-7xl space-y-6">
         <InvoiceListHeader
           badgeLabel={t("ui.sales")}
+          badgeIcon={Receipt}
           title={t("screens.invoices.salesTitle")}
           subtitle={t("screens.invoices.salesSubtitle")}
           stats={[
@@ -259,17 +280,18 @@ const SalesList = () => {
 
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-left text-sm">
-              <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
+            <table className="w-full min-w-[950px] text-left text-sm">
+              <thead className="bg-[#f8faff] text-xs font-bold uppercase text-slate-500">
                 <tr>
-                  <th className="px-5 py-4 text-start">{t("ui.invoice")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.customer")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.subtotal")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.tax")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.status")}</th>
-                  <th className="px-5 py-4 text-start">
+                  <th className="px-4 py-3 text-center">{t("ui.invoice")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.customer")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.date")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.subtotal")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.discount")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.tax")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.net")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.status")}</th>
+                  <th className="px-4 py-3 text-center">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -278,72 +300,116 @@ const SalesList = () => {
               <tbody className="divide-y divide-[#e5ebff]">
                 {loading ? (
                   <tr>
-                    <td colSpan="8" className="p-8 text-start text-slate-500">
+                    <td colSpan="9" className="p-8 text-center text-slate-500">
                       {t("common.loading")}
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="p-8 text-start text-slate-500">
+                    <td colSpan="9" className="p-8 text-center text-slate-500">
                       {t("screens.invoices.empty")}
                     </td>
                   </tr>
                 ) : (
                   filtered.map((inv) => {
-                    const { dateLabel, fullLabel } = splitDateTime(inv.date);
+                    const itemTax = Number(inv.item_tax_total || 0);
+                    const invoiceTax = Number(inv.taxValue || 0);
+                    const totalTaxValue = Number(
+                      inv.total_tax_value ?? itemTax + invoiceTax
+                    );
+
+                    const itemDiscount = Number(inv.item_discount_total || 0);
+                    const invoiceDiscount = Number(inv.discount || 0);
+                    const totalDiscountValue = Number(
+                      inv.total_discount_value ?? itemDiscount + invoiceDiscount
+                    );
 
                     return (
                       <tr
                         key={inv.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-5 py-4 text-start">
+                        <td className="px-4 py-3 text-center">
                           <InvoiceIdBadge id={inv.id} name={inv.invoice_name} />
                         </td>
 
-                        <td className="px-5 py-4 text-start">
+                        <td className="px-4 py-3 text-center">
                           <GoTo type="customer" id={inv.customer_id}>
                             {inv.customer_name ||
                               t("screens.pos.walkInCustomer")}
                           </GoTo>
                         </td>
 
-                        <td className="px-5 py-4 text-slate-500 text-start">
+                        <td className="px-4 py-3 text-slate-500 text-center">
                           <FormattedDate value={inv.date} />
                         </td>
 
-                        <td className="px-5 py-4 text-start">
-                          <div className="font-semibold tabular-nums text-slate-700">
-                            {money(inv.subtotal || 0)}
-                          </div>
-
-                          {Number(inv.discount || 0) > 0 && (
-                            <div className="mt-0.5 inline-flex items-center rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-500">
-                              -{money(inv.discount)} {t("ui.discount")}
-                            </div>
-                          )}
+                        <td className="px-4 py-3 text-center font-semibold tabular-nums text-slate-700">
+                          {money(inv.subtotal || 0)}
                         </td>
-                        <td className="px-5 py-4 text-start tabular-nums">
-                          {Number(inv.taxValue || 0) > 0 ? (
-                            <div>
-                              <div className="font-bold text-slate-700">
-                                + {money(inv.taxValue)}
-                              </div>
 
-                              <div className="text-[11px] font-semibold text-slate-400">
-                                {inv.tax_rate}%
-                              </div>
-                            </div>
+                        <td className="px-4 py-3 text-center tabular-nums">
+                          {totalDiscountValue > 0 ? (
+                            <BreakdownTooltip
+                              trigger={
+                                <span className="font-bold text-red-500">
+                                  -{money(totalDiscountValue)}
+                                </span>
+                              }
+                              rows={[
+                                {
+                                  label: t("screens.invoices.itemDiscount"),
+                                  value: itemDiscount,
+                                  display: `-${money(itemDiscount)}`,
+                                  className: "text-red-500",
+                                },
+                                {
+                                  label: t("screens.invoices.invoiceDiscount"),
+                                  value: invoiceDiscount,
+                                  display: `-${money(invoiceDiscount)}`,
+                                  className: "text-red-500",
+                                },
+                              ]}
+                            />
                           ) : (
-                            <span className="text-slate-400">{money(0)}</span>
+                            <span className="text-slate-300">—</span>
                           )}
                         </td>
-                        <td className="px-5 py-4 text-start tabular-nums text-emerald-700">
+
+                        <td className="px-4 py-3 text-center tabular-nums">
+                          {totalTaxValue > 0 ? (
+                            <BreakdownTooltip
+                              trigger={
+                                <span className="font-bold text-emerald-600">
+                                  +{money(totalTaxValue)}
+                                </span>
+                              }
+                              rows={[
+                                {
+                                  label: t("screens.invoices.itemTax"),
+                                  value: itemTax,
+                                  display: `+${money(itemTax)}`,
+                                  className: "text-emerald-600",
+                                },
+                                {
+                                  label: t("screens.invoices.invoiceTax"),
+                                  value: invoiceTax,
+                                  display: `+${money(invoiceTax)}`,
+                                  className: "text-emerald-600",
+                                },
+                              ]}
+                            />
+                          ) : (
+                            <span className="text-slate-300">—</span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3 text-center font-bold tabular-nums text-emerald-700">
                           {money(inv.net_total || 0)}
                         </td>
 
-                        <td className="px-5 py-4 text-start">
-                          <div className="flex  items-start gap-1.5">
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex flex-col items-center gap-1">
                             <StatusBadge
                               status={inv.status}
                               paidAmount={inv.paid_amount}
@@ -355,14 +421,14 @@ const SalesList = () => {
                           </div>
                         </td>
 
-                        <td className="px-5 py-4">
-                          <div className="flex justify-start gap-1">
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex justify-end gap-0.5">
                             <button
                               onClick={() => navigate(`/view-sales/${inv.id}`)}
-                              className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                               title={t("common.view")}
                             >
-                              <Eye size={16} />
+                              <Eye size={15} />
                             </button>
 
                             {inv.status === "unpaid" &&
@@ -371,10 +437,10 @@ const SalesList = () => {
                                   onClick={() =>
                                     navigate(`/edit-sales/${inv.id}`)
                                   }
-                                  className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                  className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                   title={t("common.edit")}
                                 >
-                                  <Edit2 size={16} />
+                                  <Edit2 size={15} />
                                 </button>
                               )}
 
@@ -384,32 +450,34 @@ const SalesList = () => {
                                   setSelecteInvoice(inv);
                                   setOpenPaymentModel(true);
                                 }}
-                                className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                 title={t("ui.payment")}
                               >
-                                <HandCoins size={16} />
+                                <HandCoins size={15} />
                               </button>
                             )}
+
                             {inv.return_status !== "full" && (
                               <button
                                 onClick={() => {
                                   setSelecteInvoice(inv);
                                   setOpenRefundModel(true);
                                 }}
-                                className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                 title={t("ui.createSalesReturn")}
                               >
-                                <Undo2 size={16} />
+                                <Undo2 size={15} />
                               </button>
                             )}
+
                             {inv.status === "unpaid" &&
                               inv.return_status === "none" && (
                                 <button
                                   onClick={() => setDeleteInvoice(inv)}
-                                  className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
+                                  className="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50"
                                   title={t("common.delete")}
                                 >
-                                  <Trash2 size={16} />
+                                  <Trash2 size={15} />
                                 </button>
                               )}
                           </div>

@@ -10,6 +10,62 @@ export default function allocateSupplierPayment(db, data) {
     };
   }
 
+  // Targeted mode: a specific invoice/expense was named (paying from that
+  // invoice's own context). Allocate strictly to that one record, capped at
+  // its own remaining balance — never spill into any other invoice.
+  if (data.invoiceId && data.invoiceType) {
+    const table =
+      data.invoiceType === "expense" ? "expense" : "purchase_invoices";
+
+    const invoice = db
+      .prepare(
+        `
+        SELECT
+          id,
+          net_total,
+          net_total - COALESCE((
+            SELECT SUM(amount)
+            FROM payment_allocations
+            WHERE invoice_id = ${table}.id
+              AND invoice_type = ?
+          ), 0) AS remaining
+        FROM ${table}
+        WHERE id = ? AND supplier_id = ?
+        `
+      )
+      .get(data.invoiceType, data.invoiceId, data.supplierId);
+
+    if (!invoice || Number(invoice.remaining) <= 0) {
+      return {
+        allocations: [],
+        remainingAmount,
+      };
+    }
+
+    const invoiceRemaining = Number(invoice.remaining);
+    const paymentAmount = Math.min(remainingAmount, invoiceRemaining);
+
+    createPaymentAllocation(db, {
+      payment_id: data.paymentId,
+      invoice_id: invoice.id,
+      invoice_type: data.invoiceType,
+      amount: paymentAmount,
+    });
+
+    return {
+      allocations: [
+        {
+          invoiceId: invoice.id,
+          invoiceType: data.invoiceType,
+          amount: paymentAmount,
+        },
+      ],
+      remainingAmount: remainingAmount - paymentAmount,
+    };
+  }
+
+  // Account-level mode (no specific invoice named): FIFO across every open
+  // invoice/expense for this supplier, oldest first — unchanged.
   const purchaseInvoices = db
     .prepare(
       `

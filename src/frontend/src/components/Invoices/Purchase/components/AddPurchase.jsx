@@ -12,6 +12,7 @@ import {
   Receipt,
   Percent,
   Tag,
+  StickyNote,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import useAddPurchase from "../hooks/useAddPurchase";
@@ -26,6 +27,7 @@ import ProductQuickAddModal from "../../../Products/components/ProductQuickAddMo
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
 import SupplierFormModal from "./SupplierFormModal";
+import DropdownMenu from "../../../../Global/DropdownMenu";
 
 // ---- Shared, module-level so re-renders never remount them (avoids the
 // focus-loss bug we hit earlier with in-body component definitions) ----
@@ -44,50 +46,19 @@ function AccentRule({ colorClass }) {
 
 // A single "+" trigger that reveals only the options still applicable
 // (e.g. "Add tax" hidden once tax is already active on that row/invoice).
+
 function AddOptionsMenu({ options, align = "right" }) {
-  const [open, setOpen] = useState(false);
-  const visibleOptions = options.filter((o) => o.visible !== false);
-
-  if (visibleOptions.length === 0) return null;
-
-  return (
-    <div className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-slate-200 text-slate-400 transition hover:border-[#4663ff]/50 hover:bg-[#f6f8fd] hover:text-[#4663ff]"
-        aria-label="Add"
-      >
-        <Plus size={14} />
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div
-            className={`absolute top-full right-[10%] z-20 mt-1.5 min-w-[10rem] overflow-hidden rounded-xl border border-[#e9edfb] bg-white py-1 shadow-[0_10px_28px_rgba(15,23,42,0.14)] ${
-              align === "right" ? "right-0" : "left-0"
-            }`}
-          >
-            {visibleOptions.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                onClick={() => {
-                  option.onClick();
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-bold text-slate-600 transition hover:bg-[#f6f8fd] hover:text-[#4663ff]"
-              >
-                {option.icon}
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+  const trigger = (
+    <button
+      type="button"
+      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-slate-200 text-slate-400 transition hover:border-[#4663ff]/50 hover:bg-[#f6f8fd] hover:text-[#4663ff]"
+      aria-label="Add"
+    >
+      <Plus size={14} />
+    </button>
   );
+
+  return <DropdownMenu trigger={trigger} options={options} align={align} />;
 }
 
 // Small labeled chip for an active discount or tax on a row — replaces raw
@@ -149,6 +120,7 @@ export default function AddPurchase() {
     updateItemUnit,
     updateItemDiscountRate,
     updateItemDiscountAmount,
+    updateItemDescription,
     clearItemDiscount,
     updateItemTax,
     enableItemTax,
@@ -182,8 +154,10 @@ export default function AddPurchase() {
   const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
     () => new Set()
   );
+  const [revealedItemNotes, setRevealedItemNotes] = useState(() => new Set());
   const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(false);
   const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
+  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
 
   const { money } = usePrimaryCurrency();
 
@@ -199,6 +173,19 @@ export default function AddPurchase() {
       if (revealed) {
         next.delete(index);
         clearItemDiscount(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
+  const toggleItemNote = (index, revealed) => {
+    setRevealedItemNotes((prev) => {
+      const next = new Set(prev);
+      if (revealed) {
+        next.delete(index);
+        updateItemDescription(index, "");
       } else {
         next.add(index);
       }
@@ -487,7 +474,7 @@ export default function AddPurchase() {
                           </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
                           <div>
                             <label className="mb-1 block text-[11px] font-bold text-slate-400">
                               {t("ui.qty")}
@@ -559,6 +546,53 @@ export default function AddPurchase() {
                               {money(lineTotal)}
                             </div>
                           </div>
+
+                          {hasProduct && (
+                            <div className="flex items-end">
+                              <AddOptionsMenu
+                                align="right"
+                                options={[
+                                  {
+                                    key: "tax",
+                                    label: t("screens.invoices.addTax"),
+                                    icon: (
+                                      <Receipt
+                                        size={13}
+                                        className="text-emerald-600"
+                                      />
+                                    ),
+                                    visible: !item.tax_capable,
+                                    onClick: () => enableItemTax(index),
+                                  },
+                                  {
+                                    key: "discount",
+                                    label: t("screens.invoices.addDiscount"),
+                                    icon: (
+                                      <Percent
+                                        size={13}
+                                        className="text-red-500"
+                                      />
+                                    ),
+                                    visible: !discountRevealed,
+                                    onClick: () =>
+                                      toggleItemDiscount(index, false),
+                                  },
+                                  {
+                                    key: "note",
+                                    label: t("screens.invoices.addNote"),
+                                    icon: (
+                                      <StickyNote
+                                        size={13}
+                                        className="text-amber-500"
+                                      />
+                                    ),
+                                    visible: !revealedItemNotes.has(index),
+                                    onClick: () => toggleItemNote(index, false),
+                                  },
+                                ]}
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {isNonBaseUnit && (
@@ -658,40 +692,34 @@ export default function AddPurchase() {
                               />
                             </AdjustmentChip>
                           )}
-
-                          {hasProduct && (
-                            <AddOptionsMenu
-                              align="left"
-                              options={[
-                                {
-                                  key: "tax",
-                                  label: t("screens.invoices.addTax"),
-                                  icon: (
-                                    <Receipt
-                                      size={13}
-                                      className="text-emerald-600"
-                                    />
-                                  ),
-                                  visible: !item.tax_capable,
-                                  onClick: () => enableItemTax(index),
-                                },
-                                {
-                                  key: "discount",
-                                  label: t("screens.invoices.addDiscount"),
-                                  icon: (
-                                    <Percent
-                                      size={13}
-                                      className="text-red-500"
-                                    />
-                                  ),
-                                  visible: !discountRevealed,
-                                  onClick: () =>
-                                    toggleItemDiscount(index, false),
-                                },
-                              ]}
-                            />
-                          )}
                         </div>
+
+                        {revealedItemNotes.has(index) && (
+                          <div className="flex w-full items-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50/60 px-2.5 py-1.5">
+                            <StickyNote
+                              size={12}
+                              className="shrink-0 text-amber-500"
+                            />
+                            <input
+                              type="text"
+                              className="h-6 w-full min-w-0 flex-1 border-none bg-transparent text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400"
+                              value={item.description || ""}
+                              onChange={(e) =>
+                                updateItemDescription(index, e.target.value)
+                              }
+                              placeholder={t(
+                                "screens.invoices.notePlaceholder"
+                              )}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleItemNote(index, true)}
+                              className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -704,7 +732,7 @@ export default function AddPurchase() {
             {/* Summary */}
             <section className={panelClass}>
               <AccentRule colorClass="bg-emerald-500" />
-              <div className={panelBodyClass}>
+              <div className={`${panelBodyClass} pb-14`}>
                 <div className="mb-3 flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
                     <HandCoins size={15} />
@@ -760,7 +788,7 @@ export default function AddPurchase() {
                 {/* Invoice-level discount/tax — unified "+" reveals options */}
                 <div className="space-y-2">
                   {invoiceDiscountRevealed && (
-                    <div className="space-y-1.5 rounded-xl border border-red-100 bg-red-50/40 p-2.5">
+                    <div className="space-y-3 rounded-xl border border-red-100 bg-red-50/40 p-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold text-red-600">
                           <Percent size={12} />
@@ -855,8 +883,10 @@ export default function AddPurchase() {
                     </div>
                   )}
 
-                  {(!invoiceDiscountRevealed || !invoiceTaxRevealed) && (
-                    <div className="flex justify-end">
+                  {(!invoiceDiscountRevealed ||
+                    !invoiceTaxRevealed ||
+                    !invoiceNoteRevealed) && (
+                    <div className="flex">
                       <AddOptionsMenu
                         options={[
                           {
@@ -876,6 +906,18 @@ export default function AddPurchase() {
                             ),
                             visible: !invoiceTaxRevealed,
                             onClick: () => setInvoiceTaxRevealed(true),
+                          },
+                          {
+                            key: "invoice-note",
+                            label: t("screens.invoices.addInvoiceNote"),
+                            icon: (
+                              <StickyNote
+                                size={13}
+                                className="text-amber-500"
+                              />
+                            ),
+                            visible: !invoiceNoteRevealed,
+                            onClick: () => setInvoiceNoteRevealed(true),
                           },
                         ]}
                       />
@@ -901,6 +943,43 @@ export default function AddPurchase() {
                       <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
                         +{money(invoiceTaxValue)}
                       </span>
+                    </div>
+                  )}
+                  {invoiceNoteRevealed && (
+                    <div className="space-y-1.5 rounded-xl border border-amber-100 bg-amber-50/40 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-amber-600">
+                          <StickyNote size={12} />
+                          {t("screens.invoices.invoiceNote")}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInvoice((prev) => ({
+                              ...prev,
+                              description: "",
+                            }));
+                            setInvoiceNoteRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                      <textarea
+                        className={`${smallInputClass} min-h-[2.5rem] resize-none overflow-hidden py-1.5`}
+                        value={invoice.description || ""}
+                        onChange={(e) => {
+                          setInvoice((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }));
+                          e.target.style.height = "auto";
+                          e.target.style.height = `${e.target.scrollHeight}px`;
+                        }}
+                        placeholder={t("screens.invoices.notePlaceholder")}
+                        rows={1}
+                      />
                     </div>
                   )}
                 </div>

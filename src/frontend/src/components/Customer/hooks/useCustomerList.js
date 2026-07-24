@@ -84,8 +84,9 @@ const useCustomerList = () => {
 
     setSaving(true);
     try {
-      await api.createCustomer(normalizeCustomer(cust));
+      const res = await api.createCustomer(normalizeCustomer(cust));
       await refetch();
+      return res;
     } finally {
       setSaving(false);
     }
@@ -128,10 +129,10 @@ const useCustomerList = () => {
 
   const handleCreateCustomer = async (cust) => {
     try {
-      await createCustomer(cust);
+      const result = await createCustomer(cust);
       setActionError("");
       toast.success(t("success.created", { field: t("ui.customer") }));
-      return true;
+      return result;
     } catch (err) {
       console.error("Failed to create Customer:", err);
       const message =
@@ -177,7 +178,7 @@ const useCustomerList = () => {
   const submitDraft = async (event) => {
     event.preventDefault();
     const saved = await handleCreateCustomer(draft);
-    if (saved) {
+    if (saved && saved !== false) {
       setDraft(emptyCustomer);
     }
     return saved;
@@ -201,7 +202,7 @@ const useCustomerList = () => {
       setEditing(emptyCustomer);
     }
   };
-  console.log(actionError);
+
   return {
     createCustomer,
     updateCustomer,

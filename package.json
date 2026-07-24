@@ -118,6 +118,7 @@
     "@fontsource/almarai": "^5.2.8",
     "@fontsource/ibm-plex-sans-arabic": "^5.2.9",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
+    "@phosphor-icons/react": "^2.1.10",
     "@serialport/parser-readline": "^13.0.0",
     "better-sqlite3": "^12.10.0",
     "cors": "^2.8.6",

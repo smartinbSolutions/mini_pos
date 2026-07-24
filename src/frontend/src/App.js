@@ -78,6 +78,7 @@ import PaymentDocumentPage from "./components/Cash/Payment/components/PaymentDoc
 import FundTransferDocumentPage from "./components/Cash/Fund/components/FundTransferDocumentPage";
 import ProductDetailPage from "./components/Products/components/ProductDetailPage";
 import ProductFormPage from "./components/Products/components/ProductFormPage";
+import PurchaseReturnPage from "./components/Invoices/PurchaseReturn/components/PurchaseReturnPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -202,6 +203,11 @@ export default function App() {
               />
               <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
               <Route path="supplier" element={<SuppliersList />} />
+
+              <Route
+                path="purchase-return/:invoiceId"
+                element={<PurchaseReturnPage />}
+              />
 
               {/* ================= PURCHASE RETURN ================= */}
               <Route path="/purchase-return" element={<PurchaseReturnList />} />

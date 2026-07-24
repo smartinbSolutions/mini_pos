@@ -31,6 +31,7 @@
     "confirm": "Confirm"
   },
   "ui": {
+    "available": "Available",
     "profit": "Profit",
     "cogs": "Cost of goods",
     "grossProfit": "Gross profit",
@@ -359,6 +360,14 @@
       }
     },
     "invoices": {
+      "itemDiscount": "Item discount",
+      "invoiceDiscount": "Invoice discount",
+      "itemTax": "Item tax",
+      "invoiceTax": "Invoice tax",
+      "addNote": "Add note",
+      "addInvoiceNote": "Add invoice note",
+      "invoiceNote": "Invoice note",
+      "notePlaceholder": "Write a note...",
       "addTax": "Add tax",
       "discountPercent": "Discount %",
       "itemDiscountAt": "Item discount at {{rate}}%",

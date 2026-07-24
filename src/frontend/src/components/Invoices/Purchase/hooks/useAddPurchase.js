@@ -22,6 +22,7 @@ const emptyItem = {
   tax_rate: 0,
   taxValue: 0,
   tax_capable: false,
+  description: "",
 };
 
 const emptyInvoice = {
@@ -32,6 +33,7 @@ const emptyInvoice = {
   tax: "",
   taxRate: 0,
   taxValue: 0,
+  description: "",
 };
 
 // total is always entered_quantity × entered_price — deliberately unaffected
@@ -263,6 +265,14 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
     });
   };
 
+  const updateItemDescription = (index, description) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], description };
+      return copy;
+    });
+  };
+
   const updateItemDiscountAmount = (index, amount) => {
     setItems((prev) => {
       const copy = [...prev];
@@ -322,6 +332,9 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
     let barcodeRef = "";
 
     const handleKeyDown = async (e) => {
+      if (e.target?.tagName === "TEXTAREA") {
+        return;
+      }
       if (e.key === "Enter") {
         if (!barcodeRef) return;
 
@@ -608,6 +621,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
     updateItemTax,
     enableItemTax,
     disableItemTax,
+    updateItemDescription,
     setItemProduct,
     addItemWithProduct,
     submit,

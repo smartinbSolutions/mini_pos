@@ -75,29 +75,132 @@ export default function registerSalesInvoiceIPC() {
           throw new Error("ERROR ENTER DATA");
         }
 
-        const subtotal = Number(data.subtotal || 0);
-        const discount = Number(data.discount || 0);
-        const taxId = data.tax ?? null;
+        const dateOnly = data.date.slice(0, 10);
+        const now = new Date();
+        const time = now.toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
+
+        // ---- Invoice-level tax — never trust a client-sent rate ----
+        const invoiceTaxId = data.tax || null;
+        let invoiceTaxRate = 0;
+
+        if (invoiceTaxId) {
+          const taxRow = db
+            .prepare(
+              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+            )
+            .get(invoiceTaxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          invoiceTaxRate = Number(taxRow.rate || 0);
+        }
+
+        const invoiceDiscountRate = Number(data.discount_rate || 0);
+
+        // ---- Per-item cascade — sale price is sourced from whichever unit
+        // was selected (each unit has its own registered sale_price, unlike
+        // purchase where only the base has a real cost and alt units are
+        // derived by multiplication). quantity/price stored are always
+        // BASE-UNIT — re-derived server-side, never trusted from client. ----
+        const preparedItems = [];
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        let itemTaxTotal = 0;
+
+        for (const item of data.items) {
+          const enteredQuantity = Number(item.entered_quantity || 0);
+          const enteredPrice = Number(item.entered_price || 0);
+          const factor = Number(item.unit_conversion_factor || 1);
+
+          if (!item.product_id || enteredQuantity <= 0 || enteredPrice < 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
+
+          const baseQuantity = enteredQuantity * factor;
+          const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
+          const total = enteredQuantity * enteredPrice;
+
+          const discountRate = Number(item.discount_rate || 0);
+          const discount = Number(((total * discountRate) / 100).toFixed(2));
+          const afterDiscount = total - discount;
+
+          let taxId = null;
+          let taxRate = 0;
+
+          if (item.tax_id) {
+            const taxRow = db
+              .prepare(
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+              )
+              .get(item.tax_id);
+            if (!taxRow) {
+              throw new Error("INVALID_ITEM_TAX_ID");
+            }
+            taxId = item.tax_id;
+            taxRate = Number(taxRow.rate || 0);
+          }
+
+          const taxValue = Number(((afterDiscount * taxRate) / 100).toFixed(2));
+
+          subtotal += total;
+          itemDiscountTotal += discount;
+          itemTaxTotal += taxValue;
+
+          // buyingPrice: the product's BASE-unit cost at time of sale — never
+          // shown/editable in the UI, saved purely for later profit/COGS
+          // reporting. Re-derived here from the product row, not trusted
+          // from the client, same principle as everything else.
+          const productRow = db
+            .prepare(`SELECT costPrice FROM products WHERE id = ?`)
+            .get(item.product_id);
+          const buyingPrice = Number(productRow?.costPrice || 0);
+
+          preparedItems.push({
+            product_id: item.product_id,
+            product_name: item.name || null,
+            unit_name: item.unit_name || null,
+            unit_conversion_factor: factor,
+            baseQuantity,
+            basePrice,
+            buyingPrice,
+            total,
+            discount_rate: discountRate,
+            discount,
+            tax_id: taxId,
+            tax_rate: taxRate,
+            taxValue,
+            description: item.description || null,
+          });
+        }
+
+        subtotal = Number(subtotal.toFixed(2));
+        itemDiscountTotal = Number(itemDiscountTotal.toFixed(2));
+        itemTaxTotal = Number(itemTaxTotal.toFixed(2));
 
         if (subtotal <= 0) {
           throw new Error("INVALID TOTALS");
         }
 
-        let taxRate = 0;
-        if (taxId) {
-          const taxRow = db
-            .prepare(`SELECT rate FROM taxes WHERE id = ?`)
-            .get(taxId);
-          if (!taxRow) {
-            throw new Error("INVALID_TAX_ID");
-          }
-          taxRate = Number(taxRow.rate || 0);
-        }
+        const afterItemDiscounts = subtotal - itemDiscountTotal;
 
-        const taxableAmount = subtotal - discount;
-        const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
-        const netTotal = Number((taxableAmount + taxValue).toFixed(2));
+        const invoiceDiscount = Number(
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+        );
+        const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
+        const invoiceTaxValue = Number(
+          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        );
+
+        const netTotal = Number(
+          Math.max(
+            0,
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+          ).toFixed(2)
+        );
+
+        // ---- Payment validation (unchanged) ----
         const payment = data.payment || null;
         const isPaid = !!payment;
         const isCredit = payment?.source === "credit";
@@ -119,29 +222,32 @@ export default function registerSalesInvoiceIPC() {
           throw new Error("INVALID_CREDIT_AMOUNT");
         }
 
-        const dateOnly = data.date.slice(0, 10);
-        const now = new Date();
-        const time = now.toTimeString().slice(0, 8);
-        const fullDateTime = `${dateOnly} ${time}`;
-
+        // ---- Insert invoice header ----
         const invoiceResult = db
           .prepare(
             `
             INSERT INTO sales_invoices
-            (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, taxValue, created_by )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
+            (
+              customer_id, invoice_name, description, date,
+              subtotal, discount, discount_rate,
+              tax, taxRate, taxValue,
+              net_total, created_by
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `
           )
           .run(
             data.customer_id || null,
             data.invoice_name?.trim() || null,
-            data.description || null,
+            data.description?.trim() || null,
             fullDateTime,
             subtotal,
-            discount,
-            taxId,
+            invoiceDiscount,
+            invoiceDiscountRate,
+            invoiceTaxId,
+            invoiceTaxRate,
+            invoiceTaxValue,
             netTotal,
-            taxValue,
             data.created_by || ""
           );
 
@@ -155,36 +261,44 @@ export default function registerSalesInvoiceIPC() {
           ).run(invoiceName, invoiceId);
         }
 
+        // ---- Insert items + reduce stock + record movements ----
         const insertItem = db.prepare(`
           INSERT INTO sales_invoice_items
-          (invoice_id, product_id, quantity, price, buyingPrice, total)
-          VALUES (?, ?, ?, ?, ?, ?)
+          (
+            invoice_id, product_id, quantity, price, buyingPrice, total,
+            product_name, unit_name, unit_conversion_factor,
+            tax_id, tax_rate, taxValue,
+            discount, discount_rate, description
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
+
         const updateStock = db.prepare(`
           UPDATE products
           SET quantity = quantity - ?
           WHERE id = ?
         `);
 
-        for (const item of data.items) {
-          const quantity = Number(item.quantity || 0);
-          const price = Number(item.price || 0);
-
-          if (!item.product_id || quantity <= 0 || price < 0) {
-            throw new Error("INVALID ITEM DATA");
-          }
-
-          const total = quantity * price;
-
+        for (const item of preparedItems) {
           insertItem.run(
             invoiceId,
             item.product_id,
-            quantity,
-            price,
+            item.baseQuantity,
+            item.basePrice,
             item.buyingPrice,
-            total
+            item.total,
+            item.product_name,
+            item.unit_name,
+            item.unit_conversion_factor,
+            item.tax_id,
+            item.tax_rate,
+            item.taxValue,
+            item.discount,
+            item.discount_rate,
+            item.description
           );
-          updateStock.run(quantity, item.product_id);
+
+          updateStock.run(item.baseQuantity, item.product_id);
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -192,12 +306,13 @@ export default function registerSalesInvoiceIPC() {
             reference_type: "sale",
             type: "out",
             action: "create",
-            quantity,
-            outPrice: price,
+            quantity: item.baseQuantity,
+            outPrice: item.basePrice,
             date: fullDateTime,
           });
         }
 
+        // ---- Party history, payment/credit (unchanged) ----
         if (data.customer_id) {
           createPartyHistory(db, {
             party_type: "customer",
@@ -312,10 +427,6 @@ export default function registerSalesInvoiceIPC() {
       whereParams.push(Number(params.maxTotal));
     }
 
-    // status/return_status are computed from aggregates, so they must be
-    // filtered in HAVING using the same CASE expression as the SELECT —
-    // they can't be filtered in WHERE since the aggregates don't exist yet
-    // at that stage of query evaluation.
     if (params.status) {
       havingConditions.push(`
         CASE
@@ -355,41 +466,54 @@ export default function registerSalesInvoiceIPC() {
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
         t.name AS tax_name,
-        t.rate AS tax_rate,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
-    
+  
+        COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
+        COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
+        (s.taxValue + COALESCE(itemAgg.item_tax_total, 0)) AS total_tax_value,
+        (s.discount + COALESCE(itemAgg.item_discount_total, 0)) AS total_discount_value,
+  
         s.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-    
+  
         CASE
           WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
         END AS status,
-    
+  
         CASE
           WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
           WHEN ret.total_returned >= ret.total_quantity THEN 'full'
           ELSE 'partial'
         END AS return_status
-    
+  
       FROM sales_invoices s
-    
+  
       LEFT JOIN customers c
         ON c.id = s.customer_id
-    
+  
       LEFT JOIN taxes t
         ON t.id = s.tax
-    
+  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = s.id
        AND pa.invoice_type = 'sales'
-    
+  
       LEFT JOIN users creator
         ON creator.id = s.created_by
-    
+  
       LEFT JOIN users updater
         ON updater.id = s.updated_by
-    
+  
+      LEFT JOIN (
+        SELECT
+          invoice_id,
+          SUM(taxValue) AS item_tax_total,
+          SUM(discount) AS item_discount_total
+        FROM sales_invoice_items
+        GROUP BY invoice_id
+      ) itemAgg ON itemAgg.invoice_id = s.id
+  
       LEFT JOIN (
         SELECT
           si.invoice_id,
@@ -403,13 +527,13 @@ export default function registerSalesInvoiceIPC() {
         ) sri ON sri.sales_invoice_item_id = si.id
         GROUP BY si.invoice_id
       ) ret ON ret.invoice_id = s.id
-    
+  
          ${whereClause}
       GROUP BY s.id
          ${havingClause}
-    
+  
       ORDER BY s.id DESC
-    
+  
       LIMIT ? OFFSET ?
       `
       )
@@ -462,7 +586,7 @@ export default function registerSalesInvoiceIPC() {
       sa.*,
       c.name AS customer_name,
       c.phone AS customer_phone,
-      t.rate AS tax_rate,
+      t.name AS tax_name,
       creator.full_name AS created_by_name,
       updater.full_name AS updated_by_name,
       COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
@@ -476,13 +600,13 @@ export default function registerSalesInvoiceIPC() {
   
     FROM sales_invoices sa
     LEFT JOIN customers c ON c.id = sa.customer_id
-    
+  
     LEFT JOIN users creator
     ON creator.id = sa.created_by
-    
+  
     LEFT JOIN users updater
     ON updater.id = sa.updated_by
-    
+  
     LEFT JOIN taxes t ON t.id = sa.tax
     LEFT JOIN (
       SELECT invoice_id, SUM(amount) AS paid_amount
@@ -501,43 +625,61 @@ export default function registerSalesInvoiceIPC() {
       .prepare(
         `
     SELECT
-  si.*,
-  p.name,
+      si.*,
+      p.name,
+      t.name AS tax_name,
   
-  COALESCE(r.returned_quantity, 0) AS returned_quantity,
+      COALESCE(r.returned_quantity, 0) AS returned_quantity,
   
-  (
-    si.quantity - COALESCE(r.returned_quantity, 0)
-  ) AS available_quantity,
+      (
+        si.quantity - COALESCE(r.returned_quantity, 0)
+      ) AS available_quantity,
   
-  -- Profit on what's still actually sold (returned units earn nothing)
-  (
-    (si.quantity - COALESCE(r.returned_quantity, 0)) * (si.price - si.buyingPrice)
-  ) AS item_profit,
+      (
+        (si.quantity - COALESCE(r.returned_quantity, 0))
+        * (
+            (si.price - (si.discount / NULLIF(si.quantity, 0)))
+            - si.buyingPrice
+          )
+      ) AS item_profit,
   
-  (si.price - si.buyingPrice) AS item_profit_per_unit,
+      (
+        (si.price - (si.discount / NULLIF(si.quantity, 0)))
+        - si.buyingPrice
+      ) AS item_profit_per_unit,
   
-  CASE
-    WHEN si.price > 0 THEN
-      ROUND(((si.price - si.buyingPrice) / si.price) * 100, 2)
-    ELSE 0
-  END AS item_margin_percent
+      CASE
+        WHEN si.price > 0 THEN
+          ROUND(
+            (
+              (
+                (si.price - (si.discount / NULLIF(si.quantity, 0)))
+                - si.buyingPrice
+              ) / si.price
+            ) * 100,
+            2
+          )
+        ELSE 0
+      END AS item_margin_percent
   
-  FROM sales_invoice_items si
+    FROM sales_invoice_items si
   
-  LEFT JOIN products p
-  ON p.id = si.product_id
+    LEFT JOIN products p
+    ON p.id = si.product_id
   
-  LEFT JOIN (
-  SELECT
-    sales_invoice_item_id,
-    SUM(quantity) AS returned_quantity
-  FROM sales_return_items
-  GROUP BY sales_invoice_item_id
-  ) r
-  ON r.sales_invoice_item_id = si.id
+    LEFT JOIN taxes t
+    ON t.id = si.tax_id
   
-  WHERE si.invoice_id = ?
+    LEFT JOIN (
+    SELECT
+      sales_invoice_item_id,
+      SUM(quantity) AS returned_quantity
+    FROM sales_return_items
+    GROUP BY sales_invoice_item_id
+    ) r
+    ON r.sales_invoice_item_id = si.id
+  
+    WHERE si.invoice_id = ?
     `
       )
       .all(id);
@@ -570,15 +712,51 @@ export default function registerSalesInvoiceIPC() {
       )
       .all(id);
 
-    // ---- Invoice-level profit summary, derived from items (never trusted from client) ----
-    const revenue = items.reduce(
-      (sum, i) => sum + i.available_quantity * i.price,
+    // ---- Invoice-level profit summary, derived from items (never trusted
+    // from client). Revenue/cogs computed on the DISCOUNTED per-unit price
+    // (item-level discount), restricted to available_quantity (post-return).
+    // Invoice-level discount is then prorated by the same
+    // available/original-quantity ratio used everywhere else in this
+    // summary, so a partial return doesn't overstate the discount credited
+    // against units that were actually given back. ----
+    let itemLevelRevenue = 0;
+    let proratedInvoiceDiscount = 0;
+
+    const totalOriginalQuantity = items.reduce(
+      (sum, i) => sum + Number(i.quantity || 0),
       0
     );
+    const invoiceDiscountTotal = Number(invoice.discount || 0);
+
+    for (const i of items) {
+      const quantity = Number(i.quantity || 0);
+      const availableQuantity = Number(i.available_quantity || 0);
+
+      const discountPerUnit =
+        quantity > 0 ? Number(i.discount || 0) / quantity : 0;
+      const discountedPrice = Number(i.price || 0) - discountPerUnit;
+      itemLevelRevenue += availableQuantity * discountedPrice;
+
+      // This item's share of the invoice-level discount, prorated by its
+      // share of the invoice's total original quantity, then scaled down
+      // further by however much of it is still actually sold.
+      const itemShareOfInvoiceDiscount =
+        totalOriginalQuantity > 0
+          ? (quantity / totalOriginalQuantity) * invoiceDiscountTotal
+          : 0;
+      const perUnitInvoiceDiscount =
+        quantity > 0 ? itemShareOfInvoiceDiscount / quantity : 0;
+      proratedInvoiceDiscount += perUnitInvoiceDiscount * availableQuantity;
+    }
+
+    const revenue = Math.max(0, itemLevelRevenue - proratedInvoiceDiscount);
+
     const cogs = items.reduce(
-      (sum, i) => sum + i.available_quantity * i.buyingPrice,
+      (sum, i) =>
+        sum + Number(i.available_quantity) * Number(i.buyingPrice || 0),
       0
     );
+
     const grossProfit = Number((revenue - cogs).toFixed(2));
     const marginPercent =
       revenue > 0 ? Number(((grossProfit / revenue) * 100).toFixed(2)) : 0;
@@ -602,14 +780,15 @@ export default function registerSalesInvoiceIPC() {
       !data.id ||
       !data.date ||
       !Array.isArray(data.items) ||
-      data.items.length === 0 ||
-      Number(data.subtotal) <= 0
+      data.items.length === 0
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
+
     const dateOnly = data.date.slice(0, 10);
     const time = new Date().toTimeString().slice(0, 8);
     const fullDateTime = `${dateOnly} ${time}`;
+
     try {
       const transaction = db.transaction(() => {
         const oldInvoice = db
@@ -639,6 +818,123 @@ export default function registerSalesInvoiceIPC() {
         const oldCustomerId = oldInvoice.customer_id || null;
         const newCustomerId = data.customer_id || null;
 
+        // ---- Resolve invoice-level tax — never trust a client-sent rate ----
+        const invoiceTaxId = data.tax || null;
+        let invoiceTaxRate = 0;
+
+        if (invoiceTaxId) {
+          const taxRow = db
+            .prepare(
+              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+            )
+            .get(invoiceTaxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          invoiceTaxRate = Number(taxRow.rate || 0);
+        }
+
+        const invoiceDiscountRate = Number(data.discount_rate || 0);
+
+        // ---- Per-item cascade, recomputed from raw inputs only ----
+        const preparedItems = [];
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        let itemTaxTotal = 0;
+
+        for (const item of data.items) {
+          if (!item.product_id) continue;
+
+          const enteredQuantity = Number(item.entered_quantity || 0);
+          const enteredPrice = Number(item.entered_price || 0);
+          const factor = Number(item.unit_conversion_factor || 1);
+
+          if (enteredQuantity <= 0 || enteredPrice < 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
+
+          const baseQuantity = enteredQuantity * factor;
+          const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
+          const total = enteredQuantity * enteredPrice;
+
+          const discountRate = Number(item.discount_rate || 0);
+          const discount = Number(((total * discountRate) / 100).toFixed(2));
+          const afterDiscount = total - discount;
+
+          let taxId = null;
+          let taxRate = 0;
+
+          if (item.tax_id) {
+            const taxRow = db
+              .prepare(
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+              )
+              .get(item.tax_id);
+            if (!taxRow) {
+              throw new Error("INVALID_ITEM_TAX_ID");
+            }
+            taxId = item.tax_id;
+            taxRate = Number(taxRow.rate || 0);
+          }
+
+          const taxValue = Number(((afterDiscount * taxRate) / 100).toFixed(2));
+
+          subtotal += total;
+          itemDiscountTotal += discount;
+          itemTaxTotal += taxValue;
+
+          // buyingPrice: base-unit cost at time of edit — re-derived from the
+          // product row, never trusted from the client.
+          const productRow = db
+            .prepare(`SELECT costPrice FROM products WHERE id = ?`)
+            .get(item.product_id);
+          const buyingPrice = Number(productRow?.costPrice || 0);
+
+          preparedItems.push({
+            product_id: item.product_id,
+            product_name: item.name || null,
+            unit_name: item.unit_name || null,
+            unit_conversion_factor: factor,
+            baseQuantity,
+            basePrice,
+            buyingPrice,
+            total,
+            discount_rate: discountRate,
+            discount,
+            tax_id: taxId,
+            tax_rate: taxRate,
+            taxValue,
+            description: item.description || null,
+          });
+        }
+
+        subtotal = Number(subtotal.toFixed(2));
+        itemDiscountTotal = Number(itemDiscountTotal.toFixed(2));
+        itemTaxTotal = Number(itemTaxTotal.toFixed(2));
+
+        if (subtotal <= 0) {
+          throw new Error("INVALID TOTALS");
+        }
+
+        const afterItemDiscounts = subtotal - itemDiscountTotal;
+
+        const invoiceDiscount = Number(
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+        );
+        const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
+
+        const invoiceTaxValue = Number(
+          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        );
+
+        const netTotal = Number(
+          Math.max(
+            0,
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+          ).toFixed(2)
+        );
+
+        // ---- Reverse old stock, delete old items/movements ----
         const oldItems = db
           .prepare(`SELECT * FROM sales_invoice_items WHERE invoice_id = ?`)
           .all(data.id);
@@ -660,59 +956,42 @@ export default function registerSalesInvoiceIPC() {
         db.prepare(
           `
           DELETE FROM product_movements
-          WHERE reference_type = 'sales_invoice' AND reference_id = ?
+          WHERE reference_type = 'sale' AND reference_id = ?
         `
         ).run(data.id);
 
+        // ---- Insert new items + apply stock + record movements ----
         const insertItem = db.prepare(`
           INSERT INTO sales_invoice_items
-          (invoice_id, product_id, quantity, price, buyingPrice, total)
-          VALUES (?, ?, ?, ?, ?, ?)
+          (
+            invoice_id, product_id, quantity, price, buyingPrice, total,
+            product_name, unit_name, unit_conversion_factor,
+            tax_id, tax_rate, taxValue,
+            discount, discount_rate, description
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
-        const newSubtotal = Number(data.subtotal || 0);
-        const discount = Number(data.discount || 0);
-        const taxId = data.tax ?? null;
-
-        let taxRate = 0;
-        if (taxId) {
-          const taxRow = db
-            .prepare(`SELECT rate FROM taxes WHERE id = ?`)
-            .get(taxId);
-          if (!taxRow) {
-            throw new Error("INVALID_TAX_ID");
-          }
-          taxRate = Number(taxRow.rate || 0);
-        }
-
-        const taxableAmount = newSubtotal - discount;
-        const taxValue = Number(((taxableAmount * taxRate) / 100).toFixed(2));
-        const newNetTotal = Number((taxableAmount + taxValue).toFixed(2));
-
-        const invoiceName =
-          data.invoice_name?.trim() || oldInvoice.invoice_name;
-
-        for (const item of data.items) {
-          if (!item.product_id) continue;
-
-          const quantity = Number(item.quantity || 0);
-          const price = Number(item.price || 0);
-
-          if (quantity <= 0 || price < 0) {
-            throw new Error("INVALID ITEM DATA");
-          }
-
-          const total = quantity * price;
-
+        for (const item of preparedItems) {
           insertItem.run(
             data.id,
             item.product_id,
-            quantity,
-            price,
+            item.baseQuantity,
+            item.basePrice,
             item.buyingPrice,
-            total
+            item.total,
+            item.product_name,
+            item.unit_name,
+            item.unit_conversion_factor,
+            item.tax_id,
+            item.tax_rate,
+            item.taxValue,
+            item.discount,
+            item.discount_rate,
+            item.description
           );
-          applyStock.run(quantity, item.product_id);
+
+          applyStock.run(item.baseQuantity, item.product_id);
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -720,41 +999,50 @@ export default function registerSalesInvoiceIPC() {
             reference_type: "sale",
             action: "update",
             type: "out",
-            quantity,
-            outPrice: price,
+            quantity: item.baseQuantity,
+            outPrice: item.basePrice,
             date: fullDateTime,
           });
         }
+
+        // ---- Update invoice header ----
+        const invoiceName =
+          data.invoice_name?.trim() || oldInvoice.invoice_name;
 
         db.prepare(
           `
           UPDATE sales_invoices
           SET customer_id = ?,
               invoice_name = ?,
-              description = ?,             
+              description = ?,
               date = ?,
               subtotal = ?,
               discount = ?,
+              discount_rate = ?,
               tax = ?,
-              net_total = ?,
+              taxRate = ?,
               taxValue = ?,
+              net_total = ?,
               updated_by = ?
           WHERE id = ?
         `
         ).run(
           newCustomerId,
           invoiceName,
-          data.description || null,
+          data.description?.trim() || null,
           fullDateTime,
-          newSubtotal,
-          discount,
-          taxId,
-          newNetTotal,
-          taxValue,
+          subtotal,
+          invoiceDiscount,
+          invoiceDiscountRate,
+          invoiceTaxId,
+          invoiceTaxRate,
+          invoiceTaxValue,
+          netTotal,
           data.updated_by,
           data.id
         );
 
+        // ---- Party history ----
         if (oldCustomerId && oldCustomerId === newCustomerId) {
           db.prepare(
             `
@@ -762,7 +1050,7 @@ export default function registerSalesInvoiceIPC() {
             SET amount = ?, date = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
           `
-          ).run(newNetTotal, fullDateTime, invoiceName, data.id);
+          ).run(netTotal, fullDateTime, invoiceName, data.id);
         } else {
           if (oldCustomerId) {
             db.prepare(
@@ -781,7 +1069,7 @@ export default function registerSalesInvoiceIPC() {
               invoice_type: "sales",
               record_type: "invoice",
               movement_type: "increase",
-              amount: newNetTotal,
+              amount: netTotal,
               date: fullDateTime,
               note: invoiceName,
             });

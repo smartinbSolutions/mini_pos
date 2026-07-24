@@ -1,16 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { Printer, ArrowLeft, Receipt, HandCoins } from "lucide-react";
+import {
+  Printer,
+  ArrowLeft,
+  Receipt,
+  HandCoins,
+  Tag,
+  Percent,
+  StickyNote,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
-import { formatMoney } from "../../../../Global/FormatNumber";
 import { useTranslation } from "react-i18next";
 import GoTo from "../../../../Global/GoTo";
+import FormattedDate from "../../../../Global/FormattedDate";
+import HoverTooltip from "../../../../Global/HoverTooltip";
 
 const STATUS_CONFIG = {
-  paid: { bg: "bg-green-100", text: "text-green-700" },
-  partial: { bg: "bg-amber-100", text: "text-amber-700" },
-  unpaid: { bg: "bg-red-100", text: "text-red-600" },
+  paid: { bg: "bg-emerald-50", text: "text-emerald-600" },
+  partial: { bg: "bg-amber-50", text: "text-amber-600" },
+  unpaid: { bg: "bg-slate-100", text: "text-slate-500" },
 };
+
+const panelClass =
+  "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
+
+function AccentRule({ colorClass }) {
+  return <div className={`absolute inset-x-0 top-0 h-[3px] ${colorClass}`} />;
+}
 
 export default function PurchaseInvoiceView() {
   const { t } = useTranslation();
@@ -52,13 +68,6 @@ export default function PurchaseInvoiceView() {
     };
   }, [id]);
 
-  const formatDate = (value) => {
-    if (!value) return "-";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "-";
-    return date.toLocaleDateString();
-  };
-
   const items = invoice?.items || [];
   const allocations = invoice?.allocations || [];
   const status = invoice?.status || "unpaid";
@@ -71,9 +80,22 @@ export default function PurchaseInvoiceView() {
         ? t("ui.partial")
         : t("ui.unpaidStatus");
 
+  const itemTaxTotal = items.reduce(
+    (sum, item) => sum + Number(item.taxValue || 0),
+    0
+  );
+  const itemDiscountTotal = items.reduce(
+    (sum, item) => sum + Number(item.discount || 0),
+    0
+  );
+  const invoiceDiscount = Number(invoice?.discount || 0);
+  const invoiceTaxValue = Number(invoice?.taxValue || 0);
+  const totalDiscount = itemDiscountTotal + invoiceDiscount;
+  const totalTax = itemTaxTotal + invoiceTaxValue;
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
+      <div className="flex min-h-screen items-center justify-center bg-[#f6f8fd] text-sm font-bold text-slate-400">
         {t("screens.invoices.loadingInvoice")}
       </div>
     );
@@ -81,188 +103,348 @@ export default function PurchaseInvoiceView() {
 
   if (!invoice) {
     return (
-      <div className="p-6 text-red-500">{t("screens.invoices.notFound")}</div>
+      <div className="flex min-h-screen items-center justify-center bg-[#f6f8fd] p-6 text-sm font-bold text-red-500">
+        {t("screens.invoices.notFound")}
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900 print:bg-white">
-      <div className="mx-auto max-w-5xl">
-        <div className="print:hidden mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-[#f6f8fd] p-5 text-slate-900 print:bg-white">
+      <div className="mx-auto max-w-5xl space-y-4">
+        <div className="flex items-center justify-between print:hidden">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 hover:bg-[#eef3ff]"
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={14} />
             {t("common.back")}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+          >
+            <Printer size={14} />
+            {t("common.print", "Print")}
           </button>
         </div>
 
-        <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(70,99,255,0.14)] print:rounded-none print:border-none print:shadow-none">
-          <div className="grid gap-6 bg-[#f8faff] p-7 md:grid-cols-[1fr_auto]">
-            <div className="flex items-center gap-4">
-              <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#4663ff] text-white">
-                <Receipt size={24} />
+        <div className="overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_12px_40px_rgba(70,99,255,0.10)] print:rounded-none print:border-none print:shadow-none">
+          {/* Header */}
+          <div className="grid gap-4 border-b border-[#eef1ff] bg-[#f6f8fd] p-5 md:grid-cols-[1fr_auto]">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25">
+                <Receipt size={20} />
               </span>
               <div>
-                <p className="text-xs uppercase  text-[#4663ff]">
+                <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
                   {t("screens.invoices.purchaseInvoice")}
                 </p>
-                <h1 className="text-3xl  text-slate-950">
+                <h1 className="text-xl font-black leading-tight text-slate-950">
                   {t("ui.invoice")} #{invoice.id}
                 </h1>
-                <p className="text-sm text-slate-500">
-                  {t("screens.invoices.invoiceDate", {
-                    date: formatDate(invoice.date),
-                  })}
+                <p className="text-xs text-slate-500">
+                  <FormattedDate value={invoice.date} />
                 </p>
               </div>
             </div>
 
             <div className="text-left md:text-right">
-              <p className="text-lgtext-slate-950">
+              <p className="text-base font-black text-slate-950">
                 {invoice.supplier_name || "-"}
               </p>
-              <p className="text-sm text-slate-500">{t("ui.supplier")}</p>
+              <p className="text-xs text-slate-500">{t("ui.supplier")}</p>
               <span
-                className={`mt-3 inline-block rounded-full px-3 py-1 text-xs  ${statusStyle.bg} ${statusStyle.text}`}
+                className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${statusStyle.bg} ${statusStyle.text}`}
               >
                 {statusLabel}
               </span>
             </div>
           </div>
 
-          <div className="p-7">
-            <div className="overflow-x-auto rounded-2xl border border-[#e5ebff]">
-              <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                  <tr>
-                    <th className="p-3 text-center">{t("ui.product")}</th>
-                    <th className="p-3 text-center">{t("ui.price")}</th>
-                    <th className="p-3 text-center">{t("ui.qty")}</th>
-                    <th className="p-3 text-center">{t("ui.total")}</th>
-                  </tr>
-                </thead>
+          <div className="space-y-4 p-5">
+            {invoice.description && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50/40 px-3.5 py-2.5 text-xs font-medium text-slate-600">
+                <StickyNote
+                  size={14}
+                  className="mt-0.5 shrink-0 text-amber-500"
+                />
+                {invoice.description}
+              </div>
+            )}
 
-                <tbody className="divide-y divide-[#e5ebff]">
-                  {items.length === 0 ? (
+            {/* Items */}
+            <div className={panelClass}>
+              <AccentRule colorClass="bg-violet-500" />
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead className="bg-[#f8faff] text-[11px] font-bold uppercase tracking-wide text-slate-400">
                     <tr>
-                      <td
-                        className="p-5 text-center text-slate-500"
-                        colSpan={4}
-                      >
-                        {t("screens.invoices.noItems")}
-                      </td>
+                      <th className="p-3 text-right">{t("ui.product")}</th>
+                      <th className="p-3 text-right">{t("ui.qty")}</th>
+                      <th className="p-3 text-right">{t("ui.price")}</th>
+                      <th className="p-3 text-right">
+                        {t("screens.invoices.discountPercent")}
+                      </th>
+                      <th className="p-3 text-right">{t("ui.tax")}</th>
+                      <th className="p-3 text-right">{t("ui.total")}</th>
                     </tr>
-                  ) : (
-                    items.map((item) => (
-                      <tr key={item.id}>
-                        <td className="p-3 text-center">
-                          {item.product_name || item.name || "-"}
+                  </thead>
+
+                  <tbody className="divide-y divide-[#eef1ff]">
+                    {items.length === 0 ? (
+                      <tr>
+                        <td
+                          className="p-6 text-center text-sm text-slate-400"
+                          colSpan={6}
+                        >
+                          {t("screens.invoices.noItems")}
                         </td>
-                        <td className="p-3 text-center">{money(item.price)}</td>
-                        <td className="p-3 text-center">
-                          {Number(item.quantity || 0)}
-                        </td>
-                        <td className="p-3 text-center">{money(item.total)}</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      items.map((item) => {
+                        const isNonBaseUnit =
+                          item.unit_conversion_factor &&
+                          Number(item.unit_conversion_factor) !== 1;
+                        const afterDiscount =
+                          Number(item.total || 0) - Number(item.discount || 0);
+                        const lineTotal =
+                          afterDiscount + Number(item.taxValue || 0);
+
+                        return (
+                          <tr key={item.id} className="align-top">
+                            <td className="p-3">
+                              <div className="font-bold text-slate-900">
+                                {item.product_name || item.name || "-"}
+                              </div>
+                              {isNonBaseUnit && (
+                                <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                                  <Tag size={11} className="shrink-0" />
+                                  {t("screens.invoices.unitConversionDetail", {
+                                    enteredQty: (
+                                      Number(item.quantity) /
+                                      Number(item.unit_conversion_factor)
+                                    ).toFixed(2),
+                                    unitName: item.unit_name,
+                                    factor: item.unit_conversion_factor,
+                                    baseQty: item.quantity,
+                                  })}
+                                </div>
+                              )}
+                              {item.description && (
+                                <div className="mt-1 flex items-start gap-1 text-[11px] font-medium text-amber-600">
+                                  <StickyNote
+                                    size={11}
+                                    className="mt-0.5 shrink-0"
+                                  />
+                                  {item.description}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 text-right tabular-nums text-slate-700">
+                              {Number(item.quantity || 0)}
+                              {item.unit_name && (
+                                <span className="ml-1 text-[11px] text-slate-400">
+                                  {item.unit_name}
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right tabular-nums text-slate-700">
+                              {money(item.price)}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {Number(item.discount || 0) > 0 ? (
+                                <HoverTooltip
+                                  trigger={
+                                    <span className="font-bold text-red-500">
+                                      -{money(item.discount)}
+                                    </span>
+                                  }
+                                  content={
+                                    <div className="flex justify-between">
+                                      <span>{t("ui.discount")}</span>
+                                      <span className="font-bold text-red-500">
+                                        {item.discount_rate}%
+                                      </span>
+                                    </div>
+                                  }
+                                />
+                              ) : (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right tabular-nums">
+                              {Number(item.taxValue || 0) > 0 ? (
+                                <HoverTooltip
+                                  trigger={
+                                    <span className="font-bold text-emerald-600">
+                                      +{money(item.taxValue)}
+                                    </span>
+                                  }
+                                  content={
+                                    <div className="flex justify-between">
+                                      <span>
+                                        {item.tax_name || t("ui.tax")}
+                                      </span>
+                                      <span className="font-bold text-emerald-600">
+                                        {item.tax_rate}%
+                                      </span>
+                                    </div>
+                                  }
+                                />
+                              ) : (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right font-black tabular-nums text-[#4663ff]">
+                              {money(lineTotal)}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div className="mt-6 flex flex-col-reverse gap-6 lg:flex-row lg:justify-between">
-              {/* PAYMENT HISTORY */}
-              <div className="flex-1">
-                <h3 className="mb-3 flex items-center gap-2 text-sm f text-slate-700">
-                  <HandCoins size={16} className="text-[#4663ff]" />
-                  {t("screens.invoices.paymentHistory")}
-                </h3>
+            <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2">
+              {/* Payment history */}
+              <div className={`${panelClass}`}>
+                <AccentRule colorClass="bg-amber-500" />
+                <div className="p-4">
+                  <h3 className="mb-3 flex items-center gap-1.5 text-[13px] font-black text-slate-900">
+                    <HandCoins size={14} className="text-amber-600" />
+                    {t("screens.invoices.paymentHistory")}
+                  </h3>
 
-                {allocations.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-[#dbe4ff] p-5 text-center text-sm text-slate-400">
-                    {t("screens.invoices.noPayments")}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {allocations.map((alloc) => (
-                      <div
-                        key={alloc.id}
-                        className="flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-[#f8faff] px-4 py-3 text-sm"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2 font-bold text-slate-800">
-                            <GoTo type="fund" id={alloc.fund_id}>
-                              {alloc.fund_name || "-"}
-                            </GoTo>
+                  {allocations.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs font-semibold text-slate-400">
+                      {t("screens.invoices.noPayments")}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {allocations.map((alloc) => (
+                        <div
+                          key={alloc.id}
+                          className="flex items-center justify-between rounded-xl border border-[#eef1ff] bg-[#f8faff] px-3 py-2.5 text-sm"
+                        >
+                          <div>
+                            <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                              <GoTo type="fund" id={alloc.fund_id}>
+                                {alloc.fund_name || "-"}
+                              </GoTo>
+                            </div>
+                            <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                              <FormattedDate value={alloc.date} /> ·{" "}
+                              <GoTo type="payment" id={alloc.payment_id}>
+                                {t("ui.payment")} #{alloc.payment_id}
+                              </GoTo>
+                            </div>
                           </div>
-                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
-                            {formatDate(alloc.date)} ·{" "}
-                            <GoTo type="payment" id={alloc.payment_id}>
-                              {t("ui.payment")} #{alloc.payment_id}
-                            </GoTo>
+                          <div className="font-bold tabular-nums text-emerald-700">
+                            {money(alloc.amount)}
                           </div>
                         </div>
-                        <div className="tabular-nums text-emerald-700">
-                          {money(alloc.amount)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* TOTALS */}
-              <div className="w-full max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5 lg:w-80">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">{t("ui.subtotal")}</span>
-                  <span className="font-bold">{money(invoice.subtotal)}</span>
-                </div>
-                {invoice.discount > 0 ? (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">{t("ui.discount")}</span>
-                    <span>-{money(invoice.discount)}</span>
+              {/* Totals */}
+              <div className={`${panelClass}`}>
+                <AccentRule colorClass="bg-emerald-500" />
+                <div className="space-y-2.5 p-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">{t("ui.subtotal")}</span>
+                    <span className="font-bold tabular-nums">
+                      {money(invoice.subtotal)}
+                    </span>
                   </div>
-                ) : (
-                  ""
-                )}
-                {invoice.taxValue > 0 ? (
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">{t("ui.tax")}</span>
-                    <span>{money(invoice.taxValue)}</span>
-                  </div>
-                ) : (
-                  ""
-                )}
-                <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl ">
-                  <span>{t("ui.total")}</span>
-                  <span className="text-[#4663ff]">
-                    {money(invoice.net_total)}
-                  </span>
-                </div>
 
-                {status !== "unpaid" && (
-                  <>
-                    <div className="flex justify-between border-t border-dashed border-[#dbe4ff] pt-3 text-sm">
-                      <span className="text-slate-500">{t("ui.paid")}</span>
-                      <span className="font-bold text-emerald-700">
-                        {money(invoice.paid_amount)}
+                  {itemDiscountTotal > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">
+                        {t("screens.invoices.itemDiscount")}
+                      </span>
+                      <span className="font-bold tabular-nums text-red-500">
+                        -{money(itemDiscountTotal)}
                       </span>
                     </div>
-                    {status === "partial" && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500">
-                          {t("ui.remaining")}
-                        </span>
-                        <span className="font-bold text-amber-600">
-                          {money(invoice.remaining_amount)}
+                  )}
+
+                  {invoiceDiscount > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">
+                        {t("screens.invoices.invoiceDiscount")}
+                        {invoice.discount_rate
+                          ? ` (${invoice.discount_rate}%)`
+                          : ""}
+                      </span>
+                      <span className="font-bold tabular-nums text-red-500">
+                        -{money(invoiceDiscount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {itemTaxTotal > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">
+                        {t("screens.invoices.itemTax")}
+                      </span>
+                      <span className="font-bold tabular-nums text-emerald-600">
+                        +{money(itemTaxTotal)}
+                      </span>
+                    </div>
+                  )}
+
+                  {invoiceTaxValue > 0 && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">
+                        {t("screens.invoices.invoiceTax")}
+                        {invoice.tax_name ? ` (${invoice.tax_name})` : ""}
+                        {invoice.taxRate ? ` ${invoice.taxRate}%` : ""}
+                      </span>
+                      <span className="font-bold tabular-nums text-emerald-600">
+                        +{money(invoiceTaxValue)}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between rounded-xl bg-[#f6f8fd] px-3 py-2.5">
+                    <span className="text-xs font-black text-slate-700">
+                      {t("ui.total")}
+                    </span>
+                    <span className="text-lg font-black tabular-nums text-[#4663ff]">
+                      {money(invoice.net_total)}
+                    </span>
+                  </div>
+
+                  {status !== "unpaid" && (
+                    <>
+                      <div className="flex justify-between border-t border-dashed border-slate-200 pt-2.5 text-xs">
+                        <span className="text-slate-500">{t("ui.paid")}</span>
+                        <span className="font-bold tabular-nums text-emerald-700">
+                          {money(invoice.paid_amount)}
                         </span>
                       </div>
-                    )}
-                  </>
-                )}
+                      {status === "partial" && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-500">
+                            {t("ui.remaining")}
+                          </span>
+                          <span className="font-bold tabular-nums text-amber-600">
+                            {money(invoice.remaining_amount)}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

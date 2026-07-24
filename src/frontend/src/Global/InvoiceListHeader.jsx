@@ -41,7 +41,6 @@ export default function InvoiceListHeader({
   addLabel,
   addIcon: AddIcon,
   onAdd,
-  // Filter support — generic so Expense/Purchase/Sales can each pass their own fields
   filters,
   onFilterChange,
   onClearFilters,
@@ -86,49 +85,51 @@ export default function InvoiceListHeader({
         : "md:grid-cols-2 lg:grid-cols-3";
 
   return (
-    <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
-      <div className="grid gap-6 p-7 lg:grid-cols-[1fr_460px] lg:items-center">
+    <section className="overflow-hidden rounded-2xl border border-white/80 bg-white/80 shadow-[0_12px_40px_rgba(70,99,255,0.10)] backdrop-blur">
+      <div className="grid gap-4 p-4 lg:grid-cols-2 lg:items-center">
         <div>
           {badgeLabel && (
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#eef3ff] px-3 py-1">
-              {BadgeIcon && <BadgeIcon size={12} className="text-[#4663ff]" />}
-              <span className="text-xs font-bold uppercase  text-[#4663ff]">
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#eef3ff] px-2.5 py-0.5">
+              {BadgeIcon && <BadgeIcon size={11} className="text-[#4663ff]" />}
+              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4663ff]">
                 {badgeLabel}
               </span>
             </div>
           )}
-          <h1 className="text-4xl font-black leading-tight text-slate-950">
+          <h1 className="text-2xl font-black leading-tight text-slate-950">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+            <p className="mt-1.5 max-w-md text-xs leading-5 text-slate-500">
               {subtitle}
             </p>
           )}
         </div>
 
-        <div className={`grid gap-2.5 ${gridColsClass}`}>
+        <div className={`grid gap-2 ${gridColsClass}`}>
           {stats.map((stat, i) => {
             const variant = VARIANTS[stat.variant || "blue"];
             const StatIcon = stat.icon;
             return (
               <div
                 key={i}
-                className={`rounded-2xl border ${variant.border} ${variant.bg} px-3 py-3.5`}
+                className={`rounded-xl border ${variant.border} ${variant.bg} px-2.5 py-2.5`}
               >
                 {StatIcon ? (
-                  <StatIcon size={16} className={`mb-2 ${variant.icon}`} />
+                  <StatIcon size={13} className={`mb-1.5 ${variant.icon}`} />
                 ) : (
-                  <div className={`mb-2 text-xs font-black ${variant.icon}`}>
+                  <div
+                    className={`mb-1.5 text-[10px] font-black ${variant.icon}`}
+                  >
                     {stat.eyebrow}
                   </div>
                 )}
                 <div
-                  className={`text-xl font-black tabular-nums ${variant.value}`}
+                  className={`text-base font-black tabular-nums ${variant.value}`}
                 >
                   {stat.value}
                 </div>
-                <div className="text-[11px] font-semibold text-slate-500">
+                <div className="text-[10px] font-semibold text-slate-500">
                   {stat.label}
                 </div>
               </div>
@@ -137,16 +138,16 @@ export default function InvoiceListHeader({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-[#e5ebff] bg-white/60 p-5 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-2 border-t border-[#e5ebff] bg-white/60 p-3.5 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search
-            size={18}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
           />
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-12 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 pl-11 pr-4 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10"
+            className="h-9 w-full rounded-xl border border-[#dbe4ff] bg-white/90 pl-9 pr-3 text-xs outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12"
             placeholder={searchPlaceholder}
           />
         </div>
@@ -154,15 +155,15 @@ export default function InvoiceListHeader({
         {filterFields.length > 0 && (
           <button
             onClick={() => setShowFilters((prev) => !prev)}
-            className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${
+            className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
               showFilters || hasActiveFilters
                 ? "border-[#4663ff] bg-[#eef3ff] text-[#4663ff]"
                 : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff] hover:text-[#4663ff]"
             }`}
           >
-            <SlidersHorizontal size={16} />
+            <SlidersHorizontal size={14} />
             {hasActiveFilters && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#4663ff] text-[10px] font-black text-white">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#4663ff] text-[9px] font-black text-white">
                 {activeEntries.length}
               </span>
             )}
@@ -171,31 +172,29 @@ export default function InvoiceListHeader({
 
         <button
           onClick={onRefresh}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:border-[#cbd7ff] hover:bg-[#eef3ff] hover:text-[#4663ff]"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#dbe4ff] bg-white px-3 text-xs font-bold text-slate-600 transition hover:border-[#cbd7ff] hover:bg-[#eef3ff] hover:text-[#4663ff]"
         >
-          <RefreshCw size={16} />
+          <RefreshCw size={14} />
         </button>
 
         {onAdd && (
           <button
             onClick={onAdd}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-xs font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
           >
-            {AddIcon && <AddIcon size={16} />}
+            {AddIcon && <AddIcon size={14} />}
             {addLabel}
           </button>
         )}
       </div>
 
-      {/* Active filter chips — always visible when filters are applied,
-          independent of whether the filter panel itself is expanded */}
       {hasActiveFilters && (
-        <div className="flex flex-wrap items-center gap-2 border-t border-[#e5ebff] bg-white/40 px-5 py-3.5">
-          <Filter size={13} className="shrink-0 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-[#e5ebff] bg-white/40 px-3.5 py-2.5">
+          <Filter size={12} className="shrink-0 text-slate-400" />
           {activeEntries.map((entry) => (
             <span
               key={entry.name}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#dbe4ff] bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm"
+              className="inline-flex items-center gap-1 rounded-full border border-[#dbe4ff] bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm"
             >
               <span className="text-slate-400">{entry.label}:</span>
               <span className="font-bold text-[#4663ff]">{entry.value}</span>
@@ -203,7 +202,7 @@ export default function InvoiceListHeader({
                 onClick={() => onFilterChange(entry.name, "")}
                 className="ms-0.5 rounded-full p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
               >
-                <X size={12} />
+                <X size={11} />
               </button>
             </span>
           ))}
@@ -211,9 +210,9 @@ export default function InvoiceListHeader({
           {onClearFilters && (
             <button
               onClick={onClearFilters}
-              className="ms-1 inline-flex items-center gap-1 text-xs font-bold text-red-500 transition hover:text-red-600"
+              className="ms-1 inline-flex items-center gap-1 text-[11px] font-bold text-red-500 transition hover:text-red-600"
             >
-              <X size={12} />
+              <X size={11} />
               {clearLabel}
             </button>
           )}
@@ -222,7 +221,7 @@ export default function InvoiceListHeader({
 
       {showFilters && filterFields.length > 0 && (
         <div
-          className={`grid grid-cols-2 gap-4 border-t border-[#e5ebff] bg-white/60 p-5 ${filterGridColsClass}`}
+          className={`grid grid-cols-2 gap-3 border-t border-[#e5ebff] bg-white/60 p-3.5 ${filterGridColsClass}`}
         >
           {filterFields.map((field) => {
             const isActive =
@@ -230,11 +229,11 @@ export default function InvoiceListHeader({
               filters?.[field.name] !== undefined &&
               filters?.[field.name] !== "";
 
-            const fieldWrapperClass = "flex flex-col gap-1.5";
-            const labelClass = `text-[11px] font-bold uppercase  ${
+            const fieldWrapperClass = "flex flex-col gap-1";
+            const labelClass = `text-[10px] font-bold uppercase tracking-wide ${
               isActive ? "text-[#4663ff]" : "text-slate-400"
             }`;
-            const inputBaseClass = `h-11 rounded-xl border bg-white px-3 text-sm outline-none transition focus:ring-4 focus:ring-[#4663ff]/10 ${
+            const inputBaseClass = `h-9 rounded-lg border bg-white px-2.5 text-xs outline-none transition focus:ring-[3px] focus:ring-[#4663ff]/12 ${
               isActive
                 ? "border-[#4663ff]/40 bg-[#f8faff]"
                 : "border-[#dbe4ff] focus:border-[#4663ff]"
@@ -269,7 +268,6 @@ export default function InvoiceListHeader({
               );
             }
 
-            // select
             return (
               <div key={field.name} className={fieldWrapperClass}>
                 <label className={labelClass}>{field.label}</label>
