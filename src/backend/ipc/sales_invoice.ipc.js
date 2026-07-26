@@ -226,15 +226,13 @@ export default function registerSalesInvoiceIPC() {
         const invoiceResult = db
           .prepare(
             `
-            INSERT INTO sales_invoices
-            (
-              customer_id, invoice_name, description, date,
-              subtotal, discount, discount_rate,
-              tax, taxRate, taxValue,
-              net_total, created_by
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `
+          INSERT INTO sales_invoices
+            (customer_id, invoice_name, description, channel, date,
+             subtotal, discount, discount_rate,
+             tax, taxRate, taxValue,
+             created_by, updated_by, net_total)
+          VALUES (?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `
           )
           .run(
             data.customer_id || null,
@@ -247,8 +245,9 @@ export default function registerSalesInvoiceIPC() {
             invoiceTaxId,
             invoiceTaxRate,
             invoiceTaxValue,
-            netTotal,
-            data.created_by || ""
+            data.created_by || null,
+            null, // updated_by — nothing to set at creation time
+            netTotal
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -409,6 +408,10 @@ export default function registerSalesInvoiceIPC() {
     if (params.customerId) {
       whereConditions.push("s.customer_id = ?");
       whereParams.push(params.customerId);
+    }
+    if (params.channel) {
+      whereConditions.push("s.channel = ?");
+      whereParams.push(params.channel);
     }
     if (
       params.minTotal !== undefined &&
@@ -799,6 +802,10 @@ export default function registerSalesInvoiceIPC() {
           throw new Error("SALES INVOICE NOT FOUND");
         }
 
+        if (oldInvoice.channel === "pos") {
+          throw new Error("CANNOT_MODIFY_POS_INVOICE");
+        }
+
         const hasReturn = db
           .prepare(
             `
@@ -1185,184 +1192,332 @@ export default function registerSalesInvoiceIPC() {
 
   // POS CHECKOUT
   ipcMain.handle("pos-checkout", (event, data) => {
-    const roundCents = (value) => Math.round(Number(value || 0) * 100) / 100;
-    const payments = Array.isArray(data.payments)
-      ? data.payments
-          .map((payment) => ({
-            fundId: Number(payment.fundId || payment.fund_id),
-            amount: Number(payment.amount || 0),
-            amountFundCurrency: Number(
-              payment.amount_fund_currency ||
-                payment.amountFundCurrency ||
-                payment.paymentInfundCurrency ||
-                0
-            ),
-            currencyCode: payment.currency_code,
-            exchangeRate: Number(payment.exchange_rate || 1) || 1,
-          }))
-          .filter(
-            (payment) =>
-              payment.fundId &&
-              payment.amount > 0 &&
-              payment.amountFundCurrency > 0
-          )
-      : [];
+    try {
+      const transaction = db.transaction(() => {
+        if (!Array.isArray(data.items) || data.items.length === 0) {
+          throw new Error("ERROR ENTER DATA");
+        }
 
-    if (!payments.length && data.fund_id && data.paymentInfundCurrency) {
-      payments.push({
-        fundId: Number(data.fund_id),
-        amount: Number(data.net_total || 0),
-        amountFundCurrency: Number(data.paymentInfundCurrency || 0),
-        currencyCode: data.currency_code,
-        exchangeRate: Number(data.exchange_rate || 1) || 1,
-      });
-    }
+        const rawDate = data.date || new Date().toISOString();
+        const dateOnly = rawDate.slice(0, 10);
+        const time = new Date().toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
 
-    const paidTotal = roundCents(
-      payments.reduce((sum, payment) => sum + payment.amount, 0)
-    );
-    const invoiceTotal = Number(data.net_total || 0);
+        // ---- Invoice-level tax — never trust a client-sent rate ----
+        const invoiceTaxId = data.tax || null;
+        let invoiceTaxRate = 0;
 
-    if (!payments.length || Math.abs(paidTotal - invoiceTotal) > 0.01) {
-      throw new Error("POS payments must exactly cover invoice total");
-    }
+        if (invoiceTaxId) {
+          const taxRow = db
+            .prepare(
+              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+            )
+            .get(invoiceTaxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          invoiceTaxRate = Number(taxRow.rate || 0);
+        }
 
-    const rawDate = data.date || new Date().toISOString();
-    const dateOnly = rawDate.slice(0, 10);
-    const time = new Date().toTimeString().slice(0, 8);
-    const fullDateTime = `${dateOnly} ${time}`;
+        const invoiceDiscountRate = Number(data.discount_rate || 0);
 
-    const insertInvoice = db.prepare(`
-      INSERT INTO sales_invoices
-      (customer_id, invoice_name, description, date, subtotal, discount, tax, net_total, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+        // ---- Per-item cascade — identical to create-sales-invoice ----
+        const preparedItems = [];
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        let itemTaxTotal = 0;
 
-    const insertItem = db.prepare(`
-      INSERT INTO sales_invoice_items
-      (invoice_id, product_id, quantity, price, buyingPrice, total)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
+        for (const item of data.items) {
+          const enteredQuantity = Number(
+            item.entered_quantity ?? item.qty ?? 0
+          );
+          const enteredPrice = Number(item.entered_price ?? item.price ?? 0);
+          const factor = Number(item.unit_conversion_factor || 1);
 
-    const updateStock = db.prepare(`
-      UPDATE products SET quantity = quantity - ? WHERE id = ?
-    `);
+          if (!item.product_id && !item.id) {
+            throw new Error("INVALID ITEM DATA");
+          }
+          const productId = item.product_id || item.id;
 
-    const transaction = db.transaction(() => {
-      const invoiceResult = insertInvoice.run(
-        data.customer_id || null,
-        data.invoice_name?.trim() || null,
-        data.description || null,
-        fullDateTime,
-        data.subtotal || 0,
-        data.discount || 0,
-        data.tax_rate || 0,
-        data.net_total || 0,
-        data.created_by || null
-      );
+          if (enteredQuantity <= 0 || enteredPrice < 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
 
-      const invoiceId = invoiceResult.lastInsertRowid;
+          const baseQuantity = enteredQuantity * factor;
+          const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
+          const total = enteredQuantity * enteredPrice;
 
-      let invoiceName = data.invoice_name?.trim();
-      if (!invoiceName) {
-        invoiceName = buildDefaultInvoiceName(db, "sales", invoiceId);
-        db.prepare(
-          `UPDATE sales_invoices SET invoice_name = ? WHERE id = ?`
-        ).run(invoiceName, invoiceId);
-      }
+          const discountRate = Number(item.discount_rate || 0);
+          const discount = Number(((total * discountRate) / 100).toFixed(2));
+          const afterDiscount = total - discount;
 
-      for (const item of data.items) {
-        const quantity = Number(item.qty || 0);
-        const price = Number(item.price || 0);
-        const total = quantity * price;
-        insertItem.run(
-          invoiceId,
-          item.id,
-          quantity,
-          price,
-          item.costPrice,
-          total
+          let taxId = null;
+          let taxRate = 0;
+
+          if (item.tax_id) {
+            const taxRow = db
+              .prepare(
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+              )
+              .get(item.tax_id);
+            if (!taxRow) {
+              throw new Error("INVALID_ITEM_TAX_ID");
+            }
+            taxId = item.tax_id;
+            taxRate = Number(taxRow.rate || 0);
+          }
+
+          const taxValue = Number(((afterDiscount * taxRate) / 100).toFixed(2));
+
+          subtotal += total;
+          itemDiscountTotal += discount;
+          itemTaxTotal += taxValue;
+
+          // buyingPrice — re-derived server-side from the product's current
+          // cost, never trusted from the client (item.costPrice previously
+          // came straight from the cart, which is exactly what this fixes).
+          const productRow = db
+            .prepare(`SELECT costPrice FROM products WHERE id = ?`)
+            .get(productId);
+          const buyingPrice = Number(productRow?.costPrice || 0);
+
+          preparedItems.push({
+            product_id: productId,
+            product_name: item.name || null,
+            unit_name: item.unit_name || null,
+            unit_conversion_factor: factor,
+            baseQuantity,
+            basePrice,
+            buyingPrice,
+            total,
+            discount_rate: discountRate,
+            discount,
+            tax_id: taxId,
+            tax_rate: taxRate,
+            taxValue,
+            description: item.description || null,
+          });
+        }
+
+        subtotal = Number(subtotal.toFixed(2));
+        itemDiscountTotal = Number(itemDiscountTotal.toFixed(2));
+        itemTaxTotal = Number(itemTaxTotal.toFixed(2));
+
+        if (subtotal <= 0) {
+          throw new Error("INVALID TOTALS");
+        }
+
+        const afterItemDiscounts = subtotal - itemDiscountTotal;
+
+        const invoiceDiscount = Number(
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
         );
-        updateStock.run(quantity, item.id);
+        const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
-        createProductMovement(db, {
-          product_id: item.id,
-          reference_id: invoiceId,
-          reference_type: "sale",
-          type: "out",
-          action: "create",
-          quantity,
-          outPrice: price,
-          date: fullDateTime,
-        });
-      }
+        const invoiceTaxValue = Number(
+          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        );
 
-      if (data.customer_id) {
-        createPartyHistory(db, {
-          party_type: "customer",
-          party_id: data.customer_id,
-          invoice_id: invoiceId,
-          invoice_type: "sales",
-          record_type: "invoice",
-          movement_type: "increase",
-          amount: data.net_total,
-          date: fullDateTime,
-          note: invoiceName,
-        });
-      }
+        const netTotal = Number(
+          Math.max(
+            0,
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+          ).toFixed(2)
+        );
 
-      for (const payment of payments) {
-        const paymentId = createPayment(db, {
-          type: "income",
-          party_type: data.customer_id ? "customer" : "walk-in",
-          party_id: data.customer_id || null,
-          fund_id: payment.fundId,
-          amount: payment.amount,
-          amount_fund_currency: payment.amountFundCurrency,
-          currency_code: payment.currencyCode,
-          exchange_rate: payment.exchangeRate,
-          effective_rate: payment.exchangeRate,
-          invoice_id: invoiceId,
-          invoice_type: "sales",
-          note: invoiceName,
-          fundOperation: "add",
-          date: fullDateTime,
-        });
+        // ---- Payments — multi-fund, POS-specific (unlike single-payment
+        // manual flow), but now validated against the SERVER's netTotal,
+        // not the client-sent data.net_total ----
+        const roundCents = (value) =>
+          Math.round(Number(value || 0) * 100) / 100;
 
-        createFundHistory(db, {
-          fund_id: payment.fundId,
-          record_type: "payment",
-          payment_id: paymentId,
-          movement_type: "in",
-          amount: payment.amountFundCurrency,
-          date: fullDateTime,
-          note: buildDefaultPaymentNote(db, "payment", invoiceName),
-        });
+        const payments = Array.isArray(data.payments)
+          ? data.payments
+              .map((payment) => ({
+                fundId: Number(payment.fundId || payment.fund_id),
+                amount: Number(payment.amount || 0),
+                amountFundCurrency: Number(
+                  payment.amount_fund_currency ||
+                    payment.amountFundCurrency ||
+                    payment.paymentInfundCurrency ||
+                    0
+                ),
+                currencyCode: payment.currency_code,
+                exchangeRate: Number(payment.exchange_rate || 1) || 1,
+              }))
+              .filter(
+                (payment) =>
+                  payment.fundId &&
+                  payment.amount > 0 &&
+                  payment.amountFundCurrency > 0
+              )
+          : [];
 
+        if (!payments.length && data.fund_id && data.paymentInfundCurrency) {
+          payments.push({
+            fundId: Number(data.fund_id),
+            amount: netTotal,
+            amountFundCurrency: Number(data.paymentInfundCurrency || 0),
+            currencyCode: data.currency_code,
+            exchangeRate: Number(data.exchange_rate || 1) || 1,
+          });
+        }
+
+        const paidTotal = roundCents(
+          payments.reduce((sum, payment) => sum + payment.amount, 0)
+        );
+
+        if (!payments.length || Math.abs(paidTotal - netTotal) > 0.01) {
+          throw new Error("POS payments must exactly cover invoice total");
+        }
+
+        // ---- Insert invoice header — full column set, channel = 'pos' ----
+        const invoiceResult = db
+          .prepare(
+            `
+            INSERT INTO sales_invoices
+            (
+              customer_id, invoice_name, description, channel, date,
+              subtotal, discount, discount_rate,
+              tax, taxRate, taxValue,
+              net_total, created_by
+            )
+            VALUES (?, ?, ?, 'pos', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `
+          )
+          .run(
+            data.customer_id || null,
+            data.invoice_name?.trim() || null,
+            data.description?.trim() || null,
+            fullDateTime,
+            subtotal,
+            invoiceDiscount,
+            invoiceDiscountRate,
+            invoiceTaxId,
+            invoiceTaxRate,
+            invoiceTaxValue,
+            netTotal,
+            data.created_by || null
+          );
+
+        const invoiceId = invoiceResult.lastInsertRowid;
+
+        let invoiceName = data.invoice_name?.trim();
+        if (!invoiceName) {
+          invoiceName = buildDefaultInvoiceName(db, "sales", invoiceId);
+          db.prepare(
+            `UPDATE sales_invoices SET invoice_name = ? WHERE id = ?`
+          ).run(invoiceName, invoiceId);
+        }
+
+        // ---- Insert items + reduce stock + record movements ----
+        const insertItem = db.prepare(`
+          INSERT INTO sales_invoice_items
+          (
+            invoice_id, product_id, quantity, price, buyingPrice, total,
+            product_name, unit_name, unit_conversion_factor,
+            tax_id, tax_rate, taxValue,
+            discount, discount_rate, description
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        const updateStock = db.prepare(`
+          UPDATE products SET quantity = quantity - ? WHERE id = ?
+        `);
+
+        for (const item of preparedItems) {
+          insertItem.run(
+            invoiceId,
+            item.product_id,
+            item.baseQuantity,
+            item.basePrice,
+            item.buyingPrice,
+            item.total,
+            item.product_name,
+            item.unit_name,
+            item.unit_conversion_factor,
+            item.tax_id,
+            item.tax_rate,
+            item.taxValue,
+            item.discount,
+            item.discount_rate,
+            item.description
+          );
+
+          updateStock.run(item.baseQuantity, item.product_id);
+
+          createProductMovement(db, {
+            product_id: item.product_id,
+            reference_id: invoiceId,
+            reference_type: "sale",
+            type: "out",
+            action: "create",
+            quantity: item.baseQuantity,
+            outPrice: item.basePrice,
+            date: fullDateTime,
+          });
+        }
+
+        // ---- Party history (only when a real customer is attached) ----
         if (data.customer_id) {
           createPartyHistory(db, {
             party_type: "customer",
             party_id: data.customer_id,
-            invoice_type: "payment",
-            record_type: "payment",
-            movement_type: "decrease",
-            payment_id: paymentId,
+            invoice_id: invoiceId,
+            invoice_type: "sales",
+            record_type: "invoice",
+            movement_type: "increase",
+            amount: netTotal,
+            date: fullDateTime,
+            note: invoiceName,
+          });
+        }
+
+        // ---- Payments, one per fund ----
+        const insertedPaymentIds = [];
+
+        for (const payment of payments) {
+          const paymentId = createPayment(db, {
+            type: "income",
+            party_type: data.customer_id ? "customer" : "walk-in",
+            party_id: data.customer_id || null,
+            fund_id: payment.fundId,
             amount: payment.amount,
+            amount_fund_currency: payment.amountFundCurrency,
+            currency_code: payment.currencyCode,
+            exchange_rate: payment.exchangeRate,
+            effective_rate: payment.exchangeRate,
+            invoice_id: invoiceId,
+            invoice_type: "sales",
+            note: invoiceName,
+            fundOperation: "add",
+            date: fullDateTime,
+          });
+
+          createFundHistory(db, {
+            fund_id: payment.fundId,
+            record_type: "payment",
+            payment_id: paymentId,
+            movement_type: "in",
+            amount: payment.amountFundCurrency,
             date: fullDateTime,
             note: buildDefaultPaymentNote(db, "payment", invoiceName),
           });
+
+          insertedPaymentIds.push(paymentId);
         }
-      }
 
-      return invoiceId;
-    });
+        return { invoiceId, invoiceName, paymentIds: insertedPaymentIds };
+      });
 
-    try {
-      const invoiceId = transaction();
-      return { success: true, invoiceId };
+      return { success: true, ...transaction() };
     } catch (err) {
-      console.error(err);
-      throw err;
+      return {
+        success: false,
+        error: err.message || String(err),
+        code: err.code,
+      };
     }
   });
 
@@ -1385,7 +1540,7 @@ export default function registerSalesInvoiceIPC() {
           'sale' AS type,
           NULL AS sales_invoice_id
         FROM sales_invoices s
-        WHERE DATE(s.date) = ? AND s.customer_id IS NULL
+        WHERE DATE(s.date) = ? AND s.channel = 'pos'
   
         UNION ALL
   
@@ -1398,7 +1553,7 @@ export default function registerSalesInvoiceIPC() {
           'return' AS type,
           r.sales_invoice_id
         FROM sales_returns r
-        WHERE DATE(r.date) = ? AND r.customer_id IS NULL
+        WHERE DATE(r.date) = ? AND r.channel = 'pos'
       )
       ORDER BY date DESC, id DESC
       LIMIT ? OFFSET ?
@@ -1410,8 +1565,8 @@ export default function registerSalesInvoiceIPC() {
       .prepare(
         `
         SELECT
-          (SELECT COUNT(*) FROM sales_invoices WHERE DATE(date) = ? AND customer_id IS NULL) +
-          (SELECT COUNT(*) FROM sales_returns WHERE DATE(date) = ? AND customer_id IS NULL) AS total
+          (SELECT COUNT(*) FROM sales_invoices WHERE DATE(date) = ? AND channel = 'pos') +
+          (SELECT COUNT(*) FROM sales_returns WHERE DATE(date) = ? AND channel = 'pos') AS total
         `
       )
       .get(date, date);
@@ -1421,7 +1576,7 @@ export default function registerSalesInvoiceIPC() {
         `
         SELECT COUNT(*) AS count, COALESCE(SUM(net_total), 0) AS total
         FROM sales_invoices
-        WHERE DATE(date) = ? AND customer_id IS NULL
+        WHERE DATE(date) = ? AND channel = 'pos'
         `
       )
       .get(date);
@@ -1431,7 +1586,7 @@ export default function registerSalesInvoiceIPC() {
         `
         SELECT COUNT(*) AS count, COALESCE(SUM(net_total), 0) AS total
         FROM sales_returns
-        WHERE DATE(date) = ? AND customer_id IS NULL
+        WHERE DATE(date) = ? AND channel = 'pos'
         `
       )
       .get(date);
@@ -1453,7 +1608,7 @@ export default function registerSalesInvoiceIPC() {
         JOIN sales_invoices s ON s.id = pa.invoice_id
         WHERE pa.invoice_type = 'sales'
           AND DATE(s.date) = ?
-          AND s.customer_id IS NULL
+          AND s.channel = 'pos'
         GROUP BY f.id, f.name, cur.code, cur.symbol
         ORDER BY amount DESC
         `
@@ -1477,16 +1632,15 @@ export default function registerSalesInvoiceIPC() {
         JOIN sales_returns r ON r.id = pa.invoice_id
         WHERE pa.invoice_type = 'sales_return'
           AND DATE(r.date) = ?
-          AND r.customer_id IS NULL
+          AND r.channel = 'pos'
         GROUP BY f.id, f.name, cur.code, cur.symbol
         ORDER BY amount DESC
         `
       )
       .all(date);
 
-    // Per-invoice fund allocations — batched for just the ids on this page,
-    // not one query per row. Grouped by invoice_id + fund so a single
-    // invoice split across two funds shows both lines.
+    // Per-invoice fund allocations — unchanged, batched for just the ids on
+    // this page, grouped by invoice_id + fund.
     const saleIds = rows.filter((r) => r.type === "sale").map((r) => r.id);
     const returnIds = rows.filter((r) => r.type === "return").map((r) => r.id);
 

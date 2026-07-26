@@ -164,6 +164,8 @@
     "partiallyRefunded": "Kısmen İade Edildi"
   },
   "filters": {
+    "channel": "Kanal",
+    "allChannels": "Tüm Kanallar",
     "dateFrom": "Başlangıç tarihi",
     "dateTo": "Bitiş tarihi",
     "status": "Durum",
@@ -357,6 +359,9 @@
       }
     },
     "invoices": {
+      "lockedPosInvoice": "Bu fatura POS'ta oluşturuldu ve buradan düzenlenemez.",
+      "manual": "Manuel",
+      "pos": "POS",
       "itemDiscount": "Ürün indirimi",
       "invoiceDiscount": "Fatura indirimi",
       "itemTax": "Ürün vergisi",

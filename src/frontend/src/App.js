@@ -79,6 +79,7 @@ import FundTransferDocumentPage from "./components/Cash/Fund/components/FundTran
 import ProductDetailPage from "./components/Products/components/ProductDetailPage";
 import ProductFormPage from "./components/Products/components/ProductFormPage";
 import PurchaseReturnPage from "./components/Invoices/PurchaseReturn/components/PurchaseReturnPage";
+import SalesReturnPage from "./components/Invoices/SalesReturn/components/SalesReturnPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -190,6 +191,10 @@ export default function App() {
               {/* ================= SALES RETURN ================= */}
               <Route path="/sales-return" element={<SalesReturnList />} />
               <Route
+                path="sales-return/:invoiceId"
+                element={<SalesReturnPage />}
+              />
+              <Route
                 path="/view-sales-return/:id"
                 element={<SalesReturnView />}
               />
@@ -204,13 +209,12 @@ export default function App() {
               <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
               <Route path="supplier" element={<SuppliersList />} />
 
+              {/* ================= PURCHASE RETURN ================= */}
+              <Route path="/purchase-return" element={<PurchaseReturnList />} />
               <Route
                 path="purchase-return/:invoiceId"
                 element={<PurchaseReturnPage />}
               />
-
-              {/* ================= PURCHASE RETURN ================= */}
-              <Route path="/purchase-return" element={<PurchaseReturnList />} />
               <Route
                 path="view-purchase-return/:id"
                 element={<PurchaseReturnView />}

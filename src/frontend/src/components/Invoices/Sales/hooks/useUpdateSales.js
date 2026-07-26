@@ -136,6 +136,7 @@ export default function useUpdateSales() {
         description: inv.description || "",
         invoice_name: inv.invoice_name || "",
         status: inv.status || "unpaid",
+        channel: inv.channel || "manual",
         paid_amount: inv.paid_amount,
         remaining_amount: inv.remaining_amount,
       });
@@ -167,6 +168,23 @@ export default function useUpdateSales() {
     }
   }, [id, api, t]);
 
+  const refetch = useCallback(async () => {
+    if (!api) return;
+
+    try {
+      const [prodsRes, custsRes, taxRes] = await Promise.all([
+        api.getProducts({ limit: 100 }),
+        api.getCustomers(),
+        api.getTaxes(),
+      ]);
+
+      setProducts(prodsRes?.data || []);
+      setCustomers(custsRes || []);
+      setTaxes(taxRes || []);
+    } catch (err) {
+      setError(err.message || t("errors.loadError"));
+    }
+  }, [api, t]);
   useEffect(() => {
     load();
   }, [load]);
@@ -258,6 +276,64 @@ export default function useUpdateSales() {
 
       return copy;
     });
+  };
+
+  // Directly applies a known product to a row without depending on
+  // `products` state — used by the quick-add modal. No unit list is
+  // available for a freshly created product yet. Mirrors useAddSales.
+  const setItemProduct = (
+    index,
+    { id, name, price, buyingPrice, tax_id, tax_rate }
+  ) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index] };
+
+      item.product_id = id;
+      item.name = name || "";
+      item.entered_price = Number(price || 0);
+      item.buyingPrice = Number(buyingPrice || 0);
+      item.available_units = [];
+      item.unit_id = null;
+      item.unit_name = "";
+      item.unit_conversion_factor = 1;
+      item.tax_id = tax_id || null;
+      item.tax_rate = Number(tax_rate || 0);
+      item.tax_capable = Boolean(tax_id);
+
+      copy[index] = recalcItem(item);
+
+      return copy;
+    });
+  };
+
+  const addItemWithProduct = ({
+    id,
+    name,
+    price,
+    buyingPrice,
+    tax_id,
+    tax_rate,
+  }) => {
+    setItems((prev) => [
+      ...prev,
+      recalcItem({
+        product_id: id,
+        name: name || "",
+        entered_quantity: 1,
+        entered_price: Number(price || 0),
+        buyingPrice: Number(buyingPrice || 0),
+        available_units: [],
+        unit_id: null,
+        unit_name: "",
+        unit_conversion_factor: 1,
+        discount_rate: 0,
+        tax_id: tax_id || null,
+        tax_rate: Number(tax_rate || 0),
+        tax_capable: Boolean(tax_id),
+        description: "",
+      }),
+    ]);
   };
 
   const updateItem = (index, key, value) => {
@@ -594,6 +670,8 @@ export default function useUpdateSales() {
     enableItemTax,
     disableItemTax,
     updateItemDescription,
+    setItemProduct, // ADD
+    addItemWithProduct, // ADD
     submit,
     subtotal,
     itemDiscountTotal,
@@ -610,6 +688,7 @@ export default function useUpdateSales() {
     error,
     api,
     setProducts,
+    refetch, // ADD
     status: invoice?.status || "unpaid",
   };
 }

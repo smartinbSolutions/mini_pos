@@ -242,6 +242,7 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   invoice_name TEXT,
   customer_id INTEGER,
+  channel TEXT NOT NULL DEFAULT 'manual' CHECK(channel IN ('manual', 'pos')),
   date TEXT,
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
@@ -287,26 +288,35 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
 );
 `
 ).run();
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS sales_returns (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   sales_invoice_id INTEGER,
   customer_id INTEGER,
-  date TEXT,
+  channel TEXT NOT NULL DEFAULT 'manual' CHECK(channel IN ('manual', 'pos')),
   invoice_name TEXT,
+  description TEXT,
+  date TEXT,
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
   tax REAL DEFAULT 0,
+  taxRate REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
-  description TEXT,
-    created_by INTEGER,
+  created_by INTEGER,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (sales_invoice_id) REFERENCES sales_invoices(id),
-  FOREIGN KEY (customer_id) REFERENCES customers(id),
+  FOREIGN KEY (sales_invoice_id)
+    REFERENCES sales_invoices(id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  FOREIGN KEY (customer_id)
+    REFERENCES customers(id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id)
-
 );
 `
 ).run();
@@ -318,13 +328,29 @@ CREATE TABLE IF NOT EXISTS sales_return_items (
   sales_invoice_item_id INTEGER NOT NULL,
   return_id INTEGER,
   product_id INTEGER,
-  quantity REAL,
-  price REAL,
-  total REAL,
+  quantity REAL NOT NULL,
+  price REAL NOT NULL,
+  total REAL NOT NULL,
+  product_name TEXT,
+  unit_name TEXT,
+  unit_conversion_factor REAL DEFAULT 1,
+  tax_id INTEGER,
+  tax_rate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  description TEXT,
   FOREIGN KEY (sales_invoice_item_id)
     REFERENCES sales_invoice_items(id),
-  FOREIGN KEY (return_id) REFERENCES sales_returns(id),
-  FOREIGN KEY (product_id) REFERENCES products(id)
+  FOREIGN KEY (return_id)
+    REFERENCES sales_returns(id)
+    ON DELETE CASCADE,
+  FOREIGN KEY (product_id)
+    REFERENCES products(id)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  FOREIGN KEY (tax_id)
+    REFERENCES taxes(id)
 );
 `
 ).run();

@@ -173,6 +173,24 @@ export default function useUpdatePurchase() {
     }
   }, [id, api, t]);
 
+  const refetch = useCallback(async () => {
+    if (!api) return;
+
+    try {
+      const [prodsRes, supsRes, taxRes] = await Promise.all([
+        api.getProducts({ limit: 100 }),
+        api.getSuppliers(),
+        api.getTaxes(),
+      ]);
+
+      setProducts(prodsRes?.data || []);
+      setSuppliers(supsRes || []);
+      setTaxes(taxRes || []);
+    } catch (err) {
+      setError(err.message || t("errors.loadError"));
+    }
+  }, [api, t]);
+
   useEffect(() => {
     load();
   }, [load]);
@@ -659,6 +677,7 @@ export default function useUpdatePurchase() {
     setItemProduct,
     addItemWithProduct,
     submit,
+    refetch,
     subtotal,
     itemDiscountTotal,
     itemDiscountSummary,

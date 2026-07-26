@@ -164,6 +164,8 @@
     "partiallyRefunded": "Partially Refunded"
   },
   "filters": {
+    "channel": "Channel",
+    "allChannels": "All Channels",
     "dateFrom": "From date",
     "dateTo": "To date",
     "status": "Status",
@@ -360,6 +362,9 @@
       }
     },
     "invoices": {
+      "lockedPosInvoice": "This invoice was created at the POS and cannot be edited here.",
+      "manual": "Manual",
+      "pos": "POS",
       "itemDiscount": "Item discount",
       "invoiceDiscount": "Invoice discount",
       "itemTax": "Item tax",

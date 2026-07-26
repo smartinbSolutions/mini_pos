@@ -165,6 +165,8 @@
     "partiallyRefunded": "مسترجع جزئياً"
   },
   "filters": {
+    "channel": "القناة",
+    "allChannels": "كل القنوات",
     "dateFrom": "من تاريخ",
     "dateTo": "إلى تاريخ",
     "status": "الحالة",
@@ -364,6 +366,9 @@
       }
     },
     "invoices": {
+      "lockedPosInvoice": "تم إنشاء هذه الفاتورة من نقطة البيع ولا يمكن تعديلها من هنا.",
+      "manual": "يدوي",
+      "pos": "نقطة بيع",
       "itemDiscount": "خصم الصنف",
       "invoiceDiscount": "خصم الفاتورة",
       "itemTax": "ضريبة الصنف",

@@ -97,6 +97,16 @@ const SalesReturnList = () => {
       options: customers.map((c) => ({ value: c.id, label: c.name })),
     },
     {
+      name: "channel",
+      type: "select",
+      label: t("filters.channel"),
+      allLabel: t("filters.allChannels"),
+      options: [
+        { value: "manual", label: t("screens.invoices.manual") },
+        { value: "pos", label: t("screens.invoices.pos") },
+      ],
+    },
+    {
       name: "status",
       type: "select",
       label: t("filters.status"),
@@ -131,22 +141,22 @@ const SalesReturnList = () => {
     });
   }, [salesReturns, search]);
 
-  const handleDelete = async (id) => {
-    try {
-      setActionError("");
-      await deleteSalesReturn(id);
-    } catch (err) {
-      console.log(err.message);
-      setActionError(t("screens.invoices.deleteFailed"));
-    }
-  };
+  // const handleDelete = async (id) => {
+  //   try {
+  //     setActionError("");
+  //     await deleteSalesReturn(id);
+  //   } catch (err) {
+  //     console.log(err.message);
+  //     setActionError(t("screens.invoices.deleteFailed"));
+  //   }
+  // };
 
   const totalNet = salesReturns?.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
     0
   );
   const totalTax = salesReturns?.reduce(
-    (sum, inv) => sum + Number(inv.taxValue || 0),
+    (sum, inv) => sum + Number(inv.total_tax_value ?? inv.taxValue ?? 0),
     0
   );
   const unpaidCount = salesReturns?.filter(
@@ -242,9 +252,22 @@ const SalesReturnList = () => {
                   filtered?.map((inv) => (
                     <tr key={inv.id} className="transition hover:bg-[#f8faff]">
                       <td className="px-5 py-4 text-start">
-                        <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4663ff]">
-                          #{inv.id}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4663ff]">
+                            #{inv.id}
+                          </span>
+                          <span
+                            className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase ${
+                              inv.channel === "pos"
+                                ? "bg-violet-50 text-violet-600"
+                                : "bg-slate-100 text-slate-500"
+                            }`}
+                          >
+                            {inv.channel === "pos"
+                              ? t("screens.invoices.pos")
+                              : t("screens.invoices.manual")}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-5 py-4 text-start text-slate-600 font-medium">
                         {inv.original_invoice_name
@@ -266,21 +289,23 @@ const SalesReturnList = () => {
                         <div className="font-semibold tabular-nums text-slate-700">
                           {money(inv.subtotal || 0)}
                         </div>
-                        {Number(inv.discount || 0) > 0 && (
+                        {Number(inv.total_discount_value || 0) > 0 && (
                           <div className="mt-0.5 inline-flex items-center rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-500">
-                            -{money(inv.discount)} {t("ui.discount")}
+                            -{money(inv.total_discount_value)}{" "}
+                            {t("ui.discount")}
                           </div>
                         )}
                       </td>
 
                       <td className="px-5 py-4 text-start tabular-nums">
-                        {Number(inv.taxValue || 0) > 0 ? (
+                        {Number(inv.total_tax_value ?? inv.taxValue ?? 0) >
+                        0 ? (
                           <div>
                             <div className="font-bold text-slate-700">
-                              + {money(inv.taxValue)}
+                              + {money(inv.total_tax_value ?? inv.taxValue)}
                             </div>
                             <div className="text-[11px] font-semibold text-slate-400">
-                              {inv.tax}%
+                              {inv.taxRate}%
                             </div>
                           </div>
                         ) : (
@@ -353,7 +378,7 @@ const SalesReturnList = () => {
         mode="sales_return"
         refetchList={refetch}
       />
-      <DeleteModal
+      {/* <DeleteModal
         open={Boolean(deleteInvoice)}
         onClose={() => setDeleteInvoice(null)}
         onConfirm={async () => {
@@ -362,7 +387,7 @@ const SalesReturnList = () => {
         }}
         title={t("deleteModal.title")}
         message={t("deleteModal.message")}
-      />
+      /> */}
     </div>
   );
 };

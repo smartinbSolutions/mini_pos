@@ -17,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
 import Pagination from "../../../../Global/Pagination";
-import SalesReturnModal from "../../SalesReturn/components/SalesReturnModal";
 import FormattedDate from "../../../../Global/FormattedDate";
 import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
 import GoTo from "../../../../Global/GoTo";
@@ -129,7 +128,6 @@ const SalesList = () => {
     customers,
   } = useSalesList();
 
-  const [openRefundModel, setOpenRefundModel] = useState(false);
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
@@ -147,6 +145,16 @@ const SalesList = () => {
       options: customers.map((c) => ({ value: c.id, label: c.name })),
     },
     {
+      name: "channel",
+      type: "select",
+      label: t("filters.channel"),
+      allLabel: t("filters.allChannels"),
+      options: [
+        { value: "manual", label: t("screens.invoices.manual") },
+        { value: "pos", label: t("screens.invoices.pos") },
+      ],
+    },
+    {
       name: "status",
       type: "select",
       label: t("filters.status"),
@@ -157,6 +165,7 @@ const SalesList = () => {
         { value: "unpaid", label: t("screens.invoices.unpaid") },
       ],
     },
+
     {
       name: "returnStatus",
       type: "select",
@@ -330,7 +339,23 @@ const SalesList = () => {
                         className="transition hover:bg-[#f8faff]"
                       >
                         <td className="px-4 py-3 text-center">
-                          <InvoiceIdBadge id={inv.id} name={inv.invoice_name} />
+                          <div className="flex flex-col items-center gap-1">
+                            <InvoiceIdBadge
+                              id={inv.id}
+                              name={inv.invoice_name}
+                            />
+                            <span
+                              className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase ${
+                                inv.channel === "pos"
+                                  ? "bg-violet-50 text-violet-600"
+                                  : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
+                              {inv.channel === "pos"
+                                ? t("screens.invoices.pos")
+                                : t("screens.invoices.manual")}
+                            </span>
+                          </div>
                         </td>
 
                         <td className="px-4 py-3 text-center">
@@ -432,7 +457,8 @@ const SalesList = () => {
                             </button>
 
                             {inv.status === "unpaid" &&
-                              inv.return_status === "none" && (
+                              inv.return_status === "none" &&
+                              inv.channel !== "pos" && (
                                 <button
                                   onClick={() =>
                                     navigate(`/edit-sales/${inv.id}`)
@@ -444,7 +470,7 @@ const SalesList = () => {
                                 </button>
                               )}
 
-                            {inv.status !== "paid" && (
+                            {inv.status !== "paid" && inv.channel !== "pos" && (
                               <button
                                 onClick={() => {
                                   setSelecteInvoice(inv);
@@ -460,8 +486,7 @@ const SalesList = () => {
                             {inv.return_status !== "full" && (
                               <button
                                 onClick={() => {
-                                  setSelecteInvoice(inv);
-                                  setOpenRefundModel(true);
+                                  navigate(`/sales-return/${inv.id}`);
                                 }}
                                 className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
                                 title={t("ui.createSalesReturn")}
@@ -471,7 +496,8 @@ const SalesList = () => {
                             )}
 
                             {inv.status === "unpaid" &&
-                              inv.return_status === "none" && (
+                              inv.return_status === "none" &&
+                              inv.channel !== "pos" && (
                                 <button
                                   onClick={() => setDeleteInvoice(inv)}
                                   className="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50"
@@ -503,12 +529,6 @@ const SalesList = () => {
           />
         </section>
       </div>
-
-      <SalesReturnModal
-        isOpen={openRefundModel}
-        onClose={() => setOpenRefundModel(false)}
-        id={selecteInvoice?.id}
-      />
 
       <AddPayment
         isOpen={openPaymentModel}

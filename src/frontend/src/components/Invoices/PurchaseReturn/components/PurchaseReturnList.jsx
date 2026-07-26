@@ -162,15 +162,15 @@ const PurchaseReturnList = () => {
     });
   }, [purchaseReturns, search]);
 
-  const handleDelete = async (id) => {
-    try {
-      setActionError("");
-      await deletePurchaseReturn(id);
-    } catch (err) {
-      console.log(err.message);
-      setActionError(t("screens.invoices.deleteFailed"));
-    }
-  };
+  // const handleDelete = async (id) => {
+  //   try {
+  //     setActionError("");
+  //     await deletePurchaseReturn(id);
+  //   } catch (err) {
+  //     console.log(err.message);
+  //     setActionError(t("screens.invoices.deleteFailed"));
+  //   }
+  // };
 
   const totalNet = purchaseReturns?.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
@@ -436,7 +436,7 @@ const PurchaseReturnList = () => {
         mode="purchase_return"
         refetchList={refetch}
       />
-      <DeleteModal
+      {/* <DeleteModal
         open={Boolean(deleteInvoice)}
         onClose={() => setDeleteInvoice(null)}
         onConfirm={async () => {
@@ -445,7 +445,7 @@ const PurchaseReturnList = () => {
         }}
         title={t("deleteModal.title")}
         message={t("deleteModal.message")}
-      />
+      /> */}
     </div>
   );
 };

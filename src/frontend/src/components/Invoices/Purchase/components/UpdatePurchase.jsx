@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import {
   ArrowLeft,
   Plus,
@@ -18,6 +20,10 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import ConfirmModal from "../../../../Global/ConfirmModal";
 import DropdownMenu from "../../../../Global/DropdownMenu";
+import useProductCatalog from "../../../Products/hooks/useProductCatalog";
+import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
+import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
+import SupplierFormModal from "./SupplierFormModal";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -72,6 +78,20 @@ function AdjustmentChip({ icon, tone, children, onRemove, disabled }) {
 
 export default function UpdatePurchase() {
   const { t } = useTranslation();
+  const catalog = useProductCatalog();
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false);
+
+  const {
+    saving: productSaving,
+    canUseUnits,
+    canUseTaxes,
+    isFormOpen,
+    setIsFormOpen,
+    submitProduct,
+    units,
+    taxes: productTaxes,
+  } = catalog;
+
   const {
     invoice,
     setInvoice,
@@ -95,6 +115,8 @@ export default function UpdatePurchase() {
     enableItemTax,
     disableItemTax,
     updateItemDescription,
+    setItemProduct, // ADD
+    addItemWithProduct, // ADD
     submit,
     subtotal,
     itemDiscountSummary,
@@ -107,8 +129,12 @@ export default function UpdatePurchase() {
     loading,
     api,
     setProducts,
+    refetch, // ADD
     status,
   } = useUpdatePurchase();
+
+  const { submitDraft, setDraft, draft, actionError } = useSuppliersList();
+
   const { money } = usePrimaryCurrency();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
 
@@ -199,6 +225,7 @@ export default function UpdatePurchase() {
         product_id: pendingTaxConfirm.productId,
         tax_id: pendingTaxConfirm.newTaxId,
       });
+      await refetch(); // ADD
     } catch (err) {
       console.error("Failed to update product default tax:", err);
     } finally {
@@ -282,15 +309,29 @@ export default function UpdatePurchase() {
               <AccentRule colorClass="bg-[#4663ff]" />
               <div className={panelBodyClass}>
                 <div className="grid gap-3 md:grid-cols-2">
-                  <SearchableSelect
-                    placeholder={t("ui.selectSupplier")}
-                    options={suppliers}
-                    selectedValue={invoice?.supplier_id}
-                    onChange={(e) =>
-                      setInvoice((prev) => ({ ...prev, supplier_id: e.id }))
-                    }
-                    disabled={isLocked}
-                  />
+                  <div className="flex items-center gap-1">
+                    <div className="flex-1">
+                      <SearchableSelect
+                        placeholder={t("ui.selectSupplier")}
+                        options={suppliers}
+                        selectedValue={invoice?.supplier_id}
+                        onChange={(e) =>
+                          setInvoice((prev) => ({ ...prev, supplier_id: e.id }))
+                        }
+                        disabled={isLocked}
+                      />
+                    </div>
+                    {!isLocked && (
+                      <button
+                        type="button"
+                        onClick={() => setSupplierModalOpen(true)}
+                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+                      >
+                        <Plus size={14} />
+                        <span>{t("screens.contacts.addSupplier")}</span>
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="date"
                     className={inputClass}
@@ -315,15 +356,27 @@ export default function UpdatePurchase() {
                     {items.length}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={addItem}
-                  disabled={isLocked}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Plus size={13} />
-                  {t("screens.invoices.addItem")}
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    disabled={isLocked}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Plus size={13} />
+                    {t("screens.invoices.addItem")}
+                  </button>
+                  {!isLocked && (
+                    <button
+                      type="button"
+                      onClick={() => setIsFormOpen(true)}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-600 transition hover:bg-violet-100"
+                    >
+                      <Plus size={13} />
+                      {t("screens.products.create")}
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="divide-y divide-[#eef1ff]">
@@ -933,17 +986,6 @@ export default function UpdatePurchase() {
         message={t("deleteModal.message")}
       />
 
-      <DeleteModal
-        open={deleteItemIndex !== null}
-        onClose={() => setDeleteItemIndex(null)}
-        onConfirm={() => {
-          removeItem(deleteItemIndex);
-          setDeleteItemIndex(null);
-        }}
-        title={t("deleteModal.title")}
-        message={t("deleteModal.message")}
-      />
-
       <ConfirmModal
         open={Boolean(pendingTaxConfirm)}
         onClose={() => setPendingTaxConfirm(null)}
@@ -963,6 +1005,70 @@ export default function UpdatePurchase() {
             : ""
         }
       />
+      {supplierModalOpen && (
+        <SupplierFormModal
+          open={supplierModalOpen}
+          onClose={() => setSupplierModalOpen(false)}
+          draft={draft}
+          setDraft={setDraft}
+          onSubmit={async (event) => {
+            const result = await submitDraft(event);
+            if (result && result.id) {
+              setInvoice((prev) => ({ ...prev, supplier_id: result.id }));
+              setSupplierModalOpen(false);
+              await refetch();
+            }
+          }}
+          saving={saving}
+          actionError={actionError}
+          t={t}
+        />
+      )}
+
+      {isFormOpen && (
+        <ProductQuickAddModal
+          units={units}
+          taxes={productTaxes}
+          canUseUnits={canUseUnits}
+          canUseTaxes={canUseTaxes}
+          saving={productSaving}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={async (form) => {
+            try {
+              const result = await submitProduct(form);
+              const targetIndex = items.findIndex((i) => !i.product_id);
+              const matchedTax = productTaxes?.find(
+                (tx) => tx.id === form.tax_id
+              );
+
+              if (targetIndex === -1) {
+                addItemWithProduct({
+                  id: result.id,
+                  name: form.name,
+                  price: form.costPrice,
+                  tax_id: form.tax_id,
+                  tax_rate: matchedTax?.rate || 0,
+                });
+              } else {
+                setItemProduct(targetIndex, {
+                  id: result.id,
+                  name: form.name,
+                  price: form.costPrice,
+                  tax_id: form.tax_id,
+                  tax_rate: matchedTax?.rate || 0,
+                });
+              }
+
+              setIsFormOpen(false);
+              await refetch();
+            } catch {
+              // actionError already set inside submitProduct/useProductCatalog
+            }
+          }}
+        />
+      )}
+
+      <ToastContainer />
     </div>
   );
 }
