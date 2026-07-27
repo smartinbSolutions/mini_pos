@@ -8,6 +8,7 @@ const DEFAULT_FILTERS = {
   status: "",
   minTotal: "",
   maxTotal: "",
+  taxIds: [],
 };
 
 const usePurchaseReturnList = () => {
@@ -26,6 +27,7 @@ const usePurchaseReturnList = () => {
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [suppliers, setSuppliers] = useState([]);
+  const [taxes, setTaxes] = useState([]);
 
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
@@ -58,6 +60,7 @@ const usePurchaseReturnList = () => {
         status: filters.status || undefined,
         minTotal: filters.minTotal !== "" ? filters.minTotal : undefined,
         maxTotal: filters.maxTotal !== "" ? filters.maxTotal : undefined,
+        taxIds: filters.taxIds?.length ? filters.taxIds : undefined,
       });
 
       setPurchaseReturns(res?.data || []);
@@ -81,6 +84,14 @@ const usePurchaseReturnList = () => {
       .getSuppliers({ page: 1, limit: 1000 })
       .then((res) => setSuppliers(res?.data || res || []))
       .catch(() => setSuppliers([]));
+  }, [api]);
+
+  useEffect(() => {
+    if (!api?.getTaxes) return;
+    api
+      .getTaxes()
+      .then((res) => setTaxes(res || []))
+      .catch(() => setTaxes([]));
   }, [api]);
 
   const deletePurchaseReturn = async (id) => {
@@ -128,6 +139,7 @@ const usePurchaseReturnList = () => {
     handleFilterChange,
     clearFilters,
     suppliers,
+    taxes,
   };
 };
 

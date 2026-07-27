@@ -31,6 +31,7 @@
     "confirm": "Onayla"
   },
   "ui": {
+    "inStock": "stokta",
     "available": "Mevcut",
     "profit": "Kâr",
     "cogs": "Malın maliyeti",
@@ -506,6 +507,13 @@
       "productInUse": "Bu ürünün satış veya alış geçmişi var ve silinemez."
     },
     "pos": {
+      "pay": "Öde",
+      "discountApplied": "%{{rate}} indirim",
+      "outOfStock": "Stokta yok",
+      "taxIncluded": "%{{rate}} vergi dahil",
+      "unitOfBase": "{{baseUnit}} biriminden {{unit}}",
+      "unitEquals": "{{unitLabel}} = {{factor}} {{baseUnit}}",
+      "availableCount": "{{label}}: {{count}}",
       "loading": "POS Sistemi yükleniyor...",
       "title": "POS Sistemi",
       "customerDisplay": "Müşteri Ekranı",

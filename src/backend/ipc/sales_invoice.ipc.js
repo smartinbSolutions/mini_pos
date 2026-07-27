@@ -80,29 +80,35 @@ export default function registerSalesInvoiceIPC() {
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
 
-        // ---- Invoice-level tax — never trust a client-sent rate ----
-        const invoiceTaxId = data.tax || null;
-        let invoiceTaxRate = 0;
+        // ---- Invoice-level taxes — PARALLEL: each computed independently
+        // off the same post-discount base, then summed. Never trust
+        // client-sent rates — every id is re-validated and re-priced here. ----
+        const requestedTaxIds = Array.isArray(data.taxes)
+          ? [...new Set(data.taxes.filter(Boolean))]
+          : [];
 
-        if (invoiceTaxId) {
+        const invoiceTaxes = requestedTaxIds.map((taxId) => {
           const taxRow = db
             .prepare(
-              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
             )
-            .get(invoiceTaxId);
+            .get(taxId);
           if (!taxRow) {
             throw new Error("INVALID_TAX_ID");
           }
-          invoiceTaxRate = Number(taxRow.rate || 0);
-        }
+          return {
+            tax_id: taxRow.id,
+            tax_name: taxRow.name,
+            tax_rate: Number(taxRow.rate || 0),
+          };
+        });
 
-        const invoiceDiscountRate = Number(data.discount_rate || 0);
+        const invoiceDiscountRate = Math.min(
+          100,
+          Math.max(0, Number(data.discount_rate || 0))
+        );
 
-        // ---- Per-item cascade — sale price is sourced from whichever unit
-        // was selected (each unit has its own registered sale_price, unlike
-        // purchase where only the base has a real cost and alt units are
-        // derived by multiplication). quantity/price stored are always
-        // BASE-UNIT — re-derived server-side, never trusted from client. ----
+        // ---- Per-item cascade — unchanged, still single tax per item ----
         const preparedItems = [];
         let subtotal = 0;
         let itemDiscountTotal = 0;
@@ -121,7 +127,10 @@ export default function registerSalesInvoiceIPC() {
           const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
           const total = enteredQuantity * enteredPrice;
 
-          const discountRate = Number(item.discount_rate || 0);
+          const discountRate = Math.min(
+            100,
+            Math.max(0, Number(item.discount_rate || 0))
+          );
           const discount = Number(((total * discountRate) / 100).toFixed(2));
           const afterDiscount = total - discount;
 
@@ -147,10 +156,6 @@ export default function registerSalesInvoiceIPC() {
           itemDiscountTotal += discount;
           itemTaxTotal += taxValue;
 
-          // buyingPrice: the product's BASE-unit cost at time of sale — never
-          // shown/editable in the UI, saved purely for later profit/COGS
-          // reporting. Re-derived here from the product row, not trusted
-          // from the client, same principle as everything else.
           const productRow = db
             .prepare(`SELECT costPrice FROM products WHERE id = ?`)
             .get(item.product_id);
@@ -189,14 +194,28 @@ export default function registerSalesInvoiceIPC() {
         );
         const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
-        const invoiceTaxValue = Number(
-          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        // ---- Each invoice tax computed independently (parallel) off the
+        // SAME afterInvoiceDiscount base, then summed ----
+        let invoiceTaxValueTotal = 0;
+        const preparedInvoiceTaxes = invoiceTaxes.map((tax) => {
+          const value = Number(
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+          );
+          invoiceTaxValueTotal += value;
+          return { ...tax, tax_value: value };
+        });
+        invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
+
+        // Sum-of-rates — display convenience only ("18% total"), never
+        // used in computation; each tax already computed independently above.
+        const invoiceTaxRateSum = Number(
+          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
           ).toFixed(2)
         );
 
@@ -222,16 +241,16 @@ export default function registerSalesInvoiceIPC() {
           throw new Error("INVALID_CREDIT_AMOUNT");
         }
 
-        // ---- Insert invoice header ----
+        // ---- Insert invoice header — tax column dropped ----
         const invoiceResult = db
           .prepare(
             `
           INSERT INTO sales_invoices
             (customer_id, invoice_name, description, channel, date,
              subtotal, discount, discount_rate,
-             tax, taxRate, taxValue,
+             taxRate, taxValue,
              created_by, updated_by, net_total)
-          VALUES (?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `
           )
           .run(
@@ -242,11 +261,10 @@ export default function registerSalesInvoiceIPC() {
             subtotal,
             invoiceDiscount,
             invoiceDiscountRate,
-            invoiceTaxId,
-            invoiceTaxRate,
-            invoiceTaxValue,
+            invoiceTaxRateSum,
+            invoiceTaxValueTotal,
             data.created_by || null,
-            null, // updated_by — nothing to set at creation time
+            null,
             netTotal
           );
 
@@ -258,6 +276,23 @@ export default function registerSalesInvoiceIPC() {
           db.prepare(
             `UPDATE sales_invoices SET invoice_name = ? WHERE id = ?`
           ).run(invoiceName, invoiceId);
+        }
+
+        // ---- Insert invoice-level tax rows ----
+        const insertInvoiceTax = db.prepare(`
+          INSERT INTO sales_invoice_taxes
+          (invoice_id, tax_id, tax_name, tax_rate, tax_value)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        for (const tax of preparedInvoiceTaxes) {
+          insertInvoiceTax.run(
+            invoiceId,
+            tax.tax_id,
+            tax.tax_name,
+            tax.tax_rate,
+            tax.tax_value
+          );
         }
 
         // ---- Insert items + reduce stock + record movements ----
@@ -387,6 +422,7 @@ export default function registerSalesInvoiceIPC() {
     }
   });
 
+  //  GET ALL SALES INVOICES
   ipcMain.handle("get-sales-invoices", (event, params = {}) => {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
@@ -452,6 +488,17 @@ export default function registerSalesInvoiceIPC() {
       havingParams.push(params.returnStatus);
     }
 
+    if (Array.isArray(params.taxIds) && params.taxIds.length) {
+      const taxPlaceholders = params.taxIds.map(() => "?").join(",");
+      whereConditions.push(`
+        EXISTS (
+          SELECT 1 FROM sales_invoice_taxes sit
+          WHERE sit.invoice_id = s.id AND sit.tax_id IN (${taxPlaceholders})
+        )
+      `);
+      whereParams.push(...params.taxIds);
+    }
+
     const whereClause = whereConditions.length
       ? `WHERE ${whereConditions.join(" AND ")}`
       : "";
@@ -468,7 +515,7 @@ export default function registerSalesInvoiceIPC() {
         c.phone AS customer_phone,
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
-        t.name AS tax_name,
+        invoiceTaxAgg.taxes_json,
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
   
         COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
@@ -495,9 +542,6 @@ export default function registerSalesInvoiceIPC() {
       LEFT JOIN customers c
         ON c.id = s.customer_id
   
-      LEFT JOIN taxes t
-        ON t.id = s.tax
-  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = s.id
        AND pa.invoice_type = 'sales'
@@ -516,6 +560,16 @@ export default function registerSalesInvoiceIPC() {
         FROM sales_invoice_items
         GROUP BY invoice_id
       ) itemAgg ON itemAgg.invoice_id = s.id
+  
+      LEFT JOIN (
+        SELECT
+          invoice_id,
+          json_group_array(
+            json_object('tax_id', tax_id, 'name', tax_name, 'rate', tax_rate, 'value', tax_value)
+          ) AS taxes_json
+        FROM sales_invoice_taxes
+        GROUP BY invoice_id
+      ) invoiceTaxAgg ON invoiceTaxAgg.invoice_id = s.id
   
       LEFT JOIN (
         SELECT
@@ -571,8 +625,13 @@ export default function registerSalesInvoiceIPC() {
       )
       .get(...whereParams, ...havingParams);
 
+    const invoicesWithParsedTaxes = invoices.map((inv) => ({
+      ...inv,
+      taxes: inv.taxes_json ? JSON.parse(inv.taxes_json) : [],
+    }));
+
     return {
-      data: invoices,
+      data: invoicesWithParsedTaxes,
       page,
       limit,
       total,
@@ -580,7 +639,7 @@ export default function registerSalesInvoiceIPC() {
     };
   });
 
-  // GET ONE
+  // GET ONE SALES INVOICE
   ipcMain.handle("get-sales-invoice", (event, id) => {
     const invoice = db
       .prepare(
@@ -589,7 +648,6 @@ export default function registerSalesInvoiceIPC() {
       sa.*,
       c.name AS customer_name,
       c.phone AS customer_phone,
-      t.name AS tax_name,
       creator.full_name AS created_by_name,
       updater.full_name AS updated_by_name,
       COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
@@ -610,7 +668,6 @@ export default function registerSalesInvoiceIPC() {
     LEFT JOIN users updater
     ON updater.id = sa.updated_by
   
-    LEFT JOIN taxes t ON t.id = sa.tax
     LEFT JOIN (
       SELECT invoice_id, SUM(amount) AS paid_amount
       FROM payment_allocations
@@ -687,6 +744,18 @@ export default function registerSalesInvoiceIPC() {
       )
       .all(id);
 
+    // ---- Invoice-level taxes, one row per applied tax ----
+    const taxes = db
+      .prepare(
+        `
+        SELECT id, tax_id, tax_name, tax_rate, tax_value
+        FROM sales_invoice_taxes
+        WHERE invoice_id = ?
+        ORDER BY id ASC
+        `
+      )
+      .all(id);
+
     const allocations = db
       .prepare(
         `
@@ -715,13 +784,6 @@ export default function registerSalesInvoiceIPC() {
       )
       .all(id);
 
-    // ---- Invoice-level profit summary, derived from items (never trusted
-    // from client). Revenue/cogs computed on the DISCOUNTED per-unit price
-    // (item-level discount), restricted to available_quantity (post-return).
-    // Invoice-level discount is then prorated by the same
-    // available/original-quantity ratio used everywhere else in this
-    // summary, so a partial return doesn't overstate the discount credited
-    // against units that were actually given back. ----
     let itemLevelRevenue = 0;
     let proratedInvoiceDiscount = 0;
 
@@ -740,9 +802,6 @@ export default function registerSalesInvoiceIPC() {
       const discountedPrice = Number(i.price || 0) - discountPerUnit;
       itemLevelRevenue += availableQuantity * discountedPrice;
 
-      // This item's share of the invoice-level discount, prorated by its
-      // share of the invoice's total original quantity, then scaled down
-      // further by however much of it is still actually sold.
       const itemShareOfInvoiceDiscount =
         totalOriginalQuantity > 0
           ? (quantity / totalOriginalQuantity) * invoiceDiscountTotal
@@ -767,6 +826,7 @@ export default function registerSalesInvoiceIPC() {
     return {
       ...invoice,
       items,
+      taxes,
       allocations,
       profitSummary: {
         revenue: Number(revenue.toFixed(2)),
@@ -809,12 +869,12 @@ export default function registerSalesInvoiceIPC() {
         const hasReturn = db
           .prepare(
             `
-            SELECT 1
-            FROM sales_return_items sri
-            JOIN sales_invoice_items sii ON sii.id = sri.sales_invoice_item_id
-            WHERE sii.invoice_id = ?
-            LIMIT 1
-          `
+          SELECT 1
+          FROM sales_return_items sri
+          JOIN sales_invoice_items sii ON sii.id = sri.sales_invoice_item_id
+          WHERE sii.invoice_id = ?
+          LIMIT 1
+        `
           )
           .get(data.id);
 
@@ -825,23 +885,31 @@ export default function registerSalesInvoiceIPC() {
         const oldCustomerId = oldInvoice.customer_id || null;
         const newCustomerId = data.customer_id || null;
 
-        // ---- Resolve invoice-level tax — never trust a client-sent rate ----
-        const invoiceTaxId = data.tax || null;
-        let invoiceTaxRate = 0;
+        // ---- Resolve invoice-level taxes — PARALLEL, same as create ----
+        const requestedTaxIds = Array.isArray(data.taxes)
+          ? [...new Set(data.taxes.filter(Boolean))]
+          : [];
 
-        if (invoiceTaxId) {
+        const invoiceTaxes = requestedTaxIds.map((taxId) => {
           const taxRow = db
             .prepare(
-              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
             )
-            .get(invoiceTaxId);
+            .get(taxId);
           if (!taxRow) {
             throw new Error("INVALID_TAX_ID");
           }
-          invoiceTaxRate = Number(taxRow.rate || 0);
-        }
+          return {
+            tax_id: taxRow.id,
+            tax_name: taxRow.name,
+            tax_rate: Number(taxRow.rate || 0),
+          };
+        });
 
-        const invoiceDiscountRate = Number(data.discount_rate || 0);
+        const invoiceDiscountRate = Math.min(
+          100,
+          Math.max(0, Number(data.discount_rate || 0))
+        );
 
         // ---- Per-item cascade, recomputed from raw inputs only ----
         const preparedItems = [];
@@ -864,7 +932,10 @@ export default function registerSalesInvoiceIPC() {
           const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
           const total = enteredQuantity * enteredPrice;
 
-          const discountRate = Number(item.discount_rate || 0);
+          const discountRate = Math.min(
+            100,
+            Math.max(0, Number(item.discount_rate || 0))
+          );
           const discount = Number(((total * discountRate) / 100).toFixed(2));
           const afterDiscount = total - discount;
 
@@ -890,8 +961,6 @@ export default function registerSalesInvoiceIPC() {
           itemDiscountTotal += discount;
           itemTaxTotal += taxValue;
 
-          // buyingPrice: base-unit cost at time of edit — re-derived from the
-          // product row, never trusted from the client.
           const productRow = db
             .prepare(`SELECT costPrice FROM products WHERE id = ?`)
             .get(item.product_id);
@@ -930,14 +999,25 @@ export default function registerSalesInvoiceIPC() {
         );
         const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
-        const invoiceTaxValue = Number(
-          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        // ---- Each invoice tax computed independently, then summed ----
+        let invoiceTaxValueTotal = 0;
+        const preparedInvoiceTaxes = invoiceTaxes.map((tax) => {
+          const value = Number(
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+          );
+          invoiceTaxValueTotal += value;
+          return { ...tax, tax_value: value };
+        });
+        invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
+
+        const invoiceTaxRateSum = Number(
+          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
           ).toFixed(2)
         );
 
@@ -947,11 +1027,11 @@ export default function registerSalesInvoiceIPC() {
           .all(data.id);
 
         const reverseStock = db.prepare(`
-          UPDATE products SET quantity = quantity + ? WHERE id = ?
-        `);
+        UPDATE products SET quantity = quantity + ? WHERE id = ?
+      `);
         const applyStock = db.prepare(`
-          UPDATE products SET quantity = quantity - ? WHERE id = ?
-        `);
+        UPDATE products SET quantity = quantity - ? WHERE id = ?
+      `);
 
         for (const item of oldItems) {
           reverseStock.run(item.quantity || 0, item.product_id);
@@ -962,22 +1042,43 @@ export default function registerSalesInvoiceIPC() {
         );
         db.prepare(
           `
-          DELETE FROM product_movements
-          WHERE reference_type = 'sale' AND reference_id = ?
-        `
+        DELETE FROM product_movements
+        WHERE reference_type = 'sale' AND reference_id = ?
+      `
         ).run(data.id);
+
+        // ---- Delete + reinsert invoice-level tax rows, same pattern as items ----
+        db.prepare(`DELETE FROM sales_invoice_taxes WHERE invoice_id = ?`).run(
+          data.id
+        );
+
+        const insertInvoiceTax = db.prepare(`
+        INSERT INTO sales_invoice_taxes
+        (invoice_id, tax_id, tax_name, tax_rate, tax_value)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+
+        for (const tax of preparedInvoiceTaxes) {
+          insertInvoiceTax.run(
+            data.id,
+            tax.tax_id,
+            tax.tax_name,
+            tax.tax_rate,
+            tax.tax_value
+          );
+        }
 
         // ---- Insert new items + apply stock + record movements ----
         const insertItem = db.prepare(`
-          INSERT INTO sales_invoice_items
-          (
-            invoice_id, product_id, quantity, price, buyingPrice, total,
-            product_name, unit_name, unit_conversion_factor,
-            tax_id, tax_rate, taxValue,
-            discount, discount_rate, description
-          )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
+        INSERT INTO sales_invoice_items
+        (
+          invoice_id, product_id, quantity, price, buyingPrice, total,
+          product_name, unit_name, unit_conversion_factor,
+          tax_id, tax_rate, taxValue,
+          discount, discount_rate, description
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
 
         for (const item of preparedItems) {
           insertItem.run(
@@ -1012,27 +1113,26 @@ export default function registerSalesInvoiceIPC() {
           });
         }
 
-        // ---- Update invoice header ----
+        // ---- Update invoice header — tax column dropped ----
         const invoiceName =
           data.invoice_name?.trim() || oldInvoice.invoice_name;
 
         db.prepare(
           `
-          UPDATE sales_invoices
-          SET customer_id = ?,
-              invoice_name = ?,
-              description = ?,
-              date = ?,
-              subtotal = ?,
-              discount = ?,
-              discount_rate = ?,
-              tax = ?,
-              taxRate = ?,
-              taxValue = ?,
-              net_total = ?,
-              updated_by = ?
-          WHERE id = ?
-        `
+        UPDATE sales_invoices
+        SET customer_id = ?,
+            invoice_name = ?,
+            description = ?,
+            date = ?,
+            subtotal = ?,
+            discount = ?,
+            discount_rate = ?,
+            taxRate = ?,
+            taxValue = ?,
+            net_total = ?,
+            updated_by = ?
+        WHERE id = ?
+      `
         ).run(
           newCustomerId,
           invoiceName,
@@ -1041,9 +1141,8 @@ export default function registerSalesInvoiceIPC() {
           subtotal,
           invoiceDiscount,
           invoiceDiscountRate,
-          invoiceTaxId,
-          invoiceTaxRate,
-          invoiceTaxValue,
+          invoiceTaxRateSum,
+          invoiceTaxValueTotal,
           netTotal,
           data.updated_by,
           data.id
@@ -1053,18 +1152,18 @@ export default function registerSalesInvoiceIPC() {
         if (oldCustomerId && oldCustomerId === newCustomerId) {
           db.prepare(
             `
-            UPDATE party_history
-            SET amount = ?, date = ?, note = ?
-            WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-          `
+          UPDATE party_history
+          SET amount = ?, date = ?, note = ?
+          WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
+        `
           ).run(netTotal, fullDateTime, invoiceName, data.id);
         } else {
           if (oldCustomerId) {
             db.prepare(
               `
-              DELETE FROM party_history
-              WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
-            `
+            DELETE FROM party_history
+            WHERE invoice_id = ? AND invoice_type = 'sales' AND record_type = 'invoice'
+          `
             ).run(data.id);
           }
 
@@ -1203,23 +1302,41 @@ export default function registerSalesInvoiceIPC() {
         const time = new Date().toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
 
-        // ---- Invoice-level tax — never trust a client-sent rate ----
-        const invoiceTaxId = data.tax || null;
-        let invoiceTaxRate = 0;
+        // ---- Invoice-level taxes — PARALLEL, same model as create-sales-invoice.
+        // Never trust client-sent rates — every id re-validated and re-priced here. ----
+        const requestedTaxIds = Array.isArray(data.taxes)
+          ? [...new Set(data.taxes.filter(Boolean))]
+          : [];
 
-        if (invoiceTaxId) {
+        const invoiceTaxes = requestedTaxIds.map((taxId) => {
           const taxRow = db
             .prepare(
-              `SELECT rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
             )
-            .get(invoiceTaxId);
+            .get(taxId);
           if (!taxRow) {
             throw new Error("INVALID_TAX_ID");
           }
-          invoiceTaxRate = Number(taxRow.rate || 0);
-        }
+          return {
+            tax_id: taxRow.id,
+            tax_name: taxRow.name,
+            tax_rate: Number(taxRow.rate || 0),
+          };
+        });
 
-        const invoiceDiscountRate = Number(data.discount_rate || 0);
+        const invoiceDiscountRate = Math.min(
+          100,
+          Math.max(0, Number(data.discount_rate || 0))
+        );
+
+        // ---- Stock guard — read fresh inside the transaction, never trust
+        // anything the client claims about allowing negative stock ----
+        const companySettings = db
+          .prepare(`SELECT allow_negative_stock FROM company_settings LIMIT 1`)
+          .get();
+        const allowNegativeStock = Boolean(
+          companySettings?.allow_negative_stock
+        );
 
         // ---- Per-item cascade — identical to create-sales-invoice ----
         const preparedItems = [];
@@ -1247,7 +1364,24 @@ export default function registerSalesInvoiceIPC() {
           const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
           const total = enteredQuantity * enteredPrice;
 
-          const discountRate = Number(item.discount_rate || 0);
+          if (!allowNegativeStock) {
+            const stockRow = db
+              .prepare(`SELECT name, quantity FROM products WHERE id = ?`)
+              .get(productId);
+
+            if (!stockRow) {
+              throw new Error("PRODUCT_NOT_FOUND");
+            }
+
+            if (stockRow.quantity - baseQuantity < 0) {
+              throw new Error(`INSUFFICIENT_STOCK:${stockRow.name}`);
+            }
+          }
+
+          const discountRate = Math.min(
+            100,
+            Math.max(0, Number(item.discount_rate || 0))
+          );
           const discount = Number(((total * discountRate) / 100).toFixed(2));
           const afterDiscount = total - discount;
 
@@ -1273,9 +1407,6 @@ export default function registerSalesInvoiceIPC() {
           itemDiscountTotal += discount;
           itemTaxTotal += taxValue;
 
-          // buyingPrice — re-derived server-side from the product's current
-          // cost, never trusted from the client (item.costPrice previously
-          // came straight from the cart, which is exactly what this fixes).
           const productRow = db
             .prepare(`SELECT costPrice FROM products WHERE id = ?`)
             .get(productId);
@@ -1314,20 +1445,31 @@ export default function registerSalesInvoiceIPC() {
         );
         const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
-        const invoiceTaxValue = Number(
-          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        // ---- Each invoice tax computed independently off the same base,
+        // then summed (parallel model) ----
+        let invoiceTaxValueTotal = 0;
+        const preparedInvoiceTaxes = invoiceTaxes.map((tax) => {
+          const value = Number(
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+          );
+          invoiceTaxValueTotal += value;
+          return { ...tax, tax_value: value };
+        });
+        invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
+
+        // Sum-of-rates — display convenience only, never used in computation
+        const invoiceTaxRateSum = Number(
+          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
           ).toFixed(2)
         );
 
-        // ---- Payments — multi-fund, POS-specific (unlike single-payment
-        // manual flow), but now validated against the SERVER's netTotal,
-        // not the client-sent data.net_total ----
+        // ---- Payments — multi-fund, POS-specific ----
         const roundCents = (value) =>
           Math.round(Number(value || 0) * 100) / 100;
 
@@ -1371,7 +1513,7 @@ export default function registerSalesInvoiceIPC() {
           throw new Error("POS payments must exactly cover invoice total");
         }
 
-        // ---- Insert invoice header — full column set, channel = 'pos' ----
+        // ---- Insert invoice header — tax column dropped ----
         const invoiceResult = db
           .prepare(
             `
@@ -1379,10 +1521,10 @@ export default function registerSalesInvoiceIPC() {
             (
               customer_id, invoice_name, description, channel, date,
               subtotal, discount, discount_rate,
-              tax, taxRate, taxValue,
+              taxRate, taxValue,
               net_total, created_by
             )
-            VALUES (?, ?, ?, 'pos', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, 'pos', ?, ?, ?, ?, ?, ?, ?, ?)
             `
           )
           .run(
@@ -1393,9 +1535,8 @@ export default function registerSalesInvoiceIPC() {
             subtotal,
             invoiceDiscount,
             invoiceDiscountRate,
-            invoiceTaxId,
-            invoiceTaxRate,
-            invoiceTaxValue,
+            invoiceTaxRateSum,
+            invoiceTaxValueTotal,
             netTotal,
             data.created_by || null
           );
@@ -1408,6 +1549,23 @@ export default function registerSalesInvoiceIPC() {
           db.prepare(
             `UPDATE sales_invoices SET invoice_name = ? WHERE id = ?`
           ).run(invoiceName, invoiceId);
+        }
+
+        // ---- Insert invoice-level tax rows ----
+        const insertInvoiceTax = db.prepare(`
+          INSERT INTO sales_invoice_taxes
+          (invoice_id, tax_id, tax_name, tax_rate, tax_value)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        for (const tax of preparedInvoiceTaxes) {
+          insertInvoiceTax.run(
+            invoiceId,
+            tax.tax_id,
+            tax.tax_name,
+            tax.tax_rate,
+            tax.tax_value
+          );
         }
 
         // ---- Insert items + reduce stock + record movements ----
@@ -1750,6 +1908,35 @@ export default function registerSalesInvoiceIPC() {
       )
       .join("");
 
+    // ---- Tax breakdown — one line per applied tax (item-level total
+    // folded in as its own line if present), never a single flat value ----
+    const taxLines = [];
+
+    const itemTaxTotal = Number(data.itemTaxTotal || 0);
+    if (itemTaxTotal > 0) {
+      taxLines.push({
+        label: labels.itemTax || "Item tax",
+        value: itemTaxTotal,
+      });
+    }
+
+    for (const tax of data.taxes || []) {
+      const value = Number(tax.value || tax.tax_value || 0);
+      if (value <= 0) continue;
+      taxLines.push({
+        label: `${tax.name || tax.tax_name} (${tax.rate ?? tax.tax_rate}%)`,
+        value,
+      });
+    }
+
+    const taxLinesHtml = taxLines
+      .map(
+        (t) => `
+      <div><span>${escapeHtml(t.label)}</span><span>${t.value.toFixed(2)}</span></div>
+    `
+      )
+      .join("");
+
     const html = `
   <html>
     <head>
@@ -1793,7 +1980,8 @@ export default function registerSalesInvoiceIPC() {
       </table>
       <div class="line"></div>
       <div class="summary">
-        <div><span>${labels.subtotal}</span><span>${escapeHtml(data.total)}</span></div>
+        <div><span>${labels.subtotal}</span><span>${escapeHtml(data.subtotal ?? data.total)}</span></div>
+        ${taxLinesHtml}
         <div><span>${labels.paid}</span><span>${escapeHtml(data.received)}</span></div>
         <div><span>${labels.change}</span><span>${escapeHtml(data.change)}</span></div>
         <div class="total"><span>${labels.total}</span><span>${escapeHtml(data.total)}</span></div>

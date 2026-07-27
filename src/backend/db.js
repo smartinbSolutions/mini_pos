@@ -247,7 +247,6 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   discount_rate REAL DEFAULT 0,
-  tax REAL DEFAULT 0,
   taxRate REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
   description TEXT,
@@ -258,6 +257,22 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   FOREIGN KEY (customer_id) REFERENCES customers(id),
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS sales_invoice_taxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id INTEGER NOT NULL,
+  tax_id INTEGER,
+  tax_name TEXT,
+  tax_rate REAL NOT NULL DEFAULT 0,
+  tax_value REAL NOT NULL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
 `
 ).run();
@@ -302,7 +317,6 @@ CREATE TABLE IF NOT EXISTS sales_returns (
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   discount_rate REAL DEFAULT 0,
-  tax REAL DEFAULT 0,
   taxRate REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
@@ -317,6 +331,22 @@ CREATE TABLE IF NOT EXISTS sales_returns (
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id)
+);
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS sales_return_taxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  return_id INTEGER NOT NULL,
+  tax_id INTEGER,
+  tax_name TEXT,
+  tax_rate REAL NOT NULL DEFAULT 0,
+  tax_value REAL NOT NULL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (return_id) REFERENCES sales_returns(id),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
 `
 ).run();
@@ -364,7 +394,6 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
   supplier_id INTEGER,
   date TEXT,
   subtotal REAL DEFAULT 0,
-  tax REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
   taxRate REAL DEFAULT 0,
   discount REAL DEFAULT 0,
@@ -379,6 +408,22 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
     ON UPDATE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id),
   FOREIGN KEY (updated_by) REFERENCES users(id)
+);
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS purchase_invoice_taxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id INTEGER NOT NULL,
+  tax_id INTEGER,
+  tax_name TEXT,
+  tax_rate REAL NOT NULL DEFAULT 0,
+  tax_value REAL NOT NULL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (invoice_id) REFERENCES purchase_invoices(id),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
 `
 ).run();
@@ -428,7 +473,6 @@ CREATE TABLE IF NOT EXISTS purchase_returns (
   subtotal REAL DEFAULT 0,
   discount REAL DEFAULT 0,
   discount_rate REAL DEFAULT 0,
-  tax REAL DEFAULT 0,
   taxRate REAL DEFAULT 0,
   taxValue REAL DEFAULT 0,
   net_total REAL DEFAULT 0,
@@ -443,6 +487,22 @@ CREATE TABLE IF NOT EXISTS purchase_returns (
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id)
+);
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS purchase_return_taxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  return_id INTEGER NOT NULL,
+  tax_id INTEGER,
+  tax_name TEXT,
+  tax_rate REAL NOT NULL DEFAULT 0,
+  tax_value REAL NOT NULL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (return_id) REFERENCES purchase_returns(id),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
 `
 ).run();
@@ -644,6 +704,7 @@ db.prepare(
     base_currency_id INTEGER,
     language TEXT DEFAULT 'ar',
     timezone TEXT DEFAULT 'Asia/Damascus',
+    allow_negative_stock INTEGER DEFAULT 0,
     createdAt TEXT DEFAULT (datetime('now')),
     updatedAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (base_currency_id) REFERENCES currencies(id)

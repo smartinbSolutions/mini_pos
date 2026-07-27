@@ -7,22 +7,58 @@ const toNumber = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+// Mirrors recalcItem() in useAddSales — same cascade, same order of
+// operations, so POS and manual sales produce identical math for the
+// same inputs. price/qty are always the BASE (pre-tax) values; tax is
+// LOCKED to whatever the product's tax_id already is (no dropdown here,
+// unlike manual sales — enforced by never exposing a tax_id setter).
+function recalcCartItem(item) {
+  const qty = toNumber(item.qty);
+  const price = toNumber(item.price);
+  const discountRate = toNumber(item.discount_rate);
+  const taxRate = toNumber(item.tax_rate);
+
+  const total = qty * price;
+  const discount = total * (discountRate / 100);
+  const afterDiscount = total - discount;
+  const taxValue = afterDiscount * (taxRate / 100);
+  const lineTotal = afterDiscount + taxValue;
+
+  return {
+    ...item,
+    qty,
+    price,
+    discount_rate: discountRate,
+    tax_rate: taxRate,
+    total,
+    discount,
+    afterDiscount,
+    taxValue,
+    lineTotal,
+  };
+}
+
 export default function usePosCheckout({ weight } = {}) {
   const { t, i18n } = useTranslation();
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [funds, setFunds] = useState([]);
+  const [taxes, setTaxes] = useState([]);
   const [cart, setCart] = useState([]);
-  const [discount, setDiscount] = useState({
-    type: "amount", // amount | percent
-    value: 0,
-  });
+
+  // ---- Invoice-level state — same shape as useAddSales ----
+  // ---- Invoice-level state — same shape as useAddSales ----
+  const [invoiceDiscountRate, setInvoiceDiscountRate] = useState(0);
+  const [invoiceTaxes, setInvoiceTaxes] = useState([]); // [{ id, name, rate }]
+  const [invoiceNote, setInvoiceNote] = useState("");
+
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState("");
   const [currencies, setCurrencies] = useState();
   const [search, setSearch] = useState("");
+  const [allowNegativeStock, setAllowNegativeStock] = useState(false);
 
   const weightRef = useRef(weight);
   const now = new Date();
@@ -54,17 +90,21 @@ export default function usePosCheckout({ weight } = {}) {
 
     try {
       setLoading(true);
-      const [productsResult, customersResult, fundsResult, currencyResult] =
-        await Promise.allSettled([
-          api.getProducts({
-            page: 1,
-            limit: 50,
-            search,
-          }),
-          api.getCustomers(),
-          api.getFunds(),
-          api.getCurrencies(),
-        ]);
+      const [
+        productsResult,
+        customersResult,
+        fundsResult,
+        currencyResult,
+        settingsResult,
+        taxesResult,
+      ] = await Promise.allSettled([
+        api.getPosProducts({ page: 1, limit: 50, search }),
+        api.getCustomers(),
+        api.getFunds(),
+        api.getCurrencies(),
+        api.getCompanySetting(),
+        api.getTaxes(),
+      ]);
 
       if (productsResult.status === "rejected") {
         throw productsResult.reason;
@@ -91,6 +131,16 @@ export default function usePosCheckout({ weight } = {}) {
       );
 
       setCurrencies(currencyResult.value?.[0] || []);
+
+      setAllowNegativeStock(
+        settingsResult.status === "fulfilled"
+          ? Boolean(settingsResult.value?.settings?.allow_negative_stock)
+          : false
+      );
+
+      setTaxes(
+        taxesResult.status === "fulfilled" ? taxesResult.value || [] : []
+      );
 
       setError(
         [customersResult, fundsResult].some(
@@ -119,6 +169,8 @@ export default function usePosCheckout({ weight } = {}) {
     return () => clearTimeout(searchTimeout.current);
   }, [search]);
 
+  // ---- Cart mutations ----
+
   const addToCart = (product, quantity = 1, replaceQuantity = false) => {
     const qty = Math.max(0, toNumber(quantity));
 
@@ -130,21 +182,28 @@ export default function usePosCheckout({ weight } = {}) {
       if (existing) {
         return current.map((item) =>
           item.id === product.id
-            ? {
+            ? recalcCartItem({
                 ...item,
                 qty: replaceQuantity ? qty : toNumber(item.qty) + qty,
-              }
+              })
             : item
         );
       }
 
       return [
         ...current,
-        {
+        recalcCartItem({
           ...product,
           qty,
           product_id: product.product_id || product.id,
-        },
+          unit_id: product.unit_id ?? null,
+          conversion_factor: toNumber(product.conversion_factor) || 1,
+          tax_id: product.tax_id ?? null,
+          tax_rate: toNumber(product.tax_rate) || 0,
+          catalog_price: toNumber(product.price) || 0,
+          discount_rate: 0,
+          description: "",
+        }),
       ];
     });
   };
@@ -156,16 +215,50 @@ export default function usePosCheckout({ weight } = {}) {
       quantity === -1
         ? current.filter((item) => item.id !== productId)
         : current.map((item) =>
-            item.id === productId ? { ...item, qty: quantity } : item
+            item.id === productId
+              ? recalcCartItem({ ...item, qty: quantity })
+              : item
           )
     );
   };
 
-  const updatePrice = (productId, nextPrice) => {
-    const price = Math.max(0, toNumber(nextPrice));
+  // Price entered/shown everywhere in the UI is TAX-INCLUSIVE (what the
+  // customer actually pays). Storage stays BASE (pre-tax), so it has to
+  // be converted on the way in — otherwise tax would compound on top of
+  // an already-tax-inclusive number at checkout.
+  const updatePrice = (productId, nextInclusivePrice) => {
+    const inclusivePrice = Math.max(0, toNumber(nextInclusivePrice));
+
+    setCart((current) =>
+      current.map((item) => {
+        if (item.id !== productId) return item;
+
+        const taxRate = toNumber(item.tax_rate);
+        const basePrice =
+          taxRate > 0 ? inclusivePrice / (1 + taxRate / 100) : inclusivePrice;
+
+        return recalcCartItem({ ...item, price: basePrice });
+      })
+    );
+  };
+
+  const updateItemDiscountRate = (productId, rate) => {
+    const raw = Math.max(0, toNumber(rate));
+    const discountRate = raw < 0.005 ? 0 : raw;
+
     setCart((current) =>
       current.map((item) =>
-        item.id === productId ? { ...item, price: price } : item
+        item.id === productId
+          ? recalcCartItem({ ...item, discount_rate: discountRate })
+          : item
+      )
+    );
+  };
+
+  const updateItemNote = (productId, description) => {
+    setCart((current) =>
+      current.map((item) =>
+        item.id === productId ? { ...item, description } : item
       )
     );
   };
@@ -176,36 +269,134 @@ export default function usePosCheckout({ weight } = {}) {
 
   const clearCart = () => {
     setCart([]);
-    setDiscount({
-      type: "amount",
-      value: 0,
-    });
+    setInvoiceDiscountRate(0);
+    setInvoiceTaxes([]);
+    setInvoiceNote("");
     setSelectedCustomerId("");
   };
 
+  // ---- Cascade — item level, aggregated ----
+
   const subtotal = useMemo(
-    () =>
-      cart.reduce(
-        (total, item) => total + toNumber(item.price) * toNumber(item.qty),
-        0
-      ),
+    () => cart.reduce((sum, item) => sum + toNumber(item.total), 0),
     [cart]
   );
 
-  const discountAmount = useMemo(() => {
-    const value = toNumber(discount.value);
+  const itemDiscountTotal = useMemo(
+    () => cart.reduce((sum, item) => sum + toNumber(item.discount), 0),
+    [cart]
+  );
 
-    if (discount.type === "percent") {
-      return (subtotal * value) / 100;
+  const afterItemDiscounts = useMemo(
+    () => subtotal - itemDiscountTotal,
+    [subtotal, itemDiscountTotal]
+  );
+
+  const itemTaxTotal = useMemo(
+    () => cart.reduce((sum, item) => sum + toNumber(item.taxValue), 0),
+    [cart]
+  );
+
+  // ---- Cascade — invoice level, layered on top ----
+
+  const invoiceDiscount = useMemo(
+    () => afterItemDiscounts * (toNumber(invoiceDiscountRate) / 100),
+    [afterItemDiscounts, invoiceDiscountRate]
+  );
+
+  const afterInvoiceDiscount = useMemo(
+    () => afterItemDiscounts - invoiceDiscount,
+    [afterItemDiscounts, invoiceDiscount]
+  );
+
+  // ---- Invoice-level taxes: PARALLEL — each computed independently off
+  // afterInvoiceDiscount, then summed. Mirrors the backend's model exactly. ----
+
+  const invoiceTaxValue = useMemo(() => {
+    return (invoiceTaxes || []).reduce((sum, tax) => {
+      const rate = toNumber(tax.rate);
+      return sum + afterInvoiceDiscount * (rate / 100);
+    }, 0);
+  }, [afterInvoiceDiscount, invoiceTaxes]);
+
+  const addInvoiceTax = (selectedTax) => {
+    if (!selectedTax?.id) return;
+
+    setInvoiceTaxes((current) => {
+      if (current.some((t) => t.id === selectedTax.id)) return current;
+      return [
+        ...current,
+        {
+          id: selectedTax.id,
+          name: selectedTax.name,
+          rate: toNumber(selectedTax.rate),
+        },
+      ];
+    });
+  };
+
+  const removeInvoiceTax = (taxId) => {
+    setInvoiceTaxes((current) => current.filter((t) => t.id !== taxId));
+  };
+
+  const clearInvoiceTaxes = () => {
+    setInvoiceTaxes([]);
+  };
+  const netTotal = useMemo(() => {
+    return Math.max(0, afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue);
+  }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
+
+  const itemTaxSummary = useMemo(() => {
+    const groups = new Map();
+
+    for (const item of cart) {
+      if (!item.tax_id || !item.tax_rate) continue;
+
+      const key = item.tax_id;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          tax_id: item.tax_id,
+          rate: item.tax_rate,
+          base: 0,
+          value: 0,
+        });
+      }
+
+      const group = groups.get(key);
+      group.base += toNumber(item.afterDiscount);
+      group.value += toNumber(item.taxValue);
     }
 
-    return value;
-  }, [subtotal, discount]);
+    return Array.from(groups.values());
+  }, [cart]);
 
-  const netTotal = useMemo(() => {
-    return Math.max(0, subtotal - discountAmount);
-  }, [subtotal, discountAmount]);
+  const itemDiscountSummary = useMemo(() => {
+    const groups = new Map();
 
+    for (const item of cart) {
+      const rate = toNumber(item.discount_rate);
+      if (rate < 0.005) continue;
+
+      const key = rate.toFixed(2);
+      if (!groups.has(key)) {
+        groups.set(key, { rate, base: 0, amount: 0 });
+      }
+
+      const group = groups.get(key);
+      group.base += toNumber(item.total);
+      group.amount += toNumber(item.discount);
+    }
+
+    return Array.from(groups.values());
+  }, [cart]);
+
+  // The true starting point for invoice-level adjustments — items'
+  // own discount and tax already resolved. This is what the cart
+  // footer shows as the total BEFORE any invoice discount/tax applies.
+  const itemsNetTotal = useMemo(
+    () => afterItemDiscounts + itemTaxTotal,
+    [afterItemDiscounts, itemTaxTotal]
+  );
   const checkout = async ({ payments, received }) => {
     setCheckingOut(true);
 
@@ -225,15 +416,33 @@ export default function usePosCheckout({ weight } = {}) {
             payment.amount_fund_currency > 0
         );
 
+      // pos-checkout re-derives everything server-side from these raw
+      // entered values — we send BASE price/qty plus the locked tax_id
+      // and the item's own discount_rate; server recomputes the exact
+      // same cascade and is the actual source of truth for netTotal.
+      const checkoutItems = cart.map((i) => ({
+        product_id: i.product_id,
+        name: i.name,
+        unit_name: i.unit_name,
+        unit_conversion_factor: toNumber(i.conversion_factor) || 1,
+        entered_quantity: i.qty,
+        entered_price: i.price,
+        discount_rate: i.discount_rate,
+        tax_id: i.tax_id,
+        description: i.description,
+      }));
+
       const payload = {
-        items: cart.map((i) => ({
+        items: checkoutItems.map((i) => ({
           name: i.name,
-          quantity: i.qty,
-          price: i.price,
-          buyingPrice: i.costPrice,
+          quantity: i.entered_quantity,
+          unit_name: i.unit_name,
+          price: i.entered_price,
         })),
-        subtotal,
-        discount: toNumber(discount.value),
+        subtotal: afterItemDiscounts,
+        itemTaxTotal,
+        taxes: invoiceTaxes,
+        discount_rate: invoiceDiscountRate,
         total: netTotal,
         received,
         payments: normalizedPayments,
@@ -243,9 +452,11 @@ export default function usePosCheckout({ weight } = {}) {
       };
 
       const sales = await api.posCheckout({
-        items: cart,
+        items: checkoutItems,
         subtotal,
-        discount: toNumber(discount?.value || 0),
+        discount_rate: toNumber(invoiceDiscountRate || 0),
+        taxes: invoiceTaxes.map((t) => t.id),
+        description: invoiceNote?.trim() || null,
         net_total: netTotal,
         paid_amount: netTotal,
         customer_id: selectedCustomerId,
@@ -258,13 +469,13 @@ export default function usePosCheckout({ weight } = {}) {
       const res = await api.printReceipt(payload);
       setCart([]);
       setSelectedCustomerId("");
-      setDiscount({
-        type: "amount",
-        value: 0,
-      });
+      setInvoiceDiscountRate(0);
+      setInvoiceTaxes([]);
+      setInvoiceNote("");
       refetch();
     } catch (err) {
       console.error(err);
+      setError(err?.message || t("errors.saveError"));
     } finally {
       setCheckingOut(false);
     }
@@ -285,37 +496,42 @@ export default function usePosCheckout({ weight } = {}) {
             barcode = "";
             return;
           }
+
+          // barcode always resolves to the product's base unit
+          const lineId = `${product.id}-${product.unit_id}`;
+
           setCart((prev) => {
             const scannedQuantity =
               Math.max(0, toNumber(weightRef.current)) || 1;
-            const existingIndex = prev.findIndex(
-              (i) => Number(i.product_id) === Number(product.id)
-            );
+            const existingIndex = prev.findIndex((i) => i.id === lineId);
 
             if (existingIndex !== -1) {
               const updated = [...prev];
-              const item = updated[existingIndex];
-              const newQuantity = toNumber(item.qty) + scannedQuantity;
-
-              updated[existingIndex] = {
-                ...item,
-                qty: newQuantity,
-                price: Number(item.price),
-              };
-
+              updated[existingIndex] = recalcCartItem({
+                ...updated[existingIndex],
+                qty: toNumber(updated[existingIndex].qty) + scannedQuantity,
+              });
               return updated;
             }
 
             return [
               ...prev,
-              {
-                id: product.id,
+              recalcCartItem({
+                id: lineId,
                 product_id: product.id,
+                unit_id: product.unit_id,
+                unit_name: product.unit_name,
+                is_base: true,
+                conversion_factor: toNumber(product.conversion_factor) || 1,
+                tax_id: product.tax_id ?? null,
+                tax_rate: toNumber(product.tax_rate) || 0,
                 name: product.name,
                 qty: scannedQuantity,
                 price: product.price || 0,
-                total: (product.price || 0) * scannedQuantity,
-              },
+                catalog_price: toNumber(product.price) || 0,
+                discount_rate: 0,
+                description: "",
+              }),
             ];
           });
 
@@ -338,25 +554,44 @@ export default function usePosCheckout({ weight } = {}) {
     products,
     customers,
     funds,
+    taxes,
     cart,
     search,
     setSearch,
-    discount,
-    setDiscount,
     selectedCustomerId,
+    setSelectedCustomerId,
     loading,
     checkingOut,
     error,
     subtotal,
+    itemDiscountTotal,
+    afterItemDiscounts,
+    itemTaxTotal,
+    invoiceDiscountRate,
+    setInvoiceDiscountRate,
+    invoiceDiscount,
+    afterInvoiceDiscount,
+    invoiceTaxes,
+    addInvoiceTax,
+    removeInvoiceTax,
+    clearInvoiceTaxes,
+    invoiceTaxValue,
+    invoiceNote,
+    setInvoiceNote,
     netTotal,
     refetch,
-    setSelectedCustomerId,
     addToCart,
     updateQuantity,
     updatePrice,
+    updateItemDiscountRate,
+    updateItemNote,
     removeFromCart,
     clearCart,
     checkout,
     currencies,
+    allowNegativeStock,
+    itemTaxSummary,
+    itemDiscountSummary,
+    itemsNetTotal,
   };
 }

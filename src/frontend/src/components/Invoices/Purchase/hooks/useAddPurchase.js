@@ -30,9 +30,7 @@ const emptyInvoice = {
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
   discount: 0,
-  tax: "",
-  taxRate: 0,
-  taxValue: 0,
+  taxes: [],
   description: "",
 };
 
@@ -489,22 +487,47 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
   };
 
   // ---- Invoice-level tax: hidden by default ----
+  // ---- Invoice-level taxes: PARALLEL — each computed independently off
+  // afterInvoiceDiscount, then summed. Mirrors the backend's model exactly. ----
 
   const invoiceTaxValue = useMemo(() => {
-    const rate = Number(invoice.taxRate || 0);
-    return afterInvoiceDiscount * (rate / 100);
-  }, [afterInvoiceDiscount, invoice.taxRate]);
+    const taxes = invoice.taxes || [];
+    return taxes.reduce((sum, tax) => {
+      const rate = Number(tax.rate || 0);
+      return sum + afterInvoiceDiscount * (rate / 100);
+    }, 0);
+  }, [afterInvoiceDiscount, invoice.taxes]);
 
-  const setInvoiceTax = (selectedTax) => {
+  const addInvoiceTax = (selectedTax) => {
+    if (!selectedTax?.id) return;
+
+    setInvoice((prev) => {
+      const current = prev.taxes || [];
+      if (current.some((t) => t.id === selectedTax.id)) return prev; // already added
+
+      return {
+        ...prev,
+        taxes: [
+          ...current,
+          {
+            id: selectedTax.id,
+            name: selectedTax.name,
+            rate: Number(selectedTax.rate || 0),
+          },
+        ],
+      };
+    });
+  };
+
+  const removeInvoiceTax = (taxId) => {
     setInvoice((prev) => ({
       ...prev,
-      tax: selectedTax?.id ?? "",
-      taxRate: Number(selectedTax?.rate || 0),
+      taxes: (prev.taxes || []).filter((t) => t.id !== taxId),
     }));
   };
 
-  const clearInvoiceTax = () => {
-    setInvoice((prev) => ({ ...prev, tax: "", taxRate: 0 }));
+  const clearInvoiceTaxes = () => {
+    setInvoice((prev) => ({ ...prev, taxes: [] }));
   };
   // Manually enables the tax control for a line whose product has no default
   // tax. tax_id stays null until the user picks one from the select.
@@ -562,6 +585,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
 
         const payload = {
           ...invoice,
+          taxes: (invoice.taxes || []).map((t) => t.id),
           discount: invoiceDiscount,
           taxValue: invoiceTaxValue,
           subtotal,
@@ -571,7 +595,6 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
           payment: paymentData,
           created_by: user.id,
         };
-
         const res = await api.createPurchaseInvoice(payload);
 
         if (!res?.success) {
@@ -602,8 +625,9 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
   return {
     invoice,
     setInvoice,
-    setInvoiceTax,
-    clearInvoiceTax,
+    addInvoiceTax,
+    removeInvoiceTax,
+    clearInvoiceTaxes,
     setInvoiceDiscountRate,
     setInvoiceDiscountAmount,
     clearInvoiceDiscount,

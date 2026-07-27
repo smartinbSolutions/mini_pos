@@ -171,6 +171,7 @@ export default function useSalesReturn() {
 
   const invoiceDiscountRate = Number(invoice?.discount_rate || 0);
   const invoiceTaxRate = Number(invoice?.taxRate || 0);
+  const invoiceTaxes = invoice?.taxes || [];
 
   const invoiceDiscount = useMemo(() => {
     return Number(
@@ -253,10 +254,12 @@ export default function useSalesReturn() {
     itemDiscountTotal,
     itemTaxTotal,
     invoiceDiscount,
+    afterInvoiceDiscount,
     invoiceTaxValue,
     netTotal,
     invoiceDiscountRate,
     invoiceTaxRate,
+    invoiceTaxes,
     loading,
     saving,
     error,

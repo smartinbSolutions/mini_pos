@@ -28,6 +28,14 @@ const VARIANTS = {
   },
 };
 
+// Normalizes "is this field currently filtering anything" across both
+// scalar filters (date/number/select — active when non-empty) and
+// multiselect filters (an array — active when non-empty array).
+function isFieldActive(rawValue) {
+  if (Array.isArray(rawValue)) return rawValue.length > 0;
+  return rawValue !== null && rawValue !== undefined && rawValue !== "";
+}
+
 export default function InvoiceListHeader({
   badgeLabel,
   badgeIcon: BadgeIcon,
@@ -59,11 +67,10 @@ export default function InvoiceListHeader({
   const activeEntries = filterFields
     .map((field) => {
       const rawValue = filters?.[field.name];
-      const isActive =
-        rawValue !== null && rawValue !== undefined && rawValue !== "";
-      if (!isActive) return null;
+      if (!isFieldActive(rawValue)) return null;
 
       let displayValue = rawValue;
+
       if (field.type === "select") {
         const match = field.options.find(
           (opt) => String(opt.value) === String(rawValue)
@@ -71,7 +78,25 @@ export default function InvoiceListHeader({
         displayValue = match?.label ?? rawValue;
       }
 
-      return { name: field.name, label: field.label, value: displayValue };
+      if (field.type === "multiselect") {
+        const selectedLabels = (rawValue || []).map((v) => {
+          const match = field.options.find(
+            (opt) => String(opt.value) === String(v)
+          );
+          return match?.label ?? v;
+        });
+        displayValue =
+          selectedLabels.length > 2
+            ? `${selectedLabels.slice(0, 2).join(", ")} +${selectedLabels.length - 2}`
+            : selectedLabels.join(", ");
+      }
+
+      return {
+        name: field.name,
+        label: field.label,
+        value: displayValue,
+        isMultiselect: field.type === "multiselect",
+      };
     })
     .filter(Boolean);
 
@@ -199,7 +224,9 @@ export default function InvoiceListHeader({
               <span className="text-slate-400">{entry.label}:</span>
               <span className="font-bold text-[#4663ff]">{entry.value}</span>
               <button
-                onClick={() => onFilterChange(entry.name, "")}
+                onClick={() =>
+                  onFilterChange(entry.name, entry.isMultiselect ? [] : "")
+                }
                 className="ms-0.5 rounded-full p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
               >
                 <X size={11} />
@@ -224,10 +251,7 @@ export default function InvoiceListHeader({
           className={`grid grid-cols-2 gap-3 border-t border-[#e5ebff] bg-white/60 p-3.5 ${filterGridColsClass}`}
         >
           {filterFields.map((field) => {
-            const isActive =
-              filters?.[field.name] !== null &&
-              filters?.[field.name] !== undefined &&
-              filters?.[field.name] !== "";
+            const isActive = isFieldActive(filters?.[field.name]);
 
             const fieldWrapperClass = "flex flex-col gap-1";
             const labelClass = `text-[10px] font-bold uppercase tracking-wide ${
@@ -264,6 +288,87 @@ export default function InvoiceListHeader({
                     placeholder="0"
                     className={inputBaseClass}
                   />
+                </div>
+              );
+            }
+
+            if (field.type === "multiselect") {
+              const selectedValues = filters?.[field.name] || [];
+
+              const selectedOptions = selectedValues
+                .map((v) =>
+                  field.options.find((opt) => String(opt.value) === String(v))
+                )
+                .filter(Boolean);
+
+              const addOption = (optionValue) => {
+                if (!optionValue) return;
+                const exists = selectedValues.some(
+                  (v) => String(v) === String(optionValue)
+                );
+                if (exists) return;
+                onFilterChange(field.name, [...selectedValues, optionValue]);
+              };
+
+              const removeOption = (optionValue) => {
+                onFilterChange(
+                  field.name,
+                  selectedValues.filter(
+                    (v) => String(v) !== String(optionValue)
+                  )
+                );
+              };
+
+              return (
+                <div key={field.name} className={fieldWrapperClass}>
+                  <label className={labelClass}>{field.label}</label>
+                  <div
+                    className={`flex min-h-9 flex-wrap items-center gap-1 rounded-lg border bg-white px-1.5 py-1 ${
+                      isActive
+                        ? "border-[#4663ff]/40 bg-[#f8faff]"
+                        : "border-[#dbe4ff]"
+                    }`}
+                  >
+                    {selectedOptions.map((opt) => (
+                      <span
+                        key={opt.value}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#4663ff]/20 bg-[#eef3ff] px-1.5 py-0.5 text-[11px] font-bold text-[#4663ff]"
+                      >
+                        {opt.label}
+                        <button
+                          type="button"
+                          onClick={() => removeOption(opt.value)}
+                          className="rounded p-0.5 text-[#4663ff]/60 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={10} />
+                        </button>
+                      </span>
+                    ))}
+
+                    <select
+                      value=""
+                      onChange={(e) => addOption(e.target.value)}
+                      className="h-7 min-w-[5.5rem] flex-1 rounded-md border-none bg-transparent px-1 text-xs text-slate-500 outline-none focus:ring-0"
+                    >
+                      <option value="">
+                        {selectedOptions.length > 0
+                          ? "+"
+                          : field.allLabel || field.label}
+                      </option>
+                      {field.options
+                        .filter(
+                          (opt) =>
+                            !selectedValues.some(
+                              (v) => String(v) === String(opt.value)
+                            )
+                        )
+                        .map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
               );
             }

@@ -86,8 +86,9 @@ export default function UpdateSales() {
   const {
     invoice,
     setInvoice,
-    setInvoiceTax,
-    clearInvoiceTax,
+    addInvoiceTax,
+    removeInvoiceTax,
+    clearInvoiceTaxes,
     setInvoiceDiscountRate,
     setInvoiceDiscountAmount,
     clearInvoiceDiscount,
@@ -106,8 +107,8 @@ export default function UpdateSales() {
     enableItemTax,
     disableItemTax,
     updateItemDescription,
-    setItemProduct, // ADD
-    addItemWithProduct, // ADD
+    setItemProduct,
+    addItemWithProduct,
     submit,
     subtotal,
     itemDiscountSummary,
@@ -119,7 +120,7 @@ export default function UpdateSales() {
     error,
     loading,
     setProducts,
-    refetch, // ADD
+    refetch,
     status,
   } = useUpdateSales();
 
@@ -161,8 +162,8 @@ export default function UpdateSales() {
   const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(
     () => Number(invoice?.discount_rate) > 0
   );
-  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(() =>
-    Boolean(invoice?.tax)
+  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(
+    () => (invoice?.taxes || []).length > 0
   );
   const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(() =>
     Boolean(invoice?.description)
@@ -851,7 +852,7 @@ export default function UpdateSales() {
                           <button
                             type="button"
                             onClick={() => {
-                              clearInvoiceTax();
+                              clearInvoiceTaxes();
                               setInvoiceTaxRevealed(false);
                             }}
                             className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
@@ -860,30 +861,62 @@ export default function UpdateSales() {
                           </button>
                         )}
                       </div>
-                      <select
-                        className={`${smallInputClass} text-right`}
-                        value={invoice.tax || ""}
-                        disabled={isLocked}
-                        onChange={(e) => {
-                          const selected = taxes.find(
-                            (tax) => tax.id === Number(e.target.value)
-                          );
-                          setInvoiceTax(selected);
-                        }}
-                      >
-                        <option value="">{t("ui.selectTax")}</option>
-                        {taxes
-                          .filter(
-                            (tax) =>
-                              tax.category === "invoice" ||
-                              tax.category === "both"
-                          )
-                          .map((tax) => (
-                            <option key={tax.id} value={tax.id}>
+
+                      {(invoice.taxes || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {invoice.taxes.map((tax) => (
+                            <span
+                              key={tax.id}
+                              className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-emerald-700 shadow-sm"
+                            >
                               {tax.name} ({tax.rate}%)
-                            </option>
+                              {!isLocked && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeInvoiceTax(tax.id)}
+                                  className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                                >
+                                  <X size={11} />
+                                </button>
+                              )}
+                            </span>
                           ))}
-                      </select>
+                        </div>
+                      )}
+
+                      {!isLocked && (
+                        <select
+                          className={`${smallInputClass} text-right`}
+                          value=""
+                          onChange={(e) => {
+                            const selected = taxes.find(
+                              (tax) => tax.id === Number(e.target.value)
+                            );
+                            if (selected) addInvoiceTax(selected);
+                          }}
+                        >
+                          <option value="">
+                            {t(
+                              "screens.invoices.addAnotherTax",
+                              "Add another tax"
+                            )}
+                          </option>
+                          {taxes
+                            .filter(
+                              (tax) =>
+                                (tax.category === "invoice" ||
+                                  tax.category === "both") &&
+                                !(invoice.taxes || []).some(
+                                  (applied) => applied.id === tax.id
+                                )
+                            )
+                            .map((tax) => (
+                              <option key={tax.id} value={tax.id}>
+                                {tax.name} ({tax.rate}%)
+                              </option>
+                            ))}
+                        </select>
+                      )}
                     </div>
                   )}
 

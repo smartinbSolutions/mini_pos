@@ -96,6 +96,7 @@ contextBridge.exposeInMainWorld("api", {
 
   /* ================= PRODUCTS ================= */
   getProducts: (params) => ipcRenderer.invoke("get-products", params),
+  getPosProducts: (params) => ipcRenderer.invoke("get-pos-products", params),
   getProduct: (id) => ipcRenderer.invoke("get-product", id),
   createProduct: (data) => ipcRenderer.invoke("create-product", data),
   updateProduct: (data) => ipcRenderer.invoke("update-product", data),

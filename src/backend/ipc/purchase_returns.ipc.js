@@ -31,19 +31,22 @@ export default function registerPurchaseReturnIPC() {
 
         // ---- Original invoice's own rates — reapplied to whatever fraction
         // of each item is being returned. Never trust anything client-sent
-        // here; the invoice row is the only source of truth for its rates. ----
+        // here; the invoice row (and its taxes) are the only source of truth. ----
         const originalInvoice = db
-          .prepare(
-            `SELECT discount_rate, taxRate FROM purchase_invoices WHERE id = ?`
-          )
+          .prepare(`SELECT discount_rate FROM purchase_invoices WHERE id = ?`)
           .get(data.purchase_invoice_id);
 
         if (!originalInvoice) {
           throw new Error("PURCHASE_INVOICE_NOT_FOUND");
         }
 
+        const originalInvoiceTaxes = db
+          .prepare(
+            `SELECT tax_id, tax_name, tax_rate FROM purchase_invoice_taxes WHERE invoice_id = ?`
+          )
+          .all(data.purchase_invoice_id);
+
         const invoiceDiscountRate = Number(originalInvoice.discount_rate || 0);
-        const invoiceTaxRate = Number(originalInvoice.taxRate || 0);
 
         const getOriginalItem = db.prepare(`
           SELECT
@@ -94,14 +97,7 @@ export default function registerPurchaseReturnIPC() {
             throw new Error(`EXCEEDED_RETURN_LIMIT: ${item.product_id}`);
           }
 
-          // Fraction of this original line being returned right now — the
-          // same base-unit quantity/price the original invoice used, no
-          // re-derivation from entered_quantity/entered_price needed since
-          // returns operate in the already-converted base unit.
           const originalQuantity = Number(originalItem.quantity);
-          const returnedFraction =
-            originalQuantity > 0 ? quantityToReturnNow / originalQuantity : 0;
-
           const price = Number(originalItem.price || 0);
           const returnedTotal = Number(
             (quantityToReturnNow * price).toFixed(2)
@@ -158,14 +154,34 @@ export default function registerPurchaseReturnIPC() {
         );
         const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
-        const invoiceTaxValue = Number(
-          ((afterInvoiceDiscount * invoiceTaxRate) / 100).toFixed(2)
+        // ---- Each of the ORIGINAL invoice's taxes reapplied independently
+        // to the return's own afterInvoiceDiscount base (parallel model),
+        // then summed ----
+        let invoiceTaxValueTotal = 0;
+        const preparedReturnTaxes = originalInvoiceTaxes.map((tax) => {
+          const value = Number(
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+          );
+          invoiceTaxValueTotal += value;
+          return {
+            tax_id: tax.tax_id,
+            tax_name: tax.tax_name,
+            tax_rate: tax.tax_rate,
+            tax_value: value,
+          };
+        });
+        invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
+
+        const invoiceTaxRateSum = Number(
+          originalInvoiceTaxes
+            .reduce((sum, t) => sum + Number(t.tax_rate || 0), 0)
+            .toFixed(2)
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
           ).toFixed(2)
         );
 
@@ -182,7 +198,7 @@ export default function registerPurchaseReturnIPC() {
           }
         }
 
-        // ---- Insert return header ----
+        // ---- Insert return header — tax column dropped ----
         const returnResult = db
           .prepare(
             `
@@ -196,13 +212,12 @@ export default function registerPurchaseReturnIPC() {
               subtotal,
               discount,
               discount_rate,
-              tax,
               taxRate,
               taxValue,
               net_total,
               created_by
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `
           )
           .run(
@@ -214,16 +229,30 @@ export default function registerPurchaseReturnIPC() {
             subtotal,
             invoiceDiscount,
             invoiceDiscountRate,
-            null, // tax id column intentionally left null — invoice-level tax on a
-            // return is re-derived from the original invoice's rate, not
-            // re-selected by the user, so there's no tax_id to reference here
-            invoiceTaxRate,
-            invoiceTaxValue,
+            invoiceTaxRateSum,
+            invoiceTaxValueTotal,
             netTotal,
             data.created_by
           );
 
         const returnId = returnResult.lastInsertRowid;
+
+        // ---- Insert return-level tax rows ----
+        const insertReturnTax = db.prepare(`
+          INSERT INTO purchase_return_taxes
+          (return_id, tax_id, tax_name, tax_rate, tax_value)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        for (const tax of preparedReturnTaxes) {
+          insertReturnTax.run(
+            returnId,
+            tax.tax_id,
+            tax.tax_name,
+            tax.tax_rate,
+            tax.tax_value
+          );
+        }
 
         // ---- Insert return items + reverse stock + record movements ----
         const insertItem = db.prepare(`
@@ -344,7 +373,6 @@ export default function registerPurchaseReturnIPC() {
       };
     }
   });
-
   // GET ALL
   ipcMain.handle("get-purchase-returns", (event, params = {}) => {
     const page = Math.max(1, Number(params.page) || 1);
@@ -377,6 +405,17 @@ export default function registerPurchaseReturnIPC() {
       whereValues.push(Number(maxTotal));
     }
 
+    if (Array.isArray(params.taxIds) && params.taxIds.length) {
+      const taxPlaceholders = params.taxIds.map(() => "?").join(",");
+      whereConditions.push(`
+        EXISTS (
+          SELECT 1 FROM purchase_return_taxes prt
+          WHERE prt.return_id = pr.id AND prt.tax_id IN (${taxPlaceholders})
+        )
+      `);
+      whereValues.push(...params.taxIds);
+    }
+
     const whereClause = whereConditions.length
       ? `WHERE ${whereConditions.join(" AND ")}`
       : "";
@@ -396,6 +435,8 @@ export default function registerPurchaseReturnIPC() {
         s.name AS supplier_name,
         s.phone AS supplier_phone,
         creator.full_name AS created_by_name,
+
+        returnTaxAgg.taxes_json,
 
         COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
         COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
@@ -440,6 +481,16 @@ export default function registerPurchaseReturnIPC() {
         GROUP BY return_id
       ) itemAgg ON itemAgg.return_id = pr.id
 
+      LEFT JOIN (
+        SELECT
+          return_id,
+          json_group_array(
+            json_object('tax_id', tax_id, 'name', tax_name, 'rate', tax_rate, 'value', tax_value)
+          ) AS taxes_json
+        FROM purchase_return_taxes
+        GROUP BY return_id
+      ) returnTaxAgg ON returnTaxAgg.return_id = pr.id
+
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = pr.id
        AND pa.invoice_type = 'purchase_return'
@@ -481,56 +532,60 @@ export default function registerPurchaseReturnIPC() {
       )
       .get(...whereValues, ...havingValues).total;
 
+    const returnsWithParsedTaxes = returns.map((ret) => ({
+      ...ret,
+      taxes: ret.taxes_json ? JSON.parse(ret.taxes_json) : [],
+    }));
+
     return {
-      data: returns,
+      data: returnsWithParsedTaxes,
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit),
     };
   });
-
   // GET ONE
   ipcMain.handle("get-purchase-return", (event, id) => {
     const returnInvoice = db
       .prepare(
         `
+    SELECT 
+      pr.*,
+      s.name AS supplier_name,
+      s.phone AS supplier_phone,
+      creator.full_name AS created_by_name,
+
+      COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
+
+      pr.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
+
+      CASE
+        WHEN COALESCE(pa_sum.paid_amount, 0) >= pr.net_total THEN 'paid'
+        WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
+        ELSE 'unpaid'
+      END AS status
+
+    FROM purchase_returns pr
+
+    LEFT JOIN suppliers s 
+      ON s.id = pr.supplier_id
+
+    LEFT JOIN users creator
+      ON creator.id = pr.created_by
+
+    LEFT JOIN (
       SELECT 
-        pr.*,
-        s.name AS supplier_name,
-        s.phone AS supplier_phone,
-        creator.full_name AS created_by_name,
+        invoice_id,
+        SUM(amount) AS paid_amount
+      FROM payment_allocations
+      WHERE invoice_type = 'purchase_return'
+      GROUP BY invoice_id
+    ) pa_sum 
+      ON pa_sum.invoice_id = pr.id
 
-        COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
-
-        pr.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
-
-        CASE
-          WHEN COALESCE(pa_sum.paid_amount, 0) >= pr.net_total THEN 'paid'
-          WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
-          ELSE 'unpaid'
-        END AS status
-
-      FROM purchase_returns pr
-
-      LEFT JOIN suppliers s 
-        ON s.id = pr.supplier_id
-
-      LEFT JOIN users creator
-        ON creator.id = pr.created_by
-
-      LEFT JOIN (
-        SELECT 
-          invoice_id,
-          SUM(amount) AS paid_amount
-        FROM payment_allocations
-        WHERE invoice_type = 'purchase_return'
-        GROUP BY invoice_id
-      ) pa_sum 
-        ON pa_sum.invoice_id = pr.id
-
-      WHERE pr.id = ?
-      `
+    WHERE pr.id = ?
+    `
       )
       .get(id);
 
@@ -539,20 +594,32 @@ export default function registerPurchaseReturnIPC() {
     const items = db
       .prepare(
         `
-      SELECT 
-        pri.*,
-        p.name AS name,
-        t.name AS tax_name
+    SELECT 
+      pri.*,
+      p.name AS name,
+      t.name AS tax_name
 
-      FROM purchase_return_items pri
+    FROM purchase_return_items pri
 
-      LEFT JOIN products p 
-        ON p.id = pri.product_id
+    LEFT JOIN products p 
+      ON p.id = pri.product_id
 
-      LEFT JOIN taxes t
-        ON t.id = pri.tax_id
+    LEFT JOIN taxes t
+      ON t.id = pri.tax_id
 
-      WHERE pri.return_id = ?
+    WHERE pri.return_id = ?
+    `
+      )
+      .all(id);
+
+    // ---- Invoice-level taxes reapplied to this return, one row per tax ----
+    const taxes = db
+      .prepare(
+        `
+      SELECT id, tax_id, tax_name, tax_rate, tax_value
+      FROM purchase_return_taxes
+      WHERE return_id = ?
+      ORDER BY id ASC
       `
       )
       .all(id);
@@ -560,41 +627,42 @@ export default function registerPurchaseReturnIPC() {
     const allocations = db
       .prepare(
         `
-      SELECT
-        pa.id,
-        pa.payment_id,
-        pa.amount,
+    SELECT
+      pa.id,
+      pa.payment_id,
+      pa.amount,
 
-        p.date,
-        p.fund_id,
+      p.date,
+      p.fund_id,
 
-        f.name AS fund_name,
+      f.name AS fund_name,
 
-        c.code AS fund_currency_code,
-        c.symbol AS fund_currency_symbol
+      c.code AS fund_currency_code,
+      c.symbol AS fund_currency_symbol
 
-      FROM payment_allocations pa
+    FROM payment_allocations pa
 
-      LEFT JOIN payments p 
-        ON p.id = pa.payment_id
+    LEFT JOIN payments p 
+      ON p.id = pa.payment_id
 
-      LEFT JOIN funds f 
-        ON f.id = p.fund_id
+    LEFT JOIN funds f 
+      ON f.id = p.fund_id
 
-      LEFT JOIN currencies c 
-        ON c.id = f.currency_id
+    LEFT JOIN currencies c 
+      ON c.id = f.currency_id
 
-      WHERE pa.invoice_id = ?
-        AND pa.invoice_type = 'purchase_return'
+    WHERE pa.invoice_id = ?
+      AND pa.invoice_type = 'purchase_return'
 
-      ORDER BY pa.id ASC
-      `
+    ORDER BY pa.id ASC
+    `
       )
       .all(id);
 
     return {
       ...returnInvoice,
       items,
+      taxes,
       allocations,
     };
   });

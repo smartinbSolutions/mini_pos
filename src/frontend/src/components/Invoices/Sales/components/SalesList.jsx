@@ -126,6 +126,7 @@ const SalesList = () => {
     handleFilterChange,
     clearFilters,
     customers,
+    taxes,
   } = useSalesList();
 
   const navigate = useNavigate();
@@ -179,6 +180,15 @@ const SalesList = () => {
     },
     { name: "minTotal", type: "number", label: t("filters.minTotal") },
     { name: "maxTotal", type: "number", label: t("filters.maxTotal") },
+    {
+      name: "taxIds",
+      type: "multiselect",
+      label: t("ui.tax"),
+      options: taxes.map((tax) => ({
+        value: tax.id,
+        label: `${tax.name} (${tax.rate}%)`,
+      })),
+    },
   ];
 
   const filtered = useMemo(() => {
@@ -401,7 +411,7 @@ const SalesList = () => {
                           )}
                         </td>
 
-                        <td className="px-4 py-3 text-center tabular-nums">
+                        <td className="px-4 py-3 text-right tabular-nums">
                           {totalTaxValue > 0 ? (
                             <BreakdownTooltip
                               trigger={
@@ -416,12 +426,12 @@ const SalesList = () => {
                                   display: `+${money(itemTax)}`,
                                   className: "text-emerald-600",
                                 },
-                                {
-                                  label: t("screens.invoices.invoiceTax"),
-                                  value: invoiceTax,
-                                  display: `+${money(invoiceTax)}`,
+                                ...(inv.taxes || []).map((tax) => ({
+                                  label: `${tax.name} (${tax.rate}%)`,
+                                  value: tax.value,
+                                  display: `+${money(tax.value)}`,
                                   className: "text-emerald-600",
-                                },
+                                })),
                               ]}
                             />
                           ) : (

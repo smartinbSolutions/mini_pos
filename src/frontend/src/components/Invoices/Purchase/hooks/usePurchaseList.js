@@ -10,6 +10,7 @@ const DEFAULT_FILTERS = {
   returnStatus: "",
   minTotal: "",
   maxTotal: "",
+  taxIds: [],
 };
 
 const usePurchaseList = () => {
@@ -27,6 +28,7 @@ const usePurchaseList = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [taxes, setTaxes] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
 
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
@@ -60,6 +62,7 @@ const usePurchaseList = () => {
         returnStatus: filters.returnStatus || undefined,
         minTotal: filters.minTotal !== "" ? filters.minTotal : undefined,
         maxTotal: filters.maxTotal !== "" ? filters.maxTotal : undefined,
+        taxIds: filters.taxIds?.length ? filters.taxIds : undefined,
       });
 
       setPurchaseInvoices(res?.data || []);
@@ -72,6 +75,14 @@ const usePurchaseList = () => {
       setLoading(false);
     }
   }, [api, page, limit, filters, t]);
+
+  useEffect(() => {
+    if (!api?.getTaxes) return;
+    api
+      .getTaxes()
+      .then((res) => setTaxes(res || []))
+      .catch(() => setTaxes([]));
+  }, [api]);
 
   useEffect(() => {
     refetch();
@@ -162,6 +173,7 @@ const usePurchaseList = () => {
     handleFilterChange,
     clearFilters,
     suppliers,
+    taxes,
   };
 };
 

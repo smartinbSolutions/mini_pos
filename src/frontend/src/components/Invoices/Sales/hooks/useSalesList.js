@@ -11,6 +11,7 @@ const DEFAULT_FILTERS = {
   returnStatus: "",
   minTotal: "",
   maxTotal: "",
+  taxIds: [],
 };
 
 const useSalesList = () => {
@@ -29,6 +30,7 @@ const useSalesList = () => {
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [customers, setCustomers] = useState([]);
+  const [taxes, setTaxes] = useState([]);
 
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
@@ -62,6 +64,7 @@ const useSalesList = () => {
         returnStatus: filters.returnStatus || undefined,
         minTotal: filters.minTotal !== "" ? filters.minTotal : undefined,
         maxTotal: filters.maxTotal !== "" ? filters.maxTotal : undefined,
+        taxIds: filters.taxIds?.length ? filters.taxIds : undefined,
       });
 
       setSalesInvoices(res?.data || []);
@@ -87,6 +90,14 @@ const useSalesList = () => {
       .getCustomers({ page: 1, limit: 1000 })
       .then((res) => setCustomers(res?.data || []))
       .catch(() => setCustomers([]));
+  }, [api]);
+
+  useEffect(() => {
+    if (!api?.getTaxes) return;
+    api
+      .getTaxes()
+      .then((res) => setTaxes(res || []))
+      .catch(() => setTaxes([]));
   }, [api]);
 
   // Maps backend error codes to translated, user-facing messages.
@@ -123,7 +134,6 @@ const useSalesList = () => {
       console.log(res);
 
       if (res?.success === false) {
-        // Handler returned a structured failure rather than throwing
         const message = getDeleteErrorMessage({ message: res.error });
         setError(message);
         toast.error(message);
@@ -167,6 +177,7 @@ const useSalesList = () => {
     handleFilterChange,
     clearFilters,
     customers,
+    taxes,
   };
 };
 

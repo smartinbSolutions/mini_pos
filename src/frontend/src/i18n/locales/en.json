@@ -31,6 +31,7 @@
     "confirm": "Confirm"
   },
   "ui": {
+    "inStock": "in stock",
     "available": "Available",
     "profit": "Profit",
     "cogs": "Cost of goods",
@@ -362,6 +363,7 @@
       }
     },
     "invoices": {
+      "pay": "Pay",
       "lockedPosInvoice": "This invoice was created at the POS and cannot be edited here.",
       "manual": "Manual",
       "pos": "POS",
@@ -509,6 +511,12 @@
       "productInUse": "This product has sales or purchase history and can't be deleted."
     },
     "pos": {
+      "discountApplied": "{{rate}}% off",
+      "outOfStock": "Out of stock",
+      "taxIncluded": "incl. {{rate}}% tax",
+      "unitOfBase": "{{unit}} of {{baseUnit}}",
+      "unitEquals": "{{unitLabel}} = {{factor}} {{baseUnit}}",
+      "availableCount": "{{label}}: {{count}}",
       "loading": "Loading POS System...",
       "title": "POS System",
       "customerDisplay": "Customer Display",

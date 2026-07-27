@@ -267,16 +267,19 @@ export default function SalesReturnView() {
                   </div>
                 )}
 
-                {returnInvoice.taxValue > 0 && (
-                  <div className="flex justify-between text-slate-600">
+                {(returnInvoice.taxes || []).map((tax) => (
+                  <div
+                    key={tax.id}
+                    className="flex justify-between text-slate-600"
+                  >
                     <span>
-                      {t("ui.tax")} ({returnInvoice.tax}%)
+                      {tax.tax_name} ({tax.tax_rate}%)
                     </span>
                     <span className="font-bold text-slate-800">
-                      +{money(returnInvoice.taxValue)}
+                      +{money(tax.tax_value)}
                     </span>
                   </div>
-                )}
+                ))}
 
                 <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-lg font-bold text-slate-900">
                   <span>{t("ui.total")}</span>

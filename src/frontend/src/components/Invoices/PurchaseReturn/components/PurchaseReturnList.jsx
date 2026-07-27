@@ -90,6 +90,7 @@ const PurchaseReturnList = () => {
     loading,
     saving,
     error,
+
     refetch,
     deletePurchaseReturn,
 
@@ -102,6 +103,7 @@ const PurchaseReturnList = () => {
 
     selecteInvoice,
     setSelecteInvoice,
+
     openPaymentModel,
     setOpenPaymentModel,
 
@@ -109,6 +111,7 @@ const PurchaseReturnList = () => {
     handleFilterChange,
     clearFilters,
     suppliers,
+    taxes,
   } = usePurchaseReturnList();
 
   const navigate = useNavigate();
@@ -140,6 +143,15 @@ const PurchaseReturnList = () => {
     },
     { name: "minTotal", type: "number", label: t("filters.minTotal") },
     { name: "maxTotal", type: "number", label: t("filters.maxTotal") },
+    {
+      name: "taxIds",
+      type: "multiselect",
+      label: t("ui.tax"),
+      options: taxes.map((tax) => ({
+        value: tax.id,
+        label: `${tax.name} (${tax.rate}%)`,
+      })),
+    },
   ];
 
   const filtered = useMemo(() => {
@@ -353,12 +365,12 @@ const PurchaseReturnList = () => {
                                   display: `+${money(itemTax)}`,
                                   className: "text-emerald-600",
                                 },
-                                {
-                                  label: t("screens.invoices.invoiceTax"),
-                                  value: invoiceTax,
-                                  display: `+${money(invoiceTax)}`,
+                                ...(inv.taxes || []).map((tax) => ({
+                                  label: `${tax.name} (${tax.rate}%)`,
+                                  value: tax.value,
+                                  display: `+${money(tax.value)}`,
                                   className: "text-emerald-600",
-                                },
+                                })),
                               ]}
                             />
                           ) : (

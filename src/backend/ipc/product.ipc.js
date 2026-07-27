@@ -327,6 +327,133 @@ export default function registerProductIPC() {
     };
   });
 
+  ipcMain.handle("get-pos-products", (event, params = {}) => {
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Number(params.limit) || 20);
+    const offset = (page - 1) * limit;
+
+    const search = (params.search || "").trim();
+
+    let whereClause = "";
+    const queryParams = [];
+
+    if (search) {
+      whereClause = `
+      WHERE
+        products.name LIKE ?
+      `;
+
+      const keyword = `%${search}%`;
+
+      queryParams.push(keyword);
+    }
+
+    const products = db
+      .prepare(
+        `
+      SELECT
+        products.id,
+        products.name,
+        products.logo,
+        products.quantity,
+        taxes.id AS tax_id,
+        taxes.rate AS tax_rate
+      FROM products
+      LEFT JOIN taxes
+        ON taxes.id = products.tax_id
+        AND taxes.category IN ('product', 'both')
+      ${whereClause}
+      ORDER BY products.id DESC
+      LIMIT ? OFFSET ?
+      `
+      )
+      .all(...queryParams, limit, offset);
+
+    const countQuery = db.prepare(`
+      SELECT COUNT(*) AS total
+      FROM products
+      ${whereClause}
+    `);
+
+    const { total } = countQuery.get(...queryParams);
+
+    if (!products.length) {
+      return {
+        data: [],
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      };
+    }
+
+    const productIds = products.map((p) => p.id);
+    const placeholders = productIds.map(() => "?").join(",");
+
+    const units = db
+      .prepare(
+        `
+      SELECT id, product_id, unit_name, conversion_factor, is_base, sale_price
+      FROM product_units
+      WHERE product_id IN (${placeholders})
+      ORDER BY product_id ASC, is_base DESC, id ASC
+      `
+      )
+      .all(...productIds);
+
+    const unitsByProduct = new Map();
+    for (const unit of units) {
+      if (!unitsByProduct.has(unit.product_id)) {
+        unitsByProduct.set(unit.product_id, []);
+      }
+      unitsByProduct.get(unit.product_id).push(unit);
+    }
+
+    const data = [];
+
+    for (const product of products) {
+      const productUnits = unitsByProduct.get(product.id) || [];
+      const baseUnit = productUnits.find((u) => u.is_base);
+
+      for (const unit of productUnits) {
+        const factor = Number(unit.conversion_factor) || 1;
+        const rawUnitQuantity = factor
+          ? product.quantity / factor
+          : product.quantity;
+        const unitQuantity = unit.is_base
+          ? rawUnitQuantity
+          : Math.floor(rawUnitQuantity);
+
+        data.push({
+          id: `${product.id}-${unit.id}`,
+          product_id: product.id,
+          unit_id: unit.id,
+          name: unit.is_base
+            ? product.name
+            : `${product.name} (${unit.unit_name})`,
+          unit_name: unit.unit_name,
+          base_unit_name: baseUnit?.unit_name ?? null,
+          is_base: Boolean(unit.is_base),
+          conversion_factor: factor,
+          price: unit.sale_price,
+          tax_id: product.tax_id,
+          tax_rate: Number(product.tax_rate || 0),
+          logo: product.logo,
+          base_quantity: product.quantity,
+          quantity: unitQuantity,
+        });
+      }
+    }
+
+    return {
+      data,
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    };
+  });
+
   ipcMain.handle("get-product", (event, id) => {
     const product = db
       .prepare(
@@ -415,15 +542,39 @@ export default function registerProductIPC() {
     const row = db
       .prepare(
         `
-      SELECT p.*
+      SELECT p.*, taxes.id AS tax_id, taxes.rate AS tax_rate
       FROM product_barcodes pb
       JOIN products p ON p.id = pb.product_id
+      LEFT JOIN taxes
+        ON taxes.id = p.tax_id
+        AND taxes.category IN ('product', 'both')
       WHERE pb.barcode = ?
     `
       )
       .get(barcode);
 
-    return row;
+    if (!row) return null;
+
+    const baseUnit = db
+      .prepare(
+        `
+      SELECT id, unit_name, conversion_factor, sale_price
+      FROM product_units
+      WHERE product_id = ? AND is_base = 1
+      LIMIT 1
+    `
+      )
+      .get(row.id);
+
+    return {
+      ...row,
+      unit_id: baseUnit?.id ?? null,
+      unit_name: baseUnit?.unit_name ?? null,
+      conversion_factor: baseUnit?.conversion_factor ?? 1,
+      price: baseUnit?.sale_price ?? 0,
+      tax_id: row.tax_id,
+      tax_rate: Number(row.tax_rate || 0),
+    };
   });
 
   ipcMain.handle("get-product-movements", (event, params = {}) => {

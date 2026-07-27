@@ -151,6 +151,7 @@ export default function usePurchaseReturn() {
 
   const invoiceDiscountRate = Number(invoice?.discount_rate || 0);
   const invoiceTaxRate = Number(invoice?.taxRate || 0);
+  const invoiceTaxes = invoice?.taxes || [];
 
   const invoiceDiscount = useMemo(() => {
     return Number(
@@ -218,7 +219,6 @@ export default function usePurchaseReturn() {
       setSaving(false);
     }
   };
-
   return {
     invoice,
     items,
@@ -234,7 +234,9 @@ export default function usePurchaseReturn() {
     invoiceTaxValue,
     netTotal,
     invoiceDiscountRate,
+    afterInvoiceDiscount,
     invoiceTaxRate,
+    invoiceTaxes,
     loading,
     saving,
     error,

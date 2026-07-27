@@ -9,6 +9,7 @@ const DEFAULT_FILTERS = {
   status: "",
   minTotal: "",
   maxTotal: "",
+  taxIds: [],
 };
 
 const useSalesReturnList = () => {
@@ -28,6 +29,7 @@ const useSalesReturnList = () => {
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [customers, setCustomers] = useState([]);
+  const [taxes, setTaxes] = useState([]);
 
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -61,6 +63,7 @@ const useSalesReturnList = () => {
         status: filters.status || undefined,
         minTotal: filters.minTotal !== "" ? filters.minTotal : undefined,
         maxTotal: filters.maxTotal !== "" ? filters.maxTotal : undefined,
+        taxIds: filters.taxIds?.length ? filters.taxIds : undefined,
       });
 
       setSalesReturns(res?.data || []);
@@ -84,6 +87,14 @@ const useSalesReturnList = () => {
       .getCustomers({ page: 1, limit: 1000 })
       .then((res) => setCustomers(res?.data || []))
       .catch(() => setCustomers([]));
+  }, [api]);
+
+  useEffect(() => {
+    if (!api?.getTaxes) return;
+    api
+      .getTaxes()
+      .then((res) => setTaxes(res || []))
+      .catch(() => setTaxes([]));
   }, [api]);
 
   const deleteSalesReturn = async (id) => {
@@ -127,6 +138,7 @@ const useSalesReturnList = () => {
     handleFilterChange,
     clearFilters,
     customers,
+    taxes,
   };
 };
 

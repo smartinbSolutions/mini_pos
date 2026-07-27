@@ -409,19 +409,16 @@ export default function PurchaseReturnView() {
                     </div>
                   )}
 
-                  {invoiceTaxValue > 0 && (
-                    <div className="flex justify-between text-xs">
+                  {(returnInvoice.taxes || []).map((tax) => (
+                    <div key={tax.id} className="flex justify-between text-xs">
                       <span className="text-slate-400">
-                        {t("screens.invoices.invoiceTax")}
-                        {returnInvoice.taxRate
-                          ? ` ${returnInvoice.taxRate}%`
-                          : ""}
+                        {tax.tax_name} ({tax.tax_rate}%)
                       </span>
                       <span className="font-bold tabular-nums text-emerald-600">
-                        +{money(invoiceTaxValue)}
+                        +{money(tax.tax_value)}
                       </span>
                     </div>
-                  )}
+                  ))}
 
                   <div className="flex items-center justify-between rounded-xl bg-[#f6f8fd] px-3 py-2.5">
                     <span className="text-xs font-black text-slate-700">

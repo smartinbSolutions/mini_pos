@@ -99,8 +99,9 @@ export default function AddSales() {
   const {
     invoice,
     setInvoice,
-    setInvoiceTax,
-    clearInvoiceTax,
+    addInvoiceTax,
+    removeInvoiceTax,
+    clearInvoiceTaxes,
     setInvoiceDiscountRate,
     setInvoiceDiscountAmount,
     clearInvoiceDiscount,
@@ -136,6 +137,7 @@ export default function AddSales() {
     products,
     refetch,
   } = useAddSales({ customerModalOpen, isFormOpen });
+
   const { submitDraft, setDraft, draft, actionError } = useCustomerList();
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
@@ -835,7 +837,7 @@ export default function AddSales() {
                         <button
                           type="button"
                           onClick={() => {
-                            clearInvoiceTax();
+                            clearInvoiceTaxes();
                             setInvoiceTaxRevealed(false);
                           }}
                           className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
@@ -843,22 +845,51 @@ export default function AddSales() {
                           <X size={13} />
                         </button>
                       </div>
+
+                      {(invoice.taxes || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {invoice.taxes.map((tax) => (
+                            <span
+                              key={tax.id}
+                              className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-emerald-700 shadow-sm"
+                            >
+                              {tax.name} ({tax.rate}%)
+                              <button
+                                type="button"
+                                onClick={() => removeInvoiceTax(tax.id)}
+                                className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                              >
+                                <X size={11} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       <select
                         className={`${smallInputClass} text-right`}
-                        value={invoice.tax || ""}
+                        value=""
                         onChange={(e) => {
                           const selected = taxes.find(
                             (tax) => tax.id === Number(e.target.value)
                           );
-                          setInvoiceTax(selected);
+                          if (selected) addInvoiceTax(selected);
                         }}
                       >
-                        <option value="">{t("ui.selectTax")}</option>
+                        <option value="">
+                          {t(
+                            "screens.invoices.addAnotherTax",
+                            "Add another tax"
+                          )}
+                        </option>
                         {taxes
                           .filter(
                             (tax) =>
-                              tax.category === "invoice" ||
-                              tax.category === "both"
+                              (tax.category === "invoice" ||
+                                tax.category === "both") &&
+                              !(invoice.taxes || []).some(
+                                (applied) => applied.id === tax.id
+                              )
                           )
                           .map((tax) => (
                             <option key={tax.id} value={tax.id}>

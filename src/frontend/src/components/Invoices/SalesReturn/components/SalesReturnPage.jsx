@@ -36,10 +36,12 @@ export default function SalesReturnPage() {
     itemDiscountTotal,
     itemTaxTotal,
     invoiceDiscount,
+    afterInvoiceDiscount,
     invoiceTaxValue,
     netTotal,
     invoiceDiscountRate,
     invoiceTaxRate,
+    invoiceTaxes,
     loading,
     saving,
     error,
@@ -285,17 +287,26 @@ export default function SalesReturnPage() {
                     </div>
                   )}
 
-                  {invoiceTaxValue > 0 && (
-                    <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                  {invoiceTaxes.map((tax) => (
+                    <div
+                      key={tax.id}
+                      className="grid grid-cols-[1fr_7.5rem] items-center gap-2"
+                    >
                       <span className="text-xs text-slate-400">
-                        {t("screens.invoices.invoiceTax")}
-                        {invoiceTaxRate ? ` (${invoiceTaxRate}%)` : ""}
+                        {tax.tax_name} ({tax.tax_rate}%)
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
-                        +{money(invoiceTaxValue)}
+                        +
+                        {money(
+                          Math.max(
+                            0,
+                            (afterInvoiceDiscount * Number(tax.tax_rate || 0)) /
+                              100
+                          )
+                        )}
                       </span>
                     </div>
-                  )}
+                  ))}
                 </div>
 
                 <div className="mt-3 grid grid-cols-[1fr_7.5rem] items-center gap-2 rounded-xl bg-[#f6f8fd] px-3 py-2.5">

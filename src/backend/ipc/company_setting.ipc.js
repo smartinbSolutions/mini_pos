@@ -418,6 +418,7 @@ export default function registerCompanySettingsIPC() {
         base_currency_id = ?,
         language = ?,
         timezone = ?,
+        allow_negative_stock = ?,
         updatedAt = datetime('now')
       WHERE id = ?
     `
@@ -431,12 +432,12 @@ export default function registerCompanySettingsIPC() {
       data.base_currency_id,
       data.language,
       data.timezone,
+      data.allow_negative_stock ? 1 : 0,
       data.id
     );
 
     return { success: true };
   });
-
   ipcMain.handle("get-dashboard-stats", () => {
     const sales = getModuleStats(db, {
       table: "sales_invoices",

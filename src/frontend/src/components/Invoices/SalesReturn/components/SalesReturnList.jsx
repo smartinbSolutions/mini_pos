@@ -11,6 +11,7 @@ import Pagination from "../../../../Global/Pagination";
 import useSalesReturnList from "../hooks/useSalesReturnList";
 import GoTo from "../../../../Global/GoTo";
 import FormattedDate from "../../../../Global/FormattedDate";
+import HoverTooltip from "../../../../Global/HoverTooltip";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
@@ -61,14 +62,12 @@ const SalesReturnList = () => {
     error,
     refetch,
     deleteSalesReturn,
-
     page,
     setPage,
     limit,
     setLimit,
     total,
     totalPages,
-
     selectedInvoice,
     setSelectedInvoice,
     openPaymentModel,
@@ -78,6 +77,7 @@ const SalesReturnList = () => {
     handleFilterChange,
     clearFilters,
     customers,
+    taxes,
   } = useSalesReturnList();
 
   const navigate = useNavigate();
@@ -119,6 +119,15 @@ const SalesReturnList = () => {
     },
     { name: "minTotal", type: "number", label: t("filters.minTotal") },
     { name: "maxTotal", type: "number", label: t("filters.maxTotal") },
+    {
+      name: "taxIds",
+      type: "multiselect",
+      label: t("ui.tax"),
+      options: taxes.map((tax) => ({
+        value: tax.id,
+        label: `${tax.name} (${tax.rate}%)`,
+      })),
+    },
   ];
 
   const filtered = useMemo(() => {
@@ -296,18 +305,47 @@ const SalesReturnList = () => {
                           </div>
                         )}
                       </td>
-
                       <td className="px-5 py-4 text-start tabular-nums">
                         {Number(inv.total_tax_value ?? inv.taxValue ?? 0) >
                         0 ? (
-                          <div>
-                            <div className="font-bold text-slate-700">
-                              + {money(inv.total_tax_value ?? inv.taxValue)}
-                            </div>
-                            <div className="text-[11px] font-semibold text-slate-400">
-                              {inv.taxRate}%
-                            </div>
-                          </div>
+                          <HoverTooltip
+                            trigger={
+                              <div className="cursor-default">
+                                <div className="font-bold text-slate-700">
+                                  + {money(inv.total_tax_value ?? inv.taxValue)}
+                                </div>
+                                <div className="text-[11px] font-semibold text-slate-400">
+                                  {(inv.taxes || [])
+                                    .map((tax) => `${tax.rate}%`)
+                                    .join(" + ") || `${inv.taxRate}%`}
+                                </div>
+                              </div>
+                            }
+                            content={
+                              (inv.taxes || []).length > 0 ? (
+                                (inv.taxes || []).map((tax, i) => (
+                                  <div
+                                    key={tax.tax_id ?? i}
+                                    className={`flex justify-between ${i > 0 ? "mt-1" : ""}`}
+                                  >
+                                    <span>
+                                      {tax.name} ({tax.rate}%)
+                                    </span>
+                                    <span className="font-bold text-emerald-600">
+                                      +{money(tax.value)}
+                                    </span>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="flex justify-between">
+                                  <span>{t("ui.tax")}</span>
+                                  <span className="font-bold text-emerald-600">
+                                    +{money(inv.taxValue)}
+                                  </span>
+                                </div>
+                              )
+                            }
+                          />
                         ) : (
                           <span className="text-slate-400">{money(0)}</span>
                         )}

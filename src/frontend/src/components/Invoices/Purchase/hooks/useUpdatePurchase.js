@@ -8,12 +8,9 @@ const emptyInvoice = {
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
   discount: 0,
-  tax: "",
-  taxRate: 0,
-  taxValue: 0,
+  taxes: [], // array of { id, name, rate }
   description: "",
 };
-
 // Same shape/derivation rules as useAddPurchase.js — total is always
 // entered_quantity × entered_price, quantity/price are the derived BASE-UNIT
 // values (used for stock/record), discount/taxValue are computed layers on
@@ -133,9 +130,11 @@ export default function useUpdatePurchase() {
         date: inv.date?.slice(0, 10) || emptyInvoice.date,
         discount_rate: Number(inv.discount_rate || 0),
         discount: Number(inv.discount || 0),
-        tax: inv.tax || "",
-        taxRate: Number(inv.taxRate || 0),
-        taxValue: Number(inv.taxValue || 0),
+        taxes: (inv.taxes || []).map((t) => ({
+          id: t.tax_id,
+          name: t.tax_name,
+          rate: Number(t.tax_rate || 0),
+        })),
         description: inv.description || "",
         invoice_name: inv.invoice_name || "",
         status: inv.status || "unpaid",
@@ -585,25 +584,47 @@ export default function useUpdatePurchase() {
   }, [afterItemDiscounts, invoiceDiscount]);
 
   const invoiceTaxValue = useMemo(() => {
-    const rate = Number(invoice.taxRate || 0);
-    return afterInvoiceDiscount * (rate / 100);
-  }, [afterInvoiceDiscount, invoice.taxRate]);
+    const taxes = invoice.taxes || [];
+    return taxes.reduce((sum, tax) => {
+      const rate = Number(tax.rate || 0);
+      return sum + afterInvoiceDiscount * (rate / 100);
+    }, 0);
+  }, [afterInvoiceDiscount, invoice.taxes]);
 
-  const netTotal = useMemo(() => {
-    return Math.max(0, afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue);
-  }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
+  const addInvoiceTax = (selectedTax) => {
+    if (!selectedTax?.id) return;
 
-  const setInvoiceTax = (selectedTax) => {
+    setInvoice((prev) => {
+      const current = prev.taxes || [];
+      if (current.some((t) => t.id === selectedTax.id)) return prev;
+
+      return {
+        ...prev,
+        taxes: [
+          ...current,
+          {
+            id: selectedTax.id,
+            name: selectedTax.name,
+            rate: Number(selectedTax.rate || 0),
+          },
+        ],
+      };
+    });
+  };
+
+  const removeInvoiceTax = (taxId) => {
     setInvoice((prev) => ({
       ...prev,
-      tax: selectedTax?.id ?? "",
-      taxRate: Number(selectedTax?.rate || 0),
+      taxes: (prev.taxes || []).filter((t) => t.id !== taxId),
     }));
   };
 
-  const clearInvoiceTax = () => {
-    setInvoice((prev) => ({ ...prev, tax: "", taxRate: 0 }));
+  const clearInvoiceTaxes = () => {
+    setInvoice((prev) => ({ ...prev, taxes: [] }));
   };
+  const netTotal = useMemo(() => {
+    return Math.max(0, afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue);
+  }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
 
   const setInvoiceDiscountRate = (rate) => {
     setInvoice((prev) => ({ ...prev, discount_rate: Number(rate || 0) }));
@@ -626,6 +647,7 @@ export default function useUpdatePurchase() {
 
       const payload = {
         ...invoice,
+        taxes: (invoice.taxes || []).map((t) => t.id),
         items,
         discount: invoiceDiscount,
         taxValue: invoiceTaxValue,
@@ -654,8 +676,9 @@ export default function useUpdatePurchase() {
   return {
     invoice,
     setInvoice,
-    setInvoiceTax,
-    clearInvoiceTax,
+    addInvoiceTax,
+    removeInvoiceTax,
+    clearInvoiceTaxes,
     setInvoiceDiscountRate,
     setInvoiceDiscountAmount,
     clearInvoiceDiscount,
