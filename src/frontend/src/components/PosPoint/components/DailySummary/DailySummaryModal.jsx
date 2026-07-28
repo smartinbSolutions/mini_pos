@@ -92,11 +92,22 @@ export default function DailySummaryModal({
       if (select.type === "return") {
         const data = await api.getSalesReturnById(select.id);
         setSalesInvoicesItem(data?.items || data || []);
+        // Same gap as the sale branch below — `select` is the summary row
+        // from getDailyPosReport, the full return record (with its own
+        // tax/discount detail) only exists in `data`. Merge it in.
+        setSelectedInvoice((prev) => ({ ...prev, ...data }));
         return;
       }
 
       const data = await api.getSalesInvoiceById(select.id);
       setSalesInvoicesItem(data?.items || data || []);
+      // getDailyPosReport's row (`select`) is a summary shape only — it has
+      // no `taxes`/`discount_rate`. The detailed fetch above is the only
+      // place those live, so merge it in rather than discarding everything
+      // but .items — otherwise every tax/discount row downstream (in
+      // InvoiceReturnModal's summary) computes to zero even though the
+      // invoice total clearly includes them.
+      setSelectedInvoice((prev) => ({ ...prev, ...data }));
     } catch (err) {
       console.error("Error fetching invoice details:", err);
     } finally {

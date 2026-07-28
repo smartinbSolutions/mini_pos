@@ -293,7 +293,27 @@ export default function registerSalesReturnsIpc() {
             item.description
           );
 
-          updateStock.run(item.quantity, item.product_id);
+          // Needed both to skip the stock restore for services (their
+          // quantity was never decremented on sale, so it must not be
+          // incremented back on return either) and to snapshot the current
+          // base unit name onto the movement below.
+          const productRow = db
+            .prepare(
+              `
+              SELECT p.type AS type, pu.unit_name AS base_unit_name
+              FROM products p
+              LEFT JOIN product_units pu
+                ON pu.product_id = p.id AND pu.is_base = 1
+              WHERE p.id = ?
+              `
+            )
+            .get(item.product_id);
+
+          const isService = productRow?.type === "service";
+
+          if (!isService) {
+            updateStock.run(item.quantity, item.product_id);
+          }
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -304,6 +324,9 @@ export default function registerSalesReturnsIpc() {
             quantity: item.quantity,
             enterPrice: item.price,
             date: fullDateTime,
+            base_unit_name: productRow?.base_unit_name || null,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           });
         }
 
@@ -551,16 +574,16 @@ export default function registerSalesReturnsIpc() {
       c.phone AS customer_phone,
       creator.full_name AS created_by_name,
       si.invoice_name AS original_invoice_name,
-
+  
       COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
       sr.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
-
+  
       CASE
         WHEN COALESCE(pa_sum.paid_amount, 0) >= sr.net_total THEN 'paid'
         WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
         ELSE 'unpaid'
       END AS status
-
+  
     FROM sales_returns sr
     LEFT JOIN customers c ON c.id = sr.customer_id
     LEFT JOIN users creator ON creator.id = sr.created_by
@@ -605,6 +628,14 @@ export default function registerSalesReturnsIpc() {
       )
       .all(id);
 
+    // ---- Payment-side currency fields (currency_code, exchange_rate,
+    // effective_rate, amount_fund_currency) added to match get-sales-invoice —
+    // these come from `payments`, not `funds`, and are what the return view
+    // actually needs to tell whether a given refund was paid out in a
+    // different currency than the primary one. `fund_currency_code`/
+    // `fund_currency_symbol` (the fund's own home currency) stay too, since
+    // they're harmless to have around even though the current UI doesn't use
+    // them.
     const allocations = db
       .prepare(
         `
@@ -614,6 +645,11 @@ export default function registerSalesReturnsIpc() {
       pa.amount,
       p.date,
       p.fund_id,
+      p.note,
+      p.currency_code,
+      p.exchange_rate,
+      p.effective_rate,
+      p.amount_fund_currency,
       f.name AS fund_name,
       c.code AS fund_currency_code,
       c.symbol AS fund_currency_symbol

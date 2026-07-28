@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../../../Global/Pagination";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
 
 export default function TodayInvoicesList({
   loading,
@@ -43,8 +44,10 @@ export default function TodayInvoicesList({
 
   const salesCount = stats?.salesCount ?? 0;
   const salesTotal = stats?.salesTotal ?? 0;
+  const salesTax = stats?.salesTax ?? 0;
   const returnCount = stats?.returnCount ?? 0;
   const returnTotal = stats?.returnTotal ?? 0;
+  const returnTax = stats?.returnTax ?? 0;
   const netCollected = salesTotal - returnTotal;
   const fundIn = stats?.fundIn ?? [];
   const fundOut = stats?.fundOut ?? [];
@@ -82,6 +85,11 @@ export default function TodayInvoicesList({
             <span className="text-sm font-black text-blue-800">
               {money(salesTotal)}
             </span>
+            {salesTax > 0 && (
+              <span className="text-[10px] font-semibold text-blue-500">
+                ({t("ui.tax", "الضريبة")} {money(salesTax)})
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 rounded-xl bg-rose-50 px-3 py-1.5">
@@ -92,6 +100,11 @@ export default function TodayInvoicesList({
             <span className="text-sm font-black text-rose-800">
               {money(returnTotal)}
             </span>
+            {returnTax > 0 && (
+              <span className="text-[10px] font-semibold text-rose-500">
+                ({t("ui.tax", "الضريبة")} {money(returnTax)})
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 rounded-xl bg-stone-100 px-3 py-1.5">
@@ -259,20 +272,28 @@ export default function TodayInvoicesList({
         </button>
       </div>
 
-      {/* LIST — the main event, gets the remaining space */}
+      {/* LIST — the main event, gets the remaining space.
+          Each row is a CSS grid with a fixed column template (id/badges,
+          time, allocations, net total, actions) instead of flex-wrap, so
+          the columns line up across rows like a table would — without
+          actually becoming one. */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
-        <div className="mx-auto max-w-6xl space-y-4">
+        <div className="mx-auto max-w-6xl space-y-3">
           {filteredInvoices.length > 0 ? (
-            filteredInvoices.map((invoice) => (
-              <div
-                key={`${invoice.type}-${invoice.id}`}
-                className="rounded-2xl border border-stone-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"
-              >
-                <div className="flex flex-wrap items-center gap-4">
-                  <div className="flex items-center gap-3">
+            filteredInvoices.map((invoice) => {
+              const isReturn = invoice.type === "return";
+              const fullyRefunded = invoice.return_status === "full";
+
+              return (
+                <div
+                  key={`${invoice.type}-${invoice.id}`}
+                  className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1.6fr)_120px_auto] items-center gap-4 rounded-2xl border border-stone-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-sm"
+                >
+                  {/* COLUMN 1 — identity */}
+                  <div className="flex min-w-0 items-center gap-3">
                     <div
                       className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
-                        invoice.type === "return"
+                        isReturn
                           ? "bg-rose-50 text-rose-600"
                           : "bg-blue-50 text-blue-600"
                       }`}
@@ -280,31 +301,34 @@ export default function TodayInvoicesList({
                       <Receipt size={20} />
                     </div>
 
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-black text-stone-950">
                           {invoice.invoice_number || invoice.id}
                         </span>
 
                         <span
                           className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                            invoice.type === "return"
+                            isReturn
                               ? "bg-rose-100 text-rose-800"
                               : "bg-blue-100 text-blue-800"
                           }`}
                         >
-                          {invoice.type === "return"
+                          {isReturn
                             ? t("ui.return", "مرتجع")
                             : t("ui.sale", "مبيعات")}
                         </span>
 
-                        {invoice.type === "return" &&
-                          invoice.sales_invoice_id && (
-                            <span className="text-[11px] font-semibold text-stone-400">
-                              {t("screens.pos.fromInvoice", "من فاتورة")} #
-                              {invoice.sales_invoice_id}
-                            </span>
-                          )}
+                        {!isReturn && (
+                          <ReturnStatusBadge status={invoice.return_status} />
+                        )}
+
+                        {isReturn && invoice.sales_invoice_id && (
+                          <span className="text-[11px] font-semibold text-stone-400">
+                            {t("screens.pos.fromInvoice", "من فاتورة")} #
+                            {invoice.sales_invoice_id}
+                          </span>
+                        )}
                       </div>
 
                       <p className="mt-1 flex items-center gap-1.5 text-xs text-stone-500">
@@ -321,84 +345,83 @@ export default function TodayInvoicesList({
                     </div>
                   </div>
 
-                  {invoice.allocations?.length > 0 && (
-                    <div className="flex flex-1 flex-wrap items-center gap-1.5 border-x border-stone-100 px-4">
-                      {invoice.allocations.map((alloc) => {
-                        const sameCurrency =
-                          alloc.currency_code === primaryCurrency?.code;
-                        return (
-                          <span
-                            key={alloc.fund_id}
-                            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
-                              invoice.type === "return"
-                                ? "bg-rose-50 text-rose-700"
-                                : "bg-blue-50 text-blue-700"
-                            }`}
-                          >
-                            <span className="font-bold">{alloc.fund_name}</span>
-                            <span className="opacity-50">·</span>
-                            {sameCurrency ? (
+                  {/* COLUMN 2 — fund allocations */}
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    {invoice.allocations?.map((alloc) => {
+                      const sameCurrency =
+                        alloc.currency_code === primaryCurrency?.code;
+                      return (
+                        <span
+                          key={alloc.fund_id}
+                          className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
+                            isReturn
+                              ? "bg-rose-50 text-rose-700"
+                              : "bg-blue-50 text-blue-700"
+                          }`}
+                        >
+                          <span className="font-bold">{alloc.fund_name}</span>
+                          <span className="opacity-50">·</span>
+                          {sameCurrency ? (
+                            <span className="font-black">
+                              {money(alloc.amount)}
+                            </span>
+                          ) : (
+                            <>
                               <span className="font-black">
-                                {money(alloc.amount)}
+                                {Number(alloc.fund_amount).toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}{" "}
+                                {alloc.currency_symbol || alloc.currency_code}
                               </span>
-                            ) : (
-                              <>
-                                <span className="font-black">
-                                  {Number(alloc.fund_amount).toLocaleString(
-                                    undefined,
-                                    {
-                                      minimumFractionDigits: 2,
-                                      maximumFractionDigits: 2,
-                                    }
-                                  )}{" "}
-                                  {alloc.currency_symbol || alloc.currency_code}
-                                </span>
-                                <span className="text-[11px] font-medium opacity-70">
-                                  (= {money(alloc.amount)})
-                                </span>
-                              </>
-                            )}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  )}
+                              <span className="text-[11px] font-medium opacity-70">
+                                (= {money(alloc.amount)})
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </div>
 
-                  <div className="flex items-center gap-3 ltr:ml-auto rtl:mr-auto">
-                    <div className="text-right min-w-[80px]">
-                      <p className="text-[10px] font-semibold uppercase text-stone-500">
-                        {t("ui.netTotal", "الصافي")}
-                      </p>
-                      <b className="text-sm text-stone-950">
-                        {money(invoice.net_total || 0)}
-                      </b>
-                    </div>
+                  {/* COLUMN 3 — net total */}
+                  <div className="text-right">
+                    <p className="text-[10px] font-semibold uppercase text-stone-500">
+                      {t("ui.netTotal", "الصافي")}
+                    </p>
+                    <b className="text-sm text-stone-950">
+                      {money(invoice.net_total || 0)}
+                    </b>
+                  </div>
 
-                    <div className="flex gap-2">
+                  {/* COLUMN 4 — actions */}
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onSelectInvoice(invoice, "view")}
+                      className="flex h-11 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 active:scale-95"
+                    >
+                      <Eye size={16} />
+                      {t("common.view", "عرض")}
+                    </button>
+
+                    {!isReturn && !fullyRefunded && (
                       <button
                         type="button"
-                        onClick={() => onSelectInvoice(invoice, "view")}
-                        className="flex h-11 items-center gap-1.5 rounded-2xl border border-stone-200 bg-white px-4 text-sm font-bold text-stone-700 transition hover:bg-stone-50 active:scale-95"
+                        onClick={() => onSelectInvoice(invoice, "return")}
+                        className="flex h-11 items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95"
                       >
-                        <Eye size={16} />
-                        {t("common.view", "عرض")}
+                        <RotateCcw size={16} />
+                        {t("screens.pos.return", "إرجاع")}
                       </button>
-
-                      {invoice.type !== "return" && (
-                        <button
-                          type="button"
-                          onClick={() => onSelectInvoice(invoice, "return")}
-                          className="flex h-11 items-center gap-1.5 rounded-2xl border border-rose-200 bg-rose-50 px-4 text-sm font-bold text-rose-700 transition hover:bg-rose-100 active:scale-95"
-                        >
-                          <RotateCcw size={16} />
-                          {t("screens.pos.return", "إرجاع")}
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="py-12 text-center text-sm font-semibold text-stone-400">
               {t("common.noData", "لا توجد بيانات متاحة اليوم")}

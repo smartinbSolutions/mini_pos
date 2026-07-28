@@ -254,9 +254,18 @@ export default function registerPurchaseInvoicesIPC() {
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
-        const updateStock = db.prepare(`
+        const updateStockAndCost = db.prepare(`
           UPDATE products
           SET quantity = quantity + ?, costPrice = ?
+          WHERE id = ?
+        `);
+
+        // Service products have no physical stock — quantity is never
+        // touched for them, only cost (buyingPrice/margin tracking is
+        // still kept per product decision, even without real inventory).
+        const updateCostOnly = db.prepare(`
+          UPDATE products
+          SET costPrice = ?
           WHERE id = ?
         `);
 
@@ -278,7 +287,32 @@ export default function registerPurchaseInvoicesIPC() {
             item.description
           );
 
-          updateStock.run(item.baseQuantity, item.basePrice, item.product_id);
+          // Also pulls the current base unit's name here — needed for the
+          // movement snapshot below, and needed regardless of type since
+          // this is a plain informational join, not a stock decision.
+          const productRow = db
+            .prepare(
+              `
+              SELECT p.type AS type, pu.unit_name AS base_unit_name
+              FROM products p
+              LEFT JOIN product_units pu
+                ON pu.product_id = p.id AND pu.is_base = 1
+              WHERE p.id = ?
+              `
+            )
+            .get(item.product_id);
+
+          const isService = productRow?.type === "service";
+
+          if (isService) {
+            updateCostOnly.run(item.basePrice, item.product_id);
+          } else {
+            updateStockAndCost.run(
+              item.baseQuantity,
+              item.basePrice,
+              item.product_id
+            );
+          }
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -289,6 +323,9 @@ export default function registerPurchaseInvoicesIPC() {
             quantity: item.baseQuantity,
             enterPrice: item.basePrice,
             date: fullDateTime,
+            base_unit_name: productRow?.base_unit_name || null,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           });
         }
 
@@ -681,6 +718,11 @@ export default function registerPurchaseInvoicesIPC() {
       pa.amount,
       p.date,
       p.fund_id,
+      p.note,
+      p.currency_code,
+      p.exchange_rate,
+      p.effective_rate,
+      p.amount_fund_currency,
       f.name AS fund_name,
       c.code AS fund_currency_code,
       c.symbol AS fund_currency_symbol
@@ -899,11 +941,40 @@ export default function registerPurchaseInvoicesIPC() {
           const cur = newByProduct.get(item.product_id) || {
             quantity: 0,
             price: item.basePrice,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           };
           newByProduct.set(item.product_id, {
             quantity: cur.quantity + item.baseQuantity,
             price: item.basePrice,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           });
+        }
+
+        // Batched lookup of each involved product's type + current base
+        // unit name — needed to (a) skip stock adjustment for services and
+        // (b) snapshot the base unit onto movement rows below.
+        const involvedProductIds = [
+          ...new Set([...oldByProduct.keys(), ...newByProduct.keys()]),
+        ];
+        const productInfoById = new Map();
+        if (involvedProductIds.length) {
+          const placeholders = involvedProductIds.map(() => "?").join(",");
+          const rows = db
+            .prepare(
+              `
+              SELECT p.id, p.type, pu.unit_name AS base_unit_name
+              FROM products p
+              LEFT JOIN product_units pu
+                ON pu.product_id = p.id AND pu.is_base = 1
+              WHERE p.id IN (${placeholders})
+              `
+            )
+            .all(...involvedProductIds);
+          for (const row of rows) {
+            productInfoById.set(row.id, row);
+          }
         }
 
         const adjustStock = db.prepare(
@@ -912,7 +983,8 @@ export default function registerPurchaseInvoicesIPC() {
 
         const updateMovement = db.prepare(`
         UPDATE product_movements
-        SET quantity = ?, enterPrice = ?, action = 'update', date = ?
+        SET quantity = ?, enterPrice = ?, action = 'update', date = ?,
+            base_unit_name = ?, unit_name = ?, conversion_factor = ?
         WHERE reference_type = 'purchase' AND reference_id = ? AND product_id = ?
       `);
         const deleteMovement = db.prepare(`
@@ -922,7 +994,15 @@ export default function registerPurchaseInvoicesIPC() {
 
         for (const [productId, old] of oldByProduct) {
           if (!newByProduct.has(productId)) {
-            adjustStock.run(-old.quantity, productId);
+            const isService =
+              productInfoById.get(productId)?.type === "service";
+            // Service products never had their quantity incremented at
+            // creation time (see create-purchase-invoice), so removing
+            // them here must not decrement it either — that would
+            // subtract stock that was never actually added.
+            if (!isService) {
+              adjustStock.run(-old.quantity, productId);
+            }
             deleteMovement.run(data.id, productId);
           }
         }
@@ -931,8 +1011,10 @@ export default function registerPurchaseInvoicesIPC() {
           const old = oldByProduct.get(productId);
           const oldQty = old ? old.quantity : 0;
           const delta = next.quantity - oldQty;
+          const info = productInfoById.get(productId);
+          const isService = info?.type === "service";
 
-          if (delta !== 0) {
+          if (delta !== 0 && !isService) {
             adjustStock.run(delta, productId);
           }
 
@@ -946,6 +1028,9 @@ export default function registerPurchaseInvoicesIPC() {
               next.quantity,
               next.price,
               fullDateTime,
+              info?.base_unit_name || null,
+              next.unit_name,
+              next.conversion_factor,
               data.id,
               productId
             );
@@ -959,6 +1044,9 @@ export default function registerPurchaseInvoicesIPC() {
               quantity: next.quantity,
               enterPrice: next.price,
               date: fullDateTime,
+              base_unit_name: info?.base_unit_name || null,
+              unit_name: next.unit_name,
+              conversion_factor: next.conversion_factor,
             });
           }
         }

@@ -18,8 +18,8 @@ export default function registerProductIPC() {
       const result = db
         .prepare(
           `
-          INSERT INTO products (name, latinName, costPrice, quantity, unit_id, tax_id, logo)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO products (name, latinName, costPrice, quantity, unit_id, tax_id, logo, type)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `
         )
         .run(
@@ -29,7 +29,8 @@ export default function registerProductIPC() {
           data.quantity,
           data.unit_id,
           data.tax_id || null,
-          data.logo
+          data.logo,
+          data.type || "normal"
         );
 
       const productId = result.lastInsertRowid;
@@ -50,8 +51,8 @@ export default function registerProductIPC() {
       // Insert any additional (non-base) selling units the user defined
       const insertUnit = db.prepare(
         `
-        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
-        VALUES (?, ?, ?, 0, ?)
+        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
+        VALUES (?, ?, ?, 0, ?, ?)
       `
       );
 
@@ -61,10 +62,19 @@ export default function registerProductIPC() {
           productId,
           unit.unit_name,
           unit.conversion_factor,
-          unit.sale_price ?? 0
+          unit.sale_price ?? 0,
+          unit.barcode || null
         );
       }
 
+      // Movement is recorded for every product regardless of type — service
+      // products still get their initial movement row for audit/history
+      // purposes. Whether that quantity actually means anything for stock
+      // is decided by whatever *reads* movements/quantity downstream (POS
+      // locking, stock reports), not here.
+      // Initial stock is always counted in the base unit, so the snapshot
+      // here is simply "base unit == unit used, factor == 1" rather than
+      // anything more elaborate.
       createProductMovement(db, {
         product_id: productId,
         reference_id: productId,
@@ -73,6 +83,9 @@ export default function registerProductIPC() {
         type: "in",
         quantity: data.quantity,
         enterPrice: data.costPrice,
+        base_unit_name: baseUnitName,
+        unit_name: baseUnitName,
+        conversion_factor: 1,
       });
 
       return productId;
@@ -108,6 +121,12 @@ export default function registerProductIPC() {
     const oldLogo = existing?.logo || null;
 
     const updateProductTxn = db.transaction((data) => {
+      // type is intentionally NOT in this SET clause — it's fixed at
+      // creation and never changes. A product created as 'service' would
+      // have its stock/expiry semantics silently reinterpreted if this
+      // were editable later, so the safest way to enforce "immutable" is
+      // to simply never write it here, rather than accept it from the
+      // client and validate it matches.
       db.prepare(
         `
         UPDATE products
@@ -125,6 +144,17 @@ export default function registerProductIPC() {
         data.id
       );
 
+      // Needed for the adjustment movement snapshot below — a quantity
+      // adjustment here is always expressed in base-unit terms, so the
+      // "unit used" for that movement is whatever the base unit currently
+      // is, not a specific selling unit.
+      const baseUnit = db
+        .prepare(
+          `SELECT unit_name FROM product_units WHERE product_id = ? AND is_base = 1`
+        )
+        .get(data.id);
+      const baseUnitName = baseUnit?.unit_name || "Unit";
+
       if (data.quantity !== data.oldQuantity) {
         const delta = data.quantity - data.oldQuantity;
         createProductMovement(db, {
@@ -135,6 +165,9 @@ export default function registerProductIPC() {
           type: delta > 0 ? "in" : "out",
           quantity: Math.abs(delta),
           enterPrice: data.costPrice,
+          base_unit_name: baseUnitName,
+          unit_name: baseUnitName,
+          conversion_factor: 1,
         });
       }
 
@@ -169,14 +202,14 @@ export default function registerProductIPC() {
       const updateUnit = db.prepare(
         `
         UPDATE product_units
-        SET unit_name = ?, conversion_factor = ?, sale_price = ?
+        SET unit_name = ?, conversion_factor = ?, sale_price = ?, barcode = ?
         WHERE id = ?
       `
       );
       const insertUnit = db.prepare(
         `
-        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
-        VALUES (?, ?, ?, 0, ?)
+        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
+        VALUES (?, ?, ?, 0, ?, ?)
       `
       );
 
@@ -188,6 +221,7 @@ export default function registerProductIPC() {
             unit.unit_name,
             unit.conversion_factor,
             unit.sale_price ?? 0,
+            unit.barcode || null,
             unit.id
           );
         } else {
@@ -195,7 +229,8 @@ export default function registerProductIPC() {
             data.id,
             unit.unit_name,
             unit.conversion_factor,
-            unit.sale_price ?? 0
+            unit.sale_price ?? 0,
+            unit.barcode || null
           );
         }
       }
@@ -211,6 +246,7 @@ export default function registerProductIPC() {
 
     return { success: true };
   });
+
   ipcMain.handle("update-product-tax", (event, data) => {
     if (!data?.product_id) {
       return { success: false, error: "product_id is required" };
@@ -258,19 +294,22 @@ export default function registerProductIPC() {
 
     const search = (params.search || "").trim();
 
-    let whereClause = "";
+    const whereConditions = [];
     const queryParams = [];
 
     if (search) {
-      whereClause = `
-      WHERE
-        products.name LIKE ?
-      `;
-
-      const keyword = `%${search}%`;
-
-      queryParams.push(keyword);
+      whereConditions.push(`products.name LIKE ?`);
+      queryParams.push(`%${search}%`);
     }
+
+    if (params.type) {
+      whereConditions.push(`products.type = ?`);
+      queryParams.push(params.type);
+    }
+
+    const whereClause = whereConditions.length
+      ? `WHERE ${whereConditions.join(" AND ")}`
+      : "";
 
     const data = db
       .prepare(
@@ -334,19 +373,130 @@ export default function registerProductIPC() {
 
     const search = (params.search || "").trim();
 
-    let whereClause = "";
+    // ---- Barcode short-circuit ----
+    // A barcode match (typed or scanned into the search box) is a precise
+    // code, not a name fragment — it should resolve to exactly ONE tile
+    // (the specific unit if matched via product_units.barcode, or the
+    // base unit if matched via product_barcodes), never the full fan-out
+    // of every unit on that product the way a name search does. Checked
+    // before any name-based logic runs, and returns immediately if found.
+    if (search) {
+      const unitMatch = db
+        .prepare(
+          `
+        SELECT
+          products.id AS product_id,
+          products.name,
+          products.logo,
+          products.quantity,
+          products.type,
+          pu.id AS unit_id,
+          pu.unit_name,
+          pu.conversion_factor,
+          pu.sale_price,
+          pu.is_base,
+          taxes.id AS tax_id,
+          taxes.rate AS tax_rate
+        FROM product_units pu
+        JOIN products ON products.id = pu.product_id
+        LEFT JOIN taxes
+          ON taxes.id = products.tax_id
+          AND taxes.category IN ('product', 'both')
+        WHERE pu.barcode = ?
+        `
+        )
+        .get(search);
+
+      const barcodeMatch =
+        unitMatch ||
+        (() => {
+          const baseMatch = db
+            .prepare(
+              `
+            SELECT
+              products.id AS product_id,
+              products.name,
+              products.logo,
+              products.quantity,
+              products.type,
+              pu.id AS unit_id,
+              pu.unit_name,
+              pu.conversion_factor,
+              pu.sale_price,
+              1 AS is_base,
+              taxes.id AS tax_id,
+              taxes.rate AS tax_rate
+            FROM product_barcodes pb
+            JOIN products ON products.id = pb.product_id
+            LEFT JOIN product_units pu
+              ON pu.product_id = products.id AND pu.is_base = 1
+            LEFT JOIN taxes
+              ON taxes.id = products.tax_id
+              AND taxes.category IN ('product', 'both')
+            WHERE pb.barcode = ?
+            `
+            )
+            .get(search);
+          return baseMatch;
+        })();
+
+      if (barcodeMatch) {
+        const isService = barcodeMatch.type === "service";
+        const factor = Number(barcodeMatch.conversion_factor) || 1;
+        const rawUnitQuantity = factor
+          ? barcodeMatch.quantity / factor
+          : barcodeMatch.quantity;
+        const unitQuantity = barcodeMatch.is_base
+          ? rawUnitQuantity
+          : Math.floor(rawUnitQuantity);
+
+        const tile = {
+          id: `${barcodeMatch.product_id}-${barcodeMatch.unit_id}`,
+          product_id: barcodeMatch.product_id,
+          unit_id: barcodeMatch.unit_id,
+          name: barcodeMatch.is_base
+            ? barcodeMatch.name
+            : `${barcodeMatch.name} (${barcodeMatch.unit_name})`,
+          unit_name: barcodeMatch.unit_name,
+          base_unit_name: barcodeMatch.is_base ? barcodeMatch.unit_name : null,
+          is_base: Boolean(barcodeMatch.is_base),
+          conversion_factor: factor,
+          price: barcodeMatch.sale_price,
+          tax_id: barcodeMatch.tax_id,
+          tax_rate: Number(barcodeMatch.tax_rate || 0),
+          logo: barcodeMatch.logo,
+          type: barcodeMatch.type,
+          base_quantity: isService ? null : barcodeMatch.quantity,
+          quantity: isService ? null : unitQuantity,
+        };
+
+        return {
+          data: [tile],
+          page: 1,
+          limit,
+          total: 1,
+          totalPages: 1,
+        };
+      }
+    }
+
+    // ---- Regular name search / listing — unchanged from before ----
+    const whereConditions = [];
     const queryParams = [];
 
     if (search) {
-      whereClause = `
-      WHERE
-        products.name LIKE ?
-      `;
-
-      const keyword = `%${search}%`;
-
-      queryParams.push(keyword);
+      whereConditions.push(`products.name LIKE ?`);
+      queryParams.push(`%${search}%`);
     }
+
+    if (params.type) {
+      whereConditions.push(`products.type = ?`);
+      queryParams.push(params.type);
+    }
+
+    const whereClause = whereConditions.length
+      ? `WHERE ${whereConditions.join(" AND ")}`
+      : "";
 
     const products = db
       .prepare(
@@ -356,6 +506,7 @@ export default function registerProductIPC() {
         products.name,
         products.logo,
         products.quantity,
+        products.type,
         taxes.id AS tax_id,
         taxes.rate AS tax_rate
       FROM products
@@ -393,7 +544,7 @@ export default function registerProductIPC() {
     const units = db
       .prepare(
         `
-      SELECT id, product_id, unit_name, conversion_factor, is_base, sale_price
+      SELECT id, product_id, unit_name, conversion_factor, is_base, sale_price, barcode
       FROM product_units
       WHERE product_id IN (${placeholders})
       ORDER BY product_id ASC, is_base DESC, id ASC
@@ -414,6 +565,7 @@ export default function registerProductIPC() {
     for (const product of products) {
       const productUnits = unitsByProduct.get(product.id) || [];
       const baseUnit = productUnits.find((u) => u.is_base);
+      const isService = product.type === "service";
 
       for (const unit of productUnits) {
         const factor = Number(unit.conversion_factor) || 1;
@@ -436,11 +588,17 @@ export default function registerProductIPC() {
           is_base: Boolean(unit.is_base),
           conversion_factor: factor,
           price: unit.sale_price,
+          barcode: unit.barcode,
           tax_id: product.tax_id,
           tax_rate: Number(product.tax_rate || 0),
           logo: product.logo,
-          base_quantity: product.quantity,
-          quantity: unitQuantity,
+          type: product.type,
+          // A service tile has no real stock behind it, so its quantity
+          // numbers here are meaningless for locking/"out of stock" —
+          // the frontend should skip that logic entirely when isService
+          // is true rather than trust these values.
+          base_quantity: isService ? null : product.quantity,
+          quantity: isService ? null : unitQuantity,
         });
       }
     }
@@ -477,7 +635,7 @@ export default function registerProductIPC() {
     const productUnits = db
       .prepare(
         `
-        SELECT id, unit_name, conversion_factor, is_base, sale_price
+        SELECT id, unit_name, conversion_factor, is_base, sale_price, barcode
         FROM product_units
         WHERE product_id = ?
         ORDER BY is_base DESC, id ASC
@@ -539,6 +697,40 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("get-product-by-barcode", (event, barcode) => {
+    // Unit barcodes are checked first — scanning a unit-specific barcode
+    // (e.g. a "Box" barcode) should resolve directly to that unit's own
+    // price/conversion_factor, not fall back to the product's base unit.
+    const unitMatch = db
+      .prepare(
+        `
+      SELECT
+        p.*,
+        pu.id AS unit_id,
+        pu.unit_name AS unit_name,
+        pu.conversion_factor AS conversion_factor,
+        pu.sale_price AS price,
+        taxes.id AS tax_id,
+        taxes.rate AS tax_rate
+      FROM product_units pu
+      JOIN products p ON p.id = pu.product_id
+      LEFT JOIN taxes
+        ON taxes.id = p.tax_id
+        AND taxes.category IN ('product', 'both')
+      WHERE pu.barcode = ?
+    `
+      )
+      .get(barcode);
+
+    if (unitMatch) {
+      return {
+        ...unitMatch,
+        tax_id: unitMatch.tax_id,
+        tax_rate: Number(unitMatch.tax_rate || 0),
+      };
+    }
+
+    // Falls back to the product-level barcode table — this still always
+    // resolves to the product's base unit, exactly as before.
     const row = db
       .prepare(
         `
@@ -670,7 +862,8 @@ export default function registerProductIPC() {
           COUNT(*) AS total_imports,
           COALESCE(SUM(created_count), 0) AS total_created,
           COALESCE(SUM(skipped_products_count), 0) AS total_skipped_products,
-          COALESCE(SUM(skipped_barcodes_count), 0) AS total_skipped_barcodes
+          COALESCE(SUM(skipped_barcodes_count), 0) AS total_skipped_barcodes,
+          COALESCE(SUM(skipped_units_count), 0) AS total_skipped_units
         FROM product_imports
       `
       )
@@ -683,7 +876,8 @@ export default function registerProductIPC() {
         total_created: statsRow?.total_created || 0,
         total_skipped:
           (statsRow?.total_skipped_products || 0) +
-          (statsRow?.total_skipped_barcodes || 0),
+          (statsRow?.total_skipped_barcodes || 0) +
+          (statsRow?.total_skipped_units || 0),
       },
     };
   });

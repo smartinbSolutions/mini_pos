@@ -270,6 +270,12 @@
       "youOweThem": "Onlara borçlusunuz"
     },
     "products": {
+      "productType": "Ürün Türü",
+      "typeNormal": "Normal",
+      "typeService": "Hizmet",
+      "typeLocked": "— oluşturulduktan sonra değiştirilemez",
+      "baseUnitBarcode": "Temel Birim Barkodu",
+      "unitBarcodePlaceholder": "Barkod",
       "notFound": "Ürün bulunamadı.",
       "tab": {
         "details": "Detaylar",

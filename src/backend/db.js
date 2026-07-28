@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS products (
   createdAt TEXT DEFAULT (datetime('now')),
   unit_id INTEGER,
   tax_id INTEGER,
+  type TEXT NOT NULL DEFAULT 'normal' CHECK(type IN ('normal', 'service')),
   FOREIGN KEY (unit_id) REFERENCES unit(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
@@ -82,6 +83,7 @@ CREATE TABLE IF NOT EXISTS product_units (
   conversion_factor REAL NOT NULL DEFAULT 1,
   is_base INTEGER NOT NULL DEFAULT 0,
   sale_price REAL NOT NULL DEFAULT 0,
+  barcode TEXT UNIQUE,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (product_id) REFERENCES products(id)
 )
@@ -110,6 +112,9 @@ CREATE TABLE IF NOT EXISTS product_movements (
   enterPrice REAL DEFAULT 0,
   outPrice REAL DEFAULT 0,
   quantity REAL NOT NULL DEFAULT 0,
+  base_unit_name TEXT,
+  unit_name TEXT,
+  conversion_factor REAL DEFAULT 1,
   date TEXT DEFAULT (datetime('now')),
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (product_id) REFERENCES products(id)
@@ -138,6 +143,7 @@ CREATE TABLE IF NOT EXISTS product_imports (
   skipped_products_count INTEGER DEFAULT 0,
   skipped_barcodes_count INTEGER DEFAULT 0,
   skipped_invalid_count INTEGER DEFAULT 0,
+  skipped_units_count INTEGER DEFAULT 0,
   report_path TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 );
@@ -150,7 +156,7 @@ CREATE TABLE IF NOT EXISTS product_import_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   import_id INTEGER NOT NULL,
   row_number INTEGER,
-  status TEXT NOT NULL,       -- 'created' | 'skipped_product' | 'skipped_barcode' | 'skipped_invalid'
+  status TEXT NOT NULL,       -- 'created' | 'skipped_product' | 'skipped_barcode' | 'skipped_invalid' | 'skipped_unit'
   product_id INTEGER,
   product_name TEXT,
   barcode TEXT,

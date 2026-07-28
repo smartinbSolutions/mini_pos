@@ -9,6 +9,8 @@ import {
   ImagePlus,
   Layers,
   Percent,
+  Briefcase,
+  Lock,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -103,6 +105,7 @@ const emptyForm = {
   unit_id: "",
   tax_id: "",
   logo: "",
+  type: "normal",
   barcodes: [{ barcode: "" }],
   productUnits: [],
   oldQuantity: 0,
@@ -133,6 +136,8 @@ export default function ProductFormPage() {
   const [initializing, setInitializing] = useState(isEditing);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [form, setForm] = useState(emptyForm);
+
+  const isService = form.type === "service";
 
   useEffect(() => {
     let cancelled = false;
@@ -176,6 +181,7 @@ export default function ProductFormPage() {
         unit_id: activeProduct.unit_id ? Number(activeProduct.unit_id) : "",
         tax_id: activeProduct.tax_id ? Number(activeProduct.tax_id) : "",
         logo: activeProduct.logo || "",
+        type: activeProduct.type || "normal",
         barcodes: barcodes.length > 0 ? barcodes : [{ barcode: "" }],
         productUnits: productUnits
           .filter((u) => !u.is_base)
@@ -184,6 +190,7 @@ export default function ProductFormPage() {
             unit_name: u.unit_name,
             conversion_factor: u.conversion_factor,
             sale_price: u.sale_price,
+            barcode: u.barcode || "",
           })),
         oldQuantity: Number(activeProduct.quantity ?? 0),
       });
@@ -229,7 +236,7 @@ export default function ProductFormPage() {
       ...current,
       productUnits: [
         ...current.productUnits,
-        { unit_name: "", conversion_factor: "", sale_price: "" },
+        { unit_name: "", conversion_factor: "", sale_price: "", barcode: "" },
       ],
     }));
   };
@@ -304,13 +311,17 @@ export default function ProductFormPage() {
         unit_name: u.unit_name.trim(),
         conversion_factor: Number(u.conversion_factor),
         sale_price: Number(u.sale_price || 0),
+        barcode: String(u.barcode || "").trim(),
       }));
 
     setSubmitAttempted(true);
 
     await submitProduct({
       ...form,
-      quantity: Number(form.quantity || 0),
+      // A service has no physical stock behind it — force quantity to 0
+      // regardless of whatever leftover value sits in the field, rather
+      // than trusting an input the UI itself hides for this type.
+      quantity: isService ? 0 : Number(form.quantity || 0),
       costPrice: Number(form.costPrice || 0),
       salePrice: Number(form.salePrice || 0),
       unit_id: form.unit_id ? Number(form.unit_id) : null,
@@ -445,20 +456,25 @@ export default function ProductFormPage() {
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className={labelClass}>{t("ui.quantity")}</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    dir="ltr"
-                    value={form.quantity}
-                    onChange={(event) => {
-                      const normalized = normalizeDigits(event.target.value);
-                      updateField("quantity", normalized);
-                    }}
-                    className={inputClass}
-                  />
-                </div>
+                {/* Quantity is meaningless for a service — no physical stock
+                    behind it — so it's hidden entirely rather than shown
+                    disabled-at-zero. */}
+                {!isService && (
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>{t("ui.quantity")}</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      dir="ltr"
+                      value={form.quantity}
+                      onChange={(event) => {
+                        const normalized = normalizeDigits(event.target.value);
+                        updateField("quantity", normalized);
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <label className={labelClass}>
@@ -487,6 +503,58 @@ export default function ProductFormPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            {/* Product type — editable only at creation. Once a product has
+                real stock movements (or, later, expiry lots) tied to it,
+                flipping normal<->service would reinterpret that history, so
+                this is locked the moment the product exists. */}
+            <div className="mt-3.5 border-t border-slate-100 pt-3.5">
+              <label className={labelClass}>
+                {t("screens.products.productType", "Product Type")}
+              </label>
+
+              {isEditing ? (
+                <div className="mt-1.5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
+                  <Lock size={13} />
+                  {form.type === "service"
+                    ? t("screens.products.typeService", "Service")
+                    : t("screens.products.typeNormal", "Normal")}
+                  <span className="font-medium text-slate-400">
+                    {t(
+                      "screens.products.typeLocked",
+                      "— can't be changed after creation"
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-1.5 inline-flex overflow-hidden rounded-xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => updateField("type", "normal")}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold transition ${
+                      form.type === "normal"
+                        ? "bg-[#4663ff] text-white"
+                        : "bg-white text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Package size={13} />
+                    {t("screens.products.typeNormal", "Normal")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateField("type", "service")}
+                    className={`flex items-center gap-1.5 border-l border-slate-200 px-3.5 py-2 text-xs font-bold transition ${
+                      form.type === "service"
+                        ? "bg-[#4663ff] text-white"
+                        : "bg-white text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Briefcase size={13} />
+                    {t("screens.products.typeService", "Service")}
+                  </button>
+                </div>
+              )}
             </div>
           </Panel>
 
@@ -600,7 +668,7 @@ export default function ProductFormPage() {
           </Panel>
 
           {/* Selling units + barcodes side by side */}
-          <div className="grid gap-3.5 md:grid-cols-2">
+          <div className="grid gap-3.5 md:grid-cols-[3fr_2fr]">
             <Panel
               accent="units"
               icon={<Layers size={15} />}
@@ -628,7 +696,7 @@ export default function ProductFormPage() {
                   {form.productUnits.map((unit, index) => (
                     <div
                       key={unit.id || index}
-                      className="grid grid-cols-[1fr_1fr_1fr_auto] gap-1.5 rounded-xl bg-slate-50/60 p-1.5"
+                      className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-1.5 rounded-xl bg-slate-50/60 p-1.5"
                     >
                       <input
                         value={unit.unit_name}
@@ -702,6 +770,24 @@ export default function ProductFormPage() {
                         )}
                         className={inputClass}
                       />
+
+                      {canManageBarcodes && (
+                        <input
+                          value={unit.barcode || ""}
+                          onChange={(event) =>
+                            updateProductUnit(
+                              index,
+                              "barcode",
+                              event.target.value
+                            )
+                          }
+                          placeholder={t(
+                            "screens.products.unitBarcodePlaceholder",
+                            "Barcode"
+                          )}
+                          className={inputClass}
+                        />
+                      )}
 
                       <button
                         type="button"

@@ -28,6 +28,7 @@ const normalizeProductUnits = (productUnits = []) =>
       unit_name: String(unit.unit_name).trim(),
       conversion_factor: Number(unit.conversion_factor),
       sale_price: Number(unit.sale_price || 0),
+      barcode: String(unit.barcode || "").trim(),
     }));
 
 const now = new Date();
@@ -55,6 +56,10 @@ const productPayload = (product) => ({
   unit_id: product.unit_id ? Number(product.unit_id) : null,
   tax_id: product.tax_id ? Number(product.tax_id) : null,
   logo: product.logo || "",
+  // Only meaningful on create — update-product ignores this field entirely
+  // (type is immutable once a product exists), but harmless to keep sending
+  // it here rather than branching this payload builder by create vs. update.
+  type: product.type || "normal",
   oldQuantity: product.oldQuantity || 0,
   productUnits: normalizeProductUnits(product.productUnits),
   date,

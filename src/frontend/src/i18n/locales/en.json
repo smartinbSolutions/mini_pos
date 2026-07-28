@@ -270,6 +270,12 @@
       "youOweThem": "You owe them"
     },
     "products": {
+      "productType": "Product Type",
+      "typeNormal": "Normal",
+      "typeService": "Service",
+      "typeLocked": "— can't be changed after creation",
+      "baseUnitBarcode": "Base Unit Barcode",
+      "unitBarcodePlaceholder": "Barcode",
       "notFound": "Product not found.",
       "tab": {
         "details": "Details",

@@ -156,10 +156,23 @@ export default function registerSalesInvoiceIPC() {
           itemDiscountTotal += discount;
           itemTaxTotal += taxValue;
 
+          // Extended to also pull type + current base unit name — needed
+          // below to skip stock decrement for services and to snapshot the
+          // base unit onto the movement, without a second query per item.
           const productRow = db
-            .prepare(`SELECT costPrice FROM products WHERE id = ?`)
+            .prepare(
+              `
+              SELECT p.costPrice, p.type, pu.unit_name AS base_unit_name
+              FROM products p
+              LEFT JOIN product_units pu
+                ON pu.product_id = p.id AND pu.is_base = 1
+              WHERE p.id = ?
+              `
+            )
             .get(item.product_id);
           const buyingPrice = Number(productRow?.costPrice || 0);
+          const isService = productRow?.type === "service";
+          const baseUnitName = productRow?.base_unit_name || null;
 
           preparedItems.push({
             product_id: item.product_id,
@@ -176,6 +189,8 @@ export default function registerSalesInvoiceIPC() {
             tax_rate: taxRate,
             taxValue,
             description: item.description || null,
+            isService,
+            baseUnitName,
           });
         }
 
@@ -332,7 +347,11 @@ export default function registerSalesInvoiceIPC() {
             item.description
           );
 
-          updateStock.run(item.baseQuantity, item.product_id);
+          // Services have no physical stock — never decremented, matching
+          // how they were never incremented on purchase.
+          if (!item.isService) {
+            updateStock.run(item.baseQuantity, item.product_id);
+          }
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -343,6 +362,9 @@ export default function registerSalesInvoiceIPC() {
             quantity: item.baseQuantity,
             outPrice: item.basePrice,
             date: fullDateTime,
+            base_unit_name: item.baseUnitName,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           });
         }
 
@@ -961,10 +983,24 @@ export default function registerSalesInvoiceIPC() {
           itemDiscountTotal += discount;
           itemTaxTotal += taxValue;
 
+          // Extended (same as create-sales-invoice) to also pull type +
+          // current base unit name in the same query as costPrice — used
+          // below to skip stock apply for services and to snapshot the
+          // base unit onto the movement.
           const productRow = db
-            .prepare(`SELECT costPrice FROM products WHERE id = ?`)
+            .prepare(
+              `
+              SELECT p.costPrice, p.type, pu.unit_name AS base_unit_name
+              FROM products p
+              LEFT JOIN product_units pu
+                ON pu.product_id = p.id AND pu.is_base = 1
+              WHERE p.id = ?
+              `
+            )
             .get(item.product_id);
           const buyingPrice = Number(productRow?.costPrice || 0);
+          const isService = productRow?.type === "service";
+          const baseUnitName = productRow?.base_unit_name || null;
 
           preparedItems.push({
             product_id: item.product_id,
@@ -981,6 +1017,8 @@ export default function registerSalesInvoiceIPC() {
             tax_rate: taxRate,
             taxValue,
             description: item.description || null,
+            isService,
+            baseUnitName,
           });
         }
 
@@ -1033,8 +1071,19 @@ export default function registerSalesInvoiceIPC() {
         UPDATE products SET quantity = quantity - ? WHERE id = ?
       `);
 
+        // type is immutable once a product exists (never changes after
+        // creation), so checking it NOW against these old rows is exactly
+        // equivalent to checking it at the time they were originally
+        // created — no drift risk from looking it up fresh here.
         for (const item of oldItems) {
-          reverseStock.run(item.quantity || 0, item.product_id);
+          const productRow = db
+            .prepare(`SELECT type FROM products WHERE id = ?`)
+            .get(item.product_id);
+          const wasService = productRow?.type === "service";
+
+          if (!wasService) {
+            reverseStock.run(item.quantity || 0, item.product_id);
+          }
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
@@ -1099,7 +1148,10 @@ export default function registerSalesInvoiceIPC() {
             item.description
           );
 
-          applyStock.run(item.baseQuantity, item.product_id);
+          // Services have no physical stock — same rule as create.
+          if (!item.isService) {
+            applyStock.run(item.baseQuantity, item.product_id);
+          }
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -1110,6 +1162,9 @@ export default function registerSalesInvoiceIPC() {
             quantity: item.baseQuantity,
             outPrice: item.basePrice,
             date: fullDateTime,
+            base_unit_name: item.baseUnitName,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           });
         }
 
@@ -1364,17 +1419,38 @@ export default function registerSalesInvoiceIPC() {
           const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
           const total = enteredQuantity * enteredPrice;
 
-          if (!allowNegativeStock) {
-            const stockRow = db
-              .prepare(`SELECT name, quantity FROM products WHERE id = ?`)
-              .get(productId);
+          // One query per item covering everything product-related this
+          // loop needs: quantity (stock guard), costPrice (buyingPrice
+          // snapshot), type (service check), and the current base unit
+          // name (movement snapshot) — was two separate product queries
+          // before (one for the stock guard, one for costPrice).
+          const productRow = db
+            .prepare(
+              `
+              SELECT p.name, p.quantity, p.costPrice, p.type,
+                     pu.unit_name AS base_unit_name
+              FROM products p
+              LEFT JOIN product_units pu
+                ON pu.product_id = p.id AND pu.is_base = 1
+              WHERE p.id = ?
+              `
+            )
+            .get(productId);
 
-            if (!stockRow) {
-              throw new Error("PRODUCT_NOT_FOUND");
-            }
+          if (!productRow) {
+            throw new Error("PRODUCT_NOT_FOUND");
+          }
 
-            if (stockRow.quantity - baseQuantity < 0) {
-              throw new Error(`INSUFFICIENT_STOCK:${stockRow.name}`);
+          const isService = productRow.type === "service";
+
+          // A service has no physical stock — its quantity column stays 0
+          // forever (never incremented by purchase), so this guard would
+          // otherwise reject EVERY service sale as "insufficient stock".
+          // Skipped entirely for services, same as the POS tile's
+          // out-of-stock logic already does on the frontend.
+          if (!allowNegativeStock && !isService) {
+            if (productRow.quantity - baseQuantity < 0) {
+              throw new Error(`INSUFFICIENT_STOCK:${productRow.name}`);
             }
           }
 
@@ -1407,10 +1483,7 @@ export default function registerSalesInvoiceIPC() {
           itemDiscountTotal += discount;
           itemTaxTotal += taxValue;
 
-          const productRow = db
-            .prepare(`SELECT costPrice FROM products WHERE id = ?`)
-            .get(productId);
-          const buyingPrice = Number(productRow?.costPrice || 0);
+          const buyingPrice = Number(productRow.costPrice || 0);
 
           preparedItems.push({
             product_id: productId,
@@ -1427,6 +1500,8 @@ export default function registerSalesInvoiceIPC() {
             tax_rate: taxRate,
             taxValue,
             description: item.description || null,
+            isService,
+            baseUnitName: productRow.base_unit_name || null,
           });
         }
 
@@ -1603,7 +1678,10 @@ export default function registerSalesInvoiceIPC() {
             item.description
           );
 
-          updateStock.run(item.baseQuantity, item.product_id);
+          // Services have no physical stock — never decremented.
+          if (!item.isService) {
+            updateStock.run(item.baseQuantity, item.product_id);
+          }
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -1614,6 +1692,9 @@ export default function registerSalesInvoiceIPC() {
             quantity: item.baseQuantity,
             outPrice: item.basePrice,
             date: fullDateTime,
+            base_unit_name: item.baseUnitName,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           });
         }
 
@@ -1696,8 +1777,26 @@ export default function registerSalesInvoiceIPC() {
           s.net_total AS paid_amount,
           'paid' AS status,
           'sale' AS type,
-          NULL AS sales_invoice_id
+          NULL AS sales_invoice_id,
+          CASE
+            WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+            WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+            ELSE 'partial'
+          END AS return_status
         FROM sales_invoices s
+        LEFT JOIN (
+          SELECT
+            si.invoice_id,
+            SUM(si.quantity) AS total_quantity,
+            SUM(COALESCE(sri.returned_qty, 0)) AS total_returned
+          FROM sales_invoice_items si
+          LEFT JOIN (
+            SELECT sales_invoice_item_id, SUM(quantity) AS returned_qty
+            FROM sales_return_items
+            GROUP BY sales_invoice_item_id
+          ) sri ON sri.sales_invoice_item_id = si.id
+          GROUP BY si.invoice_id
+        ) ret ON ret.invoice_id = s.id
         WHERE DATE(s.date) = ? AND s.channel = 'pos'
   
         UNION ALL
@@ -1709,7 +1808,8 @@ export default function registerSalesInvoiceIPC() {
           r.net_total AS paid_amount,
           NULL AS status,
           'return' AS type,
-          r.sales_invoice_id
+          r.sales_invoice_id,
+          NULL AS return_status
         FROM sales_returns r
         WHERE DATE(r.date) = ? AND r.channel = 'pos'
       )
@@ -1732,9 +1832,18 @@ export default function registerSalesInvoiceIPC() {
     const salesStats = db
       .prepare(
         `
-        SELECT COUNT(*) AS count, COALESCE(SUM(net_total), 0) AS total
-        FROM sales_invoices
-        WHERE DATE(date) = ? AND channel = 'pos'
+        SELECT
+          COUNT(*) AS count,
+          COALESCE(SUM(s.net_total), 0) AS total,
+          COALESCE(SUM(s.taxValue), 0)
+            + COALESCE(SUM(itemAgg.item_tax_total), 0) AS taxTotal
+        FROM sales_invoices s
+        LEFT JOIN (
+          SELECT invoice_id, SUM(taxValue) AS item_tax_total
+          FROM sales_invoice_items
+          GROUP BY invoice_id
+        ) itemAgg ON itemAgg.invoice_id = s.id
+        WHERE DATE(s.date) = ? AND s.channel = 'pos'
         `
       )
       .get(date);
@@ -1742,9 +1851,18 @@ export default function registerSalesInvoiceIPC() {
     const returnStats = db
       .prepare(
         `
-        SELECT COUNT(*) AS count, COALESCE(SUM(net_total), 0) AS total
-        FROM sales_returns
-        WHERE DATE(date) = ? AND channel = 'pos'
+        SELECT
+          COUNT(*) AS count,
+          COALESCE(SUM(r.net_total), 0) AS total,
+          COALESCE(SUM(r.taxValue), 0)
+            + COALESCE(SUM(itemAgg.item_tax_total), 0) AS taxTotal
+        FROM sales_returns r
+        LEFT JOIN (
+          SELECT return_id, SUM(taxValue) AS item_tax_total
+          FROM sales_return_items
+          GROUP BY return_id
+        ) itemAgg ON itemAgg.return_id = r.id
+        WHERE DATE(r.date) = ? AND r.channel = 'pos'
         `
       )
       .get(date);
@@ -1863,8 +1981,10 @@ export default function registerSalesInvoiceIPC() {
       stats: {
         salesCount: salesStats.count,
         salesTotal: salesStats.total,
+        salesTax: salesStats.taxTotal,
         returnCount: returnStats.count,
         returnTotal: returnStats.total,
+        returnTax: returnStats.taxTotal,
         fundIn,
         fundOut,
       },

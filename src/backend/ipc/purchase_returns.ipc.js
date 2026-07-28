@@ -291,7 +291,27 @@ export default function registerPurchaseReturnIPC() {
             item.description
           );
 
-          updateStock.run(item.quantity, item.product_id);
+          // Needed both to skip the stock reversal for services (their
+          // quantity was never incremented on purchase, so it must not be
+          // decremented on return either) and to snapshot the current base
+          // unit name onto the movement below.
+          const productRow = db
+            .prepare(
+              `
+              SELECT p.type AS type, pu.unit_name AS base_unit_name
+              FROM products p
+              LEFT JOIN product_units pu
+                ON pu.product_id = p.id AND pu.is_base = 1
+              WHERE p.id = ?
+              `
+            )
+            .get(item.product_id);
+
+          const isService = productRow?.type === "service";
+
+          if (!isService) {
+            updateStock.run(item.quantity, item.product_id);
+          }
 
           createProductMovement(db, {
             product_id: item.product_id,
@@ -302,6 +322,9 @@ export default function registerPurchaseReturnIPC() {
             quantity: item.quantity,
             enterPrice: item.price,
             date: fullDateTime,
+            base_unit_name: productRow?.base_unit_name || null,
+            unit_name: item.unit_name,
+            conversion_factor: item.unit_conversion_factor,
           });
         }
 
@@ -634,6 +657,11 @@ export default function registerPurchaseReturnIPC() {
 
       p.date,
       p.fund_id,
+      p.note,
+      p.currency_code,
+      p.exchange_rate,
+      p.effective_rate,
+      p.amount_fund_currency,
 
       f.name AS fund_name,
 

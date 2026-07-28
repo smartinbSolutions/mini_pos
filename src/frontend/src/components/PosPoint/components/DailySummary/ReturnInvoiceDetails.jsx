@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ShoppingBag, Calendar, Wallet, RotateCcw } from "lucide-react";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
@@ -6,10 +7,37 @@ export default function ReturnInvoiceDetails({
   items,
   money,
   t,
-  onClose,
 }) {
   const { primaryCurrency } = usePrimaryCurrency();
   const allocations = selectedInvoice.allocations || [];
+  const invoiceTaxes = selectedInvoice.taxes || [];
+
+  // Same as the sale-invoice view: these are historical facts already
+  // computed and stored when the return was created (per-item discount/
+  // taxValue, invoice-level discount/taxRate) — display the stored
+  // snapshot rather than recomputing it.
+  const subtotal = useMemo(
+    () =>
+      selectedInvoice.subtotal ??
+      items.reduce(
+        (sum, i) => sum + Number(i.price || 0) * Number(i.quantity || 0),
+        0
+      ),
+    [selectedInvoice, items]
+  );
+
+  const itemDiscountTotal = useMemo(
+    () => items.reduce((sum, i) => sum + Number(i.discount || 0), 0),
+    [items]
+  );
+
+  const itemTaxTotal = useMemo(
+    () => items.reduce((sum, i) => sum + Number(i.taxValue || 0), 0),
+    [items]
+  );
+
+  const invoiceDiscount = Number(selectedInvoice.discount || 0);
+  const invoiceDiscountRate = Number(selectedInvoice.discount_rate || 0);
 
   return (
     <div className="flex h-full flex-col bg-[#f7f3ee]">
@@ -74,14 +102,14 @@ export default function ReturnInvoiceDetails({
                       ) : (
                         <>
                           <span className="text-sm font-black text-rose-700">
-                            {Number(alloc.fund_amount).toLocaleString(
+                            {Number(alloc.amount_fund_currency).toLocaleString(
                               undefined,
                               {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               }
                             )}{" "}
-                            {alloc.currency_symbol || alloc.currency_code}
+                            {alloc.currency_code}
                           </span>
                           <span className="text-xs font-medium text-stone-500">
                             (= {money(alloc.amount)})
@@ -102,37 +130,106 @@ export default function ReturnInvoiceDetails({
             </h4>
 
             <div className="divide-y divide-stone-100 rounded-2xl border border-stone-200 bg-white px-4">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between gap-3 py-4"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-                      <ShoppingBag size={18} />
+              {items.map((item) => {
+                const factor = Number(item.unit_conversion_factor || 1);
+                const qtyInUnit =
+                  factor > 0
+                    ? Number(item.quantity || 0) / factor
+                    : Number(item.quantity || 0);
+                const unitLabel = item.unit_name || item.unit_code || "";
+
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 py-4"
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                        <ShoppingBag size={18} />
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-bold text-stone-950">
+                          {item.name || item.product_name}
+                        </p>
+
+                        <p className="mt-0.5 text-xs text-stone-500">
+                          {t("screens.pos.price", "السعر")}:{" "}
+                          <span className="font-bold text-stone-800">
+                            {money(item.price)}
+                          </span>
+                          {Number(item.tax_rate) > 0 &&
+                            ` · ${t("ui.tax", "الضريبة")} ${item.tax_rate}%`}
+                          {Number(item.discount_rate) > 0 &&
+                            ` · ${t("ui.discount", "الخصم")} ${item.discount_rate}%`}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-stone-950">
-                        {item.name || item.product_name}
-                      </p>
-
-                      <p className="mt-0.5 text-xs text-stone-500">
-                        {t("screens.pos.price", "السعر")}:{" "}
-                        <span className="font-bold text-stone-800">
-                          {money(item.price)}
-                        </span>
-                      </p>
-                    </div>
+                    <span className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-1.5 text-sm font-black text-rose-600">
+                      {qtyInUnit} {unitLabel} {t("ui.returned", "مرجع")}
+                    </span>
                   </div>
+                );
+              })}
+            </div>
+          </div>
 
-                  <span className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-1.5 text-sm font-black text-rose-600">
-                    {item.quantity} {t("ui.returned", "مرجع")}
+          {/* DISCOUNT / TAX BREAKDOWN */}
+          {(itemDiscountTotal > 0 ||
+            invoiceDiscount > 0 ||
+            itemTaxTotal > 0 ||
+            invoiceTaxes.length > 0) && (
+            <div className="space-y-2 rounded-2xl border border-stone-200 bg-white p-4 text-sm">
+              <div className="flex justify-between text-stone-600">
+                <span>{t("ui.subtotal", "الفرعي")}</span>
+                <span className="font-semibold text-stone-800">
+                  {money(subtotal)}
+                </span>
+              </div>
+              {itemDiscountTotal > 0 && (
+                <div className="flex justify-between text-stone-600">
+                  <span>{t("ui.itemDiscount", "خصم الأصناف")}</span>
+                  <span className="font-semibold text-stone-800">
+                    -{money(itemDiscountTotal)}
+                  </span>
+                </div>
+              )}
+              {invoiceDiscount > 0 && (
+                <div className="flex justify-between text-stone-600">
+                  <span>
+                    {t("ui.invoiceDiscount", "خصم الفاتورة")}
+                    {invoiceDiscountRate > 0 && ` (${invoiceDiscountRate}%)`}
+                  </span>
+                  <span className="font-semibold text-stone-800">
+                    -{money(invoiceDiscount)}
+                  </span>
+                </div>
+              )}
+              {itemTaxTotal > 0 && (
+                <div className="flex justify-between text-stone-600">
+                  <span>{t("ui.itemTax", "ضريبة الأصناف")}</span>
+                  <span className="font-semibold text-stone-800">
+                    {money(itemTaxTotal)}
+                  </span>
+                </div>
+              )}
+              {invoiceTaxes.map((tax) => (
+                <div
+                  key={tax.id}
+                  className="flex justify-between text-stone-600"
+                >
+                  <span>
+                    {tax.tax_name || t("ui.tax", "الضريبة")}
+                    {Number(tax.tax_rate) > 0 && ` (${tax.tax_rate}%)`}
+                  </span>
+                  <span className="font-semibold text-stone-800">
+                    {money(tax.tax_value)}
                   </span>
                 </div>
               ))}
             </div>
-          </div>
+          )}
 
           {/* TOTAL */}
           <div className="rounded-2xl bg-rose-600 p-4 text-white shadow-lg shadow-rose-200">
@@ -150,19 +247,6 @@ export default function ReturnInvoiceDetails({
               </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="shrink-0 border-t border-stone-200 bg-white px-6 py-4">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-12 rounded-2xl border border-stone-200 bg-white px-6 text-sm font-bold text-stone-700 transition hover:bg-stone-50 active:scale-95"
-          >
-            {t("common.close", "إغلاق")}
-          </button>
         </div>
       </div>
     </div>

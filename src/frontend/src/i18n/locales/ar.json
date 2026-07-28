@@ -271,6 +271,12 @@
       "youOweThem": "مستحق عليهم"
     },
     "products": {
+      "productType": "نوع المنتج",
+      "typeNormal": "عادي",
+      "typeService": "خدمة",
+      "typeLocked": "— لا يمكن تغييره بعد الإنشاء",
+      "baseUnitBarcode": "باركود الوحدة الأساسية",
+      "unitBarcodePlaceholder": "الباركود",
       "notFound": "المنتج غير موجود.",
       "tab": {
         "details": "التفاصيل",

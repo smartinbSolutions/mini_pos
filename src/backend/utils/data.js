@@ -10,6 +10,7 @@ const TRANSLATIONS = {
     { en: "Box", ar: "علبة", tr: "Kutu", code: "BOX" },
     { en: "Carton", ar: "كرتون", tr: "Karton", code: "CTN" },
     { en: "Set", ar: "طقم", tr: "Set", code: "SET" },
+    { en: "Service", ar: "خدمة", tr: "Hizmet", code: "SRV" },
   ],
   taxes: [
     // Product-level: applied per line item (e.g. VAT on a specific product)
@@ -93,6 +94,11 @@ const TRANSLATIONS = {
   ],
   fundName: { en: "Main Fund", ar: "الصندوق الرئيسي", tr: "Ana Kasa" },
   testProduct: { en: "Sample Product", ar: "منتج تجريبي", tr: "Örnek Ürün" },
+  testServiceProduct: {
+    en: "Sample Service",
+    ar: "خدمة تجريبية",
+    tr: "Örnek Hizmet",
+  },
 };
 
 // name = chosen setup language, latinName = secondary reference language
@@ -191,6 +197,62 @@ export function seedData(db, { language = "ar", currencyId } = {}) {
       type: "in",
       quantity,
       enterPrice: costPrice,
+      base_unit_name: pieceUnit.name || "Piece",
+      unit_name: pieceUnit.name || "Piece",
+      conversion_factor: 1,
+    });
+  }
+
+  // Sample service product — same shape as the sample piece product above,
+  // just type: 'service' and the "Service" unit. quantity/costPrice stay 0
+  // since there's no real stock behind a service; createProductMovement
+  // still fires for consistency with create-product's handling (movement
+  // history exists for every product regardless of type), it's just a 0-in
+  // entry rather than a meaningful stock event.
+  const serviceUnitCode = "SRV";
+  const serviceUnit = db
+    .prepare(`SELECT id, name FROM unit WHERE code = ?`)
+    .get(serviceUnitCode);
+
+  const existingTestServiceProduct = db
+    .prepare(`SELECT id FROM products WHERE name = ? LIMIT 1`)
+    .get(TRANSLATIONS.testServiceProduct[lang]);
+
+  if (!existingTestServiceProduct && serviceUnit) {
+    const [name, latinName] = localize(TRANSLATIONS.testServiceProduct, lang);
+    const costPrice = 0;
+    const salePrice = 75;
+    const quantity = 0;
+
+    const result = db
+      .prepare(
+        `
+        INSERT INTO products (name, latinName, costPrice, quantity, unit_id, type)
+        VALUES (?, ?, ?, ?, ?, 'service')
+      `
+      )
+      .run(name, latinName, costPrice, quantity, serviceUnit.id);
+
+    const productId = result.lastInsertRowid;
+
+    db.prepare(
+      `
+        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
+        VALUES (?, ?, 1, 1, ?)
+      `
+    ).run(productId, serviceUnit.name || "Service", salePrice);
+
+    createProductMovement(db, {
+      product_id: productId,
+      reference_id: productId,
+      reference_type: "initial",
+      action: "create",
+      type: "in",
+      quantity,
+      enterPrice: costPrice,
+      base_unit_name: serviceUnit.name || "Service",
+      unit_name: serviceUnit.name || "Service",
+      conversion_factor: 1,
     });
   }
 }

@@ -61,6 +61,8 @@ export default function ProductDetailPage() {
     }
   }, [activeTab, fetchMovements]);
 
+  const isService = product?.type === "service";
+
   const panelClass =
     "rounded-[28px] border border-[#e5ebff] bg-white/85 p-5 shadow-sm";
 
@@ -126,19 +128,24 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="space-y-3">
-              <div className="rounded-2xl bg-[#eef3ff] p-4">
-                <p className="text-xs font-bold text-slate-500">
-                  {t("ui.quantity")}
-                </p>
-                <p className="mt-1 text-xl font-black text-slate-950">
-                  {formatNumber(product.quantity || 0, 2)}
-                  {product.unit_name ? (
-                    <span className="ml-1 text-sm font-semibold text-slate-500">
-                      {product.unit_name}
-                    </span>
-                  ) : null}
-                </p>
-              </div>
+              {/* Quantity is meaningless for a service — no physical stock
+                  behind it — so the card is dropped entirely rather than
+                  shown pinned at 0. */}
+              {!isService && (
+                <div className="rounded-2xl bg-[#eef3ff] p-4">
+                  <p className="text-xs font-bold text-slate-500">
+                    {t("ui.quantity")}
+                  </p>
+                  <p className="mt-1 text-xl font-black text-slate-950">
+                    {formatNumber(product.quantity || 0, 2)}
+                    {product.unit_name ? (
+                      <span className="ml-1 text-sm font-semibold text-slate-500">
+                        {product.unit_name}
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+              )}
 
               <div className="rounded-2xl bg-red-50 p-4">
                 <p className="text-xs font-bold text-slate-500">
@@ -294,9 +301,18 @@ export default function ProductDetailPage() {
                   ) : (
                     <>
                       <div className="space-y-2">
-                        {console.log(movements)}
                         {movements.map((movement) => {
                           const isIn = movement.type === "in";
+                          // Unit shown here is the movement's own SNAPSHOT
+                          // (unit_name/base_unit_name/conversion_factor),
+                          // not a live join to the product's current unit —
+                          // otherwise renaming/editing a unit later would
+                          // silently reinterpret old movement history.
+                          const wasNonBaseUnit =
+                            movement.unit_name &&
+                            movement.base_unit_name &&
+                            movement.unit_name !== movement.base_unit_name;
+
                           return (
                             <div
                               key={movement.id}
@@ -343,25 +359,44 @@ export default function ProductDetailPage() {
                                 </div>
                               </div>
 
-                              <div className="text-start">
-                                <div
-                                  className={`text-sm font-black ${
-                                    isIn ? "text-emerald-600" : "text-red-600"
-                                  }`}
-                                >
-                                  {isIn ? "+" : "-"}
-                                  {formatNumber(movement.quantity, 2)}{" "}
-                                  {movement.unit_code || ""}
-                                </div>
-                                {(movement.enterPrice > 0 ||
-                                  movement.outPrice > 0) && (
-                                  <div className="text-xs text-slate-500">
-                                    {money(
-                                      movement.enterPrice || movement.outPrice
-                                    )}
+                              {/* Quantity/unit is a stock concept — skipped
+                                  entirely for a service's movement rows,
+                                  same as the aside's Quantity card. What's
+                                  left (action + reference + date) is exactly
+                                  the audit trail a service still needs. */}
+                              {!isService && (
+                                <div className="text-start">
+                                  <div
+                                    className={`text-sm font-black ${
+                                      isIn ? "text-emerald-600" : "text-red-600"
+                                    }`}
+                                  >
+                                    {isIn ? "+" : "-"}
+                                    {formatNumber(movement.quantity, 2)}{" "}
+                                    {movement.unit_name ||
+                                      movement.unit_code ||
+                                      ""}
                                   </div>
-                                )}
-                              </div>
+                                  {wasNonBaseUnit && (
+                                    <div className="text-xs text-slate-400">
+                                      ×{" "}
+                                      {formatNumber(
+                                        movement.conversion_factor,
+                                        2
+                                      )}{" "}
+                                      {movement.base_unit_name}
+                                    </div>
+                                  )}
+                                  {(movement.enterPrice > 0 ||
+                                    movement.outPrice > 0) && (
+                                    <div className="text-xs text-slate-500">
+                                      {money(
+                                        movement.enterPrice || movement.outPrice
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
                           );
                         })}

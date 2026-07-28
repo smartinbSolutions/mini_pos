@@ -57,7 +57,10 @@ export default function createProductMovement(db, data) {
       enterPrice,
       outPrice,
       date,
-      quantity
+      quantity,
+      base_unit_name,
+      unit_name,
+      conversion_factor
     )
     VALUES (
       @product_id,
@@ -68,7 +71,10 @@ export default function createProductMovement(db, data) {
       @enterPrice,
       @outPrice,
       @date,
-      @quantity
+      @quantity,
+      @base_unit_name,
+      @unit_name,
+      @conversion_factor
     )
   `);
 
@@ -82,5 +88,13 @@ export default function createProductMovement(db, data) {
     enterPrice: Number(data.enterPrice || 0),
     outPrice: Number(data.outPrice || 0),
     quantity: Number(data.quantity || 0),
+    // Plain snapshot fields — no FK, no live join back to product_units.
+    // Nullable because not every caller necessarily knows which unit was
+    // involved (older/other callers may still omit these), but every
+    // caller added so far (create-product, update-product) always passes
+    // both names and a factor.
+    base_unit_name: data.base_unit_name ?? null,
+    unit_name: data.unit_name ?? null,
+    conversion_factor: data.conversion_factor ?? 1,
   });
 }
