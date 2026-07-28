@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import useUpdateExpense from "../hooks/useUpdateExpense";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
+import { normalizeDigits } from "../../../../Global/FormatNumber";
 
 export default function UpdateExpense() {
   const { t } = useTranslation();
@@ -238,14 +239,27 @@ export default function UpdateExpense() {
                         </td>
                         <td className="p-2">
                           <input
-                            type="number"
-                            min="0"
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
                             className={inputClass}
                             value={item.price}
                             disabled={isLocked}
-                            onChange={(e) =>
-                              updateItem(index, "price", e.target.value)
-                            }
+                            onChange={(e) => {
+                              const normalized = normalizeDigits(
+                                e.target.value
+                              );
+
+                              if (normalized === "") {
+                                updateItem(index, "price", "");
+                                return;
+                              }
+
+                              const num = Number(normalized);
+                              if (isNaN(num)) return;
+
+                              updateItem(index, "price", Math.max(0, num));
+                            }}
                           />
                         </td>
                         <td className="p-2 text-center font-black">

@@ -314,7 +314,24 @@ export default function registerCompanySettingsIPC() {
       return { exists: false };
     }
 
-    return { exists: true, settings };
+    const defaultPosTaxes = db
+      .prepare(
+        `
+        SELECT cdpt.tax_id, t.name, t.rate
+        FROM company_default_pos_taxes cdpt
+        JOIN taxes t ON t.id = cdpt.tax_id
+        ORDER BY cdpt.id ASC
+        `
+      )
+      .all();
+
+    return {
+      exists: true,
+      settings: {
+        ...settings,
+        default_pos_taxes: defaultPosTaxes,
+      },
+    };
   });
 
   ipcMain.handle("create-company-settings", (event, data) => {
@@ -419,6 +436,7 @@ export default function registerCompanySettingsIPC() {
         language = ?,
         timezone = ?,
         allow_negative_stock = ?,
+        pos_invoice_tax_mode = ?,
         updatedAt = datetime('now')
       WHERE id = ?
     `
@@ -433,11 +451,29 @@ export default function registerCompanySettingsIPC() {
       data.language,
       data.timezone,
       data.allow_negative_stock ? 1 : 0,
+      data.pos_invoice_tax_mode === "fixed" ? "fixed" : "manual",
       data.id
     );
 
+    // ---- Default POS taxes — only touched when the mode is 'fixed' AND
+    // the client actually sent a taxIds array. Passing undefined/null
+    // (e.g. a settings-form save that doesn't manage this field) leaves
+    // the existing list untouched rather than silently wiping it. ----
+    if (Array.isArray(data.default_pos_tax_ids)) {
+      db.prepare(`DELETE FROM company_default_pos_taxes`).run();
+
+      const insertTax = db.prepare(
+        `INSERT INTO company_default_pos_taxes (tax_id) VALUES (?)`
+      );
+
+      for (const taxId of data.default_pos_tax_ids) {
+        insertTax.run(taxId);
+      }
+    }
+
     return { success: true };
   });
+
   ipcMain.handle("get-dashboard-stats", () => {
     const sales = getModuleStats(db, {
       table: "sales_invoices",

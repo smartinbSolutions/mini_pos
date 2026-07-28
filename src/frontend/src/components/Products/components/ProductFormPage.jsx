@@ -16,6 +16,7 @@ import { toast, ToastContainer } from "react-toastify";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import useProductCatalog from "../hooks/useProductCatalog";
+import { normalizeDigits } from "../../../Global/FormatNumber";
 
 // ---- Shared style tokens ----
 const inputClass =
@@ -447,11 +448,14 @@ export default function ProductFormPage() {
                 <div className="space-y-1.5">
                   <label className={labelClass}>{t("ui.quantity")}</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
                     value={form.quantity}
-                    onChange={(event) =>
-                      updateField("quantity", event.target.value)
-                    }
+                    onChange={(event) => {
+                      const normalized = normalizeDigits(event.target.value);
+                      updateField("quantity", normalized);
+                    }}
                     className={inputClass}
                   />
                 </div>
@@ -504,13 +508,23 @@ export default function ProductFormPage() {
                   />
                   <input
                     required
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
                     value={form.costPrice}
-                    onChange={(event) =>
-                      updateField("costPrice", event.target.value)
-                    }
+                    onChange={(event) => {
+                      const normalized = normalizeDigits(event.target.value);
+
+                      if (normalized === "") {
+                        updateField("costPrice", "");
+                        return;
+                      }
+
+                      const num = Number(normalized);
+                      if (isNaN(num)) return;
+
+                      updateField("costPrice", Math.max(0, num));
+                    }}
                     className={inputWithPrefixClass}
                   />
                 </div>
@@ -528,13 +542,23 @@ export default function ProductFormPage() {
                   />
                   <input
                     required
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
                     value={form.salePrice}
-                    onChange={(event) =>
-                      updateField("salePrice", event.target.value)
-                    }
+                    onChange={(event) => {
+                      const normalized = normalizeDigits(event.target.value);
+
+                      if (normalized === "") {
+                        updateField("salePrice", "");
+                        return;
+                      }
+
+                      const num = Number(normalized);
+                      if (isNaN(num)) return;
+
+                      updateField("salePrice", Math.max(0, num));
+                    }}
                     className={
                       inputWithPrefixClass +
                       " font-black text-emerald-700 focus:border-emerald-400 focus:ring-emerald-400/15"
@@ -620,17 +644,29 @@ export default function ProductFormPage() {
                       />
 
                       <input
-                        type="number"
-                        min="0"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
                         value={unit.conversion_factor}
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const normalized = normalizeDigits(
+                            event.target.value
+                          );
+
+                          if (normalized === "") {
+                            updateProductUnit(index, "conversion_factor", "");
+                            return;
+                          }
+
+                          const num = Number(normalized);
+                          if (isNaN(num)) return;
+
                           updateProductUnit(
                             index,
                             "conversion_factor",
-                            event.target.value
-                          )
-                        }
+                            Math.max(0, num)
+                          );
+                        }}
                         placeholder={t(
                           "screens.products.conversionPlaceholder"
                         )}
@@ -638,17 +674,29 @@ export default function ProductFormPage() {
                       />
 
                       <input
-                        type="number"
-                        min="0"
-                        step="0.01"
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
                         value={unit.sale_price}
-                        onChange={(event) =>
+                        onChange={(event) => {
+                          const normalized = normalizeDigits(
+                            event.target.value
+                          );
+
+                          if (normalized === "") {
+                            updateProductUnit(index, "sale_price", "");
+                            return;
+                          }
+
+                          const num = Number(normalized);
+                          if (isNaN(num)) return;
+
                           updateProductUnit(
                             index,
                             "sale_price",
-                            event.target.value
-                          )
-                        }
+                            Math.max(0, num)
+                          );
+                        }}
                         placeholder={t(
                           "screens.products.unitSalePricePlaceholder"
                         )}

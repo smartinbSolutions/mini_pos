@@ -38,3 +38,18 @@ export const formatMoney = (value, currency, options = {}) => {
 
   return symbol ? `${formatted}${suffix} ${symbol}` : `${formatted}${suffix}`;
 };
+
+// Converts Arabic-Indic (٠-٩) and Extended/Persian (۰-۹) digits to
+// Western 0-9, so typing on an Arabic/Persian keyboard layout still
+// produces a value <input type="number"> — or Number() — can parse.
+// A plain <input type="number"> silently rejects these digits outright,
+// even though they're numerals to the person typing them.
+export function normalizeDigits(value) {
+  if (!value) return value;
+  return value.replace(/[٠-٩۰-۹]/g, (char) => {
+    const code = char.charCodeAt(0);
+    if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660); // Arabic-Indic
+    if (code >= 0x06f0 && code <= 0x06f9) return String(code - 0x06f0); // Extended Arabic-Indic
+    return char;
+  });
+}

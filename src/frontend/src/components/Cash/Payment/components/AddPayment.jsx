@@ -14,7 +14,7 @@ import {
   Landmark,
   ArrowRight,
 } from "lucide-react";
-import { formatMoney } from "../../../../Global/FormatNumber";
+import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import useAddPayment from "../hooks/useAddPayment";
 
 export default function AddPayment({
@@ -334,9 +334,13 @@ export default function AddPayment({
               </label>
               <div className="relative mt-1">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
+                  dir="ltr"
                   value={form.amount_in_base}
-                  onChange={(e) => handleBaseAmountChange(e.target.value)}
+                  onChange={(e) =>
+                    handleBaseAmountChange(normalizeDigits(e.target.value))
+                  }
                   className={`w-full h-12 rounded-xl border-2 px-3 text-lg font-semibold focus:ring-2 outline-none ${finalAccent.ring}`}
                   placeholder="0.00"
                   disabled={
@@ -374,10 +378,15 @@ export default function AddPayment({
                   </label>
                   <div className="relative mt-1">
                     <input
-                      type="number"
+                      type="text"
+                      inputMode="decimal"
+                      dir="ltr"
                       value={form.collected_amount}
                       onChange={(e) =>
-                        handleChange("collected_amount", e.target.value)
+                        handleChange(
+                          "collected_amount",
+                          normalizeDigits(e.target.value)
+                        )
                       }
                       className="w-full h-10 rounded-lg border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none bg-white disabled:bg-slate-100"
                       disabled={!form.fund_id}

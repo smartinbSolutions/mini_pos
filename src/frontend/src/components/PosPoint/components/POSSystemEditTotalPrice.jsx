@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, Check, Plus, Percent, Receipt, StickyNote } from "lucide-react";
+import { normalizeDigits } from "../../../Global/FormatNumber";
 
 function AddOptionsMenu({ options }) {
   const [open, setOpen] = useState(false);
@@ -53,13 +54,15 @@ function AdjustmentBlock({ icon, tone, title, onRemove, children }) {
           {icon}
           {title}
         </span>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="rounded-lg p-1 text-stone-400 transition hover:bg-white hover:text-red-600"
-        >
-          <X size={13} />
-        </button>
+        {onRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="rounded-lg p-1 text-stone-400 transition hover:bg-white hover:text-red-600"
+          >
+            <X size={13} />
+          </button>
+        )}
       </div>
       {children}
     </div>
@@ -77,6 +80,7 @@ const POSSystemEditTotalPrice = ({
   itemTax,
   discountRate,
   setDiscountRate,
+  posTaxMode,
   invoiceTaxes,
   addInvoiceTax,
   removeInvoiceTax,
@@ -208,13 +212,12 @@ const POSSystemEditTotalPrice = ({
             {t("screens.pos.finalTotal")}
           </p>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             dir="ltr"
             value={totalText}
-            onChange={(e) => handleTotalChange(e.target.value)}
+            onChange={(e) => handleTotalChange(normalizeDigits(e.target.value))}
             className="mt-1 w-full bg-transparent text-center text-4xl font-black text-teal-700 outline-none"
-            min="0"
-            step="any"
           />
         </div>
 
@@ -284,13 +287,15 @@ const POSSystemEditTotalPrice = ({
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     dir="ltr"
                     value={rateText}
-                    onChange={(e) => handleRateChange(e.target.value)}
+                    onChange={(e) =>
+                      handleRateChange(normalizeDigits(e.target.value))
+                    }
                     className="h-9 w-full rounded-lg border border-stone-200 bg-white px-2 pe-6 text-sm font-bold outline-none focus:border-red-400"
                     placeholder="0"
-                    min="0"
                   />
                   <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-xs text-stone-400">
                     %
@@ -298,13 +303,15 @@ const POSSystemEditTotalPrice = ({
                 </div>
                 <span className="text-xs text-stone-300">=</span>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   dir="ltr"
                   value={amountText}
-                  onChange={(e) => handleAmountChange(e.target.value)}
+                  onChange={(e) =>
+                    handleAmountChange(normalizeDigits(e.target.value))
+                  }
                   className="h-9 flex-1 rounded-lg border border-stone-200 bg-white px-2 text-sm font-bold outline-none focus:border-red-400"
                   placeholder="0.00"
-                  min="0"
                 />
               </div>
             </AdjustmentBlock>
@@ -317,10 +324,14 @@ const POSSystemEditTotalPrice = ({
               icon={<Receipt size={13} className="text-emerald-600" />}
               tone="success"
               title={t("ui.tax")}
-              onRemove={() => {
-                clearInvoiceTaxes();
-                setTaxRevealed(false);
-              }}
+              onRemove={
+                posTaxMode === "fixed"
+                  ? null
+                  : () => {
+                      clearInvoiceTaxes();
+                      setTaxRevealed(false);
+                    }
+              }
             >
               {(invoiceTaxes || []).length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
@@ -330,45 +341,57 @@ const POSSystemEditTotalPrice = ({
                       className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-emerald-700 shadow-sm"
                     >
                       {tax.name} ({tax.rate}%)
-                      <button
-                        type="button"
-                        onClick={() => removeInvoiceTax(tax.id)}
-                        className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                      >
-                        <X size={11} />
-                      </button>
+                      {posTaxMode !== "fixed" && (
+                        <button
+                          type="button"
+                          onClick={() => removeInvoiceTax(tax.id)}
+                          className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                        >
+                          <X size={11} />
+                        </button>
+                      )}
                     </span>
                   ))}
                 </div>
               )}
 
-              <select
-                className="h-9 w-full rounded-lg border border-stone-200 bg-white px-2 text-sm font-bold outline-none focus:border-emerald-400"
-                value=""
-                onChange={(e) => {
-                  const selected = taxes?.find(
-                    (tx) => tx.id === Number(e.target.value)
-                  );
-                  if (selected) addInvoiceTax(selected);
-                }}
-              >
-                <option value="">
-                  {t("screens.invoices.addAnotherTax", "Add another tax")}
-                </option>
-                {taxes
-                  ?.filter(
-                    (tx) =>
-                      (tx.category === "invoice" || tx.category === "both") &&
-                      !(invoiceTaxes || []).some(
-                        (applied) => applied.id === tx.id
-                      )
-                  )
-                  .map((tx) => (
-                    <option key={tx.id} value={tx.id}>
-                      {tx.name} ({tx.rate}%)
-                    </option>
-                  ))}
-              </select>
+              {posTaxMode === "fixed" ? (
+                <p className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600/80">
+                  <Receipt size={11} />
+                  {t(
+                    "screens.pos.taxLockedByOwner",
+                    "Set by the business owner — cannot be changed here"
+                  )}
+                </p>
+              ) : (
+                <select
+                  className="h-9 w-full rounded-lg border border-stone-200 bg-white px-2 text-sm font-bold outline-none focus:border-emerald-400"
+                  value=""
+                  onChange={(e) => {
+                    const selected = taxes?.find(
+                      (tx) => tx.id === Number(e.target.value)
+                    );
+                    if (selected) addInvoiceTax(selected);
+                  }}
+                >
+                  <option value="">
+                    {t("screens.invoices.addAnotherTax", "Add another tax")}
+                  </option>
+                  {taxes
+                    ?.filter(
+                      (tx) =>
+                        (tx.category === "invoice" || tx.category === "both") &&
+                        !(invoiceTaxes || []).some(
+                          (applied) => applied.id === tx.id
+                        )
+                    )
+                    .map((tx) => (
+                      <option key={tx.id} value={tx.id}>
+                        {tx.name} ({tx.rate}%)
+                      </option>
+                    ))}
+                </select>
+              )}
             </AdjustmentBlock>
           </div>
         )}
@@ -410,7 +433,7 @@ const POSSystemEditTotalPrice = ({
                 key: "tax",
                 label: t("screens.invoices.addInvoiceTax"),
                 icon: <Receipt size={13} className="text-emerald-600" />,
-                visible: !taxRevealed,
+                visible: !taxRevealed && posTaxMode !== "fixed",
                 onClick: () => setTaxRevealed(true),
               },
               {

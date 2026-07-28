@@ -59,6 +59,7 @@ export default function usePosCheckout({ weight } = {}) {
   const [currencies, setCurrencies] = useState();
   const [search, setSearch] = useState("");
   const [allowNegativeStock, setAllowNegativeStock] = useState(false);
+  const [posTaxMode, setPosTaxMode] = useState("manual"); // 'manual' | 'fixed'
 
   const weightRef = useRef(weight);
   const now = new Date();
@@ -132,11 +133,27 @@ export default function usePosCheckout({ weight } = {}) {
 
       setCurrencies(currencyResult.value?.[0] || []);
 
-      setAllowNegativeStock(
+      const companySettings =
         settingsResult.status === "fulfilled"
-          ? Boolean(settingsResult.value?.settings?.allow_negative_stock)
-          : false
-      );
+          ? settingsResult.value?.settings
+          : null;
+
+      setAllowNegativeStock(Boolean(companySettings?.allow_negative_stock));
+
+      const mode =
+        companySettings?.pos_invoice_tax_mode === "fixed" ? "fixed" : "manual";
+      setPosTaxMode(mode);
+
+      if (mode === "fixed") {
+        const defaults = (companySettings?.default_pos_taxes || []).map(
+          (t) => ({
+            id: t.tax_id,
+            name: t.name,
+            rate: t.rate,
+          })
+        );
+        setInvoiceTaxes(defaults);
+      }
 
       setTaxes(
         taxesResult.status === "fulfilled" ? taxesResult.value || [] : []
@@ -270,11 +287,13 @@ export default function usePosCheckout({ weight } = {}) {
   const clearCart = () => {
     setCart([]);
     setInvoiceDiscountRate(0);
-    setInvoiceTaxes([]);
     setInvoiceNote("");
     setSelectedCustomerId("");
-  };
 
+    if (posTaxMode !== "fixed") {
+      setInvoiceTaxes([]);
+    }
+  };
   // ---- Cascade — item level, aggregated ----
 
   const subtotal = useMemo(
@@ -320,6 +339,7 @@ export default function usePosCheckout({ weight } = {}) {
   }, [afterInvoiceDiscount, invoiceTaxes]);
 
   const addInvoiceTax = (selectedTax) => {
+    if (posTaxMode === "fixed") return;
     if (!selectedTax?.id) return;
 
     setInvoiceTaxes((current) => {
@@ -336,12 +356,15 @@ export default function usePosCheckout({ weight } = {}) {
   };
 
   const removeInvoiceTax = (taxId) => {
+    if (posTaxMode === "fixed") return;
     setInvoiceTaxes((current) => current.filter((t) => t.id !== taxId));
   };
 
   const clearInvoiceTaxes = () => {
+    if (posTaxMode === "fixed") return;
     setInvoiceTaxes([]);
   };
+
   const netTotal = useMemo(() => {
     return Math.max(0, afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue);
   }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
@@ -575,6 +598,7 @@ export default function usePosCheckout({ weight } = {}) {
     addInvoiceTax,
     removeInvoiceTax,
     clearInvoiceTaxes,
+    posTaxMode,
     invoiceTaxValue,
     invoiceNote,
     setInvoiceNote,

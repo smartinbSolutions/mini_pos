@@ -99,7 +99,8 @@ export default function Sidebar() {
         ...(user?.role === "admin"
           ? [{ title: "navigation.users", path: "/users" }]
           : []),
-        { title: "navigation.companySettings", path: "/company-settings" },
+        { title: "navigation.companySettings", path: "/company-info" },
+        { title: "navigation.settings", path: "/company-settings" },
       ],
     },
   ];
@@ -111,7 +112,7 @@ export default function Sidebar() {
       if (!item.children) return;
 
       const match = item.children.some((c) =>
-        location.pathname.startsWith(c.path),
+        location.pathname.startsWith(c.path)
       );
 
       if (match) newOpen[index] = true;
@@ -274,7 +275,7 @@ export default function Sidebar() {
           }
 
           const isActiveGroup = item.children.some((c) =>
-            location.pathname.startsWith(c.path),
+            location.pathname.startsWith(c.path)
           );
 
           return (

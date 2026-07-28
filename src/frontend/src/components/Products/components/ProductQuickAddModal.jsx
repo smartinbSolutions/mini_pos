@@ -2,6 +2,7 @@ import { Save, X, Package, DollarSign, Percent } from "lucide-react";
 import { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import { normalizeDigits } from "../../../Global/FormatNumber";
 
 const emptyForm = {
   name: "",
@@ -120,13 +121,23 @@ export default function ProductQuickAddModal({
                   />
                   <input
                     required
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
                     value={form.costPrice}
-                    onChange={(event) =>
-                      updateField("costPrice", event.target.value)
-                    }
+                    onChange={(event) => {
+                      const normalized = normalizeDigits(event.target.value);
+
+                      if (normalized === "") {
+                        updateField("costPrice", "");
+                        return;
+                      }
+
+                      const num = Number(normalized);
+                      if (isNaN(num)) return;
+
+                      updateField("costPrice", Math.max(0, num));
+                    }}
                     className={inputWithPrefixClass}
                   />
                 </div>
@@ -144,13 +155,23 @@ export default function ProductQuickAddModal({
                   />
                   <input
                     required
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
                     value={form.salePrice}
-                    onChange={(event) =>
-                      updateField("salePrice", event.target.value)
-                    }
+                    onChange={(event) => {
+                      const normalized = normalizeDigits(event.target.value);
+
+                      if (normalized === "") {
+                        updateField("salePrice", "");
+                        return;
+                      }
+
+                      const num = Number(normalized);
+                      if (isNaN(num)) return;
+
+                      updateField("salePrice", Math.max(0, num));
+                    }}
                     className={
                       inputWithPrefixClass +
                       " font-black text-emerald-700 focus:border-emerald-400 focus:ring-emerald-400/15"

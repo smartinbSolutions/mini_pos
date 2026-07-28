@@ -451,6 +451,17 @@
       "salesReturnSubtitle": "Manage your sales returns and credit notes"
     },
     "company": {
+      "languageHint": "Also switches the app's interface language once saved.",
+      "businessSettingsTitle": "Business Settings",
+      "businessSettingsSubtitle": "Rules that shape how sales and POS behave across the app.",
+      "allowNegativeStock": "Allow selling out-of-stock items",
+      "allowNegativeStockHint": "When off, the POS and manual sales block checkout on items with zero stock.",
+      "posTaxMode": "POS invoice-level tax",
+      "posTaxModeHint": "Choose whether the cashier can pick invoice taxes freely, or the taxes are fixed by you and applied automatically.",
+      "taxModeManual": "Manual — cashier picks",
+      "taxModeFixed": "Fixed — locked by owner",
+      "defaultPosTaxes": "Default taxes applied to every POS sale",
+      "addDefaultTax": "Add a default tax",
       "title": "Company Settings",
       "subtitle": "Manage your company information and system settings",
       "fallbackName": "Your Company",
@@ -511,6 +522,7 @@
       "productInUse": "This product has sales or purchase history and can't be deleted."
     },
     "pos": {
+      "taxLockedByOwner": "Set by the business owner — cannot be changed here",
       "discountApplied": "{{rate}}% off",
       "outOfStock": "Out of stock",
       "taxIncluded": "incl. {{rate}}% tax",

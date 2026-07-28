@@ -72,6 +72,7 @@ export default function POSSystem() {
     addInvoiceTax,
     removeInvoiceTax,
     clearInvoiceTaxes,
+    posTaxMode,
     invoiceTaxValue,
     invoiceNote,
     setInvoiceNote,
@@ -413,7 +414,8 @@ export default function POSSystem() {
           itemDiscountSummary={itemDiscountSummary}
           itemTaxSummary={itemTaxSummary}
           invoiceDiscount={invoiceDiscount}
-          invoiceTax={invoiceTax}
+          invoiceTaxes={invoiceTaxes}
+          afterInvoiceDiscount={afterInvoiceDiscount}
           invoiceTaxValue={invoiceTaxValue}
           netTotal={netTotal}
           money={money}
@@ -457,6 +459,7 @@ export default function POSSystem() {
           itemTax={itemTaxTotal}
           discountRate={invoiceDiscountRate}
           setDiscountRate={setInvoiceDiscountRate}
+          posTaxMode={posTaxMode}
           invoiceTaxes={invoiceTaxes}
           addInvoiceTax={addInvoiceTax}
           removeInvoiceTax={removeInvoiceTax}

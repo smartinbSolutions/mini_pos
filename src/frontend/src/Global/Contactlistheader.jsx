@@ -10,6 +10,7 @@ import {
   MinusCircle,
   Info,
 } from "lucide-react";
+import { normalizeDigits } from "./FormatNumber";
 
 const defaultOpeningDate = () => `${new Date().getFullYear()}-01-01`;
 
@@ -153,13 +154,23 @@ const ContactListHeader = ({
             </div>
 
             <input
-              type="number"
-              step="0.01"
-              min="0"
+              type="text"
+              inputMode="decimal"
+              dir="ltr"
               value={draft.opening_balance}
-              onChange={(e) =>
-                setDraft({ ...draft, opening_balance: e.target.value })
-              }
+              onChange={(e) => {
+                const normalized = normalizeDigits(e.target.value);
+
+                if (normalized === "") {
+                  setDraft({ ...draft, opening_balance: "" });
+                  return;
+                }
+
+                const num = Number(normalized);
+                if (isNaN(num)) return;
+
+                setDraft({ ...draft, opening_balance: Math.max(0, num) });
+              }}
               className={`w-full ${inputClass} bg-white`}
               placeholder="0.00"
             />

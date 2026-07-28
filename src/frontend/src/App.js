@@ -68,7 +68,6 @@ import PartnersList from "./components/Partners/components/PartnersList";
 // Settings
 import UnitList from "./components/Unit/components/UnitList";
 import TaxList from "./components/Tax/components/TaxList";
-import CompanySettings from "./components/CompanySettings/components/CompanySettings";
 import UsersList from "./components/users/components/UsersList";
 import PurchaseReturnList from "./components/Invoices/PurchaseReturn/components/PurchaseReturnList";
 import PurchaseReturnView from "./components/Invoices/PurchaseReturn/components/PurchaseRefundView";
@@ -80,6 +79,8 @@ import ProductDetailPage from "./components/Products/components/ProductDetailPag
 import ProductFormPage from "./components/Products/components/ProductFormPage";
 import PurchaseReturnPage from "./components/Invoices/PurchaseReturn/components/PurchaseReturnPage";
 import SalesReturnPage from "./components/Invoices/SalesReturn/components/SalesReturnPage";
+import CompanyGeneralInfo from "./components/CompanySettings/components/CompanyGeneralInfo";
+import CompanyBusinessSettings from "./components/CompanySettings/components/CompanyBusinessSettings";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -256,7 +257,11 @@ export default function App() {
               {/* ================= SETTINGS ================= */}
               <Route path="unit" element={<UnitList />} />
               <Route path="tax" element={<TaxList />} />
-              <Route path="company-settings" element={<CompanySettings />} />
+              <Route path="company-info" element={<CompanyGeneralInfo />} />
+              <Route
+                path="company-settings"
+                element={<CompanyBusinessSettings />}
+              />
               <Route
                 path="users"
                 element={

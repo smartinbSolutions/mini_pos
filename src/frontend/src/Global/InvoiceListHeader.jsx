@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { RefreshCw, Search, Filter, X, SlidersHorizontal } from "lucide-react";
+import { normalizeDigits } from "./FormatNumber";
 
 const VARIANTS = {
   blue: {
@@ -282,9 +283,16 @@ export default function InvoiceListHeader({
                 <div key={field.name} className={fieldWrapperClass}>
                   <label className={labelClass}>{field.label}</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
+                    dir="ltr"
                     value={filters?.[field.name] ?? ""}
-                    onChange={(e) => onFilterChange(field.name, e.target.value)}
+                    onChange={(e) =>
+                      onFilterChange(
+                        field.name,
+                        normalizeDigits(e.target.value)
+                      )
+                    }
                     placeholder="0"
                     className={inputBaseClass}
                   />

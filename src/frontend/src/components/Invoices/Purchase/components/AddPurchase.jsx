@@ -28,6 +28,7 @@ import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
 import SupplierFormModal from "./SupplierFormModal";
 import DropdownMenu from "../../../../Global/DropdownMenu";
+import { normalizeDigits } from "../../../../Global/FormatNumber";
 
 // ---- Shared, module-level so re-renders never remount them (avoids the
 // focus-loss bug we hit earlier with in-body component definitions) ----
@@ -481,17 +482,30 @@ export default function AddPurchase() {
                               {t("ui.qty")}
                             </label>
                             <input
-                              type="number"
-                              min="0"
+                              type="text"
+                              inputMode="decimal"
+                              dir="ltr"
                               className={inputClass}
                               value={item.entered_quantity}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const normalized = normalizeDigits(
+                                  e.target.value
+                                );
+
+                                if (normalized === "") {
+                                  updateItem(index, "entered_quantity", "");
+                                  return;
+                                }
+
+                                const num = Number(normalized);
+                                if (isNaN(num)) return;
+
                                 updateItem(
                                   index,
                                   "entered_quantity",
-                                  e.target.value
-                                )
-                              }
+                                  Math.max(0, num)
+                                );
+                              }}
                             />
                           </div>
 
@@ -500,17 +514,30 @@ export default function AddPurchase() {
                               {t("ui.price")}
                             </label>
                             <input
-                              type="number"
-                              min="0"
+                              type="text"
+                              inputMode="decimal"
+                              dir="ltr"
                               className={inputClass}
                               value={item.entered_price}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const normalized = normalizeDigits(
+                                  e.target.value
+                                );
+
+                                if (normalized === "") {
+                                  updateItem(index, "entered_price", "");
+                                  return;
+                                }
+
+                                const num = Number(normalized);
+                                if (isNaN(num)) return;
+
                                 updateItem(
                                   index,
                                   "entered_price",
-                                  e.target.value
-                                )
-                              }
+                                  Math.max(0, num)
+                                );
+                              }}
                             />
                           </div>
 
@@ -663,32 +690,60 @@ export default function AddPurchase() {
                               onRemove={() => toggleItemDiscount(index, true)}
                             >
                               <input
-                                type="number"
-                                min="0"
-                                max="100"
+                                type="text"
+                                inputMode="decimal"
+                                dir="ltr"
                                 className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
                                 value={item.discount_rate || ""}
-                                onChange={(e) =>
-                                  updateItemDiscountRate(index, e.target.value)
-                                }
+                                onChange={(e) => {
+                                  const normalized = normalizeDigits(
+                                    e.target.value
+                                  );
+
+                                  if (normalized === "") {
+                                    updateItemDiscountRate(index, "");
+                                    return;
+                                  }
+
+                                  const num = Number(normalized);
+                                  if (isNaN(num)) return;
+
+                                  updateItemDiscountRate(
+                                    index,
+                                    Math.min(100, Math.max(0, num))
+                                  );
+                                }}
                                 placeholder="0"
                               />
                               <span className="text-[10px] text-red-400">
                                 % =
                               </span>
                               <input
-                                type="number"
-                                min="0"
+                                type="text"
+                                inputMode="decimal"
+                                dir="ltr"
                                 className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
                                 value={
                                   item.discount ? item.discount.toFixed(2) : ""
                                 }
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  const normalized = normalizeDigits(
+                                    e.target.value
+                                  );
+
+                                  if (normalized === "") {
+                                    updateItemDiscountAmount(index, "");
+                                    return;
+                                  }
+
+                                  const num = Number(normalized);
+                                  if (isNaN(num)) return;
+
                                   updateItemDiscountAmount(
                                     index,
-                                    e.target.value
-                                  )
-                                }
+                                    Math.max(0, num)
+                                  );
+                                }}
                                 placeholder="0"
                               />
                             </AdjustmentChip>
@@ -809,31 +864,56 @@ export default function AddPurchase() {
                       <div className="flex items-center gap-1.5">
                         <div className="relative flex-1">
                           <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            className={`${smallInputClass} pr-5 text-right tabular-nums`}
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
+                            className={`${smallInputClass} pe-5 text-end tabular-nums`}
                             value={invoice.discount_rate || ""}
-                            onChange={(e) =>
-                              setInvoiceDiscountRate(e.target.value)
-                            }
+                            onChange={(e) => {
+                              const normalized = normalizeDigits(
+                                e.target.value
+                              );
+
+                              if (normalized === "") {
+                                setInvoiceDiscountRate("");
+                                return;
+                              }
+
+                              const num = Number(normalized);
+                              if (isNaN(num)) return;
+
+                              setInvoiceDiscountRate(
+                                Math.min(100, Math.max(0, num))
+                              );
+                            }}
                             placeholder="0"
                           />
-                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
+                          <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
                             %
                           </span>
                         </div>
                         <span className="text-xs text-slate-300">=</span>
                         <input
-                          type="number"
-                          min="0"
-                          className={`${smallInputClass} flex-1 text-right tabular-nums`}
+                          type="text"
+                          inputMode="decimal"
+                          dir="ltr"
+                          className={`${smallInputClass} flex-1 text-end tabular-nums`}
                           value={
                             invoiceDiscount ? invoiceDiscount.toFixed(2) : ""
                           }
-                          onChange={(e) =>
-                            setInvoiceDiscountAmount(e.target.value)
-                          }
+                          onChange={(e) => {
+                            const normalized = normalizeDigits(e.target.value);
+
+                            if (normalized === "") {
+                              setInvoiceDiscountAmount("");
+                              return;
+                            }
+
+                            const num = Number(normalized);
+                            if (isNaN(num)) return;
+
+                            setInvoiceDiscountAmount(Math.max(0, num));
+                          }}
                           placeholder="0"
                         />
                       </div>

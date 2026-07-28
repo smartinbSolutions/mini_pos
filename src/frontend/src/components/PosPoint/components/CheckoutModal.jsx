@@ -1,6 +1,7 @@
 import { Wallet, CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { normalizeDigits } from "../../../Global/FormatNumber";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -34,7 +35,7 @@ export default function CheckoutModal({
     setAllocations((current) => {
       const fundIds = new Set(funds.map((fund) => String(fund.id)));
       return Object.fromEntries(
-        Object.entries(current).filter(([fundId]) => fundIds.has(fundId)),
+        Object.entries(current).filter(([fundId]) => fundIds.has(fundId))
       );
     });
   }, [funds]);
@@ -117,13 +118,13 @@ export default function CheckoutModal({
 
   const allocatedTotal = useMemo(
     () => cents(rows.reduce((sum, row) => sum + row.portion, 0)),
-    [rows],
+    [rows]
   );
 
   // positive = still unallocated, negative = over-allocated, 0 = exact
   const allocationDiff = useMemo(
     () => cents(total - allocatedTotal),
-    [total, allocatedTotal],
+    [total, allocatedTotal]
   );
 
   const isFullyAllocated = Math.abs(allocationDiff) < 0.01;
@@ -239,13 +240,25 @@ export default function CheckoutModal({
 
                         <div className="flex h-11 overflow-hidden rounded-xl border border-stone-200 bg-white focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100">
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
                             value={portion || ""}
-                            onChange={(e) =>
-                              updatePortion(fund, e.target.value)
-                            }
+                            onChange={(e) => {
+                              const normalized = normalizeDigits(
+                                e.target.value
+                              );
+
+                              if (normalized === "") {
+                                updatePortion(fund, "");
+                                return;
+                              }
+
+                              const num = Number(normalized);
+                              if (isNaN(num)) return;
+
+                              updatePortion(fund, Math.max(0, num));
+                            }}
                             className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400"
                             placeholder="0"
                           />
@@ -268,14 +281,26 @@ export default function CheckoutModal({
                           }`}
                         >
                           <input
-                            type="number"
-                            min="0"
-                            step="0.01"
+                            type="text"
+                            inputMode="decimal"
+                            dir="ltr"
                             value={sameCurrency ? portion || "" : fundAmt || ""}
                             disabled={sameCurrency}
-                            onChange={(e) =>
-                              updateFundAmt(fund, e.target.value)
-                            }
+                            onChange={(e) => {
+                              const normalized = normalizeDigits(
+                                e.target.value
+                              );
+
+                              if (normalized === "") {
+                                updateFundAmt(fund, "");
+                                return;
+                              }
+
+                              const num = Number(normalized);
+                              if (isNaN(num)) return;
+
+                              updateFundAmt(fund, Math.max(0, num));
+                            }}
                             className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400 disabled:text-stone-400"
                             placeholder="0"
                           />
@@ -313,7 +338,7 @@ export default function CheckoutModal({
                       </div>
                     )}
                   </div>
-                ),
+                )
               )}
             </div>
           </section>

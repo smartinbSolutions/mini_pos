@@ -1,5 +1,5 @@
 import { X, Save, ArrowRightLeft, ArrowRight, ArrowLeft } from "lucide-react";
-import { formatMoney } from "../../../../Global/FormatNumber";
+import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import useTransferFundtoFund from "../hooks/useTransferFundtoFund";
 import { useTranslation } from "react-i18next";
 
@@ -111,9 +111,13 @@ export default function FundTransferModal({
                   {sourceFund && `(${sourceFund.currency_code})`}
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
+                  dir="ltr"
                   value={form.amount}
-                  onChange={(e) => handleAmountChange(e.target.value)}
+                  onChange={(e) =>
+                    handleAmountChange(normalizeDigits(e.target.value))
+                  }
                   className="w-full h-10 rounded-xl border px-3 mt-1 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-gray-100"
                   placeholder="0.00"
                   disabled={!form.from_fund_id}
@@ -160,9 +164,13 @@ export default function FundTransferModal({
                   {targetFund && `(${targetFund.currency_code})`}
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
+                  dir="ltr"
                   value={form.receive_amount}
-                  onChange={(e) => handleReceiveAmountChange(e.target.value)}
+                  onChange={(e) =>
+                    handleReceiveAmountChange(normalizeDigits(e.target.value))
+                  }
                   className={`w-full h-10 rounded-xl border px-3 mt-1 focus:ring-2 focus:ring-emerald-500 outline-none text-sm disabled:bg-gray-100 ${
                     isCrossCurrency ? "bg-white" : "bg-gray-100 text-gray-500"
                   }`}

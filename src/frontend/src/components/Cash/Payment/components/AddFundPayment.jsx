@@ -9,7 +9,7 @@ import {
   Building2,
   Users,
 } from "lucide-react";
-import { formatMoney } from "../../../../Global/FormatNumber";
+import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import useAddFundPayment from "../hooks/useAddFundPayment";
 
 export default function AddFundPayment({
@@ -159,9 +159,13 @@ export default function AddFundPayment({
         </label>
         <div className="relative mt-1">
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
+            dir="ltr"
             value={form.amount_in_base || ""}
-            onChange={(e) => handleBaseAmountChange(e.target.value)}
+            onChange={(e) =>
+              handleBaseAmountChange(normalizeDigits(e.target.value))
+            }
             className="w-full h-10 rounded-xl border px-3 pr-9 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm disabled:bg-gray-100"
             placeholder="0.00"
             disabled={!form.fund_id}
@@ -223,10 +227,15 @@ export default function AddFundPayment({
               </label>
               <div className="relative mt-1">
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
+                  dir="ltr"
                   value={form.collected_amount || ""}
                   onChange={(e) =>
-                    handleChange("collected_amount", e.target.value)
+                    handleChange(
+                      "collected_amount",
+                      normalizeDigits(e.target.value)
+                    )
                   }
                   className="w-full h-11 rounded-xl border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
                   disabled={!form.fund_id}

@@ -705,9 +705,20 @@ db.prepare(
     language TEXT DEFAULT 'ar',
     timezone TEXT DEFAULT 'Asia/Damascus',
     allow_negative_stock INTEGER DEFAULT 0,
+    pos_invoice_tax_mode TEXT DEFAULT 'manual' CHECK(pos_invoice_tax_mode IN ('manual', 'fixed')),
     createdAt TEXT DEFAULT (datetime('now')),
     updatedAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (base_currency_id) REFERENCES currencies(id)
+  )`
+).run();
+
+db.prepare(
+  `
+  CREATE TABLE IF NOT EXISTS company_default_pos_taxes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tax_id INTEGER NOT NULL,
+    createdAt TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (tax_id) REFERENCES taxes(id)
   )`
 ).run();
 

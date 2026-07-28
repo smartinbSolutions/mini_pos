@@ -3,6 +3,7 @@ import useCurrency from "../hooks/useCurrency";
 import { Edit2, Plus, Save, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
+import { normalizeDigits } from "../../../../Global/FormatNumber";
 
 const CurrencyList = () => {
   const { t } = useTranslation();
@@ -107,13 +108,14 @@ const CurrencyList = () => {
                     {currency.isPrimary === 0 && (
                       <input
                         required
-                        type="number"
-                        step="0.0001"
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
                         value={editing.exchangeRate}
                         onChange={(e) =>
                           setEditing({
                             ...editing,
-                            exchangeRate: e.target.value,
+                            exchangeRate: normalizeDigits(e.target.value),
                           })
                         }
                         className={inputClass}
@@ -248,11 +250,15 @@ const CurrencyList = () => {
             </div>
             <input
               required
-              type="number"
-              step="0.0001"
+              type="text"
+              inputMode="decimal"
+              dir="ltr"
               value={draft.exchangeRate}
               onChange={(e) =>
-                setDraft({ ...draft, exchangeRate: e.target.value })
+                setDraft({
+                  ...draft,
+                  exchangeRate: normalizeDigits(e.target.value),
+                })
               }
               className={`w-full ${inputClass}`}
               placeholder={t("ui.exchangeRate")}

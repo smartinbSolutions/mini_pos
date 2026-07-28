@@ -9,7 +9,7 @@ import {
   ArrowDownLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { formatMoney } from "../../../../Global/FormatNumber";
+import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
@@ -161,12 +161,14 @@ const FundList = () => {
 
                               <input
                                 required
-                                type="number"
+                                type="text"
+                                inputMode="decimal"
+                                dir="ltr"
                                 value={editing.balance || ""}
                                 onChange={(e) =>
                                   setEditing({
                                     ...editing,
-                                    balance: Number(e.target.value),
+                                    balance: normalizeDigits(e.target.value),
                                   })
                                 }
                                 disabled

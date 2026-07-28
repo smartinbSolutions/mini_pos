@@ -3,6 +3,7 @@ import { X, Undo2, AlertCircle } from "lucide-react";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
+import { normalizeDigits } from "../../../../Global/FormatNumber";
 const SalesReturnModal = ({ isOpen, onClose, id }) => {
   const { t } = useTranslation();
   const { money } = usePrimaryCurrency();
@@ -234,16 +235,30 @@ const SalesReturnModal = ({ isOpen, onClose, id }) => {
                     </td>
                     <td className="px-4 py-3">
                       <input
-                        type="number"
-                        min="0"
-                        max={item.maxAvailable}
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
                         value={
                           item.returnQuantity === 0 ? "" : item.returnQuantity
                         }
                         placeholder="0"
-                        onChange={(e) =>
-                          handleQtyChange(item.id, e.target.value)
-                        }
+                        onChange={(e) => {
+                          const normalized = normalizeDigits(e.target.value);
+
+                          if (normalized === "") {
+                            handleQtyChange(item.id, "");
+                            return;
+                          }
+
+                          const num = Number(normalized);
+                          if (isNaN(num)) return;
+
+                          const max = Number(item.maxAvailable || 0);
+                          handleQtyChange(
+                            item.id,
+                            Math.min(max, Math.max(0, num))
+                          );
+                        }}
                         className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-start font-bold text-slate-800 shadow-sm focus:border-[#4663ff] focus:outline-none focus:ring-1 focus:ring-[#4663ff]"
                       />
                     </td>

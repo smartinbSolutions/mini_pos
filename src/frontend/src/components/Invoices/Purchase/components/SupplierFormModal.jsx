@@ -9,6 +9,7 @@ import {
   MinusCircle,
   Info,
 } from "lucide-react";
+import { normalizeDigits } from "../../../../Global/FormatNumber";
 
 const defaultOpeningDate = () => `${new Date().getFullYear()}-01-01`;
 
@@ -132,15 +133,23 @@ export default function SupplierFormModal({
             </div>
 
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
+              dir="ltr"
               value={draft.opening_balance}
-              min="0"
-              onChange={(e) =>
-                setDraft((p) => ({
-                  ...p,
-                  opening_balance: e.target.value,
-                }))
-              }
+              onChange={(e) => {
+                const normalized = normalizeDigits(e.target.value);
+
+                if (normalized === "") {
+                  setDraft((p) => ({ ...p, opening_balance: "" }));
+                  return;
+                }
+
+                const num = Number(normalized);
+                if (isNaN(num)) return;
+
+                setDraft((p) => ({ ...p, opening_balance: Math.max(0, num) }));
+              }}
               className={inputClass}
               placeholder="0"
             />

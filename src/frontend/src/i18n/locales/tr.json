@@ -447,6 +447,17 @@
       "salesReturnSubtitle": "Satış iadelerinizi ve alacak dekontlarınızı yönetin"
     },
     "company": {
+      "languageHint": "Kaydedildikten sonra uygulamanın arayüz dilini de değiştirir.",
+      "businessSettingsTitle": "İşletme Ayarları",
+      "businessSettingsSubtitle": "Satış ve POS'un uygulama genelinde nasıl davranacağını belirleyen kurallar.",
+      "allowNegativeStock": "Stokta olmayan ürünlerin satışına izin ver",
+      "allowNegativeStockHint": "Kapalıyken, POS ve manuel satışlar stoğu sıfır olan ürünlerde ödemeyi engeller.",
+      "posTaxMode": "POS fatura düzeyinde vergi",
+      "posTaxModeHint": "Kasiyerin fatura vergilerini serbestçe seçip seçemeyeceğini, ya da vergilerin sizin tarafınızdan sabitlenip otomatik uygulanacağını seçin.",
+      "taxModeManual": "Manuel — kasiyer seçer",
+      "taxModeFixed": "Sabit — sahibi tarafından kilitli",
+      "defaultPosTaxes": "Her POS satışına uygulanan varsayılan vergiler",
+      "addDefaultTax": "Varsayılan vergi ekle",
       "title": "Şirket Ayarları",
       "subtitle": "Şirket bilgilerini ve sistem ayarlarını yönet",
       "fallbackName": "Şirketiniz",
@@ -507,6 +518,7 @@
       "productInUse": "Bu ürünün satış veya alış geçmişi var ve silinemez."
     },
     "pos": {
+      "taxLockedByOwner": "İşletme sahibi tarafından belirlendi — burada değiştirilemez",
       "pay": "Öde",
       "discountApplied": "%{{rate}} indirim",
       "outOfStock": "Stokta yok",

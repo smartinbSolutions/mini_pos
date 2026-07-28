@@ -17,7 +17,8 @@ export default function POSCart({
   itemDiscountSummary,
   itemTaxSummary,
   invoiceDiscount,
-  invoiceTax,
+  invoiceTaxes,
+  afterInvoiceDiscount,
   invoiceTaxValue,
   netTotal,
   money,
@@ -25,7 +26,7 @@ export default function POSCart({
 }) {
   const hasInvoiceDiscount = Number(invoiceDiscount) > 0.005;
   const hasInvoiceTax =
-    Boolean(invoiceTax?.id) && Number(invoiceTaxValue) > 0.005;
+    (invoiceTaxes || []).length > 0 && Number(invoiceTaxValue) > 0.005;
 
   return (
     <aside className="hidden border-l border-stone-200 bg-white lg:flex lg:flex-col h-screen sticky top-0 overflow-hidden">
@@ -159,17 +160,26 @@ export default function POSCart({
                   </span>
                 </div>
               )}
+              {hasInvoiceTax &&
+                invoiceTaxes.map((tax) => {
+                  const rate = Number(tax.rate || 0);
+                  const value =
+                    Number(afterInvoiceDiscount || 0) * (rate / 100);
 
-              {hasInvoiceTax && (
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="text-stone-400">
-                    {invoiceTax.name} ({invoiceTax.rate}%)
-                  </span>
-                  <span dir="ltr" className="font-bold text-emerald-600">
-                    +{money(invoiceTaxValue)}
-                  </span>
-                </div>
-              )}
+                  return (
+                    <div
+                      key={tax.id}
+                      className="mt-1 flex items-center justify-between"
+                    >
+                      <span className="text-stone-400">
+                        {tax.name} ({tax.rate}%)
+                      </span>
+                      <span dir="ltr" className="font-bold text-emerald-600">
+                        +{money(value)}
+                      </span>
+                    </div>
+                  );
+                })}
 
               <div className="mt-1.5 flex items-center justify-between border-t border-stone-200 pt-1.5">
                 <span className="font-black text-stone-700">
