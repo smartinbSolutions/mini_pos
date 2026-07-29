@@ -8,6 +8,9 @@ import {
   Percent,
   Edit2,
   Undo2,
+  Download,
+  Printer,
+  MoreVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useSalesList from "../hooks/useSalesList";
@@ -23,6 +26,7 @@ import GoTo from "../../../../Global/GoTo";
 import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import { ToastContainer } from "react-toastify";
+import DropdownMenu from "../../../../Global/DropdownMenu";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -101,7 +105,8 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
 };
 
 const SalesList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
   const {
     salesInvoices,
     loading,
@@ -211,14 +216,36 @@ const SalesList = () => {
   }, [salesInvoices, search]);
 
   const [isPrinting, setIsPrinting] = useState(false);
-  const handlePrint = async (invoice) => {
+  const [savingPdfId, setSavingPdfId] = useState(null);
+
+  const handlePrint = async (invoiceId) => {
     try {
       setIsPrinting(true);
-      await api.printSalesInvoice(invoice.id);
+      const res = await api.printDocument(`/print-sales/${invoiceId}`);
+      if (!res.success && res.error === "NO_PRINTER") {
+        setActionError(t("screens.invoices.noPrinter", "No printer found."));
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async (invoiceId) => {
+    try {
+      setSavingPdfId(invoiceId);
+      const res = await api.saveDocumentPdf(
+        `/print-sales/${invoiceId}`,
+        `invoice-${invoiceId}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") {
+        setActionError(t("screens.invoices.pdfFailed", "Failed to save PDF."));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingPdfId(null);
     }
   };
 
@@ -457,66 +484,78 @@ const SalesList = () => {
                         </td>
 
                         <td className="px-4 py-3 text-center">
-                          <div className="flex justify-end gap-0.5">
-                            <button
-                              onClick={() => navigate(`/view-sales/${inv.id}`)}
-                              className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              title={t("common.view")}
-                            >
-                              <Eye size={15} />
-                            </button>
-
-                            {inv.status === "unpaid" &&
-                              inv.return_status === "none" &&
-                              inv.channel !== "pos" && (
-                                <button
-                                  onClick={() =>
-                                    navigate(`/edit-sales/${inv.id}`)
-                                  }
-                                  className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                  title={t("common.edit")}
-                                >
-                                  <Edit2 size={15} />
-                                </button>
-                              )}
-
-                            {inv.status !== "paid" && inv.channel !== "pos" && (
-                              <button
-                                onClick={() => {
+                          <DropdownMenu
+                            trigger={
+                              <button className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]">
+                                <MoreVertical size={16} />
+                              </button>
+                            }
+                            align={isRtl ? "left" : "right"}
+                            options={[
+                              {
+                                key: "view",
+                                icon: <Eye size={14} />,
+                                label: t("common.view"),
+                                onClick: () =>
+                                  navigate(`/view-sales/${inv.id}`),
+                              },
+                              {
+                                key: "savePdf",
+                                icon: <Download size={14} />,
+                                label: t("common.savePdf", "Save as PDF"),
+                                onClick: () => handleSavePdf(inv.id),
+                              },
+                              {
+                                key: "print",
+                                icon: <Printer size={14} />,
+                                label: t("common.print"),
+                                onClick: () => handlePrint(inv.id),
+                              },
+                              {
+                                key: "edit",
+                                icon: <Edit2 size={14} />,
+                                label: t("common.edit"),
+                                onClick: () =>
+                                  navigate(`/edit-sales/${inv.id}`),
+                                visible:
+                                  inv.status === "unpaid" &&
+                                  inv.return_status === "none" &&
+                                  inv.channel !== "pos",
+                              },
+                              {
+                                key: "payment",
+                                icon: <HandCoins size={14} />,
+                                label: t("ui.payment"),
+                                onClick: () => {
                                   setSelecteInvoice(inv);
                                   setOpenPaymentModel(true);
-                                }}
-                                className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                title={t("ui.payment")}
-                              >
-                                <HandCoins size={15} />
-                              </button>
-                            )}
-
-                            {inv.return_status !== "full" && (
-                              <button
-                                onClick={() => {
-                                  navigate(`/sales-return/${inv.id}`);
-                                }}
-                                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                title={t("ui.createSalesReturn")}
-                              >
-                                <Undo2 size={15} />
-                              </button>
-                            )}
-
-                            {inv.status === "unpaid" &&
-                              inv.return_status === "none" &&
-                              inv.channel !== "pos" && (
-                                <button
-                                  onClick={() => setDeleteInvoice(inv)}
-                                  className="rounded-lg p-1.5 text-red-500 transition hover:bg-red-50"
-                                  title={t("common.delete")}
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              )}
-                          </div>
+                                },
+                                visible:
+                                  inv.status !== "paid" &&
+                                  inv.channel !== "pos",
+                              },
+                              {
+                                key: "return",
+                                icon: <Undo2 size={14} />,
+                                label: t("ui.createSalesReturn"),
+                                onClick: () =>
+                                  navigate(`/sales-return/${inv.id}`),
+                                visible: inv.return_status !== "full",
+                              },
+                              {
+                                key: "delete",
+                                icon: (
+                                  <Trash2 size={14} className="text-red-500" />
+                                ),
+                                label: t("common.delete"),
+                                onClick: () => setDeleteInvoice(inv),
+                                visible:
+                                  inv.status === "unpaid" &&
+                                  inv.return_status === "none" &&
+                                  inv.channel !== "pos",
+                              },
+                            ]}
+                          />
                         </td>
                       </tr>
                     );

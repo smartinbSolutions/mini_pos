@@ -19,6 +19,7 @@ import registerCustomerDisplayIPC from "./ipc/customer_display.ipc";
 import registerAuthHandlersIPC from "./ipc/Auth.ipc";
 import registerPurchaseReturnIPC from "./ipc/purchase_returns.ipc";
 import registerSalesReturnsIpc from "./ipc/sales_returns.ipc";
+import registerPrintDocsIPC from "./ipc/printDocs.ipc";
 
 export default function registerAllIPC() {
   registerAuthHandlersIPC();
@@ -42,4 +43,5 @@ export default function registerAllIPC() {
   registerPartyHistoryIPC();
   registerPurchaseReturnIPC();
   registerSalesReturnsIpc();
+  registerPrintDocsIPC();
 }

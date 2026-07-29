@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
-export default function PrintSalesInvoice() {
+export default function PrintPurchaseInvoice() {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
   const { money } = usePrimaryCurrency();
@@ -14,7 +14,7 @@ export default function PrintSalesInvoice() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      window.api.getSalesInvoiceById(id),
+      window.api.getPurchaseInvoiceById(id),
       window.api.getCompanySetting(),
     ]).then(([invoiceData, companyRes]) => {
       if (!cancelled) {
@@ -40,7 +40,6 @@ export default function PrintSalesInvoice() {
     0
   );
 
-  // Group item-level tax by tax_id, same treatment as invoice.taxes[]
   const itemTaxGroups = Object.values(
     items.reduce((groups, item) => {
       if (!item.tax_id || Number(item.taxValue || 0) <= 0) return groups;
@@ -89,14 +88,9 @@ export default function PrintSalesInvoice() {
           <div className="w-2/5 text-start">
             <h3 className="text-[11px] uppercase tracking-wide text-[#6B6F76] mb-1">
               {t("DOCS.INVOICE_NO")}
-              {invoice.channel === "pos" && (
-                <span className="ms-2 bg-[#33363D] text-white text-[9px] px-1.5 py-0.5 rounded">
-                  {t("DOCS.POS_BADGE")}
-                </span>
-              )}
             </h3>
             <p className="font-mono tabular-nums text-base font-semibold mb-2">
-              {invoice.invoice_name}
+              #{invoice.id}
             </p>
             <div
               className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pt-2"
@@ -119,10 +113,10 @@ export default function PrintSalesInvoice() {
         <div className="flex justify-between gap-6">
           <div className="w-1/2">
             <h4 className="text-[11px] uppercase text-[#6B6F76] mb-2">
-              {t("DOCS.ISSUED_TO")}
+              {t("DOCS.ISSUED_FROM")}
             </h4>
-            <p className="font-medium">{invoice.customer_name}</p>
-            <p className="text-[#6B6F76]">{invoice.customer_phone}</p>
+            <p className="font-medium">{invoice.supplier_name}</p>
+            <p className="text-[#6B6F76]">{invoice.supplier_phone}</p>
           </div>
           <div className="w-[1px] bg-[#E5E5E2]" />
           <div className="w-1/2">
@@ -163,13 +157,12 @@ export default function PrintSalesInvoice() {
             {items.map((item) => {
               const afterDiscount =
                 Number(item.total || 0) - Number(item.discount || 0);
-              const lineTotal =
-                afterDiscount + Number(item.tax_value ?? item.taxValue ?? 0);
+              const lineTotal = afterDiscount + Number(item.taxValue || 0);
 
               return (
                 <tr key={item.id} className="border-b border-[#E5E5E2]">
                   <td className="p-2">
-                    {item.product_name}
+                    {item.product_name || item.name}
                     {item.description && (
                       <div className="text-[10px] text-[#6B6F76] whitespace-pre-wrap mt-0.5">
                         {item.description}
@@ -231,7 +224,6 @@ export default function PrintSalesInvoice() {
         </div>
 
         <div className="w-1/2 max-w-[300px] ms-auto">
-          {/* Subtotal — the anchor figure everything else adjusts from */}
           <div className="flex justify-between items-baseline pb-3 border-b-2 border-[#33363D]">
             <span className="text-[11px] uppercase tracking-wide text-[#6B6F76]">
               {t("DOCS.TOTAL")}
@@ -241,7 +233,6 @@ export default function PrintSalesInvoice() {
             </span>
           </div>
 
-          {/* Deductions — discounts, tinted red-ish, always subtracting */}
           {hasDeductions && (
             <div className="mt-2 rounded bg-[#FBF2F2] px-3 py-2 space-y-1.5">
               {itemDiscountTotal > 0 && (
@@ -268,7 +259,6 @@ export default function PrintSalesInvoice() {
             </div>
           )}
 
-          {/* Additions — taxes, tinted gold-ish, always adding */}
           {hasAnyTax && (
             <div className="mt-2 rounded bg-[#FBF7EF] px-3 py-2 space-y-1.5">
               {itemTaxGroups.map((g) => (
@@ -306,7 +296,6 @@ export default function PrintSalesInvoice() {
             </div>
           )}
 
-          {/* Grand total — the answer to the whole page */}
           <div className="mt-4 rounded-lg bg-[#33363D] px-4 py-3.5 flex justify-between items-baseline">
             <span className="text-[11px] uppercase tracking-wide text-[#C9C8C2]">
               {t("DOCS.TOTAL_WITH_TAX")}

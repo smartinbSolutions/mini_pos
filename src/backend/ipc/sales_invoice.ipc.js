@@ -2127,6 +2127,11 @@ export default function registerSalesInvoiceIPC() {
   });
 
   ipcMain.handle("print-sales-invoice", async (_, invoiceId) => {
+    const path = require("path");
+    const fs = require("fs");
+    const os = require("os");
+    const { shell } = require("electron");
+
     let printWindow = new BrowserWindow({
       width: 900,
       height: 1000,
@@ -2134,39 +2139,49 @@ export default function registerSalesInvoiceIPC() {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
+        preload: path.join(__dirname, "../preload.js"), // match your real preload path
       },
     });
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       printWindow.webContents.on("did-finish-load", () => {
-        setTimeout(() => {
-          printWindow.webContents.print(
-            {
-              silent: false,
+        setTimeout(async () => {
+          try {
+            // Renders the loaded page straight to a PDF buffer — no printer involved.
+            const pdfBuffer = await printWindow.webContents.printToPDF({
               printBackground: true,
-            },
-            (success, failureReason) => {
-              if (!success) {
-                console.error(`Print failed: ${failureReason}`);
-                resolve({ success: false, error: failureReason });
-              } else {
-                resolve({ success: true });
-              }
+              pageSize: "A4",
+            });
 
-              printWindow.destroy();
-              printWindow = null;
-            }
-          );
+            const tempPath = path.join(
+              os.tmpdir(),
+              `invoice-${invoiceId}-${Date.now()}.pdf`
+            );
+            fs.writeFileSync(tempPath, pdfBuffer);
+
+            // Opens the PDF in whatever app is the user's default PDF viewer.
+            // That's the "preview" — they see the real invoice, then use that
+            // app's own Print/Save/Export buttons if they want to do more.
+            await shell.openPath(tempPath);
+
+            resolve({ success: true });
+          } catch (err) {
+            console.error("PDF generation failed:", err);
+            resolve({ success: false, error: err.message || String(err) });
+          } finally {
+            printWindow.destroy();
+            printWindow = null;
+          }
         }, 600);
       });
 
-      printWindow.webContents.on("did-fail-load", (e) => {
+      printWindow.webContents.on("did-fail-load", () => {
         printWindow.destroy();
-        reject(new Error("Failed to load print route"));
+        resolve({ success: false, error: "Failed to load print route" });
       });
 
       const baseUrl =
-        process.env.VITE_DEV_SERVER_URL || "http://localhost:3000";
+        process.env.VITE_DEV_SERVER_URL || "http://localhost:5173";
       printWindow.loadURL(`${baseUrl}/print-sales/${invoiceId}`);
     });
   });

@@ -5,6 +5,7 @@
     "version": "الإصدار 1.0.5 - نظام نقاط البيع"
   },
   "common": {
+    "savePdf": "حفظ كملف PDF",
     "loading": "جار التحميل...",
     "saving": "جار الحفظ...",
     "save": "حفظ",
@@ -134,6 +135,7 @@
     "expenses": "المصروفات",
     "partial": "جزئي",
     "selectExpense": "اختر مصروفاً",
+    "createPurchaseReturn": "إنشاء مرتجع مشتريات",
     "unpaid": "غير مدفوع",
     "partner": "الشريك",
     "partners": "الشركاء",
@@ -1076,5 +1078,30 @@
     "created": "تم إنشاء {{field}} بنجاح",
     "updated": "تم تحديث {{field}} بنجاح",
     "deleted": "تم حذف {{field}} بنجاح"
+  },
+  "DOCS": {
+    "PHONE": "الهاتف",
+    "EMAIL": "البريد الإلكتروني",
+    "TAX_NO": "الرقم الضريبي",
+    "INVOICE_NO": "رقم الفاتورة",
+    "INVOICE_DATE": "تاريخ الفاتورة",
+    "ISSUED_TO": "موجهة إلى",
+    "ISSUED_BY": "صادرة عن",
+    "ISSUED_FROM": "مقدمة من",
+    "PRODUCT": "المنتج",
+    "QUANTITY": "الكمية",
+    "UNIT_PRICE": "سعر الوحدة",
+    "TAX": "الضريبة",
+    "TOTAL": "الإجمالي",
+    "DISCOUNT": "الخصم",
+    "TOTAL_TAX": "إجمالي الضريبة",
+    "TOTAL_WITH_TAX": "الإجمالي شامل الضريبة",
+    "NOTES": "ملاحظات",
+    "POS_BADGE": "بيع مباشر",
+    "ITEM_DISCOUNT": "خصم المنتجات",
+    "ITEM_TAX": "ضريبة المنتجات",
+    "RETURN_NO": "رقم المرتجع",
+    "ORIGINAL_INVOICE": "الفاتورة الأصلية",
+    "RETURN_DATE": "تاريخ الإرجاع"
   }
 }

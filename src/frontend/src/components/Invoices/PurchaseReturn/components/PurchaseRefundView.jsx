@@ -6,6 +6,7 @@ import {
   HandCoins,
   Tag,
   StickyNote,
+  Download,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -89,6 +90,39 @@ export default function PurchaseReturnView() {
   const invoiceDiscount = Number(returnInvoice?.discount || 0);
   const invoiceTaxValue = Number(returnInvoice?.taxValue || 0);
 
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
+
+  const handlePrint = async () => {
+    try {
+      setIsPrinting(true);
+      const res = await window.api.printDocument(
+        `/print-purchase-return/${id}`
+      );
+      if (!res.success && res.error === "NO_PRINTER")
+        console.error("No printer found");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async () => {
+    try {
+      setIsSavingPdf(true);
+      const res = await window.api.saveDocumentPdf(
+        `/print-purchase-return/${id}`,
+        `purchase-return-${id}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") console.error(res.error);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f6f8fd] text-sm font-bold text-slate-400">
@@ -117,15 +151,26 @@ export default function PurchaseReturnView() {
             <ArrowLeft size={14} />
             {t("common.back")}
           </button>
-
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/25 transition hover:bg-amber-600"
-          >
-            <Printer size={14} />
-            {t("common.print")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSavePdf}
+              disabled={isSavingPdf}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/25 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Download size={14} />
+              {isSavingPdf ? t("common.saving") : t("common.savePdf")}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/25 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Printer size={14} />
+              {isPrinting ? t("common.saving") : t("common.print")}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_12px_40px_rgba(70,99,255,0.10)] print:rounded-none print:border-none print:shadow-none">

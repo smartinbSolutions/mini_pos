@@ -1,11 +1,14 @@
 import React, { useMemo, useState } from "react";
 import usePurchaseList from "../hooks/usePurchaseList";
 import {
+  Download,
   Edit2,
   Eye,
   HandCoins,
+  MoreVertical,
   PackagePlus,
   Percent,
+  Printer,
   Receipt,
   Trash2,
   Undo2,
@@ -22,6 +25,7 @@ import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
 import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import GoTo from "../../../../Global/GoTo";
+import DropdownMenu from "../../../../Global/DropdownMenu";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -93,7 +97,8 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
 };
 
 const PurchaseList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
   const {
     purchaseInvoices,
     loading,
@@ -189,6 +194,36 @@ const PurchaseList = () => {
         .some((v) => String(v).toLowerCase().includes(term));
     });
   }, [purchaseInvoices, search]);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
+
+  const handlePrint = async (id) => {
+    try {
+      setIsPrinting(true);
+      const res = await window.api.printDocument(`/print-purchase/${id}`);
+      if (!res.success && res.error === "NO_PRINTER")
+        console.error("No printer found");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async (id) => {
+    try {
+      setIsSavingPdf(true);
+      const res = await window.api.saveDocumentPdf(
+        `/print-purchase/${id}`,
+        `purchase-${id}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") console.error(res.error);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -273,12 +308,12 @@ const PurchaseList = () => {
                   <th className="px-4 py-3">{t("ui.invoice")}</th>
                   <th className="px-4 py-3">{t("ui.supplier")}</th>
                   <th className="px-4 py-3">{t("ui.date")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.subtotal")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.discount")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.tax")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.net")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.subtotal")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.discount")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.tax")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.net")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.status")}</th>
-                  <th className="px-4 py-3 text-right">
+                  <th className="px-4 py-3 text-center">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -407,67 +442,75 @@ const PurchaseList = () => {
                           </div>
                         </td>
 
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end gap-0.5">
-                            <button
-                              onClick={() =>
-                                navigate(`/view-purchase/${inv.id}`)
-                              }
-                              className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              title={t("common.view")}
-                            >
-                              <Eye size={15} />
-                            </button>
-
-                            {inv.status !== "paid" && (
-                              <button
-                                onClick={() => {
+                        <td className="px-4 py-3 text-center">
+                          <DropdownMenu
+                            trigger={
+                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
+                                <MoreVertical size={16} />
+                              </button>
+                            }
+                            align={i18n.dir() === "rtl" ? "left" : "right"}
+                            options={[
+                              {
+                                key: "view",
+                                icon: <Eye size={14} />,
+                                label: t("common.view"),
+                                onClick: () =>
+                                  navigate(`/view-purchase/${inv.id}`),
+                              },
+                              {
+                                key: "savePdf",
+                                icon: <Download size={14} />,
+                                label: t("common.savePdf"),
+                                onClick: () => handleSavePdf(inv.id),
+                              },
+                              {
+                                key: "print",
+                                icon: <Printer size={14} />,
+                                label: t("common.print"),
+                                onClick: () => handlePrint(inv.id),
+                              },
+                              {
+                                key: "payment",
+                                icon: <HandCoins size={14} />,
+                                label: t("ui.payment"),
+                                onClick: () => {
                                   setSelecteInvoice(inv);
                                   setOpenPaymentModel(true);
-                                }}
-                                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                title={t("ui.payment")}
-                              >
-                                <HandCoins size={15} />
-                              </button>
-                            )}
-
-                            {inv.return_status !== "full" && (
-                              <button
-                                onClick={() => {
-                                  navigate(`/purchase-return/${inv.id}`);
-                                }}
-                                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                title={t("ui.createPurchaseReturn")}
-                              >
-                                <Undo2 size={15} />
-                              </button>
-                            )}
-
-                            {inv.status === "unpaid" &&
-                              inv.return_status === "none" && (
-                                <button
-                                  onClick={() =>
-                                    navigate(`/edit-purchase/${inv.id}`)
-                                  }
-                                  className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                  title={t("common.edit")}
-                                >
-                                  <Edit2 size={15} />
-                                </button>
-                              )}
-
-                            {inv.status === "unpaid" &&
-                              inv.return_status === "none" && (
-                                <button
-                                  onClick={() => setDeleteInvoice(inv)}
-                                  className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
-                                  title={t("common.delete")}
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              )}
-                          </div>
+                                },
+                                visible: inv.status !== "paid",
+                              },
+                              {
+                                key: "return",
+                                icon: <Undo2 size={14} />,
+                                label: t("ui.createPurchaseReturn"),
+                                onClick: () =>
+                                  navigate(`/purchase-return/${inv.id}`),
+                                visible: inv.return_status !== "full",
+                              },
+                              {
+                                key: "edit",
+                                icon: <Edit2 size={14} />,
+                                label: t("common.edit"),
+                                onClick: () =>
+                                  navigate(`/edit-purchase/${inv.id}`),
+                                visible:
+                                  inv.status === "unpaid" &&
+                                  inv.return_status === "none",
+                              },
+                              {
+                                key: "delete",
+                                icon: (
+                                  <Trash2 size={14} className="text-red-500" />
+                                ),
+                                label: t("common.delete"),
+                                onClick: () => setDeleteInvoice(inv),
+                                visible:
+                                  inv.status === "unpaid" &&
+                                  inv.return_status === "none",
+                              },
+                            ]}
+                          />
                         </td>
                       </tr>
                     );

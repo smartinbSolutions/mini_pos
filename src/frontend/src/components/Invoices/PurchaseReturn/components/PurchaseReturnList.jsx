@@ -1,5 +1,13 @@
 import React, { useMemo, useState } from "react";
-import { Eye, HandCoins, Percent, Undo2 } from "lucide-react";
+import {
+  Download,
+  Eye,
+  HandCoins,
+  MoreVertical,
+  Percent,
+  Printer,
+  Undo2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -12,6 +20,7 @@ import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import GoTo from "../../../../Global/GoTo";
 import usePurchaseReturnList from "../hooks/usePurchaseReturnList";
+import DropdownMenu from "../../../../Global/DropdownMenu";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -83,7 +92,7 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
 };
 
 const PurchaseReturnList = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const {
     purchaseReturns,
@@ -174,16 +183,41 @@ const PurchaseReturnList = () => {
     });
   }, [purchaseReturns, search]);
 
-  // const handleDelete = async (id) => {
-  //   try {
-  //     setActionError("");
-  //     await deletePurchaseReturn(id);
-  //   } catch (err) {
-  //     console.log(err.message);
-  //     setActionError(t("screens.invoices.deleteFailed"));
-  //   }
-  // };
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [savingPdfId, setSavingPdfId] = useState(null);
 
+  const handlePrint = async (returnId) => {
+    try {
+      setIsPrinting(true);
+      const res = await window.api.printDocument(
+        `/print-purchase-return/${returnId}`
+      );
+      if (!res.success && res.error === "NO_PRINTER") {
+        setActionError(t("screens.invoices.noPrinter", "No printer found."));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async (returnId) => {
+    try {
+      setSavingPdfId(returnId);
+      const res = await window.api.saveDocumentPdf(
+        `/print-purchase-return/${returnId}`,
+        `purchase-return-${returnId}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") {
+        setActionError(t("screens.invoices.pdfFailed", "Failed to save PDF."));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSavingPdfId(null);
+    }
+  };
   const totalNet = purchaseReturns?.reduce(
     (sum, inv) => sum + Number(inv.net_total || 0),
     0
@@ -256,12 +290,12 @@ const PurchaseReturnList = () => {
                   <th className="px-4 py-3">{t("ui.originalInvoice")}</th>
                   <th className="px-4 py-3">{t("ui.supplier")}</th>
                   <th className="px-4 py-3">{t("ui.date")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.subtotal")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.discount")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.tax")}</th>
-                  <th className="px-4 py-3 text-right">{t("ui.net")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.subtotal")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.discount")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.tax")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.net")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.status")}</th>
-                  <th className="px-4 py-3 text-right">
+                  <th className="px-4 py-3 text-center">
                     {t("common.actions")}
                   </th>
                 </tr>
@@ -392,31 +426,46 @@ const PurchaseReturnList = () => {
                           />
                         </td>
 
-                        <td className="px-4 py-3">
-                          <div className="flex justify-end gap-0.5">
-                            <button
-                              onClick={() =>
-                                navigate(`/view-purchase-return/${inv.id}`)
-                              }
-                              className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              title={t("common.view")}
-                            >
-                              <Eye size={15} />
-                            </button>
-
-                            {inv.status !== "paid" && (
-                              <button
-                                onClick={() => {
+                        <td className="px-4 py-3 text-center">
+                          <DropdownMenu
+                            trigger={
+                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
+                                <MoreVertical size={16} />
+                              </button>
+                            }
+                            align={i18n.dir() === "rtl" ? "left" : "right"}
+                            options={[
+                              {
+                                key: "view",
+                                icon: <Eye size={14} />,
+                                label: t("common.view"),
+                                onClick: () =>
+                                  navigate(`/view-purchase-return/${inv.id}`),
+                              },
+                              {
+                                key: "savePdf",
+                                icon: <Download size={14} />,
+                                label: t("common.savePdf"),
+                                onClick: () => handleSavePdf(inv.id),
+                              },
+                              {
+                                key: "print",
+                                icon: <Printer size={14} />,
+                                label: t("common.print"),
+                                onClick: () => handlePrint(inv.id),
+                              },
+                              {
+                                key: "payment",
+                                icon: <HandCoins size={14} />,
+                                label: t("ui.payment"),
+                                onClick: () => {
                                   setSelecteInvoice(inv);
                                   setOpenPaymentModel(true);
-                                }}
-                                className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                                title={t("ui.payment")}
-                              >
-                                <HandCoins size={15} />
-                              </button>
-                            )}
-                          </div>
+                                },
+                                visible: inv.status !== "paid",
+                              },
+                            ]}
+                          />
                         </td>
                       </tr>
                     );

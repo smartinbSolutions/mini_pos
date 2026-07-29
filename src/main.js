@@ -53,7 +53,8 @@ function registerAppFileProtocol() {
   });
 }
 
-function loadRendererRoute(window, routePath) {
+// Just add "export" here, keep only this one:
+export function loadRendererRoute(window, routePath) {
   const devServerUrl =
     !app.isPackaged && typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== "undefined"
       ? MAIN_WINDOW_VITE_DEV_SERVER_URL

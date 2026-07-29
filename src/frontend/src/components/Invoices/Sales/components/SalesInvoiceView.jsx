@@ -6,6 +6,7 @@ import {
   TrendingUp,
   Tag,
   StickyNote,
+  Download,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -41,7 +42,8 @@ export default function SalesInvoiceView() {
       try {
         setLoading(true);
         const data = await window.api.getSalesInvoiceById(id);
-
+        const company = await window.api.getCompanySetting();
+        console.log(company);
         if (!cancelled) {
           setInvoice(data);
         }
@@ -66,15 +68,36 @@ export default function SalesInvoiceView() {
   }, [id]);
 
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
 
   const handlePrint = async (invoiceId) => {
     try {
       setIsPrinting(true);
-      await api.printSalesInvoice(invoiceId);
+      const res = await api.printDocument(`/print-sales/${invoiceId}`);
+      if (!res.success && res.error === "NO_PRINTER") {
+        console.error("No printer found");
+      }
     } catch (err) {
       console.error(err);
     } finally {
       setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async (invoiceId) => {
+    try {
+      setIsSavingPdf(true);
+      const res = await api.saveDocumentPdf(
+        `/print-sales/${invoiceId}`,
+        `invoice-${invoiceId}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") {
+        console.error(res.error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingPdf(false);
     }
   };
 
@@ -131,15 +154,27 @@ export default function SalesInvoiceView() {
             {t("common.back")}
           </button>
 
-          <button
-            type="button"
-            onClick={() => handlePrint(invoice.id)}
-            disabled={isPrinting}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Printer size={14} />
-            {isPrinting ? t("common.saving") : t("common.print")}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSavePdf(invoice.id)}
+              disabled={isSavingPdf}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Download size={14} />
+              {isSavingPdf ? t("common.saving") : t("common.savePdf")}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handlePrint(invoice.id)}
+              disabled={isPrinting}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Printer size={14} />
+              {isPrinting ? t("common.saving") : t("common.print")}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_12px_40px_rgba(70,99,255,0.10)] print:rounded-none print:border-none print:shadow-none">

@@ -5,6 +5,7 @@
     "version": "v1.0.5 - POS Sistemi"
   },
   "common": {
+    "savePdf": "PDF Olarak Kaydet",
     "loading": "Yükleniyor...",
     "saving": "Kaydediliyor...",
     "save": "Kaydet",
@@ -32,6 +33,7 @@
   },
   "ui": {
     "inStock": "stokta",
+    "createPurchaseReturn": "Alış İadesi Oluştur",
     "available": "Mevcut",
     "profit": "Kâr",
     "cogs": "Malın maliyeti",
@@ -1070,5 +1072,31 @@
     "created": "{{field}} başarıyla oluşturuldu",
     "updated": "{{field}} başarıyla güncellendi",
     "deleted": "{{field}} başarıyla silindi"
+  },
+
+  "DOCS": {
+    "PHONE": "Telefon",
+    "EMAIL": "E-posta",
+    "TAX_NO": "Vergi No",
+    "INVOICE_NO": "Fatura Numarası",
+    "INVOICE_DATE": "Fatura Tarihi",
+    "ISSUED_TO": "Fatura Alıcısı",
+    "ISSUED_BY": "Düzenleyen",
+    "ISSUED_FROM": "Tedarikçi",
+    "PRODUCT": "Ürün",
+    "QUANTITY": "Miktar",
+    "UNIT_PRICE": "Birim Fiyat",
+    "TAX": "Vergi",
+    "TOTAL": "Toplam",
+    "DISCOUNT": "İndirim",
+    "TOTAL_TAX": "Toplam Vergi",
+    "TOTAL_WITH_TAX": "Vergi Dahil Toplam",
+    "NOTES": "Notlar",
+    "POS_BADGE": "POS",
+    "ITEM_DISCOUNT": "Ürün İndirimi",
+    "ITEM_TAX": "Ürün Vergisi",
+    "RETURN_NO": "İade Numarası",
+    "ORIGINAL_INVOICE": "Orijinal Fatura",
+    "RETURN_DATE": "İade Tarihi"
   }
 }

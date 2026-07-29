@@ -81,6 +81,10 @@ import PurchaseReturnPage from "./components/Invoices/PurchaseReturn/components/
 import SalesReturnPage from "./components/Invoices/SalesReturn/components/SalesReturnPage";
 import CompanyGeneralInfo from "./components/CompanySettings/components/CompanyGeneralInfo";
 import CompanyBusinessSettings from "./components/CompanySettings/components/CompanyBusinessSettings";
+import PrintSalesInvoice from "./components/Invoices/Sales/components/PrintSalesInvoice";
+import PrintSalesReturn from "./components/Invoices/SalesReturn/components/PrintSalesReturn";
+import PrintPurchaseInvoice from "./components/Invoices/Purchase/components/PrintPurchaseInvoice";
+import PrintPurchaseReturn from "./components/Invoices/PurchaseReturn/components/PrintPurchaseReturn";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -271,7 +275,19 @@ export default function App() {
                 }
               />
             </Route>
-
+            <Route path="/print-sales/:id" element={<PrintSalesInvoice />} />
+            <Route
+              path="/print-sales-return/:id"
+              element={<PrintSalesReturn />}
+            />
+            <Route
+              path="/print-purchase/:id"
+              element={<PrintPurchaseInvoice />}
+            />
+            <Route
+              path="/print-purchase-return/:id"
+              element={<PrintPurchaseReturn />}
+            />
             {/* fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </>
