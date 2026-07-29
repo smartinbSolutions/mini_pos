@@ -887,6 +887,11 @@
       "copyConfirmation": "أؤكد أنني نسخت مفتاح الاسترداد وحفظته في مكان آمن."
     },
     "salesReturn": {
+      "saveWithoutRefund": "حفظ بدون استرجاع",
+      "saveAndRefund": "حفظ واسترجاع المبلغ",
+      "confirmRefund": "تأكيد الاسترجاع",
+      "savedWithoutRefund": "تم حفظ المرتجع — لم يتم استرجاع أي مبلغ بعد",
+      "savedWithRefund": "تم حفظ المرتجع واسترجاع المبلغ",
       "returnNotes": "ملاحظات المرتجع",
       "returnNotePlaceholder": "أدخل ملاحظات المرتجع هنا",
       "subtotal": "الإجمالي الفرعي",
@@ -896,6 +901,11 @@
       "confirmReturn": "تأكيد المرتجع"
     },
     "purchaseReturn": {
+      "saveWithoutRefund": "حفظ بدون استرجاع",
+      "saveAndRefund": "حفظ واسترجاع المبلغ",
+      "confirmRefund": "تأكيد الاسترجاع",
+      "savedWithoutRefund": "تم حفظ المرتجع — لم يتم استرجاع أي مبلغ بعد",
+      "savedWithRefund": "تم حفظ المرتجع واسترجاع المبلغ",
       "fullyRefunded": "تم رد المبلغ بالكامل",
       "partialRefund": "تم رد جزء من المبلغ",
       "onAccount": "على الحساب",

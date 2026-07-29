@@ -881,6 +881,11 @@
       "copyConfirmation": "Bu Kurtarma Anahtarını kopyalayıp güvenli bir yerde sakladığımı onaylıyorum."
     },
     "salesReturn": {
+      "saveWithoutRefund": "İade Yapmadan Kaydet",
+      "saveAndRefund": "Kaydet ve İade Et",
+      "confirmRefund": "İadeyi Onayla",
+      "savedWithoutRefund": "İade kaydedildi — henüz para iadesi yapılmadı",
+      "savedWithRefund": "İade kaydedildi ve para iadesi yapıldı",
       "returnNotes": "İade notları",
       "returnNotePlaceholder": "İade notlarını buraya girin",
       "subtotal": "Ara toplam",
@@ -890,6 +895,11 @@
       "confirmReturn": "İadeyi onayla"
     },
     "purchaseReturn": {
+      "saveWithoutRefund": "İade Yapmadan Kaydet",
+      "saveAndRefund": "Kaydet ve İade Et",
+      "confirmRefund": "İadeyi Onayla",
+      "savedWithoutRefund": "İade kaydedildi — henüz para iadesi yapılmadı",
+      "savedWithRefund": "İade kaydedildi ve para iadesi yapıldı",
       "fullyRefunded": "Tamamen iade edildi",
       "partialRefund": "Kısmen iade edildi",
       "onAccount": "Cari hesaba",

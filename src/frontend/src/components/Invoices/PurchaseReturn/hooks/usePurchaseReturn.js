@@ -174,7 +174,12 @@ export default function usePurchaseReturn() {
     );
   }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
 
-  const submit = async () => {
+  // Optionally takes paymentData collected by AddPayment in collector mode
+  // (mode="purchase_return"), same pattern useAddPurchase's submit already
+  // uses. If present, the return is recorded as refunded through that fund
+  // right away; if absent (null), the return is saved with no refund yet —
+  // the supplier owes nothing back until a payment is added later.
+  const submit = async (paymentData = null) => {
     if (preparedItems.length === 0) {
       setError(t("errors.noItemsSelected"));
       return { success: false };
@@ -200,7 +205,7 @@ export default function usePurchaseReturn() {
           product_id: i.product_id,
           quantity: i.quantity, // base-unit quantity, already converted
         })),
-        payment: null,
+        payment: paymentData,
       };
 
       const result = await api.createPurchaseReturn(payload);

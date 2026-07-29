@@ -883,6 +883,11 @@
       "copyConfirmation": "I confirm that I copied and securely stored this Recovery Key."
     },
     "salesReturn": {
+      "saveWithoutRefund": "Save Without Refund",
+      "saveAndRefund": "Save & Refund",
+      "confirmRefund": "Confirm Refund",
+      "savedWithoutRefund": "Return saved — no refund issued yet",
+      "savedWithRefund": "Return saved and refunded",
       "returnNotes": "Return notes",
       "returnNotePlaceholder": "Enter return notes here",
       "subtotal": "Subtotal",
@@ -892,6 +897,11 @@
       "confirmReturn": "Confirm return"
     },
     "purchaseReturn": {
+      "saveWithoutRefund": "Save Without Refund",
+      "saveAndRefund": "Save & Refund",
+      "confirmRefund": "Confirm Refund",
+      "savedWithoutRefund": "Return saved — no refund issued yet",
+      "savedWithRefund": "Return saved and refunded",
       "fullyRefunded": "Fully refunded",
       "partialRefund": "Partially refunded",
       "onAccount": "On account",

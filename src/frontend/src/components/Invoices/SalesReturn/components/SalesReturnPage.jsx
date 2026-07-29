@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,10 +9,12 @@ import {
   Loader2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast, ToastContainer } from "react-toastify";
 import useSalesReturn from "../hooks/useSalesReturn";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import FormattedDate from "../../../../Global/FormattedDate";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
+import AddPayment from "../../../Cash/Payment/components/AddPayment";
 
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
@@ -50,7 +52,33 @@ export default function SalesReturnPage() {
   } = useSalesReturn();
   const { money } = usePrimaryCurrency();
 
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+
   const hasSelection = items.some((i) => Number(i.returnUnitQuantity) > 0);
+
+  const handleSaveWithoutRefund = async () => {
+    if (!hasSelection) return;
+    const res = await submit();
+    if (res?.success) {
+      toast.success(t("screens.salesReturn.savedWithoutRefund"));
+    }
+  };
+
+  const handleOpenRefundModal = () => {
+    if (!hasSelection) return;
+    setRefundModalOpen(true);
+  };
+
+  // Collector mode (invoice={null} passed to AddPayment — distinct from
+  // this page's own `invoice`, which is the ORIGINAL sales invoice) —
+  // AddPayment hands back paymentData instead of calling createPayment
+  // itself, same pattern as AddPurchase/PurchaseReturnPage.
+  const handleRefundCollected = async (paymentData) => {
+    const res = await submit(paymentData);
+    if (res?.success) {
+      toast.success(t("screens.salesReturn.savedWithRefund"));
+    }
+  };
 
   if (loading) {
     return (
@@ -338,24 +366,46 @@ export default function SalesReturnPage() {
               </div>
             </section>
 
-            <button
-              type="button"
-              onClick={submit}
-              disabled={saving || !hasSelection}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-2.5 text-sm font-black text-white shadow-md shadow-rose-500/25 transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {saving ? (
-                <Loader2 size={15} className="animate-spin" />
-              ) : (
+            {/* Payment choice — same split as AddPurchase/PurchaseReturnPage:
+                save now with no refund yet (customer owes it back later),
+                or refund immediately through a fund. */}
+            <div className="grid gap-2">
+              <button
+                type="button"
+                onClick={handleSaveWithoutRefund}
+                disabled={saving || !hasSelection}
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? <Loader2 size={15} className="animate-spin" /> : null}
+                {t("screens.salesReturn.saveWithoutRefund")}
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenRefundModal}
+                disabled={saving || !hasSelection}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-500 py-2.5 text-sm font-black text-white shadow-md shadow-rose-500/25 transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
                 <Save size={15} />
-              )}
-              {saving
-                ? t("common.saving")
-                : t("screens.salesReturn.confirmReturn")}
-            </button>
+                {t("screens.salesReturn.saveAndRefund")}
+              </button>
+            </div>
           </aside>
         </div>
       </div>
+
+      <AddPayment
+        isOpen={refundModalOpen}
+        onClose={() => setRefundModalOpen(false)}
+        invoice={null}
+        totalAmount={netTotal}
+        party={invoice.customer_id}
+        partyName={invoice.customer_name || t("screens.pos.walkInCustomer")}
+        mode="sales_return"
+        onSubmit={handleRefundCollected}
+        confirmLabel={t("screens.salesReturn.confirmRefund")}
+      />
+
+      <ToastContainer />
     </div>
   );
 }

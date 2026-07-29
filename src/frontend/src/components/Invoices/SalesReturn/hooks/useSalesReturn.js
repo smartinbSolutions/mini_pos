@@ -194,7 +194,16 @@ export default function useSalesReturn() {
     );
   }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
 
-  const submit = async () => {
+  // Optionally takes paymentData collected by AddPayment in collector mode
+  // (mode="sales_return"), same pattern usePurchaseReturn now uses. The
+  // backend expects an ARRAY (`payments`), unlike purchase return's single
+  // `payment` object — sales returns support multiple funds in the POS
+  // quick-return flow, so the shape stayed plural even here where only one
+  // fund is ever collected. amount_fund_currency is the field name the
+  // backend actually reads; AddPayment's paymentData calls it
+  // collected_amount, so it's remapped explicitly here rather than spread
+  // as-is, to avoid it silently landing as undefined server-side.
+  const submit = async (paymentData = null) => {
     if (preparedItems.length === 0) {
       setError(t("errors.noItemsSelected"));
       return { success: false };
@@ -220,9 +229,20 @@ export default function useSalesReturn() {
           product_id: i.product_id,
           quantity: i.quantity, // base-unit quantity, already converted
         })),
-        payments: [], // no refund collection in this flow yet — mirrors
-        // usePurchaseReturn's payment: null; add a fund-refund step here
-        // later if/when that's built
+        payments: paymentData
+          ? [
+              {
+                fund_id: paymentData.fund_id,
+                amount: paymentData.amount,
+                amount_fund_currency: paymentData.collected_amount,
+                currency_code: paymentData.currency_code,
+                exchange_rate: paymentData.exchange_rate,
+                effective_rate: paymentData.effective_rate,
+                note: paymentData.note,
+                type: paymentData.type,
+              },
+            ]
+          : [],
       };
 
       const result = await api.createSalesReturn(payload);
