@@ -9,9 +9,6 @@ export default function registerCurrenciesIPC() {
 
     const rate = Number(data.exchangeRate);
 
-    // Only the primary currency may have a rate of exactly 1 — that rate
-    // is reserved to mean "this is the base currency everything else is
-    // converted against." A newly created currency is never primary.
     if (rate === 1) {
       return { message: "RATE_RESERVED_FOR_PRIMARY", status: 400 };
     }
@@ -19,11 +16,20 @@ export default function registerCurrenciesIPC() {
     const result = db
       .prepare(
         `
-      INSERT INTO currencies (name, latinName, code, exchangeRate,symbol,isPrimary)
-      VALUES (?,?,?,?,?,?)
+      INSERT INTO currencies (name, latinName, minorName, minorLatinName, code, exchangeRate, symbol, isPrimary)
+      VALUES (?,?,?,?,?,?,?,?)
     `
       )
-      .run(data.name, data.latinName, data.code, rate, data.symbol, 0);
+      .run(
+        data.name,
+        data.latinName,
+        data.minorName || null,
+        data.minorLatinName || null,
+        data.code,
+        rate,
+        data.symbol,
+        0
+      );
 
     return {
       success: true,
@@ -71,24 +77,29 @@ export default function registerCurrenciesIPC() {
     const rate = Number(data.exchangeRate);
 
     if (existing.isPrimary) {
-      // The primary currency's rate is the reference point for every
-      // other currency's conversion — it must always stay exactly 1.
       if (rate !== 1) {
         return { message: "PRIMARY_RATE_MUST_BE_ONE", status: 400 };
       }
     } else if (rate === 1) {
-      // A non-primary currency claiming rate 1 would be indistinguishable
-      // from the primary in every calculation that divides/multiplies by it.
       return { message: "RATE_RESERVED_FOR_PRIMARY", status: 400 };
     }
 
     db.prepare(
       `
       UPDATE currencies
-      SET name = ?, latinName = ?, code = ?, exchangeRate = ?, symbol = ?
+      SET name = ?, latinName = ?, minorName = ?, minorLatinName = ?, code = ?, exchangeRate = ?, symbol = ?
       WHERE id = ?
     `
-    ).run(data.name, data.latinName, data.code, rate, data.symbol, data.id);
+    ).run(
+      data.name,
+      data.latinName,
+      data.minorName || null,
+      data.minorLatinName || null,
+      data.code,
+      rate,
+      data.symbol,
+      data.id
+    );
 
     return { success: true };
   });
@@ -99,7 +110,7 @@ export default function registerCurrenciesIPC() {
       .get(id);
 
     if (!currency) {
-      return { success: true }; // already gone, nothing to do
+      return { success: true };
     }
 
     if (currency.isPrimary) {

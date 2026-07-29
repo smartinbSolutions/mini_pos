@@ -1,6 +1,7 @@
 import { Minus, Plus, Trash2, Percent, Tag, StickyNote } from "lucide-react";
 import HoverTooltip from "../../../Global/HoverTooltip";
 import { normalizeDigits } from "../../../Global/FormatNumber";
+import NumberInput from "../../../Global/NumberInput";
 
 export default function POSCartItem({
   item,
@@ -104,27 +105,10 @@ export default function POSCartItem({
             <Minus size={15} />
           </button>
 
-          <input
-            type="text"
-            inputMode="decimal"
-            dir="ltr"
+          <NumberInput
             value={item.qty}
             onClick={(e) => e.stopPropagation()}
-            onChange={(event) => {
-              event.stopPropagation();
-
-              const normalized = normalizeDigits(event.target.value);
-
-              if (normalized === "") {
-                onUpdateQuantity(item.id, "");
-                return;
-              }
-
-              const num = Number(normalized);
-              if (isNaN(num)) return;
-
-              onUpdateQuantity(item.id, Math.max(0, num));
-            }}
+            onChange={(val) => onUpdateQuantity(item.id, val)}
             className="h-11 w-14 bg-transparent text-center text-base font-black text-stone-950 outline-none"
           />
 

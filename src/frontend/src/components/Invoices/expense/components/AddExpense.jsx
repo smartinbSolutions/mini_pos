@@ -20,7 +20,7 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
 import SupplierFormModal from "../../Purchase/components/SupplierFormModal";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
+import NumberInput from "../../../../Global/NumberInput";
 
 export default function AddExpense() {
   const { t } = useTranslation();
@@ -276,27 +276,12 @@ export default function AddExpense() {
                               />
                             </td>
                             <td className="p-2">
-                              <input
-                                type="text"
-                                inputMode="decimal"
-                                dir="ltr"
+                              <NumberInput
                                 className={inputClass}
                                 value={item.price}
-                                onChange={(e) => {
-                                  const normalized = normalizeDigits(
-                                    e.target.value
-                                  );
-
-                                  if (normalized === "") {
-                                    updateItem(index, "price", "");
-                                    return;
-                                  }
-
-                                  const num = Number(normalized);
-                                  if (isNaN(num)) return;
-
-                                  updateItem(index, "price", Math.max(0, num));
-                                }}
+                                onChange={(val) =>
+                                  updateItem(index, "price", val)
+                                }
                               />
                             </td>
                             <td className="p-2 text-center font-black">
@@ -352,27 +337,10 @@ export default function AddExpense() {
                           <label className="mb-1 block text-xs font-semibold text-slate-500">
                             {t("ui.price")}
                           </label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            dir="ltr"
+                          <NumberInput
                             className={inputClass}
                             value={item.price}
-                            onChange={(e) => {
-                              const normalized = normalizeDigits(
-                                e.target.value
-                              );
-
-                              if (normalized === "") {
-                                updateItem(index, "price", "");
-                                return;
-                              }
-
-                              const num = Number(normalized);
-                              if (isNaN(num)) return;
-
-                              updateItem(index, "price", Math.max(0, num));
-                            }}
+                            onChange={(val) => updateItem(index, "price", val)}
                           />
                         </div>
                         <div className="flex justify-between rounded-xl bg-[#f8faff] px-3 py-2 text-sm">

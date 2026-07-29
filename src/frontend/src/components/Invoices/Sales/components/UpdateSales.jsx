@@ -27,6 +27,7 @@ import useCustomerList from "../../../Customer/hooks/useCustomerList";
 import CustomerFormModal from "./CustomerFormModal";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
+import NumberInput from "../../../../Global/NumberInput";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -487,32 +488,13 @@ export default function UpdateSales() {
                           <label className="mb-1 block text-[11px] font-bold text-slate-400">
                             {t("ui.qty")}
                           </label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            dir="ltr"
+                          <NumberInput
                             className={inputClass}
                             value={item.entered_quantity}
                             disabled={isLocked}
-                            onChange={(e) => {
-                              const normalized = normalizeDigits(
-                                e.target.value
-                              );
-
-                              if (normalized === "") {
-                                updateItem(index, "entered_quantity", "");
-                                return;
-                              }
-
-                              const num = Number(normalized);
-                              if (isNaN(num)) return;
-
-                              updateItem(
-                                index,
-                                "entered_quantity",
-                                Math.max(0, num)
-                              );
-                            }}
+                            onChange={(val) =>
+                              updateItem(index, "entered_quantity", val)
+                            }
                           />
                         </div>
 
@@ -520,32 +502,13 @@ export default function UpdateSales() {
                           <label className="mb-1 block text-[11px] font-bold text-slate-400">
                             {t("ui.price")}
                           </label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            dir="ltr"
+                          <NumberInput
                             className={inputClass}
                             value={item.entered_price}
                             disabled={isLocked}
-                            onChange={(e) => {
-                              const normalized = normalizeDigits(
-                                e.target.value
-                              );
-
-                              if (normalized === "") {
-                                updateItem(index, "entered_price", "");
-                                return;
-                              }
-
-                              const num = Number(normalized);
-                              if (isNaN(num)) return;
-
-                              updateItem(
-                                index,
-                                "entered_price",
-                                Math.max(0, num)
-                              );
-                            }}
+                            onChange={(val) =>
+                              updateItem(index, "entered_price", val)
+                            }
                           />
                         </div>
 
@@ -698,63 +661,26 @@ export default function UpdateSales() {
                             disabled={isLocked}
                             onRemove={() => toggleItemDiscount(index, true)}
                           >
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              dir="ltr"
+                            <NumberInput
                               disabled={isLocked}
                               className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
                               value={item.discount_rate || ""}
-                              onChange={(e) => {
-                                const normalized = normalizeDigits(
-                                  e.target.value
-                                );
-
-                                if (normalized === "") {
-                                  updateItemDiscountRate(index, "");
-                                  return;
-                                }
-
-                                const num = Number(normalized);
-                                if (isNaN(num)) return;
-
-                                updateItemDiscountRate(
-                                  index,
-                                  Math.min(100, Math.max(0, num))
-                                );
-                              }}
+                              onChange={(val) =>
+                                updateItemDiscountRate(index, val)
+                              }
+                              max={100}
                               placeholder="0"
                             />
                             <span className="text-[10px] text-red-400">
                               % =
                             </span>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              dir="ltr"
+                            <NumberInput
                               disabled={isLocked}
                               className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
-                              value={
-                                item.discount ? item.discount.toFixed(2) : ""
+                              value={item.discount || ""}
+                              onChange={(val) =>
+                                updateItemDiscountAmount(index, val)
                               }
-                              onChange={(e) => {
-                                const normalized = normalizeDigits(
-                                  e.target.value
-                                );
-
-                                if (normalized === "") {
-                                  updateItemDiscountAmount(index, "");
-                                  return;
-                                }
-
-                                const num = Number(normalized);
-                                if (isNaN(num)) return;
-
-                                updateItemDiscountAmount(
-                                  index,
-                                  Math.max(0, num)
-                                );
-                              }}
                               placeholder="0"
                             />
                           </AdjustmentChip>
@@ -869,30 +795,12 @@ export default function UpdateSales() {
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="relative flex-1">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            dir="ltr"
+                          <NumberInput
                             disabled={isLocked}
                             className={`${smallInputClass} pe-5 text-end tabular-nums`}
                             value={invoice.discount_rate || ""}
-                            onChange={(e) => {
-                              const normalized = normalizeDigits(
-                                e.target.value
-                              );
-
-                              if (normalized === "") {
-                                setInvoiceDiscountRate("");
-                                return;
-                              }
-
-                              const num = Number(normalized);
-                              if (isNaN(num)) return;
-
-                              setInvoiceDiscountRate(
-                                Math.min(100, Math.max(0, num))
-                              );
-                            }}
+                            onChange={setInvoiceDiscountRate}
+                            max={100}
                             placeholder="0"
                           />
                           <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
@@ -900,28 +808,11 @@ export default function UpdateSales() {
                           </span>
                         </div>
                         <span className="text-xs text-slate-300">=</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          dir="ltr"
+                        <NumberInput
                           disabled={isLocked}
                           className={`${smallInputClass} flex-1 text-end tabular-nums`}
-                          value={
-                            invoiceDiscount ? invoiceDiscount.toFixed(2) : ""
-                          }
-                          onChange={(e) => {
-                            const normalized = normalizeDigits(e.target.value);
-
-                            if (normalized === "") {
-                              setInvoiceDiscountAmount("");
-                              return;
-                            }
-
-                            const num = Number(normalized);
-                            if (isNaN(num)) return;
-
-                            setInvoiceDiscountAmount(Math.max(0, num));
-                          }}
+                          value={invoiceDiscount || ""}
+                          onChange={setInvoiceDiscountAmount}
                           placeholder="0"
                         />
                       </div>

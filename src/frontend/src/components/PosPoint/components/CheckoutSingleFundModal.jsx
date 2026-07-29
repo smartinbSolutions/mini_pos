@@ -12,6 +12,7 @@ import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { normalizeDigits } from "../../../Global/FormatNumber";
+import NumberInput from "../../../Global/NumberInput";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -223,28 +224,14 @@ export default function CheckoutSingleFundModal({
           </label>
 
           <div className="relative">
-            <input
+            <NumberInput
               id="checkout-amount"
-              type="text"
-              inputMode="decimal"
-              dir="ltr"
               value={amount}
-              onChange={(e) => {
-                const normalized = normalizeDigits(e.target.value);
-
-                if (normalized === "") {
-                  setAmount("");
-                  setError("");
-                  return;
-                }
-
-                const num = Number(normalized);
-                if (isNaN(num)) return;
-
-                setAmount(Math.max(0, num));
+              onChange={(val) => {
+                setAmount(val);
                 setError("");
               }}
-              className="h-24 w-full rounded-2xl border-2 border-stone-200 bg-white px-5 pr-24 text-5xl font-black  focus:border-teal-500 focus:outline-none"
+              className="h-24 w-full rounded-2xl border-2 border-stone-200 bg-white px-5 pr-24 text-5xl font-black focus:border-teal-500 focus:outline-none"
             />
 
             <span className="pointer-events-none absolute right-16 top-1/2 -translate-y-1/2 text-lg font-bold text-stone-400">

@@ -59,8 +59,10 @@ function recalcItem(item) {
 
   return {
     ...item,
-    entered_quantity: enteredQuantity,
-    entered_price: enteredPrice,
+    // entered_quantity / entered_price intentionally NOT overwritten here —
+    // they stay exactly as the user typed (raw string), so an in-progress
+    // decimal like "5." or "0." doesn't get silently coerced back to "5"/"0"
+    // on every keystroke. Only the derived fields below use the numeric form.
     quantity,
     price,
     total,
@@ -70,7 +72,6 @@ function recalcItem(item) {
     taxValue,
   };
 }
-
 export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
   const { t } = useTranslation();
   const navigat = useNavigate();

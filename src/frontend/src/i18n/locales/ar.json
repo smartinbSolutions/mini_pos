@@ -214,6 +214,8 @@
       }
     },
     "currency": {
+      "minorNamePlaceholder": "اسم الوحدة الفرعية",
+      "minorLatinPlaceholder": "الوحدة الفرعية (لاتيني)",
       "title": "إدارة العملات",
       "subtitle": "إدارة العملات وأسعار الصرف",
       "total": "إجمالي العملات",
@@ -1102,6 +1104,20 @@
     "ITEM_TAX": "ضريبة المنتجات",
     "RETURN_NO": "رقم المرتجع",
     "ORIGINAL_INVOICE": "الفاتورة الأصلية",
-    "RETURN_DATE": "تاريخ الإرجاع"
+    "RETURN_DATE": "تاريخ الإرجاع",
+    "RECEIPT_VOUCHER": "سند قبض",
+    "PAYMENT_VOUCHER": "سند صرف",
+    "RECEIVED_FROM": "استلم من",
+    "PAID_TO": "صرف إلى",
+    "AMOUNT": "المبلغ",
+    "FUND": "الصندوق",
+    "EXCHANGE_RATE": "سعر الصرف",
+    "COLLECTED_AMOUNT": "المبلغ المحصل",
+    "FOR_INVOICE": "مقابل فاتورة",
+    "INVOICE_TYPE_SALES": "فاتورة مبيعات",
+    "INVOICE_TYPE_PURCHASE": "فاتورة مشتريات",
+    "INVOICE_TYPE_SALES_RETURN": "مرتجع مبيعات",
+    "INVOICE_TYPE_PURCHASE_RETURN": "مرتجع مشتريات",
+    "INVOICE_TYPE_EXPENSE": "مصروف"
   }
 }

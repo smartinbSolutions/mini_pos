@@ -3,11 +3,46 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const currencies = [
-  { id: "1", name: "Syrian Pound", code: "SYP", symbol: "\u00a3" },
-  { id: "2", name: "US Dollar", code: "USD", symbol: "$" },
-  { id: "3", name: "Turkish Lira", code: "TRY", symbol: "\u20ba" },
-  { id: "4", name: "Euro", code: "EUR", symbol: "\u20ac" },
-  { id: "5", name: "British Pound", code: "GBP", symbol: "\u00a3" },
+  {
+    id: "1",
+    name: "Syrian Pound",
+    code: "SYP",
+    symbol: "\u00a3",
+    minorName: "قرش",
+    minorLatinName: "Piastre",
+  },
+  {
+    id: "2",
+    name: "US Dollar",
+    code: "USD",
+    symbol: "$",
+    minorName: "سنت",
+    minorLatinName: "Cent",
+  },
+  {
+    id: "3",
+    name: "Turkish Lira",
+    code: "TRY",
+    symbol: "\u20ba",
+    minorName: "كوروش",
+    minorLatinName: "Kuruş",
+  },
+  {
+    id: "4",
+    name: "Euro",
+    code: "EUR",
+    symbol: "\u20ac",
+    minorName: "سنت",
+    minorLatinName: "Cent",
+  },
+  {
+    id: "5",
+    name: "British Pound",
+    code: "GBP",
+    symbol: "\u00a3",
+    minorName: "بنس",
+    minorLatinName: "Pence",
+  },
 ];
 
 const defaultCurrency = currencies[0];
@@ -45,6 +80,8 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
     logo: "",
     code: defaultCurrency.code,
     symbol: defaultCurrency.symbol,
+    minor_name: defaultCurrency.minorName,
+    minor_latin_name: defaultCurrency.minorLatinName,
     admin_username: "",
     admin_pin: "",
     admin_pin_confirm: "",
@@ -122,6 +159,8 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
       currency_name: currency.name,
       code: currency.code,
       symbol: currency.symbol,
+      minor_name: currency.minorName,
+      minor_latin_name: currency.minorLatinName,
     }));
     setErrors((current) => ({ ...current, base_currency_id: "" }));
   };
@@ -237,10 +276,11 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
         currency_name: form.currency_name,
         code: form.code,
         symbol: form.symbol,
+        minor_name: form.minor_name,
+        minor_latin_name: form.minor_latin_name,
         admin_username: form.admin_username,
         admin_pin: form.admin_pin,
       });
-
       if (res?.success) {
         if (res.recoveryKey) {
           setRecoveryKey(res.recoveryKey);

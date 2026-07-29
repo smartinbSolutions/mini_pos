@@ -213,6 +213,8 @@
       }
     },
     "currency": {
+      "minorNamePlaceholder": "Minor unit name",
+      "minorLatinPlaceholder": "Minor unit (Latin)",
       "title": "Currency Management",
       "subtitle": "Manage currencies and exchange rates",
       "total": "Total Currencies",
@@ -1098,6 +1100,20 @@
     "ITEM_TAX": "Item Tax",
     "RETURN_NO": "Return Number",
     "ORIGINAL_INVOICE": "Original Invoice",
-    "RETURN_DATE": "Return Date"
+    "RETURN_DATE": "Return Date",
+    "RECEIPT_VOUCHER": "Receipt Voucher",
+    "PAYMENT_VOUCHER": "Payment Voucher",
+    "RECEIVED_FROM": "Received From",
+    "PAID_TO": "Paid To",
+    "AMOUNT": "Amount",
+    "FUND": "Fund",
+    "EXCHANGE_RATE": "Exchange Rate",
+    "COLLECTED_AMOUNT": "Collected Amount",
+    "FOR_INVOICE": "For Invoice",
+    "INVOICE_TYPE_SALES": "Sales Invoice",
+    "INVOICE_TYPE_PURCHASE": "Purchase Invoice",
+    "INVOICE_TYPE_SALES_RETURN": "Sales Return",
+    "INVOICE_TYPE_PURCHASE_RETURN": "Purchase Return",
+    "INVOICE_TYPE_EXPENSE": "Expense"
   }
 }

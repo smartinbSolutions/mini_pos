@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import useAddPayment from "../hooks/useAddPayment";
+import NumberInput from "../../../../Global/NumberInput";
 
 export default function AddPayment({
   isOpen,
@@ -333,14 +334,9 @@ export default function AddPayment({
                 )}
               </label>
               <div className="relative mt-1">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  dir="ltr"
+                <NumberInput
                   value={form.amount_in_base}
-                  onChange={(e) =>
-                    handleBaseAmountChange(normalizeDigits(e.target.value))
-                  }
+                  onChange={handleBaseAmountChange}
                   className={`w-full h-12 rounded-xl border-2 px-3 text-lg font-semibold focus:ring-2 outline-none ${finalAccent.ring}`}
                   placeholder="0.00"
                   disabled={
@@ -352,7 +348,7 @@ export default function AddPayment({
                       isPurchaseReturn ||
                       isSalesReturn)
                   }
-                  max={useCredit ? availableCredit : undefined}
+                  max={useCredit ? availableCredit : null}
                 />
               </div>
               {useCredit && (
@@ -377,17 +373,9 @@ export default function AddPayment({
                     {t("screens.payments.collected_paid_amount")}
                   </label>
                   <div className="relative mt-1">
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      dir="ltr"
+                    <NumberInput
                       value={form.collected_amount}
-                      onChange={(e) =>
-                        handleChange(
-                          "collected_amount",
-                          normalizeDigits(e.target.value)
-                        )
-                      }
+                      onChange={(val) => handleChange("collected_amount", val)}
                       className="w-full h-10 rounded-lg border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none bg-white disabled:bg-slate-100"
                       disabled={!form.fund_id}
                     />

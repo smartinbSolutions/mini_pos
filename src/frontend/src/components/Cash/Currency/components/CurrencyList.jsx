@@ -3,7 +3,7 @@ import useCurrency from "../hooks/useCurrency";
 import { Edit2, Plus, Save, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
+import NumberInput from "../../../../Global/NumberInput";
 
 const CurrencyList = () => {
   const { t } = useTranslation();
@@ -78,7 +78,7 @@ const CurrencyList = () => {
                     placeholder={t("screens.currency.namePlaceholder")}
                   />
 
-                  <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     <input
                       value={editing.latinName}
                       onChange={(e) =>
@@ -106,22 +106,41 @@ const CurrencyList = () => {
                       placeholder={t("ui.symbol")}
                     />
                     {currency.isPrimary === 0 && (
-                      <input
+                      <NumberInput
                         required
-                        type="text"
-                        inputMode="decimal"
-                        dir="ltr"
                         value={editing.exchangeRate}
-                        onChange={(e) =>
-                          setEditing({
-                            ...editing,
-                            exchangeRate: normalizeDigits(e.target.value),
-                          })
+                        onChange={(val) =>
+                          setEditing({ ...editing, exchangeRate: val })
                         }
                         className={inputClass}
                         placeholder={t("ui.rate")}
                       />
                     )}
+                    <input
+                      value={editing.minorName}
+                      onChange={(e) =>
+                        setEditing({ ...editing, minorName: e.target.value })
+                      }
+                      className={inputClass}
+                      placeholder={t(
+                        "screens.currency.minorNamePlaceholder",
+                        "Minor unit name"
+                      )}
+                    />
+                    <input
+                      value={editing.minorLatinName}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          minorLatinName: e.target.value,
+                        })
+                      }
+                      className={inputClass}
+                      placeholder={t(
+                        "screens.currency.minorLatinPlaceholder",
+                        "Minor unit (Latin)"
+                      )}
+                    />
                   </div>
 
                   <div className="flex gap-2">
@@ -164,6 +183,12 @@ const CurrencyList = () => {
                       {currency.exchangeRate && (
                         <span className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-700">
                           {t("ui.rate")}: {currency.exchangeRate}
+                        </span>
+                      )}
+
+                      {(currency.minorName || currency.minorLatinName) && (
+                        <span className="rounded-lg bg-violet-100 px-2 py-1 font-semibold text-violet-700">
+                          {currency.minorName || currency.minorLatinName}
                         </span>
                       )}
                     </div>
@@ -223,7 +248,7 @@ const CurrencyList = () => {
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
               className={`w-full ${inputClass}`}
               placeholder={t("screens.currency.namePlaceholder")}
-            />{" "}
+            />
             <input
               value={draft.latinName}
               onChange={(e) =>
@@ -248,21 +273,37 @@ const CurrencyList = () => {
                 placeholder={t("ui.symbol")}
               />
             </div>
-            <input
+            <NumberInput
               required
-              type="text"
-              inputMode="decimal"
-              dir="ltr"
               value={draft.exchangeRate}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  exchangeRate: normalizeDigits(e.target.value),
-                })
-              }
+              onChange={(val) => setDraft({ ...draft, exchangeRate: val })}
               className={`w-full ${inputClass}`}
               placeholder={t("ui.exchangeRate")}
             />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                value={draft.minorName}
+                onChange={(e) =>
+                  setDraft({ ...draft, minorName: e.target.value })
+                }
+                className={inputClass}
+                placeholder={t(
+                  "screens.currency.minorNamePlaceholder",
+                  "Minor unit name"
+                )}
+              />
+              <input
+                value={draft.minorLatinName}
+                onChange={(e) =>
+                  setDraft({ ...draft, minorLatinName: e.target.value })
+                }
+                className={inputClass}
+                placeholder={t(
+                  "screens.currency.minorLatinPlaceholder",
+                  "Minor unit (Latin)"
+                )}
+              />
+            </div>
             <button
               type="submit"
               disabled={saving}

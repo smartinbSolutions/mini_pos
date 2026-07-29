@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import useAddFundPayment from "../hooks/useAddFundPayment";
+import NumberInput from "../../../../Global/NumberInput";
 
 export default function AddFundPayment({
   isOpen,
@@ -158,14 +159,9 @@ export default function AddFundPayment({
           {t("screens.payments.amount_base_currency")}
         </label>
         <div className="relative mt-1">
-          <input
-            type="text"
-            inputMode="decimal"
-            dir="ltr"
+          <NumberInput
             value={form.amount_in_base || ""}
-            onChange={(e) =>
-              handleBaseAmountChange(normalizeDigits(e.target.value))
-            }
+            onChange={handleBaseAmountChange}
             className="w-full h-10 rounded-xl border px-3 pr-9 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm disabled:bg-gray-100"
             placeholder="0.00"
             disabled={!form.fund_id}
@@ -226,17 +222,9 @@ export default function AddFundPayment({
                 {t("screens.payments.actual_amount_fund_currency")}
               </label>
               <div className="relative mt-1">
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  dir="ltr"
+                <NumberInput
                   value={form.collected_amount || ""}
-                  onChange={(e) =>
-                    handleChange(
-                      "collected_amount",
-                      normalizeDigits(e.target.value)
-                    )
-                  }
+                  onChange={(val) => handleChange("collected_amount", val)}
                   className="w-full h-11 rounded-xl border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
                   disabled={!form.fund_id}
                 />

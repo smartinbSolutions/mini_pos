@@ -211,6 +211,8 @@ CREATE TABLE IF NOT EXISTS currencies (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
   latinName TEXT,
+  minorName TEXT,
+  minorLatinName TEXT,
   code TEXT UNIQUE,
   exchangeRate REAL DEFAULT 1,
   symbol TEXT,

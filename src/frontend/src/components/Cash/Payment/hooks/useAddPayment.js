@@ -186,14 +186,17 @@ const useAddPayment = ({
   };
 
   const handleBaseAmountChange = (val) => {
-    const baseVal = Number(val || 0);
+    const parsed = val === "" ? null : Number(val);
+    const isValid = parsed !== null && !isNaN(parsed);
+
     setForm((prev) => ({
       ...prev,
-      amount_in_base: baseVal,
-      collected_amount:
-        prev.fund_exchangeRate === 1
-          ? baseVal
-          : baseVal * prev.fund_exchangeRate,
+      amount_in_base: val, // raw string — preserves "5." and empty state
+      collected_amount: !isValid
+        ? ""
+        : prev.fund_exchangeRate === 1
+          ? parsed
+          : parsed * prev.fund_exchangeRate,
     }));
   };
 

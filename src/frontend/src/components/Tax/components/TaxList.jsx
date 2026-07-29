@@ -4,6 +4,7 @@ import useTax from "../hooks/useTax";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
 import { normalizeDigits } from "../../../Global/FormatNumber";
+import NumberInput from "../../../Global/NumberInput";
 
 const CATEGORY_OPTIONS = ["product", "invoice", "both"];
 
@@ -103,28 +104,11 @@ const TaxList = () => {
                     className={inputClass}
                   />
 
-                  <input
+                  <NumberInput
                     required
-                    type="text"
-                    inputMode="decimal"
-                    dir="ltr"
                     value={editing.rate}
-                    onChange={(e) => {
-                      const normalized = normalizeDigits(e.target.value);
-
-                      if (normalized === "") {
-                        setEditing({ ...editing, rate: "" });
-                        return;
-                      }
-
-                      const num = Number(normalized);
-                      if (isNaN(num)) return;
-
-                      setEditing({
-                        ...editing,
-                        rate: Math.min(100, Math.max(0, num)),
-                      });
-                    }}
+                    onChange={(val) => setEditing({ ...editing, rate: val })}
+                    max={100}
                     className={`${inputClass} w-24`}
                   />
 
@@ -232,25 +216,11 @@ const TaxList = () => {
               placeholder={t("screens.taxes.namePlaceholder")}
             />
 
-            <input
+            <NumberInput
               required
-              type="text"
-              inputMode="decimal"
-              dir="ltr"
               value={draft.rate}
-              onChange={(e) => {
-                const normalized = normalizeDigits(e.target.value);
-
-                if (normalized === "") {
-                  setDraft({ ...draft, rate: "" });
-                  return;
-                }
-
-                const num = Number(normalized);
-                if (isNaN(num)) return;
-
-                setDraft({ ...draft, rate: Math.min(100, Math.max(0, num)) });
-              }}
+              onChange={(val) => setDraft({ ...draft, rate: val })}
+              max={100}
               className={`w-full ${inputClass}`}
               placeholder={t("screens.taxes.ratePlaceholder")}
             />

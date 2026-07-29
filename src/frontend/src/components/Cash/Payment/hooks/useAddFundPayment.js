@@ -25,7 +25,7 @@ const useAddFundPayment = ({
   const isFundLocked = Boolean(initialFundId);
 
   const [partyType, setPartyType] = useState(
-    mode === "out" ? "supplier" : "customer",
+    mode === "out" ? "supplier" : "customer"
   );
   const { user } = useAuth();
 
@@ -51,12 +51,12 @@ const useAddFundPayment = ({
 
   const selectedFund = useMemo(
     () => funds.find((f) => f.id === Number(form.fund_id)),
-    [funds, form.fund_id],
+    [funds, form.fund_id]
   );
 
   const selectedParty = useMemo(
     () => partiesList.find((p) => p.id === Number(form.party_id)),
-    [partiesList, form.party_id],
+    [partiesList, form.party_id]
   );
 
   const fetchFunds = useCallback(async () => {
@@ -145,19 +145,19 @@ const useAddFundPayment = ({
   };
 
   const handleBaseAmountChange = (val) => {
-    const baseVal = val === "" ? "" : Number(val || 0);
+    const parsed = val === "" ? null : Number(val);
+    const isValid = parsed !== null && !isNaN(parsed);
+
     setForm((prev) => ({
       ...prev,
-      amount_in_base: baseVal,
-      collected_amount:
-        baseVal === ""
-          ? ""
-          : prev.fund_exchangeRate === 1
-            ? baseVal
-            : baseVal * prev.fund_exchangeRate,
+      amount_in_base: val, // raw string — keeps "5." intact while typing
+      collected_amount: !isValid
+        ? ""
+        : prev.fund_exchangeRate === 1
+          ? parsed
+          : parsed * prev.fund_exchangeRate,
     }));
   };
-
   const effectiveRate = useMemo(() => {
     if (!form.amount_in_base) return form.fund_exchangeRate;
     return Number(form.collected_amount || 0) / Number(form.amount_in_base);

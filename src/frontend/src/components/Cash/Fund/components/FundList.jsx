@@ -16,6 +16,7 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import FundTransferModal from "./FundTransferModal";
 import AddFundPayment from "../../Payment/components/AddFundPayment";
 import FundListHeader from "./FundListHeader";
+import NumberInput from "../../../../Global/NumberInput";
 
 const FundList = () => {
   const { t } = useTranslation();
@@ -158,18 +159,11 @@ const FundList = () => {
                                   </option>
                                 ))}
                               </select>
-
-                              <input
+                              <NumberInput
                                 required
-                                type="text"
-                                inputMode="decimal"
-                                dir="ltr"
                                 value={editing.balance || ""}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    balance: normalizeDigits(e.target.value),
-                                  })
+                                onChange={(val) =>
+                                  setEditing({ ...editing, balance: val })
                                 }
                                 disabled
                                 className={`${inputClass} min-w-[140px]`}

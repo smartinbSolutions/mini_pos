@@ -352,11 +352,20 @@ export default function registerCompanySettingsIPC() {
     const currencyResult = db
       .prepare(
         `
-        INSERT INTO currencies (name, latinName, code, exchangeRate, symbol, isPrimary)
-        VALUES (?,?,?,?,?,?)
+        INSERT INTO currencies (name, latinName, minorName, minorLatinName, code, exchangeRate, symbol, isPrimary)
+        VALUES (?,?,?,?,?,?,?,?)
       `
       )
-      .run(data.currency_name, data.latinName, data.code, 1, data.symbol, 1);
+      .run(
+        data.currency_name,
+        data.latinName,
+        data.minor_name || null,
+        data.minor_latin_name || null,
+        data.code,
+        1,
+        data.symbol,
+        1
+      );
 
     const result = db
       .prepare(

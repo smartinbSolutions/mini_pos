@@ -15,6 +15,7 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import FormattedDate from "../../../../Global/FormattedDate";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
+import NumberInput from "../../../../Global/NumberInput";
 
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
@@ -205,10 +206,7 @@ export default function PurchaseReturnPage() {
                           <label className="mb-1 block text-[11px] font-bold text-slate-400">
                             {t("ui.returnQty")} ({unitLabel})
                           </label>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            dir="ltr"
+                          <NumberInput
                             value={
                               item.returnUnitQuantity === 0
                                 ? ""
@@ -216,27 +214,8 @@ export default function PurchaseReturnPage() {
                             }
                             placeholder="0"
                             disabled={Number(item.available_unit_quantity) <= 0}
-                            onChange={(e) => {
-                              const normalized = normalizeDigits(
-                                e.target.value
-                              );
-
-                              if (normalized === "") {
-                                updateQuantity(item.id, "");
-                                return;
-                              }
-
-                              const num = Number(normalized);
-                              if (isNaN(num)) return;
-
-                              const max = Number(
-                                item.available_unit_quantity || 0
-                              );
-                              updateQuantity(
-                                item.id,
-                                Math.min(max, Math.max(0, num))
-                              );
-                            }}
+                            onChange={(val) => updateQuantity(item.id, val)}
+                            max={Number(item.available_unit_quantity || 0)}
                             className="h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-center text-sm font-bold text-slate-900 outline-none focus:border-amber-400 focus:ring-[3px] focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-300"
                           />
                         </div>

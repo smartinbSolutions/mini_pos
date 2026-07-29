@@ -3,6 +3,7 @@ import { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { normalizeDigits } from "../../../Global/FormatNumber";
+import NumberInput from "../../../Global/NumberInput";
 
 const emptyForm = {
   name: "",
@@ -119,25 +120,10 @@ export default function ProductQuickAddModal({
                     size={13}
                     className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-350"
                   />
-                  <input
+                  <NumberInput
                     required
-                    type="text"
-                    inputMode="decimal"
-                    dir="ltr"
                     value={form.costPrice}
-                    onChange={(event) => {
-                      const normalized = normalizeDigits(event.target.value);
-
-                      if (normalized === "") {
-                        updateField("costPrice", "");
-                        return;
-                      }
-
-                      const num = Number(normalized);
-                      if (isNaN(num)) return;
-
-                      updateField("costPrice", Math.max(0, num));
-                    }}
+                    onChange={(val) => updateField("costPrice", val)}
                     className={inputWithPrefixClass}
                   />
                 </div>
@@ -153,25 +139,10 @@ export default function ProductQuickAddModal({
                     size={13}
                     className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-400"
                   />
-                  <input
+                  <NumberInput
                     required
-                    type="text"
-                    inputMode="decimal"
-                    dir="ltr"
                     value={form.salePrice}
-                    onChange={(event) => {
-                      const normalized = normalizeDigits(event.target.value);
-
-                      if (normalized === "") {
-                        updateField("salePrice", "");
-                        return;
-                      }
-
-                      const num = Number(normalized);
-                      if (isNaN(num)) return;
-
-                      updateField("salePrice", Math.max(0, num));
-                    }}
+                    onChange={(val) => updateField("salePrice", val)}
                     className={
                       inputWithPrefixClass +
                       " font-black text-emerald-700 focus:border-emerald-400 focus:ring-emerald-400/15"

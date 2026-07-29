@@ -1,6 +1,7 @@
 import { Check, X, Plus, Percent, StickyNote, Receipt } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { normalizeDigits } from "../../../Global/FormatNumber";
+import NumberInput from "../../../Global/NumberInput";
 
 function AddOptionsMenu({ options }) {
   const [open, setOpen] = useState(false);
@@ -197,14 +198,9 @@ const POSSystemEditPriceProdcutCart = ({
           <label className="mb-2 block text-xs font-bold uppercase text-stone-400">
             {t("screens.pos.editPrice", "Edit Price")}
           </label>
-          <input
-            type="text"
-            inputMode="decimal"
-            dir="ltr"
+          <NumberInput
             value={newPrice}
-            onChange={(event) =>
-              handlePriceChange(normalizeDigits(event.target.value))
-            }
+            onChange={handlePriceChange}
             className="w-full bg-transparent text-center text-5xl font-black text-teal-700 outline-none placeholder:text-stone-300"
             placeholder="0.00"
             autoFocus
@@ -234,14 +230,10 @@ const POSSystemEditPriceProdcutCart = ({
             >
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    dir="ltr"
+                  <NumberInput
                     value={rateText}
-                    onChange={(e) =>
-                      handleRateChange(normalizeDigits(e.target.value))
-                    }
+                    onChange={handleRateChange}
+                    max={100}
                     className="h-9 w-full rounded-lg border border-stone-200 bg-white px-2 pe-6 text-sm font-bold outline-none focus:border-red-400"
                     placeholder="0"
                   />
@@ -250,14 +242,9 @@ const POSSystemEditPriceProdcutCart = ({
                   </span>
                 </div>
                 <span className="text-xs text-stone-300">=</span>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  dir="ltr"
+                <NumberInput
                   value={amountText}
-                  onChange={(e) =>
-                    handleAmountChange(normalizeDigits(e.target.value))
-                  }
+                  onChange={handleAmountChange}
                   className="h-9 flex-1 rounded-lg border border-stone-200 bg-white px-2 text-sm font-bold outline-none focus:border-red-400"
                   placeholder="0.00"
                 />

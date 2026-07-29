@@ -9,6 +9,7 @@ import {
   Trash2,
   TrendingUp,
   TrendingDown,
+  Download,
 } from "lucide-react";
 
 import { formatMoney } from "../../../../Global/FormatNumber";
@@ -26,6 +27,8 @@ const PaymentDocumentPage = () => {
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
 
   const api = window.api;
 
@@ -42,6 +45,37 @@ const PaymentDocumentPage = () => {
       active = false;
     };
   }, [id]);
+  console.log(payment);
+  const handlePrint = async () => {
+    try {
+      setIsPrinting(true);
+      const res = await api.printDocument(`/print-payment/${id}`);
+      if (!res.success && res.error === "NO_PRINTER") {
+        toast.error(t("screens.invoices.noPrinter", "No printer found."));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async () => {
+    try {
+      setIsSavingPdf(true);
+      const res = await api.saveDocumentPdf(
+        `/print-payment/${id}`,
+        `payment-${id}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") {
+        toast.error(t("screens.invoices.pdfFailed", "Failed to save PDF."));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
 
   const handleDelete = async () => {
     const res = await api.deletePayment(id);
@@ -99,13 +133,22 @@ const PaymentDocumentPage = () => {
           </button>
 
           <div className="flex gap-2">
-            {/* <button
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+            <button
+              onClick={handleSavePdf}
+              disabled={isSavingPdf}
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Download size={16} />
+              {isSavingPdf ? t("common.saving") : t("common.savePdf")}
+            </button>
+            <button
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="inline-flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Printer size={16} />
-              {t("common.print")}
-            </button> */}
+              {isPrinting ? t("common.saving") : t("common.print")}
+            </button>
             <button
               onClick={() => setDeleteOpen(true)}
               className="inline-flex items-center gap-2 rounded-2xl border border-red-100 bg-white px-4 py-2.5 text-sm font-bold text-red-500 transition hover:bg-red-50"
@@ -187,7 +230,7 @@ const PaymentDocumentPage = () => {
                 {formatMoney(
                   payment.amount_fund_currency,
                   currencyForFund.code,
-                  currencyForFund.symbol,
+                  currencyForFund.symbol
                 )}
               </p>
             </div>
@@ -241,7 +284,7 @@ const PaymentDocumentPage = () => {
                       {formatMoney(
                         a.amount,
                         currencyForFund.code,
-                        currencyForFund.symbol,
+                        currencyForFund.symbol
                       )}
                     </span>
                   </div>

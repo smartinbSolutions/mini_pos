@@ -2,6 +2,7 @@ import { X, Save, ArrowRightLeft, ArrowRight, ArrowLeft } from "lucide-react";
 import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import useTransferFundtoFund from "../hooks/useTransferFundtoFund";
 import { useTranslation } from "react-i18next";
+import NumberInput from "../../../../Global/NumberInput";
 
 // `transfer` is optional. Pass an existing fund_transfers row to edit it;
 // omit it (or pass null) to create a brand new transfer.
@@ -110,14 +111,9 @@ export default function FundTransferModal({
                   {t("screens.transfer.amount")}{" "}
                   {sourceFund && `(${sourceFund.currency_code})`}
                 </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  dir="ltr"
+                <NumberInput
                   value={form.amount}
-                  onChange={(e) =>
-                    handleAmountChange(normalizeDigits(e.target.value))
-                  }
+                  onChange={handleAmountChange}
                   className="w-full h-10 rounded-xl border px-3 mt-1 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm disabled:bg-gray-100"
                   placeholder="0.00"
                   disabled={!form.from_fund_id}
@@ -163,14 +159,9 @@ export default function FundTransferModal({
                   {t("screens.transfer.destination_receives")}{" "}
                   {targetFund && `(${targetFund.currency_code})`}
                 </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  dir="ltr"
+                <NumberInput
                   value={form.receive_amount}
-                  onChange={(e) =>
-                    handleReceiveAmountChange(normalizeDigits(e.target.value))
-                  }
+                  onChange={handleReceiveAmountChange}
                   className={`w-full h-10 rounded-xl border px-3 mt-1 focus:ring-2 focus:ring-emerald-500 outline-none text-sm disabled:bg-gray-100 ${
                     isCrossCurrency ? "bg-white" : "bg-gray-100 text-gray-500"
                   }`}

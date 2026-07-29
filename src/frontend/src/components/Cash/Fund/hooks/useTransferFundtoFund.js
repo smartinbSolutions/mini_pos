@@ -197,27 +197,11 @@ const useTransferFundtoFund = ({
     sourceFund.currency_code !== targetFund.currency_code
   );
 
-  // The rate actually applied when the user edits the amount:
-  // - Same funds as the original transfer (edit mode, untouched): use the
-  //   transfer's own effective_rate, so nudging the amount preserves the
-  //   deal that was actually made (e.g. 200 USD -> 9700 TL, ratio 48.5),
-  //   instead of resetting to today's live fund rate or a stale stored one.
-  // - Anything else (create mode, or funds were changed): use today's live
-  //   nominal rate, same as before.
   const workingRate = isUnchangedFromOriginal
     ? Number(transfer?.effective_rate) || nominalRate
     : nominalRate;
 
-  // Recompute receive_amount whenever the *rate* changes (fund selection
-  // changed) or, in edit mode, on first load — using whatever amount
-  // currently exists, so switching funds or opening an existing transfer
-  // never leaves a stale receive_amount behind. Deliberately excludes
-  // form.amount from deps: handleAmountChange already handles that case,
-  // this effect only reacts to fund/rate changes.
   useEffect(() => {
-    // Edit mode, funds unchanged: the loaded receive_amount already
-    // reflects the real recorded deal — leave it alone until the user
-    // actually edits something.
     if (isUnchangedFromOriginal) return;
 
     const amount = Number(form.amount || 0);
@@ -240,15 +224,15 @@ const useTransferFundtoFund = ({
   // live fund rate) — overwriting any prior manual edit — while editing
   // receive_amount directly is a separate, independent action.
   const handleAmountChange = (val) => {
-    const amount = val === "" ? "" : Number(val || 0);
+    const parsed = val === "" ? null : Number(val);
     const receive =
-      amount === "" || !sourceFund || !targetFund
+      parsed === null || isNaN(parsed) || !sourceFund || !targetFund
         ? ""
-        : Number((amount * workingRate).toFixed(4));
+        : Number((parsed * workingRate).toFixed(4));
 
     setForm((prev) => ({
       ...prev,
-      amount,
+      amount: val, // keep raw string so "5." doesn't collapse mid-typing
       receive_amount: receive,
     }));
   };
@@ -256,7 +240,7 @@ const useTransferFundtoFund = ({
   const handleReceiveAmountChange = (val) => {
     setForm((prev) => ({
       ...prev,
-      receive_amount: val === "" ? "" : Number(val || 0),
+      receive_amount: val, // same — raw string while typing
     }));
   };
 

@@ -26,6 +26,7 @@ import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import GoTo from "../../../../Global/GoTo";
 import DropdownMenu from "../../../../Global/DropdownMenu";
+import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -305,9 +306,9 @@ const PurchaseList = () => {
             <table className="w-full min-w-[950px] text-left text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">{t("ui.invoice")}</th>
-                  <th className="px-4 py-3">{t("ui.supplier")}</th>
-                  <th className="px-4 py-3">{t("ui.date")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.invoice")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.supplier")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.date")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.subtotal")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.discount")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.tax")}</th>
@@ -351,9 +352,12 @@ const PurchaseList = () => {
                         key={inv.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           <span className="rounded-lg bg-[#eef3ff] px-2.5 py-1 text-xs font-bold text-[#4663ff]">
-                            #{inv.id}
+                            <InvoiceIdBadge
+                              id={inv.id}
+                              name={inv.invoice_name}
+                            />
                           </span>
                         </td>
                         <td className="px-4 py-3 font-bold text-slate-900">

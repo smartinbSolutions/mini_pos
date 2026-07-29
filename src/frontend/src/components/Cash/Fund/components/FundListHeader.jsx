@@ -10,6 +10,7 @@ import {
   MinusCircle,
 } from "lucide-react";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
+import NumberInput from "../../../../Global/NumberInput";
 
 /**
  * Header for FundList — same visual/interaction pattern as ContactListHeader
@@ -172,25 +173,9 @@ const FundListHeader = ({
                 </p>
               </div>
             </div>
-
-            <input
-              type="text"
-              inputMode="decimal"
-              dir="ltr"
+            <NumberInput
               value={draft.initial_balance || ""}
-              onChange={(e) => {
-                const normalized = normalizeDigits(e.target.value);
-
-                if (normalized === "") {
-                  setDraft({ ...draft, initial_balance: "" });
-                  return;
-                }
-
-                const num = Number(normalized);
-                if (isNaN(num)) return;
-
-                setDraft({ ...draft, initial_balance: Math.max(0, num) });
-              }}
+              onChange={(val) => setDraft({ ...draft, initial_balance: val })}
               className={`w-full ${inputClass} bg-white`}
               placeholder="0.00"
             />

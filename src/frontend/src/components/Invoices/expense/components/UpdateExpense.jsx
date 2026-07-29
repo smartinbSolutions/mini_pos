@@ -18,6 +18,7 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import useUpdateExpense from "../hooks/useUpdateExpense";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
+import NumberInput from "../../../../Global/NumberInput";
 
 export default function UpdateExpense() {
   const { t } = useTranslation();
@@ -238,28 +239,11 @@ export default function UpdateExpense() {
                           />
                         </td>
                         <td className="p-2">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            dir="ltr"
+                          <NumberInput
                             className={inputClass}
                             value={item.price}
                             disabled={isLocked}
-                            onChange={(e) => {
-                              const normalized = normalizeDigits(
-                                e.target.value
-                              );
-
-                              if (normalized === "") {
-                                updateItem(index, "price", "");
-                                return;
-                              }
-
-                              const num = Number(normalized);
-                              if (isNaN(num)) return;
-
-                              updateItem(index, "price", Math.max(0, num));
-                            }}
+                            onChange={(val) => updateItem(index, "price", val)}
                           />
                         </td>
                         <td className="p-2 text-center font-black">

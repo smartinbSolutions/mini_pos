@@ -6,6 +6,8 @@ const useCurrency = () => {
   const emptyCurrency = {
     name: "",
     latinName: "",
+    minorName: "",
+    minorLatinName: "",
     code: "",
     exchangeRate: 1,
     symbol: "",
@@ -27,6 +29,8 @@ const useCurrency = () => {
     ...currency,
     name: String(currency.name || "").trim(),
     latinName: String(currency.latinName || "").trim(),
+    minorName: String(currency.minorName || "").trim(),
+    minorLatinName: String(currency.minorLatinName || "").trim(),
     code: String(currency.code || "").trim(),
     exchangeRate: Number(currency.exchangeRate),
   });
@@ -71,7 +75,7 @@ const useCurrency = () => {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.currency") }),
+        err?.message || t("errors.createFailed", { field: t("ui.currency") })
       );
     } finally {
       setLoading(false);
@@ -130,7 +134,7 @@ const useCurrency = () => {
     } catch (err) {
       console.error("Failed to create Currency:", err);
       setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.currency") }),
+        err?.message || t("errors.createFailed", { field: t("ui.currency") })
       );
       return false;
     }
@@ -144,16 +148,13 @@ const useCurrency = () => {
     } catch (err) {
       console.error("Failed to update Currency:", err);
       setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.currency") }),
+        err?.message || t("errors.updateFailed", { field: t("ui.currency") })
       );
       return false;
     }
   };
 
   const handleDeleteCurrency = async (currency) => {
-    // const confirmed = window.confirm(`Delete Currency "${currency.name}"?`);
-    // if (!confirmed) return;
-
     try {
       await deleteCurrency(currency);
       setActionError("");
@@ -177,6 +178,8 @@ const useCurrency = () => {
       id: currency.id,
       name: currency.name || "",
       latinName: currency.latinName || "",
+      minorName: currency.minorName || "",
+      minorLatinName: currency.minorLatinName || "",
       code: currency.code || "",
       exchangeRate: currency.exchangeRate || 1,
       symbol: currency.symbol || "",

@@ -213,6 +213,8 @@
       }
     },
     "currency": {
+      "minorNamePlaceholder": "Alt birim adı",
+      "minorLatinPlaceholder": "Alt birim (Latin)",
       "title": "Para Birimi Yönetimi",
       "subtitle": "Para birimleri ve döviz kurlarını yönet",
       "total": "Toplam Para Birimi",
@@ -1097,6 +1099,20 @@
     "ITEM_TAX": "Ürün Vergisi",
     "RETURN_NO": "İade Numarası",
     "ORIGINAL_INVOICE": "Orijinal Fatura",
-    "RETURN_DATE": "İade Tarihi"
+    "RETURN_DATE": "İade Tarihi",
+    "RECEIPT_VOUCHER": "Tahsilat Fişi",
+    "PAYMENT_VOUCHER": "Ödeme Fişi",
+    "RECEIVED_FROM": "Alındı",
+    "PAID_TO": "Ödendi",
+    "AMOUNT": "Tutar",
+    "FUND": "Kasa",
+    "EXCHANGE_RATE": "Döviz Kuru",
+    "COLLECTED_AMOUNT": "Tahsil Edilen Tutar",
+    "FOR_INVOICE": "Fatura İçin",
+    "INVOICE_TYPE_SALES": "Satış Faturası",
+    "INVOICE_TYPE_PURCHASE": "Alış Faturası",
+    "INVOICE_TYPE_SALES_RETURN": "Satış İadesi",
+    "INVOICE_TYPE_PURCHASE_RETURN": "Alış İadesi",
+    "INVOICE_TYPE_EXPENSE": "Gider"
   }
 }
