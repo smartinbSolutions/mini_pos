@@ -35,12 +35,12 @@ db.prepare(
   `CREATE TABLE IF NOT EXISTS pin_reset_audit (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     performed_at TEXT NOT NULL DEFAULT (datetime('now')),
-    administrator_id INTEGER NOT NULL,
-    target_user_id INTEGER NOT NULL,
+    administrator_id INTEGER,
+    target_user_id INTEGER,
     device TEXT,
     reset_type TEXT NOT NULL CHECK(reset_type IN ('admin_reset','recovery_key')),
-    FOREIGN KEY (administrator_id) REFERENCES users(id),
-    FOREIGN KEY (target_user_id) REFERENCES users(id)
+    FOREIGN KEY (administrator_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
   );`
 ).run();
 
@@ -263,8 +263,8 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   net_total REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (customer_id) REFERENCES customers(id),
-  FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 `
 ).run();
@@ -338,7 +338,7 @@ CREATE TABLE IF NOT EXISTS sales_returns (
     REFERENCES customers(id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 `
 ).run();
@@ -414,8 +414,8 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
     REFERENCES suppliers(id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 `
 ).run();
@@ -494,7 +494,7 @@ CREATE TABLE IF NOT EXISTS purchase_returns (
     REFERENCES suppliers(id)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 `
 ).run();
@@ -577,8 +577,8 @@ CREATE TABLE IF NOT EXISTS expense (
   updated_by INTEGER,
   net_total REAL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (created_by) REFERENCES users(id),
-  FOREIGN KEY (updated_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 )
 `
 ).run();
@@ -639,7 +639,7 @@ CREATE TABLE IF NOT EXISTS payments (
   invoice_type TEXT,
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (fund_id) REFERENCES funds(id),
-  FOREIGN KEY (created_by) REFERENCES users(id)
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 )
 `
 ).run();
@@ -665,7 +665,7 @@ CREATE TABLE IF NOT EXISTS deleted_payments (
   payload TEXT NOT NULL, -- JSON snapshot of { payment, allocations } at time of deletion
   deleted_by INTEGER,
   deletedAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (deleted_by) REFERENCES users(id)
+  FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL
 )
 `
 ).run();
@@ -702,7 +702,7 @@ db.prepare(
     note TEXT,
     created_by INTEGER,
     createdAt TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 `
 ).run();
@@ -721,7 +721,7 @@ db.prepare(
     date TEXT,
     created_by INTEGER,
     createdAt TEXT DEFAULT (datetime('now')),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 
   );
   `

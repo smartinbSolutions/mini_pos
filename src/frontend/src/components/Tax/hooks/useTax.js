@@ -52,6 +52,7 @@ export default function useTax() {
       setLoading(true);
 
       let taxResult = await api.getTaxes();
+      console.log(taxResult);
 
       setTaxes(taxResult || []);
     } catch (err) {
@@ -77,11 +78,9 @@ export default function useTax() {
 
     setSaving(true);
     try {
-      const result = await api.createTax(normalizeTax(tax));
-      if (result?.status && result.status !== 200) {
-        throw new Error(
-          result.message || t("errors.createFailed", { field: t("ui.tax") })
-        );
+      const res = await api.createTax(normalizeTax(tax));
+      if (!res?.success) {
+        throw new Error(res?.error || "CREATE_FAILED");
       }
       await refetch();
     } finally {
@@ -97,11 +96,9 @@ export default function useTax() {
 
     setSaving(true);
     try {
-      const result = await api.updateTax(normalizeTax(tax));
-      if (result?.status && result.status !== 200) {
-        throw new Error(
-          result.message || t("errors.updateFailed", { field: t("ui.tax") })
-        );
+      const res = await api.updateTax(normalizeTax(tax));
+      if (!res?.success) {
+        throw new Error(res?.error || "UPDATE_FAILED");
       }
       await refetch();
     } finally {
@@ -112,9 +109,9 @@ export default function useTax() {
   const deleteTax = async (tax) => {
     setSaving(true);
     try {
-      const result = await api.deleteTax(tax.id);
-      if (result?.status && result.status !== 200) {
-        throw new Error(result.message);
+      const res = await api.deleteTax(tax.id);
+      if (!res?.success) {
+        throw new Error(res?.error || "DELETE_FAILED");
       }
       await refetch();
     } finally {
@@ -129,9 +126,13 @@ export default function useTax() {
       return true;
     } catch (err) {
       console.error("Failed to create tax:", err);
-      setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.tax") })
-      );
+      if (err.message === "TAX_ALREADY_EXISTS") {
+        setActionError(t("errors.taxAlreadyExists", { field: t("ui.tax") }));
+      } else {
+        setActionError(
+          err?.message || t("errors.createFailed", { field: t("ui.tax") })
+        );
+      }
       return false;
     }
   };
@@ -143,9 +144,13 @@ export default function useTax() {
       return true;
     } catch (err) {
       console.error("Failed to update tax:", err);
-      setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.tax") })
-      );
+      if (err.message === "TAX_ALREADY_EXISTS") {
+        setActionError(t("errors.taxAlreadyExists", { field: t("ui.tax") }));
+      } else {
+        setActionError(
+          err?.message || t("errors.updateFailed", { field: t("ui.tax") })
+        );
+      }
       return false;
     }
   };
@@ -156,12 +161,11 @@ export default function useTax() {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete tax:", err);
-      // Surface the specific "tax in use" reason instead of a generic message
-      setActionError(
-        err?.message === "ERROR TAX IN USE"
-          ? t("errors.taxInUse")
-          : t("errors.deleteHasData", { field: t("ui.tax") })
-      );
+      if (err.message === "TAX_IN_USE") {
+        setActionError(t("errors.taxInUse", { field: t("ui.tax") }));
+      } else {
+        setActionError(t("errors.deleteHasData", { field: t("ui.tax") }));
+      }
     }
   };
 

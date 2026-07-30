@@ -10,12 +10,11 @@ import {
 } from "../utils/authCrypto";
 
 const validPin = (pin) => /^\d{6}$/.test(pin || "");
-const genericRecoveryError = "Recovery could not be completed";
 
 function activeAdmin(id) {
   return db
     .prepare(
-      "SELECT * FROM users WHERE id = ? AND role = 'admin' AND is_active = 1",
+      "SELECT * FROM users WHERE id = ? AND role = 'admin' AND is_active = 1"
     )
     .get(id);
 }
@@ -24,7 +23,7 @@ function auditPinReset(administratorId, targetUserId, resetType) {
   db.prepare(
     `INSERT INTO pin_reset_audit
       (administrator_id, target_user_id, device, reset_type)
-     VALUES (?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?)`
   ).run(administratorId, targetUserId, os.hostname(), resetType);
 }
 
@@ -33,7 +32,7 @@ export default function registerAuthHandlersIPC() {
     try {
       const users = db.prepare("SELECT * FROM users WHERE is_active = 1").all();
       const match = users.find((u) => verifyPin(pin, u.pin_hash));
-      if (!match) return { success: false, error: "Invalid PIN" };
+      if (!match) return { success: false, error: "INVALID_PIN" };
       return {
         success: true,
         user: {
@@ -52,7 +51,7 @@ export default function registerAuthHandlersIPC() {
     try {
       const users = db
         .prepare(
-          "SELECT id, username, role, full_name, is_active, created_at FROM users ORDER BY created_at ASC",
+          "SELECT id, username, role, full_name, is_active, created_at FROM users ORDER BY created_at ASC"
         )
         .all();
       return { success: true, users };
@@ -64,23 +63,23 @@ export default function registerAuthHandlersIPC() {
   ipcMain.handle("auth:create-user", (event, data) => {
     try {
       if (!/^\d{6}$/.test(data.pin || ""))
-        return { success: false, error: "PIN must be exactly 6 digits" };
+        return { success: false, error: "PIN_INVALID_LENGTH" };
       if (
         db.prepare("SELECT id FROM users WHERE username = ?").get(data.username)
       )
-        return { success: false, error: "Username already taken" };
+        return { success: false, error: "USERNAME_TAKEN" };
       if (isPinTaken(db, data.pin))
-        return { success: false, error: "PIN already in use" };
+        return { success: false, error: "PIN_ALREADY_IN_USE" };
 
       const result = db
         .prepare(
-          `INSERT INTO users (username, pin_hash, role, full_name, is_active) VALUES (?, ?, ?, ?, 1)`,
+          `INSERT INTO users (username, pin_hash, role, full_name, is_active) VALUES (?, ?, ?, ?, 1)`
         )
         .run(
           data.username,
           hashPin(data.pin),
           data.role,
-          data.full_name || null,
+          data.full_name || null
         );
       return { success: true, id: result.lastInsertRowid };
     } catch (err) {
@@ -93,16 +92,14 @@ export default function registerAuthHandlersIPC() {
       const current = db
         .prepare("SELECT * FROM users WHERE id = ?")
         .get(data.id);
-      if (!current) return { success: false, error: "User not found" };
+      if (!current) return { success: false, error: "USER_NOT_FOUND" };
 
-      if (data.pin)
-        return { success: false, error: "Use Reset PIN to change a PIN" };
+      if (data.pin) return { success: false, error: "USE_RESET_PIN_FLOW" };
       if (data.username) {
         const existing = db
           .prepare("SELECT id FROM users WHERE username = ? AND id != ?")
           .get(data.username, data.id);
-        if (existing)
-          return { success: false, error: "Username already taken" };
+        if (existing) return { success: false, error: "USERNAME_TAKEN" };
       }
 
       // Guard: can't deactivate the last active admin
@@ -114,13 +111,13 @@ export default function registerAuthHandlersIPC() {
       if (wasActiveAdmin && !willBeActiveAdmin) {
         const otherActiveAdmins = db
           .prepare(
-            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1 AND id != ?",
+            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND is_active = 1 AND id != ?"
           )
           .get(data.id).count;
         if (otherActiveAdmins === 0) {
           return {
             success: false,
-            error: "At least one active admin must remain",
+            error: "LAST_ADMIN_MUST_REMAIN",
           };
         }
       }
@@ -134,14 +131,14 @@ export default function registerAuthHandlersIPC() {
           is_active = COALESCE(?, is_active),
           pin_hash = COALESCE(?, pin_hash)
         WHERE id = ?
-      `,
+      `
       ).run(
         data.username ?? null,
         data.full_name ?? null,
         data.role ?? null,
         data.is_active ?? null,
         null,
-        data.id,
+        data.id
       );
       return { success: true };
     } catch (err) {
@@ -160,16 +157,16 @@ export default function registerAuthHandlersIPC() {
         !target ||
         !verifyPin(data.administratorPin, admin.pin_hash)
       )
-        return { success: false, error: "Administrator authentication failed" };
+        return { success: false, error: "ADMIN_AUTH_FAILED" };
       if (!validPin(data.newPin))
-        return { success: false, error: "PIN must be exactly 6 digits" };
+        return { success: false, error: "PIN_INVALID_LENGTH" };
       if (isPinTaken(db, data.newPin, target.id))
-        return { success: false, error: "PIN already in use" };
+        return { success: false, error: "PIN_ALREADY_IN_USE" };
 
       db.transaction(() => {
         db.prepare("UPDATE users SET pin_hash = ? WHERE id = ?").run(
           hashPin(data.newPin),
-          target.id,
+          target.id
         );
         auditPinReset(admin.id, target.id, "admin_reset");
       })();
@@ -180,10 +177,13 @@ export default function registerAuthHandlersIPC() {
   });
 
   ipcMain.handle("auth:recover-admin-pin", (event, data) => {
+    // Deliberately generic on every failure branch — a specific reason here
+    // (wrong username vs wrong recovery key) would let an attacker enumerate
+    // valid admin usernames. This is intentional, not an oversight.
     try {
       const admin = db
         .prepare(
-          "SELECT * FROM users WHERE username = ? AND role = 'admin' AND is_active = 1",
+          "SELECT * FROM users WHERE username = ? AND role = 'admin' AND is_active = 1"
         )
         .get(data.username);
       const setting = db
@@ -194,20 +194,20 @@ export default function registerAuthHandlersIPC() {
         !setting ||
         !verifyPin(data.recoveryKey, setting.recovery_key_hash)
       )
-        return { success: false, error: genericRecoveryError };
+        return { success: false, error: "RECOVERY_FAILED" };
       if (!validPin(data.newPin) || isPinTaken(db, data.newPin, admin.id))
-        return { success: false, error: genericRecoveryError };
+        return { success: false, error: "RECOVERY_FAILED" };
 
       db.transaction(() => {
         db.prepare("UPDATE users SET pin_hash = ? WHERE id = ?").run(
           hashPin(data.newPin),
-          admin.id,
+          admin.id
         );
         auditPinReset(admin.id, admin.id, "recovery_key");
       })();
       return { success: true };
     } catch (_err) {
-      return { success: false, error: genericRecoveryError };
+      return { success: false, error: "RECOVERY_FAILED" };
     }
   });
 
@@ -215,13 +215,13 @@ export default function registerAuthHandlersIPC() {
     try {
       const admin = activeAdmin(data.administratorId);
       if (!admin || !verifyPin(data.administratorPin, admin.pin_hash))
-        return { success: false, error: "Administrator authentication failed" };
+        return { success: false, error: "ADMIN_AUTH_FAILED" };
       const recoveryKey = generateRecoveryKey();
       db.prepare(
         `INSERT INTO security_settings (id, recovery_key_hash, updated_at)
          VALUES (1, ?, datetime('now'))
          ON CONFLICT(id) DO UPDATE SET recovery_key_hash = excluded.recovery_key_hash,
-           updated_at = datetime('now')`,
+           updated_at = datetime('now')`
       ).run(hashSecret(recoveryKey));
       return { success: true, recoveryKey };
     } catch (err) {
@@ -239,7 +239,7 @@ export default function registerAuthHandlersIPC() {
          FROM pin_reset_audit a
          JOIN users administrator ON administrator.id = a.administrator_id
          JOIN users target ON target.id = a.target_user_id
-         ORDER BY a.performed_at DESC`,
+         ORDER BY a.performed_at DESC`
         )
         .all();
       return { success: true, records };
@@ -251,25 +251,25 @@ export default function registerAuthHandlersIPC() {
   ipcMain.handle("auth:delete-user", (event, id) => {
     try {
       const user = db.prepare("SELECT * FROM users WHERE id = ?").get(id);
-      if (!user) return { success: false, error: "User not found" };
+      if (!user) return { success: false, error: "USER_NOT_FOUND" };
 
       if (user.is_active) {
         return {
           success: false,
-          error: "Deactivate this user before deleting",
+          error: "DEACTIVATE_BEFORE_DELETE",
         };
       }
 
       if (user.role === "admin") {
         const otherAdmins = db
           .prepare(
-            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND id != ?",
+            "SELECT COUNT(*) as count FROM users WHERE role = 'admin' AND id != ?"
           )
           .get(id).count;
         if (otherAdmins === 0) {
           return {
             success: false,
-            error: "At least one admin account must remain",
+            error: "LAST_ADMIN_MUST_REMAIN",
           };
         }
       }

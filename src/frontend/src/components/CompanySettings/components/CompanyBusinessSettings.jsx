@@ -213,7 +213,7 @@ export default function CompanyBusinessSettings() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="bg-indigo-600 hover:bg-indigo-700 transition-all text-white px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-500/20"
+              className="flex items-center gap-2 rounded-2xl bg-[#4663ff] px-6 py-3 text-sm font-black text-white shadow-[0_12px_32px_rgba(70,99,255,0.35)] transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Save size={18} />
               {saving ? t("common.saving") : t("screens.company.saveSettings")}

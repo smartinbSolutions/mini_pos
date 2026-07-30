@@ -4,26 +4,34 @@ import db from "../db";
 export default function registerTaxesIPC() {
   ipcMain.handle("create-tax", (event, data) => {
     if (!data.name || data.rate < 0) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
 
     const category = ["product", "invoice", "both"].includes(data.category)
       ? data.category
       : "product";
 
-    const result = db
-      .prepare(
-        `
-      INSERT INTO taxes (name, rate, category)
-      VALUES (?, ?, ?)
-    `
-      )
-      .run(data.name, data.rate || 0, category);
+    try {
+      const result = db
+        .prepare(
+          `
+        INSERT INTO taxes (name, rate, category)
+        VALUES (?, ?, ?)
+      `
+        )
+        .run(data.name, data.rate || 0, category);
 
-    return {
-      success: true,
-      id: result.lastInsertRowid,
-    };
+      return {
+        success: true,
+        id: result.lastInsertRowid,
+      };
+    } catch (err) {
+      if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        return { success: false, error: "TAX_ALREADY_EXISTS" };
+      }
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("get-taxes", (event, params = {}) => {
@@ -56,22 +64,30 @@ export default function registerTaxesIPC() {
 
   ipcMain.handle("update-tax", (event, data) => {
     if (!data.name || data.rate < 0) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
 
     const category = ["product", "invoice", "both"].includes(data.category)
       ? data.category
       : "product";
 
-    db.prepare(
+    try {
+      db.prepare(
+        `
+        UPDATE taxes
+        SET name = ?, rate = ?, category = ?
+        WHERE id = ?
       `
-      UPDATE taxes
-      SET name = ?, rate = ?, category = ?
-      WHERE id = ?
-    `
-    ).run(data.name, data.rate, category, data.id);
+      ).run(data.name, data.rate, category, data.id);
 
-    return { success: true };
+      return { success: true };
+    } catch (err) {
+      if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        return { success: false, error: "TAX_ALREADY_EXISTS" };
+      }
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("delete-tax", (event, id) => {
@@ -80,18 +96,23 @@ export default function registerTaxesIPC() {
       .get(id);
 
     if (usedByProduct) {
-      return {
-        message: "ERROR TAX IN USE",
-        status: 409,
-      };
+      return { success: false, error: "TAX_IN_USE" };
     }
 
-    db.prepare(
+    try {
+      db.prepare(
+        `
+        DELETE FROM taxes WHERE id = ?
       `
-      DELETE FROM taxes WHERE id = ?
-    `
-    ).run(id);
+      ).run(id);
 
-    return { success: true };
+      return { success: true };
+    } catch (err) {
+      if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+        return { success: false, error: "TAX_IN_USE" };
+      }
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 }

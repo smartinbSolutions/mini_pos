@@ -481,7 +481,11 @@
       "emailAddress": "Email Address",
       "companyAddress": "Company Address",
       "saveSettings": "Save Settings",
-      "baseCurrency": "Base currency"
+      "baseCurrency": "Base currency",
+      "companyGeneralInfo": "Company Information",
+      "detailsSection": "Company details",
+      "contactSection": "Contact",
+      "regionalSection": "Regional preferences"
     },
     "setupPage": {
       "title": "Company Setup",
@@ -529,7 +533,24 @@
       "cannotDeletePaidInvoice": "This invoice has a payment and cannot be deleted.",
       "invoiceNotFound": "This invoice no longer exists.",
       "taxInUse": "This tax is set as the default on one or more products and can't be deleted.",
-      "productInUse": "This product has sales or purchase history and can't be deleted."
+      "taxAlreadyExists": "A {{field}} with this name already exists.",
+      "productInUse": "This product has sales or purchase history and can't be deleted.",
+      "unitAlreadyExists": "A {{field}} with this name or code already exists.",
+      "currencyInUse": "This {{field}} is used by a fund and cannot be deleted.",
+      "cannotDeletePrimaryCurrency": "The primary {{field}} cannot be deleted.",
+      "currencyAlreadyExists": "A {{field}} with this code already exists.",
+      "rateReservedForPrimary": "An exchange rate of 1 is reserved for the primary currency.",
+      "primaryRateMustBeOne": "The primary currency's exchange rate must be exactly 1.",
+      "invalidPin": "Incorrect PIN.",
+      "pinInvalidLength": "PIN must be exactly 6 digits.",
+      "usernameTaken": "That username is already taken.",
+      "pinAlreadyInUse": "That PIN is already in use.",
+      "userNotFound": "User not found.",
+      "useResetPinFlow": "Use Reset PIN to change a PIN.",
+      "lastAdminMustRemain": "At least one active admin must remain.",
+      "adminAuthFailed": "Administrator authentication failed.",
+      "recoveryFailed": "Recovery could not be completed.",
+      "deactivateBeforeDelete": "Deactivate this user before deleting."
     },
     "pos": {
       "taxLockedByOwner": "Set by the business owner — cannot be changed here",
@@ -854,7 +875,14 @@
       "resetPin": "Reset PIN",
       "resetPinTitle": "Reset PIN for {{name}}",
       "resetPinNotice": "Confirm your Administrator PIN before assigning the new PIN.",
-      "yourPin": "Your Administrator PIN"
+      "yourPin": "Your Administrator PIN",
+      "identitySection": "Identity",
+      "accessSection": "Access level",
+      "roleAdminHint": "Full access",
+      "rolePosHint": "Checkout only",
+      "pinSection": "Login PIN",
+      "yourAuthorization": "Your authorization",
+      "newPinSection": "New PIN"
     },
     "login": {
       "poweredBy": "Developed by",
@@ -886,7 +914,12 @@
       "newKeyTitle": "Your new Recovery Key",
       "copyKey": "Copy Recovery Key",
       "copied": "Recovery Key copied",
-      "copyConfirmation": "I confirm that I copied and securely stored this Recovery Key."
+      "copyConfirmation": "I confirm that I copied and securely stored this Recovery Key.",
+      "whatHappensSection": "What this does",
+      "consequenceOldKeyDies": "Your current recovery key stops working immediately.",
+      "consequenceOneChance": "The new key is shown once — save it somewhere safe.",
+      "confirmSection": "Confirm it's you",
+      "regenerateConfirm": "Yes, regenerate key"
     },
     "salesReturn": {
       "saveWithoutRefund": "Save Without Refund",

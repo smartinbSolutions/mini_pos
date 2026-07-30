@@ -4,23 +4,78 @@ export default function registerCurrenciesIPC() {
   // CREATE
   ipcMain.handle("create-currencies", (event, data) => {
     if (!data.name || !data.code || !data.exchangeRate) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
 
     const rate = Number(data.exchangeRate);
 
     if (rate === 1) {
-      return { message: "RATE_RESERVED_FOR_PRIMARY", status: 400 };
+      return { success: false, error: "RATE_RESERVED_FOR_PRIMARY" };
     }
 
-    const result = db
-      .prepare(
+    try {
+      const result = db
+        .prepare(
+          `
+        INSERT INTO currencies (name, latinName, minorName, minorLatinName, code, exchangeRate, symbol, isPrimary)
+        VALUES (?,?,?,?,?,?,?,?)
+      `
+        )
+        .run(
+          data.name,
+          data.latinName,
+          data.minorName || null,
+          data.minorLatinName || null,
+          data.code,
+          rate,
+          data.symbol,
+          0
+        );
+
+      return {
+        success: true,
+        id: result.lastInsertRowid,
+      };
+    } catch (err) {
+      if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        return { success: false, error: "CURRENCY_ALREADY_EXISTS" };
+      }
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("update-currency", (event, data) => {
+    if (!data.name || !data.code || !data.exchangeRate) {
+      return { success: false, error: "ERROR ENTER DATA" };
+    }
+
+    const existing = db
+      .prepare(`SELECT isPrimary FROM currencies WHERE id = ?`)
+      .get(data.id);
+
+    if (!existing) {
+      return { success: false, error: "CURRENCY_NOT_FOUND" };
+    }
+
+    const rate = Number(data.exchangeRate);
+
+    if (existing.isPrimary) {
+      if (rate !== 1) {
+        return { success: false, error: "PRIMARY_RATE_MUST_BE_ONE" };
+      }
+    } else if (rate === 1) {
+      return { success: false, error: "RATE_RESERVED_FOR_PRIMARY" };
+    }
+
+    try {
+      db.prepare(
         `
-      INSERT INTO currencies (name, latinName, minorName, minorLatinName, code, exchangeRate, symbol, isPrimary)
-      VALUES (?,?,?,?,?,?,?,?)
-    `
-      )
-      .run(
+        UPDATE currencies
+        SET name = ?, latinName = ?, minorName = ?, minorLatinName = ?, code = ?, exchangeRate = ?, symbol = ?
+        WHERE id = ?
+      `
+      ).run(
         data.name,
         data.latinName,
         data.minorName || null,
@@ -28,13 +83,17 @@ export default function registerCurrenciesIPC() {
         data.code,
         rate,
         data.symbol,
-        0
+        data.id
       );
 
-    return {
-      success: true,
-      id: result.lastInsertRowid,
-    };
+      return { success: true };
+    } catch (err) {
+      if (err.code === "SQLITE_CONSTRAINT_UNIQUE") {
+        return { success: false, error: "CURRENCY_ALREADY_EXISTS" };
+      }
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("get-currencies", () => {
@@ -61,49 +120,6 @@ export default function registerCurrenciesIPC() {
     return currency;
   });
 
-  ipcMain.handle("update-currency", (event, data) => {
-    if (!data.name || !data.code || !data.exchangeRate) {
-      return { message: "ERROR ENTER DATA", status: 500 };
-    }
-
-    const existing = db
-      .prepare(`SELECT isPrimary FROM currencies WHERE id = ?`)
-      .get(data.id);
-
-    if (!existing) {
-      return { message: "CURRENCY_NOT_FOUND", status: 404 };
-    }
-
-    const rate = Number(data.exchangeRate);
-
-    if (existing.isPrimary) {
-      if (rate !== 1) {
-        return { message: "PRIMARY_RATE_MUST_BE_ONE", status: 400 };
-      }
-    } else if (rate === 1) {
-      return { message: "RATE_RESERVED_FOR_PRIMARY", status: 400 };
-    }
-
-    db.prepare(
-      `
-      UPDATE currencies
-      SET name = ?, latinName = ?, minorName = ?, minorLatinName = ?, code = ?, exchangeRate = ?, symbol = ?
-      WHERE id = ?
-    `
-    ).run(
-      data.name,
-      data.latinName,
-      data.minorName || null,
-      data.minorLatinName || null,
-      data.code,
-      rate,
-      data.symbol,
-      data.id
-    );
-
-    return { success: true };
-  });
-
   ipcMain.handle("delete-currency", (event, id) => {
     const currency = db
       .prepare(`SELECT isPrimary FROM currencies WHERE id = ?`)
@@ -114,15 +130,26 @@ export default function registerCurrenciesIPC() {
     }
 
     if (currency.isPrimary) {
-      return { success: false, message: "CANNOT_DELETE_PRIMARY", status: 400 };
+      return { success: false, error: "CANNOT_DELETE_PRIMARY" };
     }
 
-    db.prepare(
-      `
-      DELETE FROM currencies WHERE id = ?
-    `
-    ).run(id);
+    const usedByFund = db
+      .prepare(`SELECT 1 FROM funds WHERE currency_id = ? LIMIT 1`)
+      .get(id);
 
-    return { success: true };
+    if (usedByFund) {
+      return { success: false, error: "CURRENCY_IN_USE" };
+    }
+
+    try {
+      db.prepare(`DELETE FROM currencies WHERE id = ?`).run(id);
+      return { success: true };
+    } catch (err) {
+      if (err.code === "SQLITE_CONSTRAINT_FOREIGNKEY") {
+        return { success: false, error: "CURRENCY_IN_USE" };
+      }
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 }

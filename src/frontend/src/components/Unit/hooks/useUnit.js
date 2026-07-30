@@ -51,7 +51,9 @@ export default function useUnit() {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || t("errors.createFailed", { field: t("ui.units") }));
+      setError(
+        err?.message || t("errors.createFailed", { field: t("ui.units") })
+      );
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,10 @@ export default function useUnit() {
 
     setSaving(true);
     try {
-      await api.createUnit(normalizeUnit(unit));
+      const res = await api.createUnit(normalizeUnit(unit));
+      if (!res?.success) {
+        throw new Error(res?.error || "CREATE_FAILED");
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -84,7 +89,10 @@ export default function useUnit() {
 
     setSaving(true);
     try {
-      await api.updateUnit(normalizeUnit(unit));
+      const res = await api.updateUnit(normalizeUnit(unit));
+      if (!res?.success) {
+        throw new Error(res?.error || "UPDATE_FAILED");
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -94,7 +102,10 @@ export default function useUnit() {
   const deleteUnit = async (unit) => {
     setSaving(true);
     try {
-      await api.deleteUnit(unit.id);
+      const res = await api.deleteUnit(unit.id);
+      if (!res?.success) {
+        throw new Error(res?.error || "DELETE_FAILED");
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -108,7 +119,13 @@ export default function useUnit() {
       return true;
     } catch (err) {
       console.error("Failed to create unit:", err);
-      setActionError(err?.message || t("errors.createFailed", { field: t("ui.unit") }));
+      if (err.message === "UNIT_ALREADY_EXISTS") {
+        setActionError(t("errors.unitAlreadyExists", { field: t("ui.unit") }));
+      } else {
+        setActionError(
+          err?.message || t("errors.createFailed", { field: t("ui.unit") })
+        );
+      }
       return false;
     }
   };
@@ -120,21 +137,28 @@ export default function useUnit() {
       return true;
     } catch (err) {
       console.error("Failed to update unit:", err);
-      setActionError(err?.message || t("errors.updateFailed", { field: t("ui.unit") }));
+      if (err.message === "UNIT_ALREADY_EXISTS") {
+        setActionError(t("errors.unitAlreadyExists", { field: t("ui.unit") }));
+      } else {
+        setActionError(
+          err?.message || t("errors.updateFailed", { field: t("ui.unit") })
+        );
+      }
       return false;
     }
   };
 
   const handleDeleteUnit = async (unit) => {
-    // const confirmed = window.confirm(`Delete unit "${unit.name}"?`);
-    // if (!confirmed) return;
-
     try {
       await deleteUnit(unit);
       setActionError("");
     } catch (err) {
       console.error("Failed to delete unit:", err);
-      setActionError(t("errors.deleteHasData", { field: t("ui.unit") }));
+      if (err.message === "UNIT_IN_USE") {
+        setActionError(t("errors.unitInUse", { field: t("ui.unit") }));
+      } else {
+        setActionError(t("errors.deleteHasData", { field: t("ui.unit") }));
+      }
     }
   };
 

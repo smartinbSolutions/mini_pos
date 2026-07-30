@@ -3,7 +3,6 @@ import { Edit2, Plus, Save, Trash2, X, Search } from "lucide-react";
 import useTax from "../hooks/useTax";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../Global/DeleteModel";
-import { normalizeDigits } from "../../../Global/FormatNumber";
 import NumberInput from "../../../Global/NumberInput";
 
 const CATEGORY_OPTIONS = ["product", "invoice", "both"];
@@ -36,6 +35,8 @@ const TaxList = () => {
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
   const primaryButtonClass =
     "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
+
+  const rowGridClass = "grid grid-cols-[2fr_110px_140px_88px] gap-3";
 
   const categoryBadgeClass = {
     product: "bg-[#eef3ff] text-[#4663ff]",
@@ -80,11 +81,19 @@ const TaxList = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-4 border-b bg-[#f8faff] px-5 py-3 text-xs font-bold uppercase  text-slate-400">
+          {actionError && (
+            <div className="mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
+          <div
+            className={`${rowGridClass} border-b bg-[#f8faff] px-5 py-3 text-center text-xs font-bold uppercase text-slate-400`}
+          >
             <span>{t("ui.name")}</span>
             <span>{t("ui.rate")}</span>
             <span>{t("screens.taxes.category")}</span>
-            <span className="text-right">{t("common.actions")}</span>
+            <span>{t("common.actions")}</span>
           </div>
 
           <div>
@@ -93,7 +102,7 @@ const TaxList = () => {
                 <form
                   key={tax.id}
                   onSubmit={submitEdit}
-                  className="grid grid-cols-4 items-center border-b bg-[#f8faff] px-5 py-3 gap-2"
+                  className={`${rowGridClass} items-center border-b bg-[#f8faff] px-5 py-3`}
                 >
                   <input
                     required
@@ -109,7 +118,7 @@ const TaxList = () => {
                     value={editing.rate}
                     onChange={(val) => setEditing({ ...editing, rate: val })}
                     max={100}
-                    className={`${inputClass} w-24`}
+                    className={inputClass}
                   />
 
                   <select
@@ -126,7 +135,7 @@ const TaxList = () => {
                     ))}
                   </select>
 
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-center gap-2">
                     <button className="rounded-xl bg-[#4663ff] p-2 text-white shadow-lg shadow-[#4663ff]/20">
                       <Save size={14} />
                     </button>
@@ -142,19 +151,19 @@ const TaxList = () => {
               ) : (
                 <div
                   key={tax.id}
-                  className="group grid grid-cols-4 items-center border-b px-5 py-3 transition hover:bg-[#f8faff]"
+                  className={`${rowGridClass} items-center border-b px-5 py-3 text-center transition hover:bg-[#f8faff]`}
                 >
                   <div className="text-sm font-bold text-slate-900">
                     {tax.name}
                   </div>
 
-                  <div>
+                  <div className="flex justify-center">
                     <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
                       {tax.rate}%
                     </span>
                   </div>
 
-                  <div>
+                  <div className="flex justify-center">
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                         categoryBadgeClass[tax.category] ||
@@ -167,7 +176,7 @@ const TaxList = () => {
                     </span>
                   </div>
 
-                  <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex justify-center gap-1">
                     <button
                       onClick={() => startEdit(tax)}
                       className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
@@ -200,12 +209,6 @@ const TaxList = () => {
           <p className="mb-5 text-sm text-slate-500">
             {t("screens.taxes.createSubtitle")}
           </p>
-
-          {actionError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {actionError}
-            </div>
-          )}
 
           <form onSubmit={submitDraft} className="space-y-3">
             <input

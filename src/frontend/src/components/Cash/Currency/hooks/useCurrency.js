@@ -94,7 +94,10 @@ const useCurrency = () => {
 
     setSaving(true);
     try {
-      await api.createCurrency(normalizeCurrency(currency));
+      const res = await api.createCurrency(normalizeCurrency(currency));
+      if (!res?.success) {
+        throw new Error(res?.error || "CREATE_FAILED");
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -109,7 +112,10 @@ const useCurrency = () => {
 
     setSaving(true);
     try {
-      await api.updateCurrency(normalizeCurrency(currency));
+      const res = await api.updateCurrency(normalizeCurrency(currency));
+      if (!res?.success) {
+        throw new Error(res?.error || "UPDATE_FAILED");
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -119,7 +125,10 @@ const useCurrency = () => {
   const deleteCurrency = async (currency) => {
     setSaving(true);
     try {
-      await api.deleteCurrency(currency.id);
+      const res = await api.deleteCurrency(currency.id);
+      if (!res?.success) {
+        throw new Error(res?.error || "DELETE_FAILED");
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -133,9 +142,17 @@ const useCurrency = () => {
       return true;
     } catch (err) {
       console.error("Failed to create Currency:", err);
-      setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.currency") })
-      );
+      if (err.message === "CURRENCY_ALREADY_EXISTS") {
+        setActionError(
+          t("errors.currencyAlreadyExists", { field: t("ui.currency") })
+        );
+      } else if (err.message === "RATE_RESERVED_FOR_PRIMARY") {
+        setActionError(t("errors.rateReservedForPrimary"));
+      } else {
+        setActionError(
+          err?.message || t("errors.createFailed", { field: t("ui.currency") })
+        );
+      }
       return false;
     }
   };
@@ -147,9 +164,19 @@ const useCurrency = () => {
       return true;
     } catch (err) {
       console.error("Failed to update Currency:", err);
-      setActionError(
-        err?.message || t("errors.updateFailed", { field: t("ui.currency") })
-      );
+      if (err.message === "CURRENCY_ALREADY_EXISTS") {
+        setActionError(
+          t("errors.currencyAlreadyExists", { field: t("ui.currency") })
+        );
+      } else if (err.message === "PRIMARY_RATE_MUST_BE_ONE") {
+        setActionError(t("errors.primaryRateMustBeOne"));
+      } else if (err.message === "RATE_RESERVED_FOR_PRIMARY") {
+        setActionError(t("errors.rateReservedForPrimary"));
+      } else {
+        setActionError(
+          err?.message || t("errors.updateFailed", { field: t("ui.currency") })
+        );
+      }
       return false;
     }
   };
@@ -160,7 +187,15 @@ const useCurrency = () => {
       setActionError("");
     } catch (err) {
       console.error("Failed to delete Currency:", err);
-      setActionError(t("errors.deleteHasData", { field: t("ui.currency") }));
+      if (err.message === "CANNOT_DELETE_PRIMARY") {
+        setActionError(
+          t("errors.cannotDeletePrimaryCurrency", { field: t("ui.currency") })
+        );
+      } else if (err.message === "CURRENCY_IN_USE") {
+        setActionError(t("errors.currencyInUse", { field: t("ui.currency") }));
+      } else {
+        setActionError(t("errors.deleteHasData", { field: t("ui.currency") }));
+      }
     }
   };
 

@@ -484,7 +484,11 @@
       "emailAddress": "البريد الإلكتروني",
       "companyAddress": "عنوان الشركة",
       "saveSettings": "حفظ الإعدادات",
-      "baseCurrency": "العملة الأساسية"
+      "baseCurrency": "العملة الأساسية",
+      "companyGeneralInfo": "معلومات الشركة",
+      "detailsSection": "بيانات الشركة",
+      "contactSection": "معلومات التواصل",
+      "regionalSection": "التفضيلات الإقليمية"
     },
     "setupPage": {
       "title": "إعداد الشركة",
@@ -858,7 +862,14 @@
       "resetPin": "إعادة تعيين الرقم السري",
       "resetPinTitle": "إعادة تعيين الرقم السري لـ {{name}}",
       "resetPinNotice": "أكد الرقم السري الخاص بالمسؤول قبل تعيين الرقم الجديد.",
-      "yourPin": "الرقم السري الخاص بالمسؤول"
+      "yourPin": "الرقم السري الخاص بالمسؤول",
+      "identitySection": "الهوية",
+      "accessSection": "مستوى الصلاحية",
+      "roleAdminHint": "صلاحية كاملة",
+      "rolePosHint": "الكاشير فقط",
+      "pinSection": "رقم الدخول السري",
+      "yourAuthorization": "تفويضك",
+      "newPinSection": "الرقم السري الجديد"
     },
     "login": {
       "poweredBy": "تم التطوير من قبل",
@@ -890,7 +901,12 @@
       "newKeyTitle": "مفتاح الاسترداد الجديد",
       "copyKey": "نسخ مفتاح الاسترداد",
       "copied": "تم نسخ مفتاح الاسترداد",
-      "copyConfirmation": "أؤكد أنني نسخت مفتاح الاسترداد وحفظته في مكان آمن."
+      "copyConfirmation": "أؤكد أنني نسخت مفتاح الاسترداد وحفظته في مكان آمن.",
+      "whatHappensSection": "ماذا سيحدث",
+      "consequenceOldKeyDies": "سيتوقف مفتاح الاسترداد الحالي عن العمل فورًا.",
+      "consequenceOneChance": "سيُعرض المفتاح الجديد مرة واحدة فقط — احفظه في مكان آمن.",
+      "confirmSection": "تأكيد الهوية",
+      "regenerateConfirm": "نعم، أعد إنشاء المفتاح"
     },
     "salesReturn": {
       "saveWithoutRefund": "حفظ بدون استرجاع",
@@ -1076,7 +1092,25 @@
     "returnQtyExceeded": "لا يمكن إرجاع كمية أكبر من الكمية المباعة",
     "noItemsSelected": "يرجى تحديد منتج واحد على الأقل للإرجاع",
     "invalidReturnTotal": "قيمة المرتجع الإجمالية غير صالحة",
-    "supplierHasTransactions": "لا يمكن حذف هذا المورد لأنه يحتوي على معاملات موجودة."
+    "supplierHasTransactions": "لا يمكن حذف هذا المورد لأنه يحتوي على معاملات موجودة.",
+    "unitAlreadyExists": "توجد {{field}} أخرى بنفس الاسم أو الرمز.",
+    "currencyInUse": "لا يمكن حذف {{field}} لأنها مستخدمة في صندوق.",
+    "cannotDeletePrimaryCurrency": "لا يمكن حذف {{field}} الرئيسية.",
+    "currencyAlreadyExists": "توجد {{field}} أخرى بنفس الرمز.",
+    "rateReservedForPrimary": "سعر الصرف 1 مخصص للعملة الرئيسية فقط.",
+    "primaryRateMustBeOne": "يجب أن يكون سعر صرف العملة الرئيسية 1 بالضبط.",
+    "taxAlreadyExists": "توجد {{field}} أخرى بنفس الاسم.",
+    "taxInUse": "لا يمكن حذف {{field}} لأنها مستخدمة في منتج.",
+    "invalidPin": "الرقم السري غير صحيح.",
+    "pinInvalidLength": "يجب أن يتكون الرقم السري من 6 أرقام بالضبط.",
+    "usernameTaken": "اسم المستخدم هذا مستخدم بالفعل.",
+    "pinAlreadyInUse": "هذا الرقم السري مستخدم بالفعل.",
+    "userNotFound": "المستخدم غير موجود.",
+    "useResetPinFlow": "استخدم خيار إعادة تعيين الرقم السري لتغييره.",
+    "lastAdminMustRemain": "يجب أن يبقى مسؤول واحد نشط على الأقل.",
+    "adminAuthFailed": "فشل التحقق من هوية المسؤول.",
+    "recoveryFailed": "تعذر إتمام عملية الاسترداد.",
+    "deactivateBeforeDelete": "يجب إلغاء تفعيل هذا المستخدم قبل حذفه."
   },
   "success": {
     "created": "تم إنشاء {{field}} بنجاح",

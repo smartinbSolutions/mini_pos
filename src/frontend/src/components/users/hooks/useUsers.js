@@ -14,6 +14,28 @@ const useUsers = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null); // null = create mode
 
+  // Maps backend error codes (e.g. "USERNAME_TAKEN") to translated messages.
+  // Falls back to the code itself if somehow unmapped, so nothing silently
+  // disappears — but every code returned by authIpc.js should have an entry.
+  const translateError = useCallback(
+    (code, fallback) => {
+      const map = {
+        INVALID_PIN: t("errors.invalidPin"),
+        PIN_INVALID_LENGTH: t("errors.pinInvalidLength"),
+        USERNAME_TAKEN: t("errors.usernameTaken"),
+        PIN_ALREADY_IN_USE: t("errors.pinAlreadyInUse"),
+        USER_NOT_FOUND: t("errors.userNotFound"),
+        USE_RESET_PIN_FLOW: t("errors.useResetPinFlow"),
+        LAST_ADMIN_MUST_REMAIN: t("errors.lastAdminMustRemain"),
+        ADMIN_AUTH_FAILED: t("errors.adminAuthFailed"),
+        RECOVERY_FAILED: t("errors.recoveryFailed"),
+        DEACTIVATE_BEFORE_DELETE: t("errors.deactivateBeforeDelete"),
+      };
+      return map[code] || fallback || code;
+    },
+    [t]
+  );
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiUnavailable"));
@@ -27,7 +49,10 @@ const useUsers = () => {
         setUsers(res.users || []);
       } else {
         setError(
-          res?.error || t("errors.loadFailed", { field: t("ui.users") })
+          translateError(
+            res?.error,
+            t("errors.loadFailed", { field: t("ui.users") })
+          )
         );
       }
     } catch (err) {
@@ -38,7 +63,7 @@ const useUsers = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, t, translateError]);
 
   useEffect(() => {
     refetch();
@@ -86,7 +111,10 @@ const useUsers = () => {
       }
 
       setActionError(
-        res?.error || t("errors.saveFailed", { field: t("ui.user") })
+        translateError(
+          res?.error,
+          t("errors.saveFailed", { field: t("ui.user") })
+        )
       );
       return false;
     } catch (err) {
@@ -112,7 +140,9 @@ const useUsers = () => {
         setActionError("");
         await refetch();
       } else {
-        setActionError(res?.error || t("errors.deactivateFailed"));
+        setActionError(
+          translateError(res?.error, t("errors.deactivateFailed"))
+        );
       }
     } catch (err) {
       console.error("Failed to deactivate user:", err);
@@ -131,7 +161,10 @@ const useUsers = () => {
         await refetch();
       } else {
         setActionError(
-          res?.error || t("errors.updateFailed", { field: t("ui.user") })
+          translateError(
+            res?.error,
+            t("errors.updateFailed", { field: t("ui.user") })
+          )
         );
       }
     } catch (err) {
@@ -148,12 +181,16 @@ const useUsers = () => {
     setSaving(true);
     try {
       const res = await api.deleteUser(user.id);
+      console.log(res);
       if (res?.success) {
         setActionError("");
         await refetch();
       } else {
         setActionError(
-          res?.error || t("errors.deleteFailed", { field: t("ui.user") })
+          translateError(
+            res?.error,
+            t("errors.deleteFailed", { field: t("ui.user") })
+          )
         );
       }
     } catch (err) {

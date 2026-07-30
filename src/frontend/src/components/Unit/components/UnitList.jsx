@@ -43,7 +43,7 @@ const UnitList = () => {
 
   return (
     <div className={pageClass}>
-      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
+      <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
         <div className={panelClass}>
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -72,6 +72,20 @@ const UnitList = () => {
             </div>
           </div>
 
+          {actionError && (
+            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {actionError}
+            </div>
+          )}
+
+          {/* Header row — makes the list read as an actual table */}
+          <div className="mb-2 grid grid-cols-[1fr_1fr_140px_auto] gap-3 px-4 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+            <span>{t("ui.name")}</span>
+            <span>{t("screens.units.latinPlaceholder")}</span>
+            <span>{t("screens.units.codePlaceholder")}</span>
+            <span className="text-right">{t("common.actions")}</span>
+          </div>
+
           <div className="space-y-2">
             {filteredUnits.map((unit) =>
               editingId === unit.id ? (
@@ -80,17 +94,16 @@ const UnitList = () => {
                   onSubmit={submitEdit}
                   className="rounded-2xl border border-[#cbd7ff] bg-[#f8faff] p-4 shadow-sm animate-fadeIn"
                 >
-                  <input
-                    required
-                    value={editing.name}
-                    onChange={(e) =>
-                      setEditing({ ...editing, name: e.target.value })
-                    }
-                    className={`mb-3 w-full ${inputClass}`}
-                    placeholder={t("screens.units.namePlaceholder")}
-                  />
-
-                  <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <input
+                      required
+                      value={editing.name}
+                      onChange={(e) =>
+                        setEditing({ ...editing, name: e.target.value })
+                      }
+                      className={inputClass}
+                      placeholder={t("screens.units.namePlaceholder")}
+                    />
                     <input
                       value={editing.latinName}
                       onChange={(e) =>
@@ -127,18 +140,17 @@ const UnitList = () => {
               ) : (
                 <div
                   key={unit.id}
-                  className="group flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-white p-4 transition-all duration-200 hover:-translate-y-[2px] hover:border-[#cbd7ff] hover:shadow-lg hover:shadow-[#4663ff]/10"
+                  className="grid grid-cols-[1fr_1fr_140px_auto] items-center gap-3 rounded-2xl border border-[#e5ebff] bg-white px-4 py-3 transition hover:border-[#cbd7ff] hover:shadow-md hover:shadow-[#4663ff]/8"
                 >
-                  <div>
-                    <div className="font-bold text-slate-900">{unit.name}</div>
-                    <div className="mt-1 text-xs text-slate-500">
-                      {[unit.latinName, unit.code]
-                        .filter(Boolean)
-                        .join(" - ") || t("ui.noDetails")}
-                    </div>
-                  </div>
+                  <span className="font-bold text-slate-900">{unit.name}</span>
+                  <span className="text-sm text-slate-500">
+                    {unit.latinName || "—"}
+                  </span>
+                  <span className="inline-flex w-fit rounded-lg bg-[#eef3ff] px-2 py-1 text-xs font-bold text-[#4663ff]">
+                    {unit.code}
+                  </span>
 
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex justify-end gap-1">
                     <button
                       onClick={() => startEdit(unit)}
                       className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
@@ -171,12 +183,6 @@ const UnitList = () => {
           <p className="mb-5 text-sm text-slate-500">
             {t("screens.units.createSubtitle")}
           </p>
-
-          {actionError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {actionError}
-            </div>
-          )}
 
           <form onSubmit={submitDraft} className="space-y-3">
             <input

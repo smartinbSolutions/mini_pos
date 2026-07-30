@@ -35,7 +35,7 @@ const CurrencyList = () => {
 
   return (
     <div className={pageClass}>
-      <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
+      <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-5">
           <div className={`${panelClass} flex items-center justify-between`}>
             <div>
@@ -60,170 +60,186 @@ const CurrencyList = () => {
             </div>
           </div>
 
-          <div className={`${panelClass} space-y-3`}>
-            {currencies.map((currency) =>
-              editingId === currency.id ? (
-                <form
-                  key={currency.id}
-                  onSubmit={submitEdit}
-                  className="rounded-2xl border border-[#cbd7ff] bg-[#f8faff] p-4 shadow-sm animate-fadeIn"
-                >
-                  <input
-                    required
-                    value={editing.name}
-                    onChange={(e) =>
-                      setEditing({ ...editing, name: e.target.value })
-                    }
-                    className={`mb-3 w-full ${inputClass}`}
-                    placeholder={t("screens.currency.namePlaceholder")}
-                  />
-
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <input
-                      value={editing.latinName}
-                      onChange={(e) =>
-                        setEditing({ ...editing, latinName: e.target.value })
-                      }
-                      className={inputClass}
-                      placeholder={t("screens.units.latinPlaceholder")}
-                    />
-                    <input
-                      required
-                      value={editing.code}
-                      onChange={(e) =>
-                        setEditing({ ...editing, code: e.target.value })
-                      }
-                      className={inputClass}
-                      placeholder={t("ui.code")}
-                    />
-                    <input
-                      required
-                      value={editing.symbol}
-                      onChange={(e) =>
-                        setEditing({ ...editing, symbol: e.target.value })
-                      }
-                      className={inputClass}
-                      placeholder={t("ui.symbol")}
-                    />
-                    {currency.isPrimary === 0 && (
-                      <NumberInput
-                        required
-                        value={editing.exchangeRate}
-                        onChange={(val) =>
-                          setEditing({ ...editing, exchangeRate: val })
-                        }
-                        className={inputClass}
-                        placeholder={t("ui.rate")}
-                      />
-                    )}
-                    <input
-                      value={editing.minorName}
-                      onChange={(e) =>
-                        setEditing({ ...editing, minorName: e.target.value })
-                      }
-                      className={inputClass}
-                      placeholder={t(
-                        "screens.currency.minorNamePlaceholder",
-                        "Minor unit name"
-                      )}
-                    />
-                    <input
-                      value={editing.minorLatinName}
-                      onChange={(e) =>
-                        setEditing({
-                          ...editing,
-                          minorLatinName: e.target.value,
-                        })
-                      }
-                      className={inputClass}
-                      placeholder={t(
-                        "screens.currency.minorLatinPlaceholder",
-                        "Minor unit (Latin)"
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button className={primaryButtonClass}>
-                      <Save size={15} />
-                      {t("common.save")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div
-                  key={currency.id}
-                  className="group flex items-center justify-between rounded-2xl border border-[#e5ebff] bg-white p-4 transition-all hover:-translate-y-[2px] hover:border-[#cbd7ff] hover:shadow-lg hover:shadow-[#4663ff]/10"
-                >
-                  <div>
-                    <div className="font-bold text-slate-900">
-                      {currency.name}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mt-2 text-xs">
-                      {currency.code && (
-                        <span className="rounded-lg bg-[#eef3ff] px-2 py-1 font-semibold text-[#4663ff]">
-                          {currency.code}
-                        </span>
-                      )}
-
-                      {currency.latinName && (
-                        <span className="rounded-lg bg-slate-100 px-2 py-1 text-slate-500">
-                          {currency.latinName}
-                        </span>
-                      )}
-
-                      {currency.exchangeRate && (
-                        <span className="rounded-lg bg-emerald-100 px-2 py-1 font-semibold text-emerald-700">
-                          {t("ui.rate")}: {currency.exchangeRate}
-                        </span>
-                      )}
-
-                      {(currency.minorName || currency.minorLatinName) && (
-                        <span className="rounded-lg bg-violet-100 px-2 py-1 font-semibold text-violet-700">
-                          {currency.minorName || currency.minorLatinName}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                    <button
-                      onClick={() => startEdit(currency)}
-                      className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                    >
-                      <Edit2 size={15} />
-                    </button>
-                    {currency.isPrimary === 0 && (
-                      <button
-                        onClick={() => setDeleteCurrency(currency)}
-                        className="rounded-xl p-2 text-red-500 hover:bg-red-50"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )
-            )}
-
-            {currencies.length === 0 && (
-              <div className="text-center py-16">
-                <div className="text-gray-400 mb-2 text-sm">
-                  {t("screens.currency.empty")}
-                </div>
-                <div className="text-xs text-gray-400">
-                  {t("screens.currency.emptyHint")}
-                </div>
+          <div className={panelClass}>
+            {actionError && (
+              <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {actionError}
               </div>
             )}
+
+            {/* Header row */}
+            {/* Header row */}
+            <div className="mb-2 grid grid-cols-[1fr_1fr_90px_100px_1fr_88px] gap-3 px-4 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">
+              <span>{t("ui.name")}</span>
+              <span>{t("screens.units.latinPlaceholder")}</span>
+              <span>{t("ui.code")}</span>
+              <span>{t("ui.rate")}</span>
+              <span>
+                {t("screens.currency.minorNamePlaceholder", "Minor unit")}
+              </span>
+              <span>{t("common.actions")}</span>
+            </div>
+
+            <div className="space-y-2">
+              {currencies.map((currency) =>
+                editingId === currency.id ? (
+                  <form
+                    key={currency.id}
+                    onSubmit={submitEdit}
+                    className="rounded-2xl border border-[#cbd7ff] bg-[#f8faff] p-4 shadow-sm animate-fadeIn"
+                  >
+                    <input
+                      required
+                      value={editing.name}
+                      onChange={(e) =>
+                        setEditing({ ...editing, name: e.target.value })
+                      }
+                      className={`mb-3 w-full ${inputClass}`}
+                      placeholder={t("screens.currency.namePlaceholder")}
+                    />
+
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      <input
+                        value={editing.latinName}
+                        onChange={(e) =>
+                          setEditing({ ...editing, latinName: e.target.value })
+                        }
+                        className={inputClass}
+                        placeholder={t("screens.units.latinPlaceholder")}
+                      />
+                      <input
+                        required
+                        value={editing.code}
+                        onChange={(e) =>
+                          setEditing({ ...editing, code: e.target.value })
+                        }
+                        className={inputClass}
+                        placeholder={t("ui.code")}
+                      />
+                      <input
+                        required
+                        value={editing.symbol}
+                        onChange={(e) =>
+                          setEditing({ ...editing, symbol: e.target.value })
+                        }
+                        className={inputClass}
+                        placeholder={t("ui.symbol")}
+                      />
+                      {currency.isPrimary === 0 && (
+                        <NumberInput
+                          required
+                          value={editing.exchangeRate}
+                          onChange={(val) =>
+                            setEditing({ ...editing, exchangeRate: val })
+                          }
+                          className={inputClass}
+                          placeholder={t("ui.rate")}
+                        />
+                      )}
+                      <input
+                        value={editing.minorName}
+                        onChange={(e) =>
+                          setEditing({ ...editing, minorName: e.target.value })
+                        }
+                        className={inputClass}
+                        placeholder={t(
+                          "screens.currency.minorNamePlaceholder",
+                          "Minor unit name"
+                        )}
+                      />
+                      <input
+                        value={editing.minorLatinName}
+                        onChange={(e) =>
+                          setEditing({
+                            ...editing,
+                            minorLatinName: e.target.value,
+                          })
+                        }
+                        className={inputClass}
+                        placeholder={t(
+                          "screens.currency.minorLatinPlaceholder",
+                          "Minor unit (Latin)"
+                        )}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button className={primaryButtonClass}>
+                        <Save size={15} />
+                        {t("common.save")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingId(null)}
+                        className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <div
+                    key={currency.id}
+                    className="grid grid-cols-[1fr_1fr_90px_100px_1fr_88px] items-center gap-3 rounded-2xl border border-[#e5ebff] bg-white px-4 py-3 text-center transition hover:border-[#cbd7ff] hover:shadow-md hover:shadow-[#4663ff]/8"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="font-bold text-slate-900">
+                        {currency.name}
+                      </span>
+                      {currency.isPrimary === 1 && (
+                        <span className="rounded-md bg-[#eef3ff] px-1.5 py-0.5 text-[10px] font-bold text-[#4663ff]">
+                          {t("ui.primary", "Primary")}
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="text-sm text-slate-500">
+                      {currency.latinName || "—"}
+                    </span>
+
+                    <span className="mx-auto inline-flex w-fit rounded-lg bg-[#eef3ff] px-2 py-1 text-xs font-bold text-[#4663ff]">
+                      {currency.code}
+                    </span>
+
+                    <span className="text-sm font-semibold text-emerald-700">
+                      {currency.exchangeRate}
+                    </span>
+
+                    <span className="text-sm text-slate-500">
+                      {currency.minorName || currency.minorLatinName || "—"}
+                    </span>
+
+                    <div className="flex justify-center gap-1">
+                      <button
+                        onClick={() => startEdit(currency)}
+                        className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                      >
+                        <Edit2 size={15} />
+                      </button>
+                      {currency.isPrimary === 0 && (
+                        <button
+                          onClick={() => setDeleteCurrency(currency)}
+                          className="rounded-xl p-2 text-red-500 hover:bg-red-50"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+
+              {currencies.length === 0 && (
+                <div className="text-center py-16">
+                  <div className="text-gray-400 mb-2 text-sm">
+                    {t("screens.currency.empty")}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {t("screens.currency.emptyHint")}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -234,12 +250,6 @@ const CurrencyList = () => {
           <p className="mb-5 text-sm text-slate-500">
             {t("screens.currency.createSubtitle")}
           </p>
-
-          {actionError && (
-            <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {actionError}
-            </div>
-          )}
 
           <form onSubmit={submitDraft} className="space-y-3">
             <input
@@ -304,6 +314,7 @@ const CurrencyList = () => {
                 )}
               />
             </div>
+
             <button
               type="submit"
               disabled={saving}

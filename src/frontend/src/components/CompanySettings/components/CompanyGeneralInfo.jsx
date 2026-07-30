@@ -6,6 +6,7 @@ import {
   Globe,
   Save,
   Image as ImageIcon,
+  Clock,
 } from "lucide-react";
 import useUpdateCompanySettings from "../hooks/useUpdateCompanySettings";
 import { getAssetUrl } from "../../../Global/assetUrl";
@@ -17,172 +18,203 @@ export default function CompanyGeneralInfo() {
   const { handleSave, handleLogo, handleChange, form, saving, loading } =
     useUpdateCompanySettings();
 
+  const inputClass =
+    "w-full pl-10 pr-4 h-11 rounded-2xl border border-[#e9edfb] bg-white text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+  const plainInputClass =
+    "w-full h-11 rounded-2xl border border-[#e9edfb] bg-white px-4 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+  const labelClass = "mb-1.5 block text-xs font-bold text-slate-500";
+  const sectionLabelClass =
+    "mb-4 flex items-center gap-2 text-[11px] font-black uppercase tracking-wide text-[#4663ff]";
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen text-gray-500 text-lg">
+      <div className="flex h-screen items-center justify-center text-slate-500">
         {t("common.loading")}
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-[#f5f7fb] min-h-screen">
-      <div className="max-w-5xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
+    <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-6">
+          <p className="mb-1 text-xs font-bold uppercase tracking-wide text-[#4663ff]">
+            {t("ui.setup")}
+          </p>
+          <h1 className="text-2xl font-black text-slate-950">
             {t("screens.company.title")}
           </h1>
-          <p className="text-gray-500 mt-2">{t("screens.company.subtitle")}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {t("screens.company.subtitle")}
+          </p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-blue-500 p-8 text-white">
-            <div className="flex items-center gap-5">
-              <div className="relative">
-                <label className="cursor-pointer">
-                  <div className="w-28 h-28 rounded-2xl bg-white/20 border border-white/30 flex items-center justify-center overflow-hidden backdrop-blur-sm">
-                    {form.logo ? (
-                      <img
-                        src={getAssetUrl(form.logo)}
-                        alt={t("screens.setupPage.logo")}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <ImageIcon size={40} />
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleLogo}
-                  />
-                </label>
-              </div>
+        <div className="space-y-4">
+          {/* Identity card — logo + name, the "who you are" summary */}
+          <div className="overflow-hidden rounded-[28px] border border-[#e9edfb] bg-white shadow-[0_18px_60px_rgba(70,99,255,0.08)]">
+            <div className="flex items-center gap-5 p-6">
+              <label className="group relative cursor-pointer">
+                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-[#e9edfb] bg-[#f8faff] transition group-hover:border-[#4663ff]/40">
+                  {form.logo ? (
+                    <img
+                      src={getAssetUrl(form.logo)}
+                      alt={t("screens.setupPage.logo")}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <ImageIcon size={30} className="text-slate-300" />
+                  )}
+                </div>
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-[#1c2340]/0 text-[10px] font-bold text-white opacity-0 transition group-hover:bg-[#1c2340]/50 group-hover:opacity-100">
+                  {t("common.change", "Change")}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogo}
+                />
+              </label>
 
-              <div>
-                <h2 className="text-2xl font-semibold">
+              <div className="min-w-0">
+                <h2 className="truncate text-xl font-black text-slate-950">
                   {form.company_name || t("screens.company.fallbackName")}
                 </h2>
-                <p className="text-white/80 mt-1">
-                  {t("screens.company.configuration")}
+                <p className="mt-1 text-sm text-slate-500">
+                  {t("screens.company.companyGeneralInfo")}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Company details */}
+          <div className="rounded-[28px] border border-[#e9edfb] bg-white p-6 shadow-[0_18px_60px_rgba(70,99,255,0.08)]">
+            <p className={sectionLabelClass}>
+              <Building2 size={13} />
+              {t("screens.company.detailsSection", "Company details")}
+            </p>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">
+                <label className={labelClass}>
                   {t("screens.company.companyName")}
                 </label>
                 <div className="relative">
                   <Building2
-                    size={18}
-                    className="absolute left-3 top-3.5 text-gray-400"
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350"
                   />
                   <input
                     name="company_name"
                     value={form.company_name}
                     onChange={handleChange}
                     placeholder={t("screens.company.companyName")}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  {t("ui.latinName")}
-                </label>
+                <label className={labelClass}>{t("ui.latinName")}</label>
                 <div className="relative">
                   <Globe
-                    size={18}
-                    className="absolute left-3 top-3.5 text-gray-400"
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350"
                   />
                   <input
                     name="company_latin_name"
                     value={form.company_latin_name}
                     onChange={handleChange}
                     placeholder={t("ui.latinName")}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  {t("ui.phone")}
-                </label>
-                <div className="relative">
-                  <Phone
-                    size={18}
-                    className="absolute left-3 top-3.5 text-gray-400"
-                  />
-                  <input
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    placeholder={t("screens.company.phoneNumber")}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  {t("ui.email")}
-                </label>
-                <div className="relative">
-                  <Mail
-                    size={18}
-                    className="absolute left-3 top-3.5 text-gray-400"
-                  />
-                  <input
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    placeholder={t("screens.company.emailAddress")}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  {t("ui.address")}
-                </label>
+                <label className={labelClass}>{t("ui.address")}</label>
                 <div className="relative">
                   <MapPin
-                    size={18}
-                    className="absolute left-3 top-3.5 text-gray-400"
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350"
                   />
                   <input
                     name="address"
                     value={form.address}
                     onChange={handleChange}
                     placeholder={t("screens.company.companyAddress")}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div className="rounded-[28px] border border-[#e9edfb] bg-white p-6 shadow-[0_18px_60px_rgba(70,99,255,0.08)]">
+            <p className={sectionLabelClass}>
+              <Phone size={13} />
+              {t("screens.company.contactSection", "Contact")}
+            </p>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className={labelClass}>{t("ui.phone")}</label>
+                <div className="relative">
+                  <Phone
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350"
+                  />
+                  <input
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder={t("screens.company.phoneNumber")}
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  {t("common.language")}
-                </label>
+                <label className={labelClass}>{t("ui.email")}</label>
+                <div className="relative">
+                  <Mail
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350"
+                  />
+                  <input
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder={t("screens.company.emailAddress")}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Regional preferences */}
+          <div className="rounded-[28px] border border-[#e9edfb] bg-white p-6 shadow-[0_18px_60px_rgba(70,99,255,0.08)]">
+            <p className={sectionLabelClass}>
+              <Globe size={13} />
+              {t("screens.company.regionalSection", "Regional preferences")}
+            </p>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <label className={labelClass}>{t("common.language")}</label>
                 <select
                   name="language"
                   value={form.language}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
+                  className={plainInputClass}
                 >
                   <option value="en">{t("languages.en")}</option>
                   <option value="ar">{t("languages.ar")}</option>
                   <option value="tr">{t("languages.tr")}</option>
                 </select>
-                <p className="mt-1.5 text-xs text-gray-400">
+                <p className="mt-1.5 text-xs text-slate-400">
                   {t(
                     "screens.company.languageHint",
                     "Also switches the app's interface language once saved."
@@ -191,32 +223,35 @@ export default function CompanyGeneralInfo() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-600 mb-2 block">
-                  {t("ui.timezone")}
-                </label>
-                <input
-                  name="timezone"
-                  value={form.timezone}
-                  onChange={handleChange}
-                  placeholder={t("ui.timezone")}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-indigo-500"
-                />
+                <label className={labelClass}>{t("ui.timezone")}</label>
+                <div className="relative">
+                  <Clock
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350"
+                  />
+                  <input
+                    name="timezone"
+                    value={form.timezone}
+                    onChange={handleChange}
+                    placeholder={t("ui.timezone")}
+                    className={inputClass}
+                  />
+                </div>
               </div>
             </div>
-
-            <div className="mt-8 flex justify-end">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-indigo-600 hover:bg-indigo-700 transition-all text-white px-6 py-3 rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-500/20"
-              >
-                <Save size={18} />
-                {saving
-                  ? t("common.saving")
-                  : t("screens.company.saveSettings")}
-              </button>
-            </div>
           </div>
+        </div>
+
+        {/* Sticky save bar */}
+        <div className="sticky bottom-4 mt-6 flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex items-center gap-2 rounded-2xl bg-[#4663ff] px-6 py-3 text-sm font-black text-white shadow-[0_12px_32px_rgba(70,99,255,0.35)] transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Save size={18} />
+            {saving ? t("common.saving") : t("screens.company.saveSettings")}
+          </button>
         </div>
       </div>
       <ToastContainer />

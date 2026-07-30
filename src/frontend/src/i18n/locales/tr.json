@@ -477,7 +477,11 @@
       "emailAddress": "E-posta Adresi",
       "companyAddress": "Şirket Adresi",
       "saveSettings": "Ayarları Kaydet",
-      "baseCurrency": "Temel para birimi"
+      "baseCurrency": "Temel para birimi",
+      "companyGeneralInfo": "Şirket Bilgileri",
+      "detailsSection": "Şirket bilgileri",
+      "contactSection": "İletişim",
+      "regionalSection": "Bölgesel tercihler"
     },
     "setupPage": {
       "title": "Şirket Kurulumu",
@@ -852,7 +856,14 @@
       "resetPin": "PIN'i Sıfırla",
       "resetPinTitle": "{{name}} için PIN'i sıfırla",
       "resetPinNotice": "Yeni PIN'i atamadan önce Yönetici PIN'inizi doğrulayın.",
-      "yourPin": "Yönetici PIN'iniz"
+      "yourPin": "Yönetici PIN'iniz",
+      "identitySection": "Kimlik",
+      "accessSection": "Erişim düzeyi",
+      "roleAdminHint": "Tam erişim",
+      "rolePosHint": "Sadece kasa",
+      "pinSection": "Giriş PIN'i",
+      "yourAuthorization": "Yetkilendirmeniz",
+      "newPinSection": "Yeni PIN"
     },
     "login": {
       "poweredBy": "Geliştiren",
@@ -884,7 +895,12 @@
       "newKeyTitle": "Yeni Kurtarma Anahtarınız",
       "copyKey": "Kurtarma Anahtarını Kopyala",
       "copied": "Kurtarma Anahtarı kopyalandı",
-      "copyConfirmation": "Bu Kurtarma Anahtarını kopyalayıp güvenli bir yerde sakladığımı onaylıyorum."
+      "copyConfirmation": "Bu Kurtarma Anahtarını kopyalayıp güvenli bir yerde sakladığımı onaylıyorum.",
+      "whatHappensSection": "Bu işlem ne yapar",
+      "consequenceOldKeyDies": "Mevcut kurtarma anahtarınız hemen geçersiz olur.",
+      "consequenceOneChance": "Yeni anahtar yalnızca bir kez gösterilir — güvenli bir yere kaydedin.",
+      "confirmSection": "Kimliğinizi doğrulayın",
+      "regenerateConfirm": "Evet, anahtarı yenile"
     },
     "salesReturn": {
       "saveWithoutRefund": "İade Yapmadan Kaydet",
@@ -1070,7 +1086,25 @@
     "returnQtyExceeded": "Satılan miktardan fazla iade yapılamaz",
     "noItemsSelected": "Lütfen iade edilecek en az bir ürün belirtin",
     "invalidReturnTotal": "Toplam iade tutarı geçersiz",
-    "supplierHasTransactions": "Bu tedarikçi silinemiyor çünkü mevcut işlemleri var."
+    "supplierHasTransactions": "Bu tedarikçi silinemiyor çünkü mevcut işlemleri var.",
+    "unitAlreadyExists": "Bu ada veya koda sahip bir {{field}} zaten var.",
+    "currencyInUse": "Bu {{field}} bir kasada kullanıldığı için silinemez.",
+    "cannotDeletePrimaryCurrency": "Birincil {{field}} silinemez.",
+    "currencyAlreadyExists": "Bu koda sahip bir {{field}} zaten var.",
+    "rateReservedForPrimary": "1 döviz kuru yalnızca birincil para birimi için ayrılmıştır.",
+    "primaryRateMustBeOne": "Birincil para biriminin döviz kuru tam olarak 1 olmalıdır.",
+    "taxAlreadyExists": "Bu ada sahip bir {{field}} zaten var.",
+    "taxInUse": "Bu {{field}} bir üründe kullanıldığı için silinemez.",
+    "invalidPin": "PIN hatalı.",
+    "pinInvalidLength": "PIN tam olarak 6 haneli olmalıdır.",
+    "usernameTaken": "Bu kullanıcı adı zaten alınmış.",
+    "pinAlreadyInUse": "Bu PIN zaten kullanımda.",
+    "userNotFound": "Kullanıcı bulunamadı.",
+    "useResetPinFlow": "PIN'i değiştirmek için Sıfırla seçeneğini kullanın.",
+    "lastAdminMustRemain": "En az bir aktif yönetici kalmalıdır.",
+    "adminAuthFailed": "Yönetici kimlik doğrulaması başarısız oldu.",
+    "recoveryFailed": "Kurtarma işlemi tamamlanamadı.",
+    "deactivateBeforeDelete": "Silmeden önce bu kullanıcıyı devre dışı bırakın."
   },
   "success": {
     "created": "{{field}} başarıyla oluşturuldu",
