@@ -8,6 +8,7 @@ const useExpenseList = () => {
   const [expenses, setExpenses] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [taxes, setTaxes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -28,6 +29,7 @@ const useExpenseList = () => {
     minTotal: null,
     maxTotal: null,
     category_id: null,
+    taxIds: null,
   });
 
   const setFilters = (patch) => {
@@ -44,6 +46,7 @@ const useExpenseList = () => {
       minTotal: null,
       maxTotal: null,
       category_id: null,
+      taxIds: null,
     });
     setPage(1);
   };
@@ -67,6 +70,15 @@ const useExpenseList = () => {
           setCategories(Array.isArray(res) ? res : res?.data || [])
         )
         .catch(() => setCategories([]));
+    }
+  }, [api]);
+
+  useEffect(() => {
+    if (api?.getTaxes) {
+      api
+        .getTaxes()
+        .then((res) => setTaxes(res || []))
+        .catch(() => setTaxes([]));
     }
   }, [api]);
 
@@ -94,6 +106,7 @@ const useExpenseList = () => {
             ? filters.maxTotal
             : undefined,
         category_id: filters.category_id || undefined,
+        taxIds: filters.taxIds || undefined,
       });
 
       setExpenses(res?.data || []);
@@ -126,6 +139,7 @@ const useExpenseList = () => {
     expenses,
     suppliers,
     categories,
+    taxes,
     loading,
     saving,
     error,

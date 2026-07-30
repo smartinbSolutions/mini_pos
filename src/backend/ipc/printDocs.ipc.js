@@ -41,6 +41,7 @@ export default function registerPrintDocsIPC() {
             const pdfBuffer = await win.webContents.printToPDF({
               printBackground: true,
               pageSize: "A4",
+              margins: { marginType: "none" },
             });
 
             const { filePath, canceled } = await dialog.showSaveDialog({

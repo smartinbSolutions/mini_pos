@@ -855,6 +855,8 @@
       "yourPin": "Yönetici PIN'iniz"
     },
     "login": {
+      "poweredBy": "Geliştiren",
+      "enterPin": "PIN kodunuzu girin",
       "title": "Yeniden hoşgeldiniz",
       "subtitle": "Başlamak için giriş yap",
       "hint": "6 haneli PIN'inizi girin",

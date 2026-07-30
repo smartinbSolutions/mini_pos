@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, Receipt, HandCoins, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Receipt,
+  HandCoins,
+  FileText,
+  Download,
+  Printer,
+} from "lucide-react";
+
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
-import { formatMoney } from "../../../../Global/FormatNumber";
 import { useTranslation } from "react-i18next";
 import GoTo from "../../../../Global/GoTo";
+import HoverTooltip from "../../../../Global/HoverTooltip";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-green-100", text: "text-green-700" },
@@ -23,6 +31,38 @@ export default function ExpenseView() {
   const [expense, setExpense] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // inside component
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
+
+  const handlePrint = async () => {
+    try {
+      setIsPrinting(true);
+      const res = await window.api.printDocument(`/print-expense/${id}`);
+      if (!res.success && res.error === "NO_PRINTER")
+        console.error("No printer found");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async () => {
+    try {
+      setIsSavingPdf(true);
+      const res = await window.api.saveDocumentPdf(
+        `/print-expense/${id}`,
+        `expense-${id}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") console.error(res.error);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +105,19 @@ export default function ExpenseView() {
         ? t("ui.partial", "Partial")
         : t("ui.unpaid");
 
+  const itemTaxTotal = items.reduce(
+    (sum, item) => sum + Number(item.taxValue || 0),
+    0
+  );
+  const itemDiscountTotal = items.reduce(
+    (sum, item) => sum + Number(item.discount || 0),
+    0
+  );
+  const invoiceDiscount = Number(expense?.discount || 0);
+  const invoiceTaxValue = Number(expense?.taxValue || 0);
+  const hasAnyDiscount = itemDiscountTotal > 0 || invoiceDiscount > 0;
+  const hasAnyTax = itemTaxTotal > 0 || invoiceTaxValue > 0;
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#eef3ff] text-slate-500">
@@ -93,6 +146,27 @@ export default function ExpenseView() {
             <ArrowLeft size={18} />
             {t("common.back")}
           </button>
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleSavePdf}
+              disabled={isSavingPdf}
+              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Download size={18} />
+              {isSavingPdf ? t("common.saving") : t("common.savePdf")}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="inline-flex h-11 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Printer size={18} />
+              {isPrinting ? t("common.saving") : t("common.print")}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(70,99,255,0.14)] print:rounded-none print:border-none print:shadow-none">
@@ -148,6 +222,12 @@ export default function ExpenseView() {
                   <tr>
                     <th className="p-3 text-start">{t("ui.category")}</th>
                     <th className="p-3 text-start">{t("ui.price")}</th>
+                    {hasAnyDiscount && (
+                      <th className="p-3 text-start">{t("ui.discount")}</th>
+                    )}
+                    {hasAnyTax && (
+                      <th className="p-3 text-start">{t("ui.tax")}</th>
+                    )}
                     <th className="p-3 text-start">{t("ui.total")}</th>
                   </tr>
                 </thead>
@@ -155,22 +235,79 @@ export default function ExpenseView() {
                 <tbody className="divide-y divide-[#e5ebff]">
                   {items.length === 0 ? (
                     <tr>
-                      <td className="p-5 text-start text-slate-500" colSpan={3}>
+                      <td className="p-5 text-start text-slate-500" colSpan={5}>
                         {t("screens.invoices.noItems")}
                       </td>
                     </tr>
                   ) : (
-                    items.map((item, index) => (
-                      <tr key={item.id ?? index}>
-                        <td className="p-3 font-bold text-slate-900">
-                          {item.category_name || item.name || "-"}
-                        </td>
-                        <td className="p-3 text-start">{money(item.price)}</td>
-                        <td className="p-3 text-start font-black">
-                          {money(item.total || item.price)}
-                        </td>
-                      </tr>
-                    ))
+                    items.map((item, index) => {
+                      const afterDiscount =
+                        Number(item.total || 0) - Number(item.discount || 0);
+                      const lineTotal =
+                        afterDiscount + Number(item.taxValue || 0);
+
+                      return (
+                        <tr key={item.id ?? index}>
+                          <td className="p-3 font-bold text-slate-900">
+                            {item.category_name || "-"}
+                          </td>
+                          <td className="p-3 text-start tabular-nums">
+                            {money(item.price)}
+                          </td>
+                          {hasAnyDiscount && (
+                            <td className="p-3 text-start tabular-nums">
+                              {Number(item.discount || 0) > 0 ? (
+                                <HoverTooltip
+                                  trigger={
+                                    <span className="font-bold text-red-500">
+                                      -{money(item.discount)}
+                                    </span>
+                                  }
+                                  content={
+                                    <div className="flex justify-between">
+                                      <span>{t("ui.discount")}</span>
+                                      <span className="font-bold text-red-500">
+                                        {item.discount_rate}%
+                                      </span>
+                                    </div>
+                                  }
+                                />
+                              ) : (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </td>
+                          )}
+                          {hasAnyTax && (
+                            <td className="p-3 text-start tabular-nums">
+                              {Number(item.taxValue || 0) > 0 ? (
+                                <HoverTooltip
+                                  trigger={
+                                    <span className="font-bold text-emerald-600">
+                                      +{money(item.taxValue)}
+                                    </span>
+                                  }
+                                  content={
+                                    <div className="flex justify-between">
+                                      <span>
+                                        {item.tax_name || t("ui.tax")}
+                                      </span>
+                                      <span className="font-bold text-emerald-600">
+                                        {item.tax_rate}%
+                                      </span>
+                                    </div>
+                                  }
+                                />
+                              ) : (
+                                <span className="text-slate-300">—</span>
+                              )}
+                            </td>
+                          )}
+                          <td className="p-3 text-start font-black tabular-nums text-[#4663ff]">
+                            {money(lineTotal)}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -218,11 +355,60 @@ export default function ExpenseView() {
               </div>
 
               {/* TOTALS */}
-              <div className="w-full max-w-full space-y-3 rounded-3xl bg-[#f8faff] p-5 lg:w-80">
-                <div className="flex justify-between">
+              <div className="w-full max-w-full space-y-2.5 rounded-3xl bg-[#f8faff] p-5 lg:w-80">
+                <div className="flex justify-between text-sm">
                   <span className="text-slate-500">{t("ui.subtotal")}</span>
-                  <span className="font-bold">{money(expense.subtotal)}</span>
+                  <span className="font-bold tabular-nums">
+                    {money(expense.subtotal)}
+                  </span>
                 </div>
+
+                {itemDiscountTotal > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400">
+                      {t("screens.invoices.itemDiscount")}
+                    </span>
+                    <span className="font-bold tabular-nums text-red-500">
+                      -{money(itemDiscountTotal)}
+                    </span>
+                  </div>
+                )}
+
+                {invoiceDiscount > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400">
+                      {t("screens.invoices.invoiceDiscount")}
+                      {expense.discount_rate
+                        ? ` (${expense.discount_rate}%)`
+                        : ""}
+                    </span>
+                    <span className="font-bold tabular-nums text-red-500">
+                      -{money(invoiceDiscount)}
+                    </span>
+                  </div>
+                )}
+
+                {itemTaxTotal > 0 && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400">
+                      {t("screens.invoices.itemTax")}
+                    </span>
+                    <span className="font-bold tabular-nums text-emerald-600">
+                      +{money(itemTaxTotal)}
+                    </span>
+                  </div>
+                )}
+
+                {(expense.taxes || []).map((tax) => (
+                  <div key={tax.id} className="flex justify-between text-xs">
+                    <span className="text-slate-400">
+                      {tax.tax_name} ({tax.tax_rate}%)
+                    </span>
+                    <span className="font-bold tabular-nums text-emerald-600">
+                      +{money(tax.tax_value)}
+                    </span>
+                  </div>
+                ))}
 
                 <div className="flex justify-between border-t border-[#dbe4ff] pt-3 text-xl font-black">
                   <span>{t("ui.total")}</span>

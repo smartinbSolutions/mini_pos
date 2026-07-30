@@ -9,6 +9,9 @@ import {
   PackageOpen,
   AlertCircle,
   Loader2,
+  X,
+  Percent,
+  StickyNote,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import useAddExpense from "../hooks/useAddExpense";
@@ -20,7 +23,57 @@ import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
 import SupplierFormModal from "../../Purchase/components/SupplierFormModal";
+import DropdownMenu from "../../../../Global/DropdownMenu";
 import NumberInput from "../../../../Global/NumberInput";
+
+const inputClass =
+  "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+const smallInputClass =
+  "h-8 w-full rounded-lg border border-[#e1e7fb] bg-white px-2 text-xs font-semibold text-slate-900 outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12";
+const panelClass =
+  "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
+const panelBodyClass = "p-4";
+
+function AccentRule({ colorClass }) {
+  return <div className={`absolute inset-x-0 top-0 h-[3px] ${colorClass}`} />;
+}
+
+function AddOptionsMenu({ options, align = "right" }) {
+  const trigger = (
+    <button
+      type="button"
+      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-slate-200 text-slate-400 transition hover:border-[#4663ff]/50 hover:bg-[#f6f8fd] hover:text-[#4663ff]"
+      aria-label="Add"
+    >
+      <Plus size={14} />
+    </button>
+  );
+
+  return <DropdownMenu trigger={trigger} options={options} align={align} />;
+}
+
+function AdjustmentChip({ icon, tone, children, onRemove }) {
+  const toneClasses =
+    tone === "danger"
+      ? "border-red-100 bg-red-50/60"
+      : "border-emerald-100 bg-emerald-50/60";
+
+  return (
+    <div
+      className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 ${toneClasses}`}
+    >
+      {icon}
+      {children}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="ml-0.5 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+      >
+        <X size={12} />
+      </button>
+    </div>
+  );
+}
 
 export default function AddExpense() {
   const { t } = useTranslation();
@@ -29,14 +82,32 @@ export default function AddExpense() {
   const {
     invoice,
     setInvoice,
+    addInvoiceTax,
+    removeInvoiceTax,
+    clearInvoiceTaxes,
+    setInvoiceDiscountRate,
+    setInvoiceDiscountAmount,
+    clearInvoiceDiscount,
     items,
     supplierOptions,
     category,
+    taxes,
     addItem,
     removeItem,
     updateItem,
+    updateItemDiscountRate,
+    updateItemDiscountAmount,
+    clearItemDiscount,
+    updateItemDescription,
+    updateItemTax,
+    enableItemTax,
+    disableItemTax,
     submit,
     subtotal,
+    itemDiscountSummary,
+    itemTaxSummary,
+    invoiceDiscount,
+    invoiceTaxValue,
     netTotal,
     loading,
     saving,
@@ -48,17 +119,45 @@ export default function AddExpense() {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();
 
+  const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
+    () => new Set()
+  );
+  const [revealedItemNotes, setRevealedItemNotes] = useState(() => new Set());
+  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(false);
+  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
+  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
+
   const supplierName =
     supplierOptions.find((s) => s.id === invoice.supplier_id)?.name || "";
 
   const hasUsableItems = items.some((i) => i.category_id);
   const canSave = hasUsableItems && !saving;
 
-  const inputClass =
-    "h-11 w-full rounded-2xl border border-[#dbe4ff] bg-white/90 px-3 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100";
+  const toggleItemDiscount = (index, revealed) => {
+    setRevealedItemDiscounts((prev) => {
+      const next = new Set(prev);
+      if (revealed) {
+        next.delete(index);
+        clearItemDiscount(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
-  const panelClass =
-    "rounded-[28px] border border-white/80 bg-white/85 p-5 shadow-[0_18px_60px_rgba(70,99,255,0.10)]";
+  const toggleItemNote = (index, revealed) => {
+    setRevealedItemNotes((prev) => {
+      const next = new Set(prev);
+      if (revealed) {
+        next.delete(index);
+        updateItemDescription(index, "");
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   const handleSaveUnpaid = async () => {
     if (!canSave) return;
@@ -84,24 +183,20 @@ export default function AddExpense() {
   };
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <section className="flex flex-col gap-4 rounded-[32px] border border-white/80 bg-white/80 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-4">
-            <span className="flex h-14 w-14 items-center justify-center rounded-3xl bg-[#4663ff] text-white shadow-lg shadow-[#4663ff]/20">
-              <Receipt size={24} />
+    <div className="min-h-screen bg-[#f6f8fd] text-slate-900">
+      <div className="mx-auto max-w-7xl space-y-4 p-5">
+        <section className="flex flex-col gap-3 rounded-2xl border border-[#e9edfb] bg-white px-5 py-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25">
+              <Receipt size={18} />
             </span>
             <div>
-              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
+              <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
                 {t("ui.expense")}
               </p>
-              <h1 className="text-3xl font-black text-slate-950">
+              <h1 className="text-lg font-black leading-tight text-slate-950">
                 {t("screens.expenses.createExpense")}
               </h1>
-              <p className="text-sm text-slate-500">
-                {t("screens.expenses.manageItemsPayments")}
-              </p>
             </div>
           </div>
 
@@ -110,7 +205,7 @@ export default function AddExpense() {
               type="button"
               onClick={reset}
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
             >
               {t("common.refresh")}
             </button>
@@ -118,325 +213,669 @@ export default function AddExpense() {
               type="button"
               onClick={() => window.history.back()}
               disabled={saving}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={14} />
               {t("common.back")}
             </button>
           </div>
         </section>
 
         {error && (
-          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-            <AlertCircle size={18} className="mt-0.5 shrink-0" />
+          <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-bold text-red-700">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <main className="space-y-6">
+        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          <main className="space-y-4">
             <section className={panelClass}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex-1">
-                    <SearchableSelect
-                      placeholder={t("ui.selectSupplier")}
-                      options={supplierOptions}
-                      selectedValue={invoice.supplier_id}
-                      onChange={(e) =>
-                        setInvoice({ ...invoice, supplier_id: e.id })
-                      }
-                    />
+              <AccentRule colorClass="bg-[#4663ff]" />
+              <div className={panelBodyClass}>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <SearchableSelect
+                        placeholder={t("ui.selectSupplier")}
+                        options={supplierOptions}
+                        selectedValue={invoice.supplier_id}
+                        onChange={(e) =>
+                          setInvoice({ ...invoice, supplier_id: e.id })
+                        }
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSupplierModalOpen(true)}
+                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+                    >
+                      <Plus size={14} />
+                      <span>{t("screens.contacts.addSupplier")}</span>
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setSupplierModalOpen(true)}
-                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
-                  >
-                    <Plus size={18} />
-                    <span>{t("screens.contacts.addSupplier")}</span>
-                  </button>
+                  <input
+                    type="date"
+                    className={inputClass}
+                    value={invoice.date}
+                    onChange={(e) =>
+                      setInvoice({ ...invoice, date: e.target.value })
+                    }
+                  />
+
+                  <input
+                    type="text"
+                    className={inputClass}
+                    placeholder={t("ui.expenseName")}
+                    value={invoice.invoice_name || ""}
+                    onChange={(e) =>
+                      setInvoice({ ...invoice, invoice_name: e.target.value })
+                    }
+                  />
+
+                  <div />
                 </div>
-
-                <input
-                  type="date"
-                  className={inputClass}
-                  value={invoice.date}
-                  onChange={(e) =>
-                    setInvoice({ ...invoice, date: e.target.value })
-                  }
-                />
-
-                <input
-                  type="text"
-                  className={inputClass}
-                  placeholder={t("ui.expenseName")}
-                  value={invoice.invoice_name || ""}
-                  onChange={(e) =>
-                    setInvoice({ ...invoice, invoice_name: e.target.value })
-                  }
-                />
-
-                <div />
               </div>
-
-              <textarea
-                className={`${inputClass} mt-4 h-24 resize-none py-3`}
-                placeholder={t("ui.description")}
-                value={invoice.description || ""}
-                onChange={(e) =>
-                  setInvoice({ ...invoice, description: e.target.value })
-                }
-              />
             </section>
 
-            {/* Items */}
-            <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
-              <div className="flex items-center justify-between border-b border-[#e5ebff] bg-white/70 p-5">
-                <div>
-                  <h2 className="flex items-center gap-2 text-lg font-black text-slate-950">
+            <section className={panelClass}>
+              <AccentRule colorClass="bg-violet-500" />
+              <div className="flex items-center justify-between gap-3 border-b border-[#eef1ff] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-[13px] font-black text-slate-900">
                     {t("ui.items")}
-                    {items.length > 0 && (
-                      <span className="rounded-full bg-[#eef3ff] px-2 py-0.5 text-xs font-bold text-[#4663ff]">
-                        {items.length}
-                      </span>
-                    )}
                   </h2>
-                  <p className="text-sm text-slate-500">
-                    {t("screens.expenses.categoriesOnExpense")}
-                  </p>
+                  {items.length > 0 && (
+                    <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-600">
+                      {items.length}
+                    </span>
+                  )}
                 </div>
 
                 <button
                   type="button"
                   onClick={addItem}
-                  className="inline-flex h-10 items-center gap-2 rounded-2xl bg-[#4663ff] px-4 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
                 >
-                  <Plus size={16} />
+                  <Plus size={13} />
                   {t("screens.invoices.addItem")}
                 </button>
               </div>
 
               {loading ? (
-                <div className="flex flex-col items-center justify-center gap-3 p-12 text-slate-400">
-                  <Loader2 size={28} className="animate-spin" />
-                  <p className="text-sm font-medium">{t("common.loading")}</p>
+                <div className="flex flex-col items-center justify-center gap-2.5 p-10 text-slate-400">
+                  <Loader2 size={22} className="animate-spin" />
+                  <p className="text-xs font-bold">{t("common.loading")}</p>
                 </div>
               ) : items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
-                    <PackageOpen size={26} />
+                <div className="flex flex-col items-center justify-center gap-2.5 p-10 text-center">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4663ff]">
+                    <PackageOpen size={20} />
                   </span>
                   <div>
-                    <p className="font-bold text-slate-700">
+                    <p className="text-sm font-bold text-slate-700">
                       {t("screens.expenses.noItemsYet")}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {t("screens.expenses.addItemToStart")}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={addItem}
-                    className="mt-1 inline-flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 py-2 text-sm font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-[#dbe4ff] bg-white px-3 py-1.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
                   >
-                    <Plus size={16} />
+                    <Plus size={13} />
                     {t("screens.invoices.addItem")}
                   </button>
                 </div>
               ) : (
-                <>
-                  {/* Desktop table */}
-                  <div className="hidden overflow-x-auto md:block">
-                    <table className="w-full min-w-[700px] text-sm">
-                      <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                        <tr>
-                          <th className="p-3 text-left">{t("ui.name")}</th>
-                          <th className="p-3">{t("ui.price")}</th>
-                          <th className="p-3">{t("ui.total")}</th>
-                          <th className="p-3"></th>
-                        </tr>
-                      </thead>
+                <div className="divide-y divide-[#eef1ff]">
+                  {items.map((item, index) => {
+                    const discountRevealed = revealedItemDiscounts.has(index);
+                    const noteRevealed = revealedItemNotes.has(index);
+                    const hasCategory = Boolean(item.category_id);
+                    const hasTax = hasCategory && item.tax_capable;
+                    const afterDiscount =
+                      (item.total || 0) - (item.discount || 0);
+                    const lineTotal = afterDiscount + (item.taxValue || 0);
 
-                      <tbody className="divide-y divide-[#e5ebff]">
-                        {items.map((item, index) => (
-                          <tr
-                            key={index}
-                            className="transition hover:bg-[#f8faff]"
-                          >
-                            <td className="p-2">
-                              <SearchableSelect
-                                placeholder={t("ui.selectExpense")}
-                                options={category}
-                                selectedValue={item.category_id}
-                                onChange={(e) =>
-                                  updateItem(index, "category_id", e.id)
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <NumberInput
-                                className={inputClass}
-                                value={item.price}
-                                onChange={(val) =>
-                                  updateItem(index, "price", val)
-                                }
-                              />
-                            </td>
-                            <td className="p-2 text-center font-black">
-                              {money(item.total)}
-                            </td>
-                            <td className="p-2 text-center">
-                              <button
-                                type="button"
-                                onClick={() => setDeleteItemIndex(index)}
-                                disabled={items.length === 1}
-                                title={
-                                  items.length === 1
-                                    ? t("screens.invoices.keepOneItem")
-                                    : undefined
-                                }
-                                className="rounded-xl p-2 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                    return (
+                      <div
+                        key={index}
+                        className="space-y-2.5 p-3.5 transition hover:bg-[#fafbff]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1">
+                            <SearchableSelect
+                              placeholder={t("ui.selectExpense")}
+                              options={category}
+                              selectedValue={item.category_id}
+                              onChange={(e) =>
+                                updateItem(index, "category_id", e.id)
+                              }
+                            />
+                          </div>
 
-                  {/* Mobile stacked cards */}
-                  <div className="divide-y divide-[#e5ebff] md:hidden">
-                    {items.map((item, index) => (
-                      <div key={index} className="space-y-3 p-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase  text-slate-400">
-                            {t("ui.name")} #{index + 1}
-                          </span>
+                          <div className="w-32 shrink-0">
+                            <NumberInput
+                              className={inputClass}
+                              value={item.price}
+                              onChange={(val) =>
+                                updateItem(index, "price", val)
+                              }
+                            />
+                          </div>
+
+                          <div className="flex h-9 w-32 shrink-0 items-center justify-end rounded-xl bg-[#f6f8fd] px-3 text-sm font-black tabular-nums text-[#4663ff]">
+                            {money(lineTotal)}
+                          </div>
+
+                          {hasCategory && (
+                            <AddOptionsMenu
+                              align="right"
+                              options={[
+                                {
+                                  key: "tax",
+                                  label: t("screens.invoices.addTax"),
+                                  icon: (
+                                    <Receipt
+                                      size={13}
+                                      className="text-emerald-600"
+                                    />
+                                  ),
+                                  visible: !item.tax_capable,
+                                  onClick: () => enableItemTax(index),
+                                },
+                                {
+                                  key: "discount",
+                                  label: t("screens.invoices.addDiscount"),
+                                  icon: (
+                                    <Percent
+                                      size={13}
+                                      className="text-red-500"
+                                    />
+                                  ),
+                                  visible: !discountRevealed,
+                                  onClick: () =>
+                                    toggleItemDiscount(index, false),
+                                },
+                                {
+                                  key: "note",
+                                  label: t("screens.invoices.addNote"),
+                                  icon: (
+                                    <StickyNote
+                                      size={13}
+                                      className="text-amber-500"
+                                    />
+                                  ),
+                                  visible: !noteRevealed,
+                                  onClick: () => toggleItemNote(index, false),
+                                },
+                              ]}
+                            />
+                          )}
+
                           <button
                             type="button"
                             onClick={() => setDeleteItemIndex(index)}
                             disabled={items.length === 1}
-                            className="rounded-xl p-1.5 text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:text-slate-300"
+                            title={
+                              items.length === 1
+                                ? t("screens.invoices.keepOneItem")
+                                : undefined
+                            }
+                            className="shrink-0 rounded-lg p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                           >
                             <Trash2 size={16} />
                           </button>
                         </div>
-                        <SearchableSelect
-                          placeholder={t("ui.selectProduct")}
-                          options={category}
-                          selectedValue={item.category_id}
-                          onChange={(e) =>
-                            updateItem(index, "category_id", e.id)
-                          }
-                        />
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold text-slate-500">
-                            {t("ui.price")}
-                          </label>
-                          <NumberInput
-                            className={inputClass}
-                            value={item.price}
-                            onChange={(val) => updateItem(index, "price", val)}
-                          />
+
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {hasTax && (
+                            <AdjustmentChip
+                              icon={
+                                <Receipt
+                                  size={12}
+                                  className="shrink-0 text-emerald-600"
+                                />
+                              }
+                              tone="success"
+                              onRemove={() => disableItemTax(index)}
+                            >
+                              <select
+                                className="h-6 border-none bg-transparent text-xs font-bold text-emerald-700 outline-none"
+                                value={item.tax_id || ""}
+                                onChange={(e) => {
+                                  const newTaxId = e.target.value
+                                    ? Number(e.target.value)
+                                    : null;
+                                  const selectedTax = taxes?.find(
+                                    (tx) => tx.id === newTaxId
+                                  );
+                                  updateItemTax(
+                                    index,
+                                    newTaxId,
+                                    selectedTax?.rate || 0
+                                  );
+                                }}
+                              >
+                                <option value="">
+                                  {t("screens.products.noTaxOption")}
+                                </option>
+                                {taxes
+                                  ?.filter(
+                                    (tax) =>
+                                      tax.category === "product" ||
+                                      tax.category === "both"
+                                  )
+                                  .map((tax) => (
+                                    <option key={tax.id} value={tax.id}>
+                                      {tax.name} ({tax.rate}%)
+                                    </option>
+                                  ))}
+                              </select>
+                            </AdjustmentChip>
+                          )}
+
+                          {discountRevealed && (
+                            <AdjustmentChip
+                              icon={
+                                <Percent
+                                  size={12}
+                                  className="shrink-0 text-red-500"
+                                />
+                              }
+                              tone="danger"
+                              onRemove={() => toggleItemDiscount(index, true)}
+                            >
+                              <NumberInput
+                                className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                value={item.discount_rate || ""}
+                                onChange={(val) =>
+                                  updateItemDiscountRate(index, val)
+                                }
+                                max={100}
+                                placeholder="0"
+                              />
+                              <span className="text-[10px] text-red-400">
+                                % =
+                              </span>
+                              <NumberInput
+                                className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                value={item.discount || ""}
+                                onChange={(val) =>
+                                  updateItemDiscountAmount(index, val)
+                                }
+                                placeholder="0"
+                              />
+                            </AdjustmentChip>
+                          )}
                         </div>
-                        <div className="flex justify-between rounded-xl bg-[#f8faff] px-3 py-2 text-sm">
-                          <span className="text-slate-500">
-                            {t("ui.total")}
-                          </span>
-                          <span className="font-black">
-                            {money(item.total)}
-                          </span>
-                        </div>
+
+                        {noteRevealed && (
+                          <div className="flex w-full items-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50/60 px-2.5 py-1.5">
+                            <StickyNote
+                              size={12}
+                              className="shrink-0 text-amber-500"
+                            />
+                            <input
+                              type="text"
+                              className="h-6 w-full min-w-0 flex-1 border-none bg-transparent text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400"
+                              value={item.description || ""}
+                              onChange={(e) =>
+                                updateItemDescription(index, e.target.value)
+                              }
+                              placeholder={t(
+                                "screens.invoices.notePlaceholder"
+                              )}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => toggleItemNote(index, true)}
+                              className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </>
+                    );
+                  })}
+                </div>
               )}
             </section>
           </main>
 
           <aside className="space-y-4">
-            {/* Summary — same aligned-grid pattern as AddPurchase */}
             <section className={panelClass}>
-              <div className="mb-4 flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
-                  <HandCoins size={19} />
-                </span>
-                <div>
-                  <h3 className="font-black text-slate-950">
+              <AccentRule colorClass="bg-emerald-500" />
+              <div className={panelBodyClass}>
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <HandCoins size={15} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
                     {t("ui.summary")}
                   </h3>
-                  <p className="text-sm text-slate-500">
-                    {t("screens.expenses.expensesTotal")}
-                  </p>
                 </div>
-              </div>
 
-              <div className="space-y-2.5">
-                <div className="grid grid-cols-[1fr_9rem] items-center gap-3">
-                  <span className="text-sm text-slate-500">
-                    {t("ui.subtotal")}
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                    <span className="text-xs font-semibold text-slate-500">
+                      {t("ui.subtotal")}
+                    </span>
+                    <span className="text-right text-sm font-black tabular-nums">
+                      {money(subtotal)}
+                    </span>
+                  </div>
+
+                  {itemDiscountSummary.map((group) => (
+                    <div
+                      key={`item-discount-${group.rate}`}
+                      className="grid grid-cols-[1fr_7.5rem] items-center gap-2"
+                    >
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.itemDiscountAt", {
+                          rate: group.rate,
+                        })}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-red-500">
+                        -{money(group.amount)}
+                      </span>
+                    </div>
+                  ))}
+
+                  {itemTaxSummary.map((group) => (
+                    <div
+                      key={`item-tax-${group.tax_id}`}
+                      className="grid grid-cols-[1fr_7.5rem] items-center gap-2"
+                    >
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.itemTaxAt", { rate: group.rate })}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
+                        +{money(group.value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="my-3 h-px bg-[#eef1ff]" />
+
+                <div className="space-y-2">
+                  {invoiceDiscountRevealed && (
+                    <div className="space-y-1.5 rounded-xl border border-red-100 bg-red-50/40 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-red-600">
+                          <Percent size={12} />
+                          {t("screens.invoices.invoiceDiscountRate")}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearInvoiceDiscount();
+                            setInvoiceDiscountRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="relative flex-1">
+                          <NumberInput
+                            className={`${smallInputClass} pe-5 text-end tabular-nums`}
+                            value={invoice.discount_rate || ""}
+                            onChange={setInvoiceDiscountRate}
+                            max={100}
+                            placeholder="0"
+                          />
+                          <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
+                            %
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-300">=</span>
+                        <NumberInput
+                          className={`${smallInputClass} flex-1 text-end tabular-nums`}
+                          value={invoiceDiscount || ""}
+                          onChange={setInvoiceDiscountAmount}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {invoiceTaxRevealed && (
+                    <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                          <Receipt size={12} />
+                          {t("ui.tax")}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearInvoiceTaxes();
+                            setInvoiceTaxRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+
+                      {(invoice.taxes || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {invoice.taxes.map((tax) => (
+                            <span
+                              key={tax.id}
+                              className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-emerald-700 shadow-sm"
+                            >
+                              {tax.name} ({tax.rate}%)
+                              <button
+                                type="button"
+                                onClick={() => removeInvoiceTax(tax.id)}
+                                className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                              >
+                                <X size={11} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      <select
+                        className={`${smallInputClass} text-right`}
+                        value=""
+                        onChange={(e) => {
+                          const selected = taxes.find(
+                            (tax) => tax.id === Number(e.target.value)
+                          );
+                          if (selected) addInvoiceTax(selected);
+                        }}
+                      >
+                        <option value="">
+                          {t(
+                            "screens.invoices.addAnotherTax",
+                            "Add another tax"
+                          )}
+                        </option>
+                        {taxes
+                          .filter(
+                            (tax) =>
+                              (tax.category === "invoice" ||
+                                tax.category === "both") &&
+                              !(invoice.taxes || []).some(
+                                (applied) => applied.id === tax.id
+                              )
+                          )
+                          .map((tax) => (
+                            <option key={tax.id} value={tax.id}>
+                              {tax.name} ({tax.rate}%)
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {(!invoiceDiscountRevealed ||
+                    !invoiceTaxRevealed ||
+                    !invoiceNoteRevealed) && (
+                    <div className="flex">
+                      <AddOptionsMenu
+                        options={[
+                          {
+                            key: "invoice-discount",
+                            label: t("screens.invoices.addInvoiceDiscount"),
+                            icon: (
+                              <Percent size={13} className="text-red-500" />
+                            ),
+                            visible: !invoiceDiscountRevealed,
+                            onClick: () => setInvoiceDiscountRevealed(true),
+                          },
+                          {
+                            key: "invoice-tax",
+                            label: t("screens.invoices.addInvoiceTax"),
+                            icon: (
+                              <Receipt size={13} className="text-emerald-600" />
+                            ),
+                            visible: !invoiceTaxRevealed,
+                            onClick: () => setInvoiceTaxRevealed(true),
+                          },
+                          {
+                            key: "invoice-note",
+                            label: t("screens.invoices.addInvoiceNote"),
+                            icon: (
+                              <StickyNote
+                                size={13}
+                                className="text-amber-500"
+                              />
+                            ),
+                            visible: !invoiceNoteRevealed,
+                            onClick: () => setInvoiceNoteRevealed(true),
+                          },
+                        ]}
+                      />
+                    </div>
+                  )}
+
+                  {invoiceDiscount > 0 && (
+                    <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.invoiceDiscountAmount")}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-red-500">
+                        -{money(invoiceDiscount)}
+                      </span>
+                    </div>
+                  )}
+
+                  {invoiceTaxValue > 0 && (
+                    <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
+                      <span className="text-xs text-slate-400">
+                        {t("screens.invoices.invoiceTaxAmount")}
+                      </span>
+                      <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
+                        +{money(invoiceTaxValue)}
+                      </span>
+                    </div>
+                  )}
+
+                  {invoiceNoteRevealed && (
+                    <div className="space-y-1.5 rounded-xl border border-amber-100 bg-amber-50/40 p-2.5">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-1.5 text-xs font-bold text-amber-600">
+                          <StickyNote size={12} />
+                          {t("screens.invoices.invoiceNote")}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setInvoice((prev) => ({
+                              ...prev,
+                              description: "",
+                            }));
+                            setInvoiceNoteRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                      <textarea
+                        className={`${smallInputClass} min-h-[2.5rem] resize-none overflow-hidden py-1.5`}
+                        value={invoice.description || ""}
+                        onChange={(e) => {
+                          setInvoice((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }));
+                          e.target.style.height = "auto";
+                          e.target.style.height = `${e.target.scrollHeight}px`;
+                        }}
+                        placeholder={t("screens.invoices.notePlaceholder")}
+                        rows={1}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 grid grid-cols-[1fr_7.5rem] items-center gap-2 rounded-xl bg-[#f6f8fd] px-3 py-2.5">
+                  <span className="text-xs font-black text-slate-700">
+                    {t("ui.total")}
                   </span>
-                  <span className="text-right text-sm font-bold tabular-nums">
-                    {money(subtotal)}
+                  <span className="text-right text-lg font-black tabular-nums text-[#4663ff]">
+                    {money(netTotal)}
                   </span>
                 </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-[1fr_9rem] items-center gap-3 rounded-2xl bg-[#f8faff] px-4 py-3">
-                <span className="text-sm font-bold text-slate-700">
-                  {t("ui.total")}
-                </span>
-                <span className="text-right text-xl font-black tabular-nums text-[#4663ff]">
-                  {money(netTotal)}
-                </span>
               </div>
             </section>
 
-            {/* Payment choice */}
-            <section className={`${panelClass} space-y-3`}>
-              <div>
-                <h3 className="font-black">{t("ui.payment")}</h3>
-                <p className="text-xs text-slate-500">
-                  {t("screens.expenses.paymentHelper")}
-                </p>
-              </div>
+            <section className={panelClass}>
+              <AccentRule colorClass="bg-amber-500" />
+              <div className={`${panelBodyClass} space-y-2.5`}>
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                    <Save size={14} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
+                    {t("ui.payment")}
+                  </h3>
+                </div>
 
-              <div className="grid gap-2">
-                <button
-                  type="button"
-                  onClick={handleSaveUnpaid}
-                  disabled={!canSave}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white py-3 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {saving ? (
-                    <Loader2 size={16} className="animate-spin" />
-                  ) : null}
-                  {t("screens.invoices.saveUnpaid")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenPayModal}
-                  disabled={!canSave}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-[#4663ff] py-3 text-sm font-black text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Save size={16} />
-                  {t("screens.invoices.saveAndPay")}
-                </button>
-              </div>
+                <div className="grid gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveUnpaid}
+                    disabled={!canSave}
+                    className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <Loader2 size={15} className="animate-spin" />
+                    ) : null}
+                    {t("screens.invoices.saveUnpaid")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenPayModal}
+                    disabled={!canSave}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Save size={15} />
+                    {t("screens.invoices.saveAndPay")}
+                  </button>
+                </div>
 
-              {!canSave && !saving && (
-                <p className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-                  <AlertCircle size={12} />
-                  {!invoice.supplier_id
-                    ? t("errors.supplierRequired")
-                    : t("errors.addOneItem")}
-                </p>
-              )}
+                {!canSave && !saving && (
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                    <AlertCircle size={12} />
+                    {t("errors.addOneItem")}
+                  </p>
+                )}
+              </div>
             </section>
           </aside>
         </div>

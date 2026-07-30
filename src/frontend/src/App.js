@@ -86,6 +86,7 @@ import PrintSalesReturn from "./components/Invoices/SalesReturn/components/Print
 import PrintPurchaseInvoice from "./components/Invoices/Purchase/components/PrintPurchaseInvoice";
 import PrintPurchaseReturn from "./components/Invoices/PurchaseReturn/components/PrintPurchaseReturn";
 import PrintPayment from "./components/Cash/Payment/components/PrintPayment";
+import PrintExpense from "./components/Invoices/expense/components/PrintExpense";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -290,6 +291,7 @@ export default function App() {
               element={<PrintPurchaseReturn />}
             />
             <Route path="/print-payment/:id" element={<PrintPayment />} />
+            <Route path="/print-expense/:id" element={<PrintExpense />} />
             {/* fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </>

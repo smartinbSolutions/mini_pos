@@ -23,7 +23,20 @@
     local("Liberation Mono"), local("Courier New");
   unicode-range: U+0030-0039;
 }
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
 
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 297mm;
+    overflow: hidden;
+  }
+}
 body {
   margin: 0;
   font-family:

@@ -857,6 +857,8 @@
       "yourPin": "Your Administrator PIN"
     },
     "login": {
+      "poweredBy": "Developed by",
+      "enterPin": "Enter your PIN",
       "title": "Welcome back",
       "subtitle": "Log in to start",
       "hint": "Enter your 6-digit PIN",

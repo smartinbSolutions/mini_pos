@@ -18,15 +18,134 @@ export default function registerExpenseIPC() {
           throw new Error("ERROR ENTER DATA");
         }
 
+        const dateOnly = data.date.slice(0, 10);
+        const now = new Date();
+        const time = now.toTimeString().slice(0, 8);
+        const fullDateTime = `${dateOnly} ${time}`;
+
+        // ---- Invoice-level taxes — PARALLEL, same model as sales/purchase ----
+        const requestedTaxIds = Array.isArray(data.taxes)
+          ? [...new Set(data.taxes.filter(Boolean))]
+          : [];
+
+        const invoiceTaxes = requestedTaxIds.map((taxId) => {
+          const taxRow = db
+            .prepare(
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+            )
+            .get(taxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          return {
+            tax_id: taxRow.id,
+            tax_name: taxRow.name,
+            tax_rate: Number(taxRow.rate || 0),
+          };
+        });
+
+        const invoiceDiscountRate = Math.min(
+          100,
+          Math.max(0, Number(data.discount_rate || 0))
+        );
+
+        // ---- Per-item cascade: total = price (no quantity for expenses) ----
+        const preparedItems = [];
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        let itemTaxTotal = 0;
+
+        for (const item of data.items) {
+          const price = Number(item.price || 0);
+
+          if (!item.category_id || price < 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
+
+          const total = price;
+
+          const discountRate = Math.min(
+            100,
+            Math.max(0, Number(item.discount_rate || 0))
+          );
+          const discount = Number(((total * discountRate) / 100).toFixed(2));
+          const afterDiscount = total - discount;
+
+          let taxId = null;
+          let taxRate = 0;
+
+          if (item.tax_id) {
+            const taxRow = db
+              .prepare(
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+              )
+              .get(item.tax_id);
+            if (!taxRow) {
+              throw new Error("INVALID_ITEM_TAX_ID");
+            }
+            taxId = item.tax_id;
+            taxRate = Number(taxRow.rate || 0);
+          }
+
+          const taxValue = Number(((afterDiscount * taxRate) / 100).toFixed(2));
+
+          subtotal += total;
+          itemDiscountTotal += discount;
+          itemTaxTotal += taxValue;
+
+          preparedItems.push({
+            category_id: item.category_id,
+            price,
+            total,
+            discount_rate: discountRate,
+            discount,
+            tax_id: taxId,
+            tax_rate: taxRate,
+            taxValue,
+            description: item.description || null,
+          });
+        }
+
+        subtotal = Number(subtotal.toFixed(2));
+        itemDiscountTotal = Number(itemDiscountTotal.toFixed(2));
+        itemTaxTotal = Number(itemTaxTotal.toFixed(2));
+
+        if (subtotal <= 0) {
+          throw new Error("INVALID TOTALS");
+        }
+
+        const afterItemDiscounts = subtotal - itemDiscountTotal;
+
+        const invoiceDiscount = Number(
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+        );
+        const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
+
+        // ---- Each invoice tax computed independently off the same base ----
+        let invoiceTaxValueTotal = 0;
+        const preparedInvoiceTaxes = invoiceTaxes.map((tax) => {
+          const value = Number(
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+          );
+          invoiceTaxValueTotal += value;
+          return { ...tax, tax_value: value };
+        });
+        invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
+
+        const invoiceTaxRateSum = Number(
+          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
+        );
+
+        const netTotal = Number(
+          Math.max(
+            0,
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
+          ).toFixed(2)
+        );
+
         const payment = data.payment || null;
         const isPaid = !!payment;
         const isCredit = payment?.source === "credit";
-        const subtotal = Number(data.subtotal || 0);
-        const netTotal = Number(data.net_total || 0);
-
-        if (subtotal <= 0 || netTotal <= 0) {
-          throw new Error("INVALID TOTALS");
-        }
 
         if (isPaid && !isCredit) {
           if (!payment.fund_id) {
@@ -45,19 +164,15 @@ export default function registerExpenseIPC() {
           throw new Error("INVALID_CREDIT_AMOUNT");
         }
 
-        const dateOnly = data.date.slice(0, 10);
-        const now = new Date();
-        const time = now.toTimeString().slice(0, 8);
-        const fullDateTime = `${dateOnly} ${time}`;
-
         const invoiceResult = db
           .prepare(
             `
-                INSERT INTO expense
-                (supplier_id, invoice_name,
-                 description, date, subtotal, net_total, created_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-              `
+            INSERT INTO expense
+            (supplier_id, invoice_name, description, date,
+             subtotal, discount, discount_rate, taxRate, taxValue,
+             net_total, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `
           )
           .run(
             data.supplier_id || null,
@@ -65,6 +180,10 @@ export default function registerExpenseIPC() {
             data.description || null,
             fullDateTime,
             subtotal,
+            invoiceDiscount,
+            invoiceDiscountRate,
+            invoiceTaxRateSum,
+            invoiceTaxValueTotal,
             netTotal,
             data.created_by
           );
@@ -79,11 +198,43 @@ export default function registerExpenseIPC() {
           );
         }
 
+        const insertInvoiceTax = db.prepare(`
+          INSERT INTO expense_taxes
+          (expense_id, tax_id, tax_name, tax_rate, tax_value)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        for (const tax of preparedInvoiceTaxes) {
+          insertInvoiceTax.run(
+            invoiceId,
+            tax.tax_id,
+            tax.tax_name,
+            tax.tax_rate,
+            tax.tax_value
+          );
+        }
+
         const insertItem = db.prepare(`
           INSERT INTO expense_items
-          (expense_id, category_id, price)
-          VALUES (?, ?, ?)
+          (expense_id, category_id, price, total,
+           discount, discount_rate, tax_id, tax_rate, taxValue, description)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
+
+        for (const item of preparedItems) {
+          insertItem.run(
+            invoiceId,
+            item.category_id,
+            item.price,
+            item.total,
+            item.discount,
+            item.discount_rate,
+            item.tax_id,
+            item.tax_rate,
+            item.taxValue,
+            item.description
+          );
+        }
 
         if (data.supplier_id) {
           createPartyHistory(db, {
@@ -97,16 +248,6 @@ export default function registerExpenseIPC() {
             date: fullDateTime,
             note: invoiceName,
           });
-        }
-
-        for (const item of data.items) {
-          const price = Number(item.price || 0);
-
-          if (!item.category_id || price < 0) {
-            throw new Error("INVALID ITEM DATA");
-          }
-
-          insertItem.run(invoiceId, item.category_id, price);
         }
 
         let insertPaymentId = null;
@@ -158,10 +299,7 @@ export default function registerExpenseIPC() {
         };
       });
 
-      return {
-        success: true,
-        ...transaction(),
-      };
+      return { success: true, ...transaction() };
     } catch (err) {
       return {
         success: false,
@@ -202,6 +340,16 @@ export default function registerExpenseIPC() {
       whereConditions.push("e.supplier_id = ?");
       whereValues.push(supplier_id);
     }
+    if (Array.isArray(params.taxIds) && params.taxIds.length) {
+      const taxPlaceholders = params.taxIds.map(() => "?").join(",");
+      whereConditions.push(`
+        EXISTS (
+          SELECT 1 FROM expense_taxes et
+          WHERE et.expense_id = e.id AND et.tax_id IN (${taxPlaceholders})
+        )
+      `);
+      whereValues.push(...params.taxIds);
+    }
     if (minTotal !== undefined && minTotal !== "" && minTotal !== null) {
       whereConditions.push("e.net_total >= ?");
       whereValues.push(Number(minTotal));
@@ -235,7 +383,6 @@ export default function registerExpenseIPC() {
         updater.full_name AS updated_by_name,
   
         COALESCE(SUM(pa.amount), 0) AS paid_amount,
-  
         e.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
   
         CASE
@@ -243,6 +390,13 @@ export default function registerExpenseIPC() {
           WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
           ELSE 'unpaid'
         END AS status,
+  
+        COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
+        COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
+        (e.taxValue + COALESCE(itemAgg.item_tax_total, 0)) AS total_tax_value,
+        (e.discount + COALESCE(itemAgg.item_discount_total, 0)) AS total_discount_value,
+  
+        expenseTaxAgg.taxes_json,
   
         (
           SELECT GROUP_CONCAT(DISTINCT ec.name)
@@ -256,16 +410,34 @@ export default function registerExpenseIPC() {
       LEFT JOIN suppliers s
         ON s.id = e.supplier_id
   
-    LEFT JOIN users creator
-    ON creator.id = e.created_by
-    
-    LEFT JOIN users updater
-    ON updater.id = e.updated_by
+      LEFT JOIN users creator
+        ON creator.id = e.created_by
   
+      LEFT JOIN users updater
+        ON updater.id = e.updated_by
   
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = e.id
        AND pa.invoice_type = 'expense'
+  
+      LEFT JOIN (
+        SELECT
+          expense_id,
+          SUM(taxValue) AS item_tax_total,
+          SUM(discount) AS item_discount_total
+        FROM expense_items
+        GROUP BY expense_id
+      ) itemAgg ON itemAgg.expense_id = e.id
+  
+      LEFT JOIN (
+        SELECT
+          expense_id,
+          json_group_array(
+            json_object('tax_id', tax_id, 'name', tax_name, 'rate', tax_rate, 'value', tax_value)
+          ) AS taxes_json
+        FROM expense_taxes
+        GROUP BY expense_id
+      ) expenseTaxAgg ON expenseTaxAgg.expense_id = e.id
   
       ${whereClause}
   
@@ -298,23 +470,28 @@ export default function registerExpenseIPC() {
     FROM (
       SELECT e.id
       FROM expense e
-
+  
       LEFT JOIN payment_allocations pa
         ON pa.invoice_id = e.id
        AND pa.invoice_type = 'expense'
-
+  
       ${whereClause}
-
+  
       GROUP BY e.id
-
+  
       ${countHaving}
     )
     `
       )
       .get(...whereValues, ...(status ? [status] : []));
 
+    const rowsWithParsedTaxes = rows.map((row) => ({
+      ...row,
+      taxes: row.taxes_json ? JSON.parse(row.taxes_json) : [],
+    }));
+
     return {
-      data: rows,
+      data: rowsWithParsedTaxes,
       page,
       limit,
       total,
@@ -343,11 +520,8 @@ export default function registerExpenseIPC() {
           END AS status
   
         FROM expense e
-            LEFT JOIN users creator
-    ON creator.id = e.created_by
-    
-    LEFT JOIN users updater
-    ON updater.id = e.updated_by
+        LEFT JOIN users creator ON creator.id = e.created_by
+        LEFT JOIN users updater ON updater.id = e.updated_by
         LEFT JOIN suppliers s ON s.id = e.supplier_id
         LEFT JOIN (
           SELECT invoice_id, SUM(amount) AS paid_amount
@@ -356,7 +530,7 @@ export default function registerExpenseIPC() {
           GROUP BY invoice_id
         ) pa_sum ON pa_sum.invoice_id = e.id
         WHERE e.id = ?
-      `
+        `
       )
       .get(id);
 
@@ -366,12 +540,25 @@ export default function registerExpenseIPC() {
       .prepare(
         `
         SELECT 
-          pii.*,
-          c.name AS category_name
-        FROM expense_items pii
-        LEFT JOIN expence_category c ON c.id = pii.category_id
-        WHERE pii.expense_id = ?
-      `
+          ei.*,
+          c.name AS category_name,
+          t.name AS tax_name
+        FROM expense_items ei
+        LEFT JOIN expence_category c ON c.id = ei.category_id
+        LEFT JOIN taxes t ON t.id = ei.tax_id
+        WHERE ei.expense_id = ?
+        `
+      )
+      .all(id);
+
+    const taxes = db
+      .prepare(
+        `
+        SELECT id, tax_id, tax_name, tax_rate, tax_value
+        FROM expense_taxes
+        WHERE expense_id = ?
+        ORDER BY id ASC
+        `
       )
       .all(id);
 
@@ -394,13 +581,14 @@ export default function registerExpenseIPC() {
         WHERE pa.invoice_id = ?
           AND pa.invoice_type = 'expense'
         ORDER BY pa.id ASC
-      `
+        `
       )
       .all(id);
 
     return {
       ...invoice,
       items,
+      taxes,
       allocations,
     };
   });
@@ -410,9 +598,7 @@ export default function registerExpenseIPC() {
       !data.id ||
       !data.date ||
       !Array.isArray(data.items) ||
-      data.items.length === 0 ||
-      Number(data.subtotal) <= 0 ||
-      Number(data.net_total) <= 0
+      data.items.length === 0
     ) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
@@ -427,7 +613,6 @@ export default function registerExpenseIPC() {
           throw new Error("EXPENSE NOT FOUND");
         }
 
-        // Block editing if this invoice already has a payment against it
         const existingPayment = db
           .prepare(
             `
@@ -446,24 +631,135 @@ export default function registerExpenseIPC() {
         const oldSupplierId = oldInvoice.supplier_id || null;
         const newSupplierId = data.supplier_id || null;
 
-        const newNetTotal = Number(data.net_total || 0);
-        const newSubtotal = Number(data.subtotal || 0);
-
-        const payment = data.payment || null;
-        const paidAmount = payment ? Number(payment.amount || 0) : 0;
-
         const dateOnly = data.date.slice(0, 10);
         const now = new Date();
         const time = now.toTimeString().slice(0, 8);
         const fullDateTime = `${dateOnly} ${time}`;
 
-        // ---- Invoice name: keep user-edited name, else fall back to existing, else localized default ----
+        // ---- Resolve invoice-level taxes — PARALLEL, same as create ----
+        const requestedTaxIds = Array.isArray(data.taxes)
+          ? [...new Set(data.taxes.filter(Boolean))]
+          : [];
+
+        const invoiceTaxes = requestedTaxIds.map((taxId) => {
+          const taxRow = db
+            .prepare(
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+            )
+            .get(taxId);
+          if (!taxRow) {
+            throw new Error("INVALID_TAX_ID");
+          }
+          return {
+            tax_id: taxRow.id,
+            tax_name: taxRow.name,
+            tax_rate: Number(taxRow.rate || 0),
+          };
+        });
+
+        const invoiceDiscountRate = Math.min(
+          100,
+          Math.max(0, Number(data.discount_rate || 0))
+        );
+
+        // ---- Per-item cascade ----
+        const preparedItems = [];
+        let subtotal = 0;
+        let itemDiscountTotal = 0;
+        let itemTaxTotal = 0;
+
+        for (const item of data.items) {
+          const price = Number(item.price || 0);
+
+          if (!item.category_id || price < 0) {
+            throw new Error("INVALID ITEM DATA");
+          }
+
+          const total = price;
+
+          const discountRate = Math.min(
+            100,
+            Math.max(0, Number(item.discount_rate || 0))
+          );
+          const discount = Number(((total * discountRate) / 100).toFixed(2));
+          const afterDiscount = total - discount;
+
+          let taxId = null;
+          let taxRate = 0;
+
+          if (item.tax_id) {
+            const taxRow = db
+              .prepare(
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+              )
+              .get(item.tax_id);
+            if (!taxRow) {
+              throw new Error("INVALID_ITEM_TAX_ID");
+            }
+            taxId = item.tax_id;
+            taxRate = Number(taxRow.rate || 0);
+          }
+
+          const taxValue = Number(((afterDiscount * taxRate) / 100).toFixed(2));
+
+          subtotal += total;
+          itemDiscountTotal += discount;
+          itemTaxTotal += taxValue;
+
+          preparedItems.push({
+            category_id: item.category_id,
+            price,
+            total,
+            discount_rate: discountRate,
+            discount,
+            tax_id: taxId,
+            tax_rate: taxRate,
+            taxValue,
+            description: item.description || null,
+          });
+        }
+
+        subtotal = Number(subtotal.toFixed(2));
+        itemDiscountTotal = Number(itemDiscountTotal.toFixed(2));
+        itemTaxTotal = Number(itemTaxTotal.toFixed(2));
+
+        if (subtotal <= 0) {
+          throw new Error("INVALID TOTALS");
+        }
+
+        const afterItemDiscounts = subtotal - itemDiscountTotal;
+
+        const invoiceDiscount = Number(
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+        );
+        const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
+
+        let invoiceTaxValueTotal = 0;
+        const preparedInvoiceTaxes = invoiceTaxes.map((tax) => {
+          const value = Number(
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+          );
+          invoiceTaxValueTotal += value;
+          return { ...tax, tax_value: value };
+        });
+        invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
+
+        const invoiceTaxRateSum = Number(
+          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
+        );
+
+        const netTotal = Number(
+          Math.max(
+            0,
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
+          ).toFixed(2)
+        );
+
         const invoiceName =
           data.invoice_name?.trim() ||
           oldInvoice.invoice_name ||
           buildDefaultInvoiceName(db, "expense", data.id);
 
-        // Update the invoice row
         db.prepare(
           `
           UPDATE expense
@@ -472,6 +768,10 @@ export default function registerExpenseIPC() {
               description = ?,
               date = ?,
               subtotal = ?,
+              discount = ?,
+              discount_rate = ?,
+              taxRate = ?,
+              taxValue = ?,
               net_total = ?,
               updated_by = ?
           WHERE id = ?
@@ -481,32 +781,65 @@ export default function registerExpenseIPC() {
           invoiceName,
           data.description || null,
           fullDateTime,
-          newSubtotal,
-          newNetTotal,
+          subtotal,
+          invoiceDiscount,
+          invoiceDiscountRate,
+          invoiceTaxRateSum,
+          invoiceTaxValueTotal,
+          netTotal,
           data.updated_by,
           data.id
         );
 
-        // Replace items
+        // ---- Replace items ----
         db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(
           data.id
         );
 
         const insertItem = db.prepare(`
           INSERT INTO expense_items
-          (expense_id, category_id, price)
-          VALUES (?, ?, ?)
+          (expense_id, category_id, price, total,
+           discount, discount_rate, tax_id, tax_rate, taxValue, description)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
-        for (const item of data.items) {
-          const price = Number(item.price || 0);
-          if (!item.category_id || price < 0) {
-            throw new Error("INVALID ITEM DATA");
-          }
-          insertItem.run(data.id, item.category_id, price);
+        for (const item of preparedItems) {
+          insertItem.run(
+            data.id,
+            item.category_id,
+            item.price,
+            item.total,
+            item.discount,
+            item.discount_rate,
+            item.tax_id,
+            item.tax_rate,
+            item.taxValue,
+            item.description
+          );
         }
 
-        // Supplier ledger + party history reconciliation for the invoice amount
+        // ---- Replace invoice-level taxes ----
+        db.prepare(`DELETE FROM expense_taxes WHERE expense_id = ?`).run(
+          data.id
+        );
+
+        const insertInvoiceTax = db.prepare(`
+          INSERT INTO expense_taxes
+          (expense_id, tax_id, tax_name, tax_rate, tax_value)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        for (const tax of preparedInvoiceTaxes) {
+          insertInvoiceTax.run(
+            data.id,
+            tax.tax_id,
+            tax.tax_name,
+            tax.tax_rate,
+            tax.tax_value
+          );
+        }
+
+        // ---- Party history reconciliation ----
         if (oldSupplierId && oldSupplierId === newSupplierId) {
           db.prepare(
             `
@@ -514,7 +847,7 @@ export default function registerExpenseIPC() {
             SET amount = ?, date = ?, note = ?
             WHERE invoice_id = ? AND invoice_type = 'expense' AND record_type = 'invoice'
           `
-          ).run(newNetTotal, fullDateTime, invoiceName, data.id);
+          ).run(netTotal, fullDateTime, invoiceName, data.id);
         } else {
           if (oldSupplierId) {
             db.prepare(
@@ -533,17 +866,18 @@ export default function registerExpenseIPC() {
               invoice_type: "expense",
               record_type: "invoice",
               movement_type: "increase",
-              amount: newNetTotal,
+              amount: netTotal,
               date: fullDateTime,
               note: invoiceName,
             });
           }
         }
 
-        // New payment attached in this same edit
+        // ---- New payment attached in this same edit ----
+        const payment = data.payment || null;
         let insertPaymentId = null;
 
-        if (paidAmount > 0) {
+        if (payment && Number(payment.amount || 0) > 0) {
           insertPaymentId = createPayment(db, {
             type: payment.type,
             party_type: payment.party_type,
@@ -586,18 +920,15 @@ export default function registerExpenseIPC() {
   // DELETE
   ipcMain.handle("delete-expense", (event, id) => {
     const transaction = db.transaction(() => {
-      const items = db
-        .prepare(`SELECT * FROM expense_items WHERE expense_id = ?`)
-        .all(id);
-
-      db.prepare(`DELETE  FROM expense_items WHERE expense_id = ?`).run(id);
+      db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(id);
+      db.prepare(`DELETE FROM expense_taxes WHERE expense_id = ?`).run(id);
       db.prepare(
         `
-  DELETE FROM party_history
-  WHERE invoice_id = ?
-    AND invoice_type = 'expense'
-    AND record_type = 'invoice'
-`
+        DELETE FROM party_history
+        WHERE invoice_id = ?
+          AND invoice_type = 'expense'
+          AND record_type = 'invoice'
+      `
       ).run(id);
       db.prepare(`DELETE FROM expense WHERE id = ?`).run(id);
     });

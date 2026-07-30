@@ -551,6 +551,17 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
 
 db.prepare(
   `
+CREATE TABLE IF NOT EXISTS expence_category (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  latinName TEXT,
+  createdAt TEXT DEFAULT (datetime('now'))
+)
+`
+).run();
+
+db.prepare(
+  `
 CREATE TABLE IF NOT EXISTS expense (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   supplier_id INTEGER,
@@ -558,6 +569,10 @@ CREATE TABLE IF NOT EXISTS expense (
   description TEXT,
   date TEXT,
   subtotal REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  taxRate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
   created_by INTEGER,
   updated_by INTEGER,
   net_total REAL DEFAULT 0,
@@ -570,24 +585,37 @@ CREATE TABLE IF NOT EXISTS expense (
 
 db.prepare(
   `
-CREATE TABLE IF NOT EXISTS expence_category (
+CREATE TABLE IF NOT EXISTS expense_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT,
-  latinName TEXT,
-  createdAt TEXT DEFAULT (datetime('now'))
+  expense_id INTEGER,
+  category_id INTEGER,
+  price REAL,
+  total REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  tax_id INTEGER,
+  tax_rate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
+  description TEXT,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (expense_id) REFERENCES expense(id),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
 `
 ).run();
 
 db.prepare(
   `
-CREATE TABLE IF NOT EXISTS expense_items (
+CREATE TABLE IF NOT EXISTS expense_taxes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  expense_id INTEGER,
-  category_id INTEGER,
-  price REAL,
+  expense_id INTEGER NOT NULL,
+  tax_id INTEGER,
+  tax_name TEXT,
+  tax_rate REAL NOT NULL DEFAULT 0,
+  tax_value REAL NOT NULL DEFAULT 0,
   createdAt TEXT DEFAULT (datetime('now')),
-  FOREIGN KEY (expense_id) REFERENCES expense(id)
+  FOREIGN KEY (expense_id) REFERENCES expense(id),
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
 `
 ).run();
