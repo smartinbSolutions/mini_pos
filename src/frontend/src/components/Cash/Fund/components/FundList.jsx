@@ -7,6 +7,8 @@ import {
   CloudSync,
   ArrowUpRight,
   ArrowDownLeft,
+  Wallet,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
@@ -17,6 +19,9 @@ import FundTransferModal from "./FundTransferModal";
 import AddFundPayment from "../../Payment/components/AddFundPayment";
 import FundListHeader from "./FundListHeader";
 import NumberInput from "../../../../Global/NumberInput";
+
+const ACTION_BUTTON_BASE =
+  "flex h-9 w-9 items-center justify-center rounded-xl transition active:scale-95";
 
 const FundList = () => {
   const { t } = useTranslation();
@@ -51,13 +56,11 @@ const FundList = () => {
   const [paymentMode, setPaymentMode] = useState("out");
 
   const pageClass =
-    "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
+    "min-h-screen bg-[linear-gradient(135deg,#f7f8fc_0%,#fbfbfd_50%,#f6f9f7_100%)] p-6 text-slate-900";
   const panelClass =
-    "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
+    "rounded-[28px] border border-white/80 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur overflow-hidden";
   const inputClass =
-    "rounded-xl border border-[#dbe4ff] bg-white/90 px-4 py-2.5 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100 disabled:text-slate-500";
-  const primaryButtonClass =
-    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
+    "rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-50 disabled:text-slate-400";
 
   const handleOpenPayment = (fund, mode) => {
     setSelectedFund(fund);
@@ -73,10 +76,28 @@ const FundList = () => {
     );
   }, [funds, search]);
 
+  // Summary strip — grouped by currency, since balances in different
+  // currencies can't be meaningfully summed into one number. Carries the
+  // first fund's symbol/code seen for that group, since formatMoney needs
+  // a currency-like object (symbol/code), not just a bare code string.
+  const balancesByCurrency = useMemo(() => {
+    const groups = new Map();
+    for (const fund of funds || []) {
+      const code = fund.currency_code || "—";
+      const existing = groups.get(code);
+      groups.set(code, {
+        code,
+        symbol: existing?.symbol || fund.currency_symbol,
+        total: (existing?.total || 0) + Number(fund.balance || 0),
+      });
+    }
+    return Array.from(groups.values());
+  }, [funds]);
   return (
     <div className={pageClass}>
-      <div className="max-w-6xl mx-auto">
-        <div className={panelClass}>
+      <div className="mx-auto max-w-6xl space-y-5">
+        {/* HERO / CREATE */}
+        <section className={panelClass}>
           <FundListHeader
             eyebrow={t("ui.setup")}
             title={t("screens.funds.title")}
@@ -99,170 +120,194 @@ const FundList = () => {
             t={t}
           />
 
-          {filteredFunds.length === 0 ? (
-            <div className="text-center text-gray-400 text-sm py-10">
-              {t("screens.funds.noFunds")}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-start text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                  <tr>
-                    <th className="px-5 py-4 text-start">{t("ui.name")}</th>
-                    <th className="px-5 py-4 text-start">{t("ui.currency")}</th>
-                    <th className="px-5 py-4 text-start">{t("ui.balance")}</th>
-                    <th className="px-5 py-4 text-start">
-                      {t("common.actions")}
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-[#eef1ff]">
-                  {filteredFunds.map((fund) => {
-                    if (editingId === fund.id) {
-                      return (
-                        <tr key={fund.id} className="bg-[#f8faff]">
-                          <td className="px-5 py-3 text-start" colSpan={4}>
-                            <form
-                              onSubmit={submitEdit}
-                              className="flex flex-wrap items-center gap-2"
-                            >
-                              <input
-                                required
-                                value={editing.name}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    name: e.target.value,
-                                  })
-                                }
-                                className={`${inputClass} flex-1 min-w-[160px]`}
-                                placeholder={t("screens.funds.namePlaceholder")}
-                              />
-
-                              <select
-                                required
-                                value={editing.currency_id || ""}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    currency_id: Number(e.target.value),
-                                  })
-                                }
-                                disabled
-                                className={`${inputClass} min-w-[140px]`}
-                              >
-                                <option value="">{t("ui.currency")}</option>
-                                {currencies.map((c) => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.name} ({c.code})
-                                  </option>
-                                ))}
-                              </select>
-                              <NumberInput
-                                required
-                                value={editing.balance || ""}
-                                onChange={(val) =>
-                                  setEditing({ ...editing, balance: val })
-                                }
-                                disabled
-                                className={`${inputClass} min-w-[140px]`}
-                                placeholder={t("ui.balance")}
-                              />
-
-                              <button className="flex items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 py-2 text-xs font-bold text-white hover:bg-[#3854e8]">
-                                {t("common.save")}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setEditingId(null)}
-                                className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
-                              >
-                                <span>&times;</span>
-                              </button>
-                            </form>
-                          </td>
-                        </tr>
-                      );
-                    }
-
-                    return (
-                      <tr
-                        key={fund.id}
-                        className="transition hover:bg-[#f8faff]"
-                      >
-                        <td className="px-5 py-3 text-start">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4663ff] text-xs font-bold text-white shadow-md shadow-[#4663ff]/20">
-                              {fund.name?.charAt(0)?.toUpperCase() || "F"}
-                            </div>
-                            <span className="font-bold text-slate-900">
-                              {fund.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-start text-slate-500">
-                          {fund.currency_code}
-                        </td>
-                        <td className="px-5 py-3 text-start">
-                          <span className="font-black tabular-nums text-emerald-600">
-                            {formatMoney(fund.balance || 0, fund)}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 text-start">
-                          <div className="flex justify-start gap-1">
-                            <button
-                              onClick={() => navigate(`/fund/${fund.id}`)}
-                              className="rounded-xl p-2 text-[#4663ff] transition hover:bg-[#eef3ff]"
-                              title={t("screens.funds.viewMovements")}
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleOpenPayment(fund, "out")}
-                              className="rounded-xl p-2 text-red-600 transition hover:bg-red-50"
-                              title={t("screens.payments.payment_expense")}
-                            >
-                              <ArrowUpRight size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleOpenPayment(fund, "in")}
-                              className="rounded-xl p-2 text-emerald-600 transition hover:bg-emerald-50"
-                              title={t("screens.payments.receipt_deposit")}
-                            >
-                              <ArrowDownLeft size={16} />
-                            </button>
-                            <button
-                              onClick={() => setOpenTransferModal(fund)}
-                              className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              title={t("screens.funds.fund_transfer")}
-                            >
-                              <CloudSync size={16} />
-                            </button>
-                            <button
-                              onClick={() => startEdit(fund)}
-                              className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              title={t("common.edit")}
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              onClick={() => setDeleteFund(fund)}
-                              className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
-                              title={t("common.delete")}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* SUMMARY STRIP */}
+          {balancesByCurrency.length > 0 && (
+            <div className="flex flex-wrap gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
+              {balancesByCurrency.map(({ code, symbol, total }) => (
+                <div
+                  key={code}
+                  className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-4 py-2.5"
+                >
+                  <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-[11px] text-white">
+                    {code?.slice(0, 2) || "—"}
+                  </span>
+                  <div>
+                    <p className="text-lg font-bold tabular-nums text-slate-900">
+                      {formatMoney(total, { symbol, code })}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-        </div>
+        </section>
+
+        {/* FUND CARDS */}
+        {filteredFunds.length === 0 ? (
+          <section className={panelClass}>
+            <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 bg-[#4663ff]">
+                <Wallet size={20} />
+              </div>
+              <p className="text-sm font-semibold text-slate-500">
+                {t("screens.funds.noFunds")}
+              </p>
+            </div>
+          </section>
+        ) : (
+          <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredFunds.map((fund) => {
+              const isEditing = editingId === fund.id;
+
+              if (isEditing) {
+                return (
+                  <div
+                    key={fund.id}
+                    className="rounded-[22px] border border-[#4663ff]/30 bg-white p-4 shadow-[0_16px_40px_rgba(70,99,255,0.12)]"
+                  >
+                    <form onSubmit={submitEdit} className="space-y-2.5">
+                      <input
+                        required
+                        autoFocus
+                        value={editing.name}
+                        onChange={(e) =>
+                          setEditing({ ...editing, name: e.target.value })
+                        }
+                        className={`${inputClass} w-full`}
+                        placeholder={t("screens.funds.namePlaceholder")}
+                      />
+
+                      <select
+                        value={editing.currency_id || ""}
+                        disabled
+                        className={`${inputClass} w-full`}
+                      >
+                        <option value="">{t("ui.currency")}</option>
+                        {currencies.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name} ({c.code})
+                          </option>
+                        ))}
+                      </select>
+
+                      <NumberInput
+                        value={editing.balance || ""}
+                        onChange={(val) =>
+                          setEditing({ ...editing, balance: val })
+                        }
+                        disabled
+                        className={`${inputClass} w-full`}
+                        placeholder={t("ui.balance")}
+                      />
+
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="submit"
+                          className="flex-1 rounded-xl bg-[#4663ff] py-2.5 text-sm font-bold text-white transition hover:bg-[#3854e8]"
+                        >
+                          {t("common.save")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={fund.id}
+                  className="group flex flex-col justify-between rounded-[22px] border border-slate-200/80 bg-white p-4 transition hover:border-slate-300 hover:shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#4663ff] text-sm font-bold text-white">
+                          {fund.name?.charAt(0)?.toUpperCase() || "F"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-bold text-slate-900">
+                            {fund.name}
+                          </p>
+                          <p className="text-xs font-semibold text-slate-400">
+                            {fund.currency_code}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => navigate(`/fund/${fund.id}`)}
+                        className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
+                        title={t("screens.funds.viewMovements")}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                        {t("ui.balance")}
+                      </p>
+                      <p
+                        className={`mt-0.5 text-2xl tabular-nums ${
+                          Number(fund.balance || 0) < 0
+                            ? "text-red-600"
+                            : "text-slate-900"
+                        }`}
+                      >
+                        {formatMoney(fund.balance || 0, fund)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between gap-1 border-t border-slate-100 pt-3.5">
+                    <button
+                      onClick={() => handleOpenPayment(fund, "out")}
+                      className={`${ACTION_BUTTON_BASE} text-red-500 hover:bg-red-50`}
+                      title={t("screens.payments.payment_expense")}
+                    >
+                      <ArrowUpRight size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleOpenPayment(fund, "in")}
+                      className={`${ACTION_BUTTON_BASE} text-emerald-600 hover:bg-emerald-50`}
+                      title={t("screens.payments.receipt_deposit")}
+                    >
+                      <ArrowDownLeft size={16} />
+                    </button>
+                    <button
+                      onClick={() => setOpenTransferModal(fund)}
+                      className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
+                      title={t("screens.funds.fund_transfer")}
+                    >
+                      <CloudSync size={16} />
+                    </button>
+                    <button
+                      onClick={() => startEdit(fund)}
+                      className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
+                      title={t("common.edit")}
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteFund(fund)}
+                      className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-red-50 hover:text-red-500`}
+                      title={t("common.delete")}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <DeleteModal

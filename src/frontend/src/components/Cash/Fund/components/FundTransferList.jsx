@@ -1,19 +1,19 @@
 import React, { useState } from "react";
 import {
   ArrowRight,
+  ArrowLeft,
   ArrowRightLeft,
   Trash2,
   Edit2,
-  Plus,
-  ArrowLeft,
   Eye,
+  CalendarDays,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useFundTransfersList from "../hooks/useFundTransfersList";
-import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import DeleteModal from "../../../../Global/DeleteModel";
 import Pagination from "../../../../Global/Pagination";
 import FundTransferModal from "./FundTransferModal";
+import GoTo from "../../../../Global/GoTo";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import { useNavigate } from "react-router-dom";
 
@@ -39,8 +39,6 @@ const FundTransferList = () => {
 
   const [deleteTransfer, setDeleteTransfer] = useState(null);
 
-  // One modal handles both create and edit — `selectedTransfer` is null
-  // for create, or the row being edited.
   const [openTransferModal, setOpenTransferModal] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
 
@@ -61,19 +59,22 @@ const FundTransferList = () => {
   const primaryButtonClass =
     "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
 
+  const FlowArrow = isRtl ? ArrowLeft : ArrowRight;
+
   return (
     <div className={pageClass}>
-      <div className="max-w-7xl mx-auto">
-        <div className={panelClass}>
-          <div className="flex items-center justify-between gap-4 p-6 pb-4">
+      <div className="mx-auto max-w-6xl space-y-5">
+        {/* HERO */}
+        <section className={panelClass}>
+          <div className="flex items-center justify-between gap-4 p-7">
             <div>
-              <p className="mb-1 text-xs font-bold uppercase  text-[#4663ff]">
+              <p className="mb-1 text-xs font-bold uppercase text-[#4663ff]">
                 {t("ui.setup")}
               </p>
-              <h2 className="text-2xl font-black text-slate-950">
+              <h1 className="text-3xl font-black leading-tight text-slate-950">
                 {t("screens.transfer.title")}
-              </h2>
-              <p className="text-sm text-slate-500">
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">
                 {t("screens.transfer.subtitle")}
               </p>
             </div>
@@ -85,166 +86,147 @@ const FundTransferList = () => {
           </div>
 
           {actionError && (
-            <div className="mx-6 mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="mx-7 mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
               {actionError}
             </div>
           )}
+        </section>
 
+        {/* LIST */}
+        <section className={panelClass}>
           {loading ? (
-            <div className="text-center text-gray-400 text-sm py-10">
+            <div className="p-10 text-center text-sm font-semibold text-slate-400">
               {t("common.loading")}
             </div>
           ) : transfers.length === 0 ? (
-            <div className="text-center text-gray-400 text-sm py-10">
-              {t("screens.transfer.noTransfers")}
+            <div className="flex flex-col items-center gap-2 p-14 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
+                <ArrowRightLeft size={22} />
+              </div>
+              <p className="font-bold text-slate-600">
+                {t("screens.transfer.noTransfers")}
+              </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                  <tr>
-                    <th className="px-5 py-4 text-start">{t("ui.date")}</th>
-                    <th className="px-5 py-4 text-start">
-                      {t("screens.funds.transfer_Flow") || "Transfer"}
-                    </th>
-                    <th className="px-5 py-4 text-start">
-                      {t("screens.funds.transfer_rate") || "Rate"}
-                    </th>
-                    <th className="px-5 py-4 text-start">
-                      {t("screens.transfer.internal_remarks")}
-                    </th>
-                    <th className="px-5 py-4 text-start">
-                      {t("common.actions")}
-                    </th>
-                  </tr>
-                </thead>
+            <div className="divide-y divide-[#eef1ff]">
+              {transfers.map((tr) => {
+                const isCrossCurrency =
+                  tr.from_fund_currency !== tr.to_fund_currency;
+                const rateDiffers =
+                  Number(tr.effective_rate) !== Number(tr.exchange_rate);
 
-                <tbody className="divide-y divide-[#eef1ff]">
-                  {transfers.map((tr) => {
-                    const isCrossCurrency =
-                      tr.from_fund_currency !== tr.to_fund_currency;
+                return (
+                  <div
+                    key={tr.id}
+                    className="flex flex-col gap-4 px-6 py-5 transition hover:bg-[#f8faff] lg:flex-row lg:items-center lg:justify-between"
+                  >
+                    {/* FLOW — the focal point: two amounts either side of an arrow */}
+                    <div className="flex flex-1 items-center gap-4">
+                      <div className="flex-1 rounded-2xl border border-red-100 bg-red-50/60 px-4 py-3">
+                        <GoTo type="fund" id={tr.from_fund_id}>
+                          <p className="truncate font-bold text-slate-900">
+                            {tr.from_fund_name}
+                          </p>
+                        </GoTo>
+                        <p className="mt-0.5 text-lg font-black tabular-nums text-red-600">
+                          -{formatMoney(tr.deduct_amount)}{" "}
+                          <span className="text-xs font-bold text-red-400">
+                            {tr.from_fund_currency}
+                          </span>
+                        </p>
+                      </div>
 
-                    return (
-                      <tr key={tr.id} className="transition hover:bg-[#f8faff]">
-                        <td className="px-5 py-3 text-start text-slate-500 whitespace-nowrap">
-                          {tr.date ? new Date(tr.date).toLocaleString() : "-"}
-                        </td>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef3ff] text-[#4663ff]">
+                        <FlowArrow size={18} />
+                      </div>
 
-                        <td className="px-5 py-3 text-start">
-                          <div
-                            className={`flex items-center gap-2 ${
-                              isRtl ? "flex-row" : ""
-                            }`}
-                          >
-                            <div className="text-start">
-                              <div className="font-bold text-slate-900 text-sm">
-                                {tr.from_fund_name}
-                              </div>
-                              <div className="text-xs text-red-500 font-medium">
-                                -{formatMoney(tr.deduct_amount)}{" "}
-                                {tr.from_fund_currency}
-                              </div>
-                            </div>
+                      <div className="flex-1 rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3">
+                        <GoTo type="fund" id={tr.to_fund_id}>
+                          <p className="truncate font-bold text-slate-900">
+                            {tr.to_fund_name}
+                          </p>
+                        </GoTo>
+                        <p className="mt-0.5 text-lg font-black tabular-nums text-emerald-700">
+                          +{formatMoney(tr.receive_amount)}{" "}
+                          <span className="text-xs font-bold text-emerald-500">
+                            {tr.to_fund_currency}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
 
-                            {isRtl ? (
-                              <ArrowLeft
-                                className="text-indigo-400 shrink-0"
-                                size={16}
-                              />
-                            ) : (
-                              <ArrowRight
-                                className="text-indigo-400 shrink-0"
-                                size={16}
-                              />
+                    {/* META — rate, date, note */}
+                    <div className="flex flex-col gap-1.5 lg:w-64 lg:shrink-0">
+                      {isCrossCurrency && (
+                        <div className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-1.5 text-xs">
+                          <span className="font-semibold text-slate-400">
+                            {t("ui.fundRate", "Rate")}
+                          </span>
+                          <span className="font-bold tabular-nums text-slate-700">
+                            {Number(tr.exchange_rate).toFixed(4)}
+                            {rateDiffers && (
+                              <span className="ms-1.5 text-[#4663ff]">
+                                ({Number(tr.effective_rate).toFixed(4)})
+                              </span>
                             )}
+                          </span>
+                        </div>
+                      )}
 
-                            <div className="text-start">
-                              <div className="font-bold text-slate-900 text-sm">
-                                {tr.to_fund_name}
-                              </div>
-                              <div className="text-xs text-emerald-600 font-medium">
-                                +{formatMoney(tr.receive_amount)}{" "}
-                                {tr.to_fund_currency}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                        <CalendarDays size={12} />
+                        {tr.date ? new Date(tr.date).toLocaleString() : "-"}
+                      </div>
 
-                        <td className="px-5 py-3 text-start">
-                          {isCrossCurrency ? (
-                            <div className="text-xs text-gray-500">
-                              <div>
-                                {t("ui.fundRate") || "Rate"}:{" "}
-                                <strong>
-                                  {Number(tr.exchange_rate).toFixed(4)}
-                                </strong>
-                              </div>
-                              {Number(tr.effective_rate) !==
-                                Number(tr.exchange_rate) && (
-                                <div className="text-blue-600">
-                                  {t("ui.effectiveRate") || "Effective"}:{" "}
-                                  <strong>
-                                    {Number(tr.effective_rate).toFixed(4)}
-                                  </strong>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-gray-300">—</span>
-                          )}
-                        </td>
+                      {tr.note && (
+                        <p className="truncate text-xs italic text-slate-400">
+                          {tr.note}
+                        </p>
+                      )}
+                    </div>
 
-                        <td className="px-5 py-3 text-start max-w-[220px] truncate text-slate-500">
-                          {tr.note || "-"}
-                        </td>
-
-                        <td className="px-5 py-3 text-start">
-                          <div className="flex justify-start gap-1">
-                            <button
-                              onClick={() =>
-                                navigate(`/funds/transfers/${tr.id}`)
-                              }
-                              className="rounded-xl p-2 text-[#4663ff] transition hover:bg-[#eef3ff]"
-                              title={t("common.view")}
-                            >
-                              <Eye size={16} />
-                            </button>
-                            <button
-                              onClick={() => openEditModal(tr)}
-                              className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              title={t("common.edit")}
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              onClick={() => setDeleteTransfer(tr)}
-                              className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
-                              title={t("common.delete")}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              <Pagination
-                page={page}
-                totalPages={totalPages}
-                total={total}
-                limit={limit}
-                onPageChange={setPage}
-                onLimitChange={(newLimit) => {
-                  setLimit(newLimit);
-                  setPage(1);
-                }}
-              />
+                    {/* ACTIONS */}
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        onClick={() => navigate(`/funds/transfers/${tr.id}`)}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-[#4663ff] transition hover:bg-[#eef3ff]"
+                        title={t("common.view")}
+                      >
+                        <Eye size={16} />
+                      </button>
+                      <button
+                        onClick={() => openEditModal(tr)}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                        title={t("common.edit")}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteTransfer(tr)}
+                        className="flex h-9 w-9 items-center justify-center rounded-xl text-red-500 transition hover:bg-red-50"
+                        title={t("common.delete")}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
-        </div>
+
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
+          />
+        </section>
       </div>
 
       <FundTransferModal

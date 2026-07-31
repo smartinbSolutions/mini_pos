@@ -9,7 +9,6 @@ import Pagination from "../../../../Global/Pagination";
 import {
   Search,
   Receipt,
-  HandCoins,
   RefreshCw,
   Trash2,
   ChevronDown,
@@ -24,18 +23,20 @@ import {
   MoreVertical,
   Download,
   Printer,
+  CalendarDays,
 } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useNavigate } from "react-router-dom";
 import DropdownMenu from "../../../../Global/DropdownMenu";
+import GoTo from "../../../../Global/GoTo";
 
 const AllocationBadge = ({ payment }) => {
   const { t } = useTranslation();
 
   if (payment.party_type === "partner") {
     return (
-      <span className="rounded-lg text-start bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
+      <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500">
         {t("screens.payments.partnerMovement")}
       </span>
     );
@@ -43,7 +44,7 @@ const AllocationBadge = ({ payment }) => {
 
   if (!payment.allocation_count || payment.allocation_count === 0) {
     return (
-      <span className="rounded-lg text-start bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+      <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
         {t("screens.payments.unallocated")}
       </span>
     );
@@ -51,62 +52,50 @@ const AllocationBadge = ({ payment }) => {
 
   if (payment.allocated_amount < payment.amount) {
     return (
-      <span className="rounded-lg text-start bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+      <span className="rounded-lg bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
         {t("screens.payments.partial")}
       </span>
     );
   }
 
   return (
-    <span className="rounded-lg text-start bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+    <span className="rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
       {t("screens.payments.fullyAllocated")}
     </span>
   );
 };
 
-const PaymentFlow = ({ payment, dir = "ltr" }) => {
+const PaymentFlow = ({ payment, isRtl }) => {
   const isIncome = payment.type === "income";
-  const isRTL = dir === "rtl";
+  const Arrow = isRtl ? ArrowLeft : ArrowRight;
 
-  const partyLabel = payment.party_name || "-";
-  const fundLabel = payment.fund_name || "-";
+  const partyNode = payment.party_id ? (
+    <GoTo type={payment.party_type} id={payment.party_id} variant="light">
+      {payment.party_name || "-"}
+    </GoTo>
+  ) : (
+    <span>{payment.party_name || "-"}</span>
+  );
 
-  const Arrow = isRTL ? ArrowLeft : ArrowRight;
+  const fundNode = payment.fund_id ? (
+    <GoTo type="fund" id={payment.fund_id} variant="light">
+      {payment.fund_name || "-"}
+    </GoTo>
+  ) : (
+    <span>{payment.fund_name || "-"}</span>
+  );
 
-  const from = isIncome ? partyLabel : fundLabel;
-  const to = isIncome ? fundLabel : partyLabel;
+  const from = isIncome ? partyNode : fundNode;
+  const to = isIncome ? fundNode : partyNode;
 
   return (
-    <div
-      className={`flex items-center justify-center gap-2 ${isRTL ? "flex-row" : ""}`}
-      dir={dir}
-    >
-      <span
-        className={`font-bold ${
-          isIncome ? "text-slate-700" : "text-slate-900"
-        }`}
-      >
-        {from}
-      </span>
-
+    <div className="flex items-center gap-2 text-sm">
+      <span className="truncate font-semibold text-slate-500">{from}</span>
       <Arrow
-        size={14}
-        className={`${isIncome ? "text-emerald-500" : "text-red-500"} shrink-0`}
+        size={13}
+        className={`shrink-0 ${isIncome ? "text-emerald-500" : "text-red-500"}`}
       />
-
-      <span
-        className={`font-bold ${
-          isIncome ? "text-slate-900" : "text-slate-700"
-        }`}
-      >
-        {to}
-      </span>
-
-      {isIncome ? (
-        <TrendingUp size={14} className="text-emerald-500 shrink-0" />
-      ) : (
-        <TrendingDown size={14} className="text-red-500 shrink-0" />
-      )}
+      <span className="truncate font-bold text-slate-900">{to}</span>
     </div>
   );
 };
@@ -152,7 +141,6 @@ const PaymentList = () => {
 
   const isDeletedView = view === "deleted";
 
-  // Whichever dataset is active drives the table
   const rows = isDeletedView ? deletedPayments : payments;
   const loading = isDeletedView ? deletedLoading : activeLoading;
   const actionError = isDeletedView ? deletedActionError : activeActionError;
@@ -166,7 +154,7 @@ const PaymentList = () => {
   const filters = isDeletedView ? deletedFilters : activeFilters;
   const setFilters = isDeletedView ? setDeletedFilters : setActiveFilters;
 
-  const { primaryCurrency } = usePrimaryCurrency();
+  const { money, primaryCurrency } = usePrimaryCurrency();
 
   const [deletePaymentId, setDeletePaymentId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -175,7 +163,6 @@ const PaymentList = () => {
   const [allocationsByPayment, setAllocationsByPayment] = useState({});
   const [loadingAllocations, setLoadingAllocations] = useState({});
   const [funds, setFunds] = useState([]);
-  const [isPrinting, setIsPrinting] = useState(false);
   const [savingPdfId, setSavingPdfId] = useState(null);
 
   const api = window.api;
@@ -188,7 +175,6 @@ const PaymentList = () => {
         .catch(() => setFunds([]));
     }
   }, [api]);
-  const { money } = usePrimaryCurrency();
 
   const filteredPayments = rows.filter((pay) => {
     const partyName = pay.party_name?.toLowerCase() || "";
@@ -203,19 +189,13 @@ const PaymentList = () => {
 
     setExpandedRows((prev) => ({ ...prev, [rowId]: !isExpanded }));
 
-    if (isDeletedView) {
-      // Allocations already came back with the snapshot, nothing to fetch
-      return;
-    }
+    if (isDeletedView) return;
 
     if (!isExpanded && !allocationsByPayment[rowId]) {
       setLoadingAllocations((prev) => ({ ...prev, [rowId]: true }));
       try {
         const res = await api.getPaymentAllocations(payment.id);
-        setAllocationsByPayment((prev) => ({
-          ...prev,
-          [rowId]: res || [],
-        }));
+        setAllocationsByPayment((prev) => ({ ...prev, [rowId]: res || [] }));
       } catch (err) {
         console.error("Failed to load allocations:", err);
         setAllocationsByPayment((prev) => ({ ...prev, [rowId]: [] }));
@@ -237,15 +217,12 @@ const PaymentList = () => {
 
   const handlePrint = async (paymentId) => {
     try {
-      setIsPrinting(true);
       const res = await api.printDocument(`/print-payment/${paymentId}`);
       if (!res.success && res.error === "NO_PRINTER") {
         console.error("No printer found");
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setIsPrinting(false);
     }
   };
 
@@ -281,13 +258,17 @@ const PaymentList = () => {
     });
   };
 
+  const panelClass =
+    "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
+
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
+      <div className="mx-auto max-w-6xl space-y-5">
+        {/* HERO */}
+        <section className={panelClass}>
           <div className="grid gap-6 p-7 lg:grid-cols-[1fr_360px]">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase  text-[#4663ff]">
+              <p className="mb-2 text-xs font-bold uppercase text-[#4663ff]">
                 {t("ui.payment")}
               </p>
               <h1 className="text-4xl font-black leading-tight text-slate-950">
@@ -299,34 +280,34 @@ const PaymentList = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
-                <TrendingUp size={20} className="mb-4 text-emerald-600" />
-                <div className="text-xl  text-emerald-700">
-                  {formatMoney(summary.income_total)} {primaryCurrency?.symbol}
-                </div>
-                <div className="text-xs font-semibold text-slate-500">
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+                  <TrendingUp size={13} />
                   {t("screens.payments.count_income", {
                     count: summary.income_count,
                   })}
                 </div>
-              </div>
-              <div className="rounded-3xl border border-[#e5ebff] bg-[#f8faff] p-4">
-                <TrendingDown size={20} className="mb-4 text-red-500" />
-                <div className="text-xl  text-red-600">
-                  {formatMoney(summary.expense_total)} {primaryCurrency?.symbol}
+                <div className="mt-2 text-xl font-black tabular-nums text-emerald-700">
+                  {formatMoney(summary.income_total, primaryCurrency)}
                 </div>
-                <div className="text-xs font-semibold text-slate-500">
+              </div>
+              <div className="rounded-2xl border border-red-100 bg-red-50 p-4">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-red-600">
+                  <TrendingDown size={13} />
                   {t("screens.payments.count_expense", {
                     count: summary.expense_count,
                   })}
+                </div>
+                <div className="mt-2 text-xl font-black tabular-nums text-red-600">
+                  {formatMoney(summary.expense_total, primaryCurrency)}
                 </div>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col gap-3 border-t border-[#e5ebff] bg-white/60 p-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-md">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative max-w-md flex-1">
                 <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
@@ -476,257 +457,228 @@ const PaymentList = () => {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-center text-sm">
-              <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                <tr>
-                  <th className="w-10 px-5 py-4 text-center"></th>
-                  <th className="px-5 py-4 text-center">
-                    {t("screens.payments.paymentNo")}
-                  </th>
-                  <th className="px-5 py-4 text-center">
-                    {t("screens.payments.flow")}
-                  </th>
-                  <th className="px-5 py-4 text-center">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.amount")}</th>
-                  <th className="px-5 py-4 text-center">
-                    {t("screens.payments.rate")}
-                  </th>
-                  {isDeletedView ? (
-                    <th className="px-5 py-4 text-center">
-                      {t("screens.payments.deletedInfo")}
-                    </th>
-                  ) : (
-                    <th className="px-5 py-4 text-center">
-                      {t("screens.payments.allocation")}
-                    </th>
-                  )}
-                  <th className="px-5 py-4 text-center">
-                    {t("common.actions")}
-                  </th>
-                </tr>
-              </thead>
+        {/* LIST */}
+        <section className={panelClass}>
+          {loading ? (
+            <div className="p-10 text-center text-sm font-semibold text-slate-400">
+              {t("common.loading")}
+            </div>
+          ) : filteredPayments.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 p-14 text-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4663ff]">
+                <Receipt size={22} />
+              </div>
+              <p className="font-bold text-slate-600">
+                {isDeletedView
+                  ? t("screens.payments.emptyDeleted")
+                  : t("screens.payments.empty")}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-[#eef1ff]">
+              {filteredPayments.map((pay) => {
+                const rowId = isDeletedView ? pay.deleted_payment_id : pay.id;
+                const displayId = isDeletedView ? pay.payment_id : pay.id;
+                const canExpand = pay.party_type !== "partner";
+                const isExpanded = expandedRows[rowId];
+                const allocations = isDeletedView
+                  ? pay.allocations
+                  : allocationsByPayment[rowId];
+                const isLoadingAlloc = loadingAllocations[rowId];
+                const rateDiffers = pay.exchange_rate !== pay.effective_rate;
+                const isIncome = pay.type === "income";
+                const hasFundCurrencyDiff =
+                  pay.fund_currency_code &&
+                  pay.amount_fund_currency !== pay.amount;
 
-              <tbody className="divide-y divide-[#e5ebff]">
-                {loading ? (
-                  <tr>
-                    <td colSpan="8" className="p-8 text-center text-slate-500">
-                      {t("common.loading")}
-                    </td>
-                  </tr>
-                ) : filteredPayments.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" className="p-8 text-center text-slate-500">
-                      {isDeletedView
-                        ? t("screens.payments.emptyDeleted")
-                        : t("screens.payments.empty")}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPayments.map((pay) => {
-                    const rowId = isDeletedView
-                      ? pay.deleted_payment_id
-                      : pay.id;
-                    const displayId = isDeletedView ? pay.payment_id : pay.id;
-                    const canExpand = pay.party_type !== "partner";
-                    const isExpanded = expandedRows[rowId];
-                    const allocations = isDeletedView
-                      ? pay.allocations
-                      : allocationsByPayment[rowId];
-                    const isLoadingAlloc = loadingAllocations[rowId];
-                    const rateDiffers =
-                      pay.exchange_rate !== pay.effective_rate;
+                return (
+                  <div key={rowId}>
+                    <div
+                      className={`flex flex-col gap-4 px-6 py-4 transition hover:bg-[#f8faff] lg:flex-row lg:items-center lg:justify-between ${
+                        isDeletedView ? "opacity-70" : ""
+                      }`}
+                    >
+                      {/* LEFT — identity + flow */}
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        {canExpand ? (
+                          <button
+                            onClick={() => toggleExpand(pay)}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown size={16} />
+                            ) : (
+                              <ChevronRight size={16} />
+                            )}
+                          </button>
+                        ) : (
+                          <span className="w-8 shrink-0" />
+                        )}
 
-                    return (
-                      <React.Fragment key={rowId}>
-                        <tr
-                          className={`transition hover:bg-[#f8faff] ${
-                            isDeletedView ? "opacity-75" : ""
+                        <div
+                          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                            isIncome
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-red-100 text-red-600"
                           }`}
                         >
-                          <td className="px-5 py-4 text-center">
-                            {canExpand && (
+                          {isIncome ? (
+                            <TrendingUp size={19} />
+                          ) : (
+                            <TrendingDown size={19} />
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            {isDeletedView ? (
+                              <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-black text-slate-500">
+                                #{displayId}
+                              </span>
+                            ) : (
                               <button
-                                onClick={() => toggleExpand(pay)}
-                                className="rounded-lg p-1 text-slate-400 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                                onClick={() => navigate(`/payments/${pay.id}`)}
+                                className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-xs font-black text-[#4663ff] transition hover:bg-[#dbe4ff]"
                               >
-                                {isExpanded ? (
-                                  <ChevronDown size={16} />
-                                ) : (
-                                  <ChevronRight size={16} />
-                                )}
+                                #{displayId}
                               </button>
                             )}
-                          </td>
+                            <span className="flex items-center gap-1 text-xs font-semibold text-slate-400">
+                              <CalendarDays size={11} />
+                              {pay?.date?.slice(0, 10) ||
+                                pay?.createdAt?.slice(0, 10)}
+                            </span>
+                          </div>
+                          <div className="mt-1">
+                            <PaymentFlow payment={pay} isRtl={isRtl} />
+                          </div>
+                        </div>
+                      </div>
 
-                          <td className="px-5 py-4 text-center">
-                            {isDeletedView ? (
-                              <span className="rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-500">
-                                #{displayId}
-                              </span>
-                            ) : (
-                              <span
-                                onClick={() => navigate(`/payments/${pay.id}`)}
-                                className="cursor-pointer rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff] transition hover:bg-[#dbe4ff]"
-                              >
-                                #{displayId}
-                              </span>
-                            )}
-                          </td>
-
-                          <td className="px-5 py-4 text-center">
-                            <PaymentFlow
-                              payment={pay}
-                              dir={isRtl ? "rtl" : "ltr"}
-                            />
-                          </td>
-
-                          <td className="px-5 py-4 text-center text-slate-500">
-                            {pay?.date?.slice(0, 10) ||
-                              pay?.createdAt?.slice(0, 10)}
-                          </td>
-
-                          <td className="px-5 py-4 text-text-center">
-                            <div
-                              className={` ${
-                                pay.type === "income"
-                                  ? "text-emerald-700"
-                                  : "text-red-600"
-                              }`}
-                            >
-                              {formatMoney(pay.amount, primaryCurrency)}
+                      {/* MIDDLE — allocation / deleted info */}
+                      <div className="shrink-0 lg:w-48">
+                        {isDeletedView ? (
+                          <div className="text-xs font-semibold text-slate-500">
+                            <div className="text-slate-700">
+                              {pay.deleted_by_name || "-"}
                             </div>
-                            {pay.fund_currency_code &&
-                              pay.amount_fund_currency !== pay.amount && (
-                                <div className="text-xs font-semibold text-slate-400">
-                                  {formatMoney(
-                                    pay.amount_fund_currency,
-                                    pay.fund_currency_code,
-                                    pay.fund_currency_symbol
-                                  )}
-                                </div>
-                              )}
-                          </td>
-
-                          <td className="px-5 py-4 text-text-center text-xs font-semibold text-slate-500">
-                            {rateDiffers ? (
-                              <>
-                                <div>{pay.exchange_rate}</div>
-                                <div className="text-slate-400">
-                                  ({pay.effective_rate})
-                                </div>
-                              </>
-                            ) : (
-                              <div>{pay.exchange_rate}</div>
-                            )}
-                          </td>
-
-                          {isDeletedView ? (
-                            <td className="px-5 py-4 text-center text-xs font-semibold text-slate-500">
-                              <div className="text-slate-700">
-                                {pay.deleted_by_name || "-"}
-                              </div>
-                              <div className="text-slate-400">
-                                {pay.deletedAt?.slice(0, 16)}
-                              </div>
-                            </td>
-                          ) : (
-                            <td className="px-5 py-4">
-                              <AllocationBadge payment={pay} />
-                            </td>
-                          )}
-
-                          <td className="px-5 py-4 text-center">
-                            <div className="flex justify-center gap-1">
-                              {isDeletedView ? (
-                                <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-400">
-                                  {t("screens.payments.deleted")}
-                                </span>
-                              ) : (
-                                <DropdownMenu
-                                  trigger={
-                                    <button className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
-                                      <MoreVertical size={16} />
-                                    </button>
-                                  }
-                                  align={isRtl ? "left" : "right"}
-                                  options={[
-                                    {
-                                      key: "view",
-                                      icon: <Eye size={14} />,
-                                      label: t("common.view"),
-                                      onClick: () =>
-                                        navigate(`/payments/${pay.id}`),
-                                    },
-                                    {
-                                      key: "savePdf",
-                                      icon: <Download size={14} />,
-                                      label: t("common.savePdf"),
-                                      onClick: () => handleSavePdf(pay.id),
-                                    },
-                                    {
-                                      key: "print",
-                                      icon: <Printer size={14} />,
-                                      label: t("common.print"),
-                                      onClick: () => handlePrint(pay.id),
-                                    },
-                                    {
-                                      key: "delete",
-                                      icon: (
-                                        <Trash2
-                                          size={14}
-                                          className="text-red-500"
-                                        />
-                                      ),
-                                      label: t("common.delete"),
-                                      onClick: () => setDeletePaymentId(pay),
-                                    },
-                                  ]}
-                                />
-                              )}
+                            <div className="text-slate-400">
+                              {pay.deletedAt?.slice(0, 16)}
                             </div>
-                          </td>
-                        </tr>
-
-                        {isExpanded && (
-                          <tr className="bg-[#f8faff]/60">
-                            <td colSpan="8" className="px-5 py-4 text-center">
-                              {isLoadingAlloc ? (
-                                <div className="text-sm text-slate-500">
-                                  {t("common.loading")}
-                                </div>
-                              ) : allocations && allocations.length > 0 ? (
-                                <div className="space-y-2">
-                                  {allocations.map((alloc) => (
-                                    <div
-                                      key={alloc.id}
-                                      className="flex items-center justify-between rounded-xl border border-[#e5ebff] bg-white px-4 py-2 text-sm"
-                                    >
-                                      <span className="font-semibold text-slate-600">
-                                        {alloc.invoice_type} #{alloc.invoice_id}
-                                      </span>
-                                      <span className="font-black text-slate-900">
-                                        {money(alloc.amount)}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="text-sm text-slate-500">
-                                  {t("screens.payments.noAllocations")}
-                                </div>
-                              )}
-                            </td>
-                          </tr>
+                          </div>
+                        ) : (
+                          <AllocationBadge payment={pay} />
                         )}
-                      </React.Fragment>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+
+                      {/* NUMBERS — the focal point */}
+                      <div className="shrink-0 text-end lg:w-44">
+                        <div
+                          className={`text-lg font-black tabular-nums ${
+                            isIncome ? "text-emerald-700" : "text-red-600"
+                          }`}
+                        >
+                          {isIncome ? "+" : "-"}
+                          {formatMoney(pay.amount, primaryCurrency)}
+                        </div>
+                        {hasFundCurrencyDiff && (
+                          <div className="mt-0.5 text-xs font-semibold text-slate-400">
+                            {formatMoney(pay.amount_fund_currency, {
+                              code: pay.fund_currency_code,
+                              symbol: pay.fund_currency_symbol,
+                            })}
+                          </div>
+                        )}
+                        {rateDiffers && (
+                          <div className="mt-0.5 text-[11px] text-slate-300">
+                            {t("screens.payments.rate")}: {pay.exchange_rate} (
+                            {pay.effective_rate})
+                          </div>
+                        )}
+                      </div>
+
+                      {/* ACTIONS */}
+                      <div className="shrink-0">
+                        {isDeletedView ? (
+                          <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-400">
+                            {t("screens.payments.deleted")}
+                          </span>
+                        ) : (
+                          <DropdownMenu
+                            trigger={
+                              <button className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]">
+                                <MoreVertical size={16} />
+                              </button>
+                            }
+                            align={isRtl ? "left" : "right"}
+                            options={[
+                              {
+                                key: "view",
+                                icon: <Eye size={14} />,
+                                label: t("common.view"),
+                                onClick: () => navigate(`/payments/${pay.id}`),
+                              },
+                              {
+                                key: "savePdf",
+                                icon: <Download size={14} />,
+                                label: t("common.savePdf"),
+                                onClick: () => handleSavePdf(pay.id),
+                              },
+                              {
+                                key: "print",
+                                icon: <Printer size={14} />,
+                                label: t("common.print"),
+                                onClick: () => handlePrint(pay.id),
+                              },
+                              {
+                                key: "delete",
+                                icon: (
+                                  <Trash2 size={14} className="text-red-500" />
+                                ),
+                                label: t("common.delete"),
+                                onClick: () => setDeletePaymentId(pay),
+                              },
+                            ]}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="bg-[#f8faff]/60 px-6 py-4">
+                        {isLoadingAlloc ? (
+                          <div className="text-sm text-slate-500">
+                            {t("common.loading")}
+                          </div>
+                        ) : allocations && allocations.length > 0 ? (
+                          <div className="space-y-2">
+                            {allocations.map((alloc) => (
+                              <div
+                                key={alloc.id}
+                                className="flex items-center justify-between rounded-xl border border-[#e5ebff] bg-white px-4 py-2 text-sm"
+                              >
+                                <span className="font-semibold text-slate-600">
+                                  {alloc.invoice_type} #{alloc.invoice_id}
+                                </span>
+                                <span className="font-black tabular-nums text-slate-900">
+                                  {money(alloc.amount)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-slate-500">
+                            {t("screens.payments.noAllocations")}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <Pagination
             page={page}
             totalPages={totalPages}
@@ -747,6 +699,7 @@ const PaymentList = () => {
         onConfirm={async () => {
           if (deletePaymentId) {
             await handleDeletePayment(deletePaymentId);
+            await refetchDeleted();
             setDeletePaymentId(null);
           }
         }}

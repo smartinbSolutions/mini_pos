@@ -5,6 +5,13 @@
     "version": "v1.0.5 - POS System"
   },
   "common": {
+    "export": "Export",
+    "exportData": "Export Data",
+    "dateRange": "Date Range",
+    "exportDateRangeHint": "Leave empty to export all records",
+    "exportLanguage": "Document Language",
+    "exportExcel": "Excel",
+    "exportPdf": "PDF",
     "loading": "Loading...",
     "saving": "Saving...",
     "save": "Save",
@@ -226,6 +233,18 @@
       "addButton": "Add Currency"
     },
     "funds": {
+      "transferDeleted": "Transfer deleted",
+      "transferDeleteFailed": "Failed to delete transfer",
+      "transferNotFound": "Transfer not found",
+      "from": "From",
+      "to": "To",
+      "exchangeRate": "Exchange rate",
+      "effectiveRate": "Effective rate",
+      "rateDiffers": "Rate differs",
+      "transactionType": {
+        "payment": "Payment",
+        "transfer": "Transfer"
+      },
       "title": "Funds Overview",
       "subtitle": "Manage your cash, bank & wallets",
       "accounts": "Accounts",
@@ -243,7 +262,19 @@
       "balanceAsOf": "Balance as of",
       "startsInDeficit": "Starts in deficit",
       "startsWithMoney": "Starts with money",
-      "initialBalanceHelper": "Optional — only if this fund already has money in it"
+      "initialBalanceHelper": "Optional — only if this fund already has money in it",
+      "openingBalancePositive": "Fund started with an opening balance",
+      "openingBalanceNegative": "Fund started with a negative opening balance",
+      "transferReceivedFrom": "Received transfer from {{fund}}",
+      "transferSentTo": "Transferred to {{fund}}",
+      "paymentFromCustomer": "Payment received from customer {{party}}",
+      "refundToCustomer": "Refund paid to customer {{party}}",
+      "refundFromSupplier": "Refund received from supplier {{party}}",
+      "paymentToSupplier": "Payment paid to supplier {{party}}",
+      "depositFromPartner": "Deposit received from partner {{party}}",
+      "withdrawalToPartner": "Withdrawal paid to partner {{party}}",
+      "genericPaymentIn": "Payment received",
+      "genericPaymentOut": "Payment made"
     },
     "contacts": {
       "customersSubtitle": "Manage your customers easily",
@@ -376,6 +407,14 @@
       }
     },
     "invoices": {
+      "invoiceType": {
+        "sales": "Sales",
+        "purchase": "Purchase",
+        "sales_return": "Sales return",
+        "purchase_return": "Purchase return",
+        "expense": "Expense",
+        "opening_balance": "Opening balance"
+      },
       "pay": "Pay",
       "lockedPosInvoice": "This invoice was created at the POS and cannot be edited here.",
       "manual": "Manual",
@@ -796,6 +835,7 @@
       "openingBalanceNegativeFor": "{{party}} started owing {{amount}}"
     },
     "fundMovements": {
+      "exportTitle": "Export Fund Movements",
       "title": "Fund Movements",
       "subtitle": "Track all fund transactions and running balances",
       "totalIn": "Total In",

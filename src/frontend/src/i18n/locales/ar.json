@@ -5,6 +5,13 @@
     "version": "الإصدار 1.0.5 - نظام نقاط البيع"
   },
   "common": {
+    "export": "تصدير",
+    "exportData": "تصدير البيانات",
+    "dateRange": "نطاق التاريخ",
+    "exportDateRangeHint": "اتركه فارغاً لتصدير جميع السجلات",
+    "exportLanguage": "لغة المستند",
+    "exportExcel": "إكسل",
+    "exportPdf": "PDF",
     "savePdf": "حفظ كملف PDF",
     "loading": "جار التحميل...",
     "saving": "جار الحفظ...",
@@ -227,6 +234,18 @@
       "addButton": "إضافة عملة"
     },
     "funds": {
+      "transactionType": {
+        "payment": "دفعة",
+        "transfer": "تحويل"
+      },
+      "transferDeleted": "تم حذف التحويل",
+      "transferDeleteFailed": "فشل حذف التحويل",
+      "transferNotFound": "التحويل غير موجود",
+      "from": "من",
+      "to": "إلى",
+      "exchangeRate": "سعر الصرف",
+      "effectiveRate": "السعر الفعلي",
+      "rateDiffers": "السعر مختلف",
       "title": "نظرة عامة على الصناديق",
       "subtitle": "إدارة النقد والبنوك والمحافظ",
       "accounts": "الحسابات",
@@ -244,7 +263,19 @@
       "balanceAsOf": "الرصيد اعتباراً من",
       "startsInDeficit": "يبدأ بعجز مالي",
       "startsWithMoney": "يبدأ برصيد مالي",
-      "initialBalanceHelper": "اختياري — فقط إذا كان هذا الصندوق يحتوي على أموال بالفعل"
+      "initialBalanceHelper": "اختياري — فقط إذا كان هذا الصندوق يحتوي على أموال بالفعل",
+      "openingBalancePositive": "بدأ الصندوق برصيد افتتاحي",
+      "openingBalanceNegative": "بدأ الصندوق برصيد افتتاحي سالب",
+      "transferReceivedFrom": "تم استلام تحويل من {{fund}}",
+      "transferSentTo": "تم التحويل إلى {{fund}}",
+      "paymentFromCustomer": "تم استلام دفعة من العميل {{party}}",
+      "refundToCustomer": "تم دفع مبلغ مسترد للعميل {{party}}",
+      "refundFromSupplier": "تم استلام مبلغ مسترد من المورد {{party}}",
+      "paymentToSupplier": "تم دفع مبلغ للمورد {{party}}",
+      "depositFromPartner": "تم استلام إيداع من الشريك {{party}}",
+      "withdrawalToPartner": "تم دفع سحب للشريك {{party}}",
+      "genericPaymentIn": "تم استلام دفعة",
+      "genericPaymentOut": "تم دفع مبلغ"
     },
     "contacts": {
       "customersSubtitle": "إدارة العملاء بسهولة",
@@ -380,6 +411,14 @@
       }
     },
     "invoices": {
+      "invoiceType": {
+        "sales": "فاتورة مبيعات",
+        "purchase": "فاتورة مشتريات",
+        "sales_return": "مرتجع مبيعات",
+        "purchase_return": "مرتجع مشتريات",
+        "expense": "مصروف",
+        "opening_balance": "رصيد افتتاحي"
+      },
       "lockedPosInvoice": "تم إنشاء هذه الفاتورة من نقطة البيع ولا يمكن تعديلها من هنا.",
       "manual": "يدوي",
       "pos": "نقطة بيع",
@@ -790,6 +829,7 @@
       "currentBalance": "الرصيد الحالي",
       "loading": "جار تحميل الحركات...",
       "empty": "لا توجد حركات",
+      "exportTitle": "تصدير حركات الصندوق",
       "fundMovement": "حركة صندوق"
     },
     "expensesCategory": {

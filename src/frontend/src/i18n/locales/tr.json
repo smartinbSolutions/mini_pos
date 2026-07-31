@@ -5,6 +5,13 @@
     "version": "v1.0.5 - POS Sistemi"
   },
   "common": {
+    "export": "Dışa aktar",
+    "exportData": "Veri Dışa Aktar",
+    "dateRange": "Tarih Aralığı",
+    "exportDateRangeHint": "Tüm kayıtları dışa aktarmak için boş bırakın",
+    "exportLanguage": "Belge Dili",
+    "exportExcel": "Excel",
+    "exportPdf": "PDF",
     "savePdf": "PDF Olarak Kaydet",
     "loading": "Yükleniyor...",
     "saving": "Kaydediliyor...",
@@ -226,6 +233,18 @@
       "addButton": "Para Birimi Ekle"
     },
     "funds": {
+      "transactionType": {
+        "payment": "Ödeme",
+        "transfer": "Transfer"
+      },
+      "transferDeleted": "Transfer silindi",
+      "transferDeleteFailed": "Transfer silinemedi",
+      "transferNotFound": "Transfer bulunamadı",
+      "from": "Kaynak",
+      "to": "Hedef",
+      "exchangeRate": "Döviz kuru",
+      "effectiveRate": "Efektif kur",
+      "rateDiffers": "Kur farklı",
       "title": "Kasa Özeti",
       "subtitle": "Nakit, banka ve cüzdanları yönet",
       "accounts": "Hesaplar",
@@ -243,7 +262,19 @@
       "balanceAsOf": "itibarıyla bakiye",
       "startsInDeficit": "Açıkla başlıyor",
       "startsWithMoney": "Bakiye ile başlıyor",
-      "initialBalanceHelper": "İsteğe bağlı — yalnızca bu kasada zaten para varsa"
+      "initialBalanceHelper": "İsteğe bağlı — yalnızca bu kasada zaten para varsa",
+      "openingBalancePositive": "Kasa açılış bakiyesiyle başladı",
+      "openingBalanceNegative": "Kasa negatif açılış bakiyesiyle başladı",
+      "transferReceivedFrom": "{{fund}} kasasından transfer alındı",
+      "transferSentTo": "{{fund}} kasasına transfer yapıldı",
+      "paymentFromCustomer": "{{party}} müşterisinden ödeme alındı",
+      "refundToCustomer": "{{party}} müşterisine iade yapıldı",
+      "refundFromSupplier": "{{party}} tedarikçisinden iade alındı",
+      "paymentToSupplier": "{{party}} tedarikçisine ödeme yapıldı",
+      "depositFromPartner": "{{party}} ortağından yatırım alındı",
+      "withdrawalToPartner": "{{party}} ortağına ödeme yapıldı",
+      "genericPaymentIn": "Ödeme alındı",
+      "genericPaymentOut": "Ödeme yapıldı"
     },
     "contacts": {
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
@@ -373,6 +404,14 @@
       }
     },
     "invoices": {
+      "invoiceType": {
+        "sales": "Satış",
+        "purchase": "Alış",
+        "sales_return": "Satış iadesi",
+        "purchase_return": "Alış iadesi",
+        "expense": "Gider",
+        "opening_balance": "Açılış bakiyesi"
+      },
       "lockedPosInvoice": "Bu fatura POS'ta oluşturuldu ve buradan düzenlenemez.",
       "manual": "Manuel",
       "pos": "POS",
@@ -777,6 +816,7 @@
       "openingBalanceNegativeFor": "{{party}} {{amount}} borçla başladı"
     },
     "fundMovements": {
+      "exportTitle": "Kasa Hareketlerini Dışa Aktar",
       "title": "Kasa Hareketleri",
       "subtitle": "Tüm kasa işlemlerini ve güncel bakiyeleri takip edin",
       "totalIn": "Toplam Giriş",

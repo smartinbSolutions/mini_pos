@@ -25,6 +25,26 @@ const useFundList = () => {
   const [openTransferModal, setOpenTransferModal] = useState(false);
   const api = window.api;
 
+  // Maps known backend error codes (from create/update/delete-fund) to a
+  // translated, user-facing message. Falls back to treating the code as
+  // an already-human-readable string, then to a generic message.
+  const mapFundErrorCode = useCallback(
+    (code) => {
+      switch (code) {
+        case "MISSING_REQUIRED_FIELDS":
+          return t(
+            "errors.missingRequiredFields",
+            "Please fill in all required fields."
+          );
+        case "FUND_HAS_HISTORY":
+          return t("errors.deleteHasData", { field: t("ui.fund") });
+        default:
+          return null;
+      }
+    },
+    [t]
+  );
+
   const normalizeFund = (fund) => {
     const exchangeRate = Number(fund.exchange_rate || 1);
     const balance = Number(fund.computed_balance || 0);
@@ -81,9 +101,6 @@ const useFundList = () => {
     refetch();
   }, [refetch]);
 
-  // Single handler each — validation + API call + saving state + user
-  // feedback (actionError/toast) all live in one place per action, rather
-  // than a "raw" function plus a separate "for the form" wrapper.
   const handleCreateFund = async (fund) => {
     const validationError = validateFund(fund);
     if (validationError) {
@@ -94,7 +111,7 @@ const useFundList = () => {
 
     setSaving(true);
     try {
-      await api.createFund({
+      const res = await api.createFund({
         name: String(fund.name || "").trim(),
         currency_id: Number(fund.currency_id),
         currency_code: fund.currency_code,
@@ -103,6 +120,15 @@ const useFundList = () => {
           fund.balance_type === "decrease" ? "decrease" : "increase",
         date: fund.date || undefined,
       });
+
+      if (!res?.success) {
+        throw new Error(
+          mapFundErrorCode(res?.error) ||
+            res?.error ||
+            t("errors.createFailed", { field: t("ui.fund") })
+        );
+      }
+
       await refetch();
       setActionError("");
       return true;
@@ -128,7 +154,16 @@ const useFundList = () => {
 
     setSaving(true);
     try {
-      await api.updateFund(normalizeFund(fund));
+      const res = await api.updateFund(normalizeFund(fund));
+
+      if (!res?.success) {
+        throw new Error(
+          mapFundErrorCode(res?.error) ||
+            res?.error ||
+            t("errors.updateFailed", { field: t("ui.fund") })
+        );
+      }
+
       await refetch();
       setActionError("");
       return true;
@@ -151,7 +186,9 @@ const useFundList = () => {
 
       if (!res?.success) {
         throw new Error(
-          res?.message || t("errors.deleteFailed", { field: t("ui.fund") })
+          mapFundErrorCode(res?.error) ||
+            res?.error ||
+            t("errors.deleteFailed", { field: t("ui.fund") })
         );
       }
 

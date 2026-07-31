@@ -3,8 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast, ToastContainer } from "react-toastify";
 import {
-  ArrowLeft,
-  ArrowRight,
   Printer,
   Trash2,
   TrendingUp,
@@ -15,13 +13,13 @@ import {
 import { formatMoney } from "../../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import DeleteModal from "../../../../Global/DeleteModel";
+import GoTo from "../../../../Global/GoTo";
+import BackButton from "../../../../Global/BackButton";
 
 const PaymentDocumentPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
-  const isRtl = i18n.dir() === "rtl";
-  const BackIcon = isRtl ? ArrowRight : ArrowLeft;
+  const { t } = useTranslation();
   const { primaryCurrency } = usePrimaryCurrency();
 
   const [payment, setPayment] = useState(null);
@@ -115,7 +113,7 @@ const PaymentDocumentPage = () => {
 
   const isIncome = payment.type === "income";
   const rateDiffers = payment.exchange_rate !== payment.effective_rate;
-  const currencyForFund = {
+  const fundCurrency = {
     code: payment.fund_currency_code,
     symbol: payment.fund_currency_symbol,
   };
@@ -124,13 +122,7 @@ const PaymentDocumentPage = () => {
     <div className={pageClass}>
       <div className="mx-auto max-w-3xl space-y-5">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-          >
-            <BackIcon size={16} />
-            {t("common.back")}
-          </button>
+          <BackButton />
 
           <div className="flex gap-2">
             <button
@@ -162,7 +154,7 @@ const PaymentDocumentPage = () => {
         <section className={panelClass}>
           <div className="flex items-start justify-between p-7">
             <div>
-              <p className="mb-2 text-xs font-bold uppercase  text-[#4663ff]">
+              <p className="mb-2 text-xs font-bold uppercase text-[#4663ff]">
                 {t("ui.payment")}
               </p>
               <h1 className="text-3xl font-black text-slate-950">
@@ -187,79 +179,93 @@ const PaymentDocumentPage = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-6 border-t border-[#e5ebff] bg-[#f8faff] p-7 text-sm">
-            <div>
-              <p className="text-xs font-bold uppercase  text-slate-400">
-                {t("screens.payments.party")}
-              </p>
-              <p className="mt-1 font-bold text-slate-900">
-                {payment.party_name || t("ui.other")}
-                <span className="ms-2 font-normal text-slate-400">
-                  ({t(`ui.${payment.party_type}`)})
-                </span>
-              </p>
+          {/* NUMBERS — amount is the focal point, larger and first */}
+          <div className="border-t border-[#e5ebff] bg-[#f8faff] p-7">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-2xl bg-white p-5">
+                <p className="text-xs font-bold uppercase text-slate-400">
+                  {t("ui.amount")}
+                </p>
+                <p
+                  className={`mt-1 text-2xl font-black tabular-nums ${
+                    isIncome ? "text-emerald-700" : "text-red-600"
+                  }`}
+                >
+                  {formatMoney(payment.amount, primaryCurrency)}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white p-5">
+                <p className="text-xs font-bold uppercase text-slate-400">
+                  {t("screens.payments.collectedAmount")}
+                </p>
+                <p className="mt-1 text-2xl font-black tabular-nums text-slate-700">
+                  {formatMoney(payment.amount_fund_currency, fundCurrency)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-bold uppercase  text-slate-400">
-                {t("ui.fund")}
-              </p>
-              <p className="mt-1 font-bold text-slate-900">
-                {payment.fund_name}{" "}
-                <span className="font-normal text-slate-400">
-                  ({payment.fund_currency_code})
-                </span>
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase  text-slate-400">
-                {t("ui.amount")}
-              </p>
-              <p
-                className={`mt-1 font-black tabular-nums ${
-                  isIncome ? "text-emerald-700" : "text-red-600"
-                }`}
-              >
-                {formatMoney(payment.amount, primaryCurrency)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-bold uppercase  text-slate-400">
-                {t("screens.payments.collectedAmount")}
-              </p>
-              <p className="mt-1 font-black tabular-nums text-slate-700">
-                {formatMoney(
-                  payment.amount_fund_currency,
-                  currencyForFund.code,
-                  currencyForFund.symbol
-                )}
-              </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-6 text-sm">
+              <div>
+                <p className="text-xs font-bold uppercase text-slate-400">
+                  {t("screens.payments.party")}
+                </p>
+                <p className="mt-1 font-bold text-slate-900">
+                  {payment.party_id ? (
+                    <GoTo
+                      type={payment.party_type}
+                      id={payment.party_id}
+                      variant="light"
+                    >
+                      {payment.party_name || t("ui.other")}
+                    </GoTo>
+                  ) : (
+                    payment.party_name || t("ui.other")
+                  )}
+                  <span className="ms-2 font-normal text-slate-400">
+                    ({t(`ui.${payment.party_type}`)})
+                  </span>
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase text-slate-400">
+                  {t("ui.fund")}
+                </p>
+                <p className="mt-1 font-bold text-slate-900">
+                  <GoTo type="fund" id={payment.fund_id} variant="light">
+                    {payment.fund_name}
+                  </GoTo>{" "}
+                  <span className="font-normal text-slate-400">
+                    ({payment.fund_currency_code})
+                  </span>
+                </p>
+              </div>
             </div>
 
             {rateDiffers && (
-              <>
+              <div className="mt-4 grid grid-cols-2 gap-6 text-sm">
                 <div>
-                  <p className="text-xs font-bold uppercase  text-slate-400">
-                    {t("screens.payments.exchangeRate")}
+                  <p className="text-xs font-bold uppercase text-slate-400">
+                    {t("screens.funds.exchangeRate")}
                   </p>
-                  <p className="mt-1 font-bold text-slate-700">
+                  <p className="mt-1 font-bold tabular-nums text-slate-700">
                     {payment.exchange_rate}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase  text-slate-400">
-                    {t("screens.payments.effectiveRate")}
+                  <p className="text-xs font-bold uppercase text-slate-400">
+                    {t("screens.funds.effectiveRate")}
                   </p>
-                  <p className="mt-1 font-bold text-slate-700">
+                  <p className="mt-1 font-bold tabular-nums text-slate-700">
                     {payment.effective_rate}
                   </p>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
           {payment.note && (
             <div className="border-t border-[#e5ebff] p-7 text-sm">
-              <p className="text-xs font-bold uppercase  text-slate-400">
+              <p className="text-xs font-bold uppercase text-slate-400">
                 {t("ui.note")}
               </p>
               <p className="mt-1 text-slate-700">{payment.note}</p>
@@ -268,7 +274,7 @@ const PaymentDocumentPage = () => {
 
           {payment.allocations?.length > 0 && (
             <div className="border-t border-[#e5ebff] p-7">
-              <p className="mb-3 text-xs font-bold uppercase  text-slate-400">
+              <p className="mb-3 text-xs font-bold uppercase text-slate-400">
                 {t("screens.payments.allocations")}
               </p>
               <div className="divide-y divide-[#e5ebff] overflow-hidden rounded-2xl border border-[#e5ebff]">
@@ -277,15 +283,18 @@ const PaymentDocumentPage = () => {
                     key={a.id}
                     className="flex items-center justify-between bg-white px-5 py-4 text-sm"
                   >
-                    <span className="font-bold text-slate-600">
-                      {a.invoice_type} #{a.invoice_id}
-                    </span>
-                    <span className="font-black text-slate-900">
-                      {formatMoney(
-                        a.amount,
-                        currencyForFund.code,
-                        currencyForFund.symbol
-                      )}
+                    <GoTo
+                      type={a.invoice_type}
+                      id={a.invoice_id}
+                      variant="light"
+                    >
+                      {t(`screens.invoices.invoiceType.${a.invoice_type}`, {
+                        defaultValue: a.invoice_type,
+                      })}{" "}
+                      #{a.invoice_id}
+                    </GoTo>
+                    <span className="font-black tabular-nums text-slate-900">
+                      {formatMoney(a.amount, fundCurrency)}
                     </span>
                   </div>
                 ))}

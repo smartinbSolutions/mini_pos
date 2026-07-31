@@ -27,6 +27,10 @@ const EXPORT_LABELS = {
       payment: "Payment",
       opening_balance: "Opening Balance",
     },
+    transactionTypes: {
+      transfer: "Transfer",
+      payment: "Payment",
+    },
   },
   ar: {
     title: "سجل الصندوق",
@@ -49,6 +53,10 @@ const EXPORT_LABELS = {
       transfer: "تحويل",
       payment: "دفعة",
       opening_balance: "رصيد افتتاحي",
+    },
+    transactionTypes: {
+      transfer: "تحويل",
+      payment: "دفعة",
     },
   },
   tr: {
@@ -73,6 +81,10 @@ const EXPORT_LABELS = {
       payment: "Ödeme",
       opening_balance: "Açılış Bakiyesi",
     },
+    transactionTypes: {
+      transfer: "Transfer",
+      payment: "Ödeme",
+    },
   },
 };
 
@@ -80,6 +92,8 @@ const getLabels = (language) => EXPORT_LABELS[language] || EXPORT_LABELS.en;
 
 const formatRecordType = (L, recordType) =>
   L.recordTypes[recordType] || recordType;
+const formatTransactionType = (L, transactionType) =>
+  L.transactionTypes?.[transactionType] || transactionType;
 
 const formatExportDate = (value) => {
   if (!value) return "";
@@ -241,41 +255,98 @@ function fetchFundHistory(
 export default function registerFundIPC() {
   ipcMain.handle("create-fund", (event, data) => {
     if (!data.name || !data.currency_id) {
-      return { success: false, error: "ERROR ENTER DATA" };
+      return { success: false, error: "MISSING_REQUIRED_FIELDS" };
     }
 
     const initialBalance = Math.abs(Number(data.initial_balance || 0));
     const balanceType =
       data.balance_type === "decrease" ? "decrease" : "increase";
 
-    const result = db
-      .prepare(
+    const createFundTxn = db.transaction((data) => {
+      const result = db
+        .prepare(
+          `
+          INSERT INTO funds (name, currency_id)
+          VALUES (?, ?)
         `
-        INSERT INTO funds (name, currency_id)
-        VALUES (?, ?)
-      `
-      )
-      .run(data.name, data.currency_id);
+        )
+        .run(data.name, data.currency_id);
 
-    if (initialBalance !== 0) {
-      const openingBalanceDate = data.date
-        ? `${data.date.slice(0, 10)} 00:00:00`
-        : `${new Date().getFullYear()}-01-01 00:00:00`;
+      const fundId = result.lastInsertRowid;
 
-      createFundHistory(db, {
-        fund_id: result.lastInsertRowid,
-        record_type: "opening_balance",
-        movement_type: balanceType === "increase" ? "in" : "out",
-        amount: initialBalance,
-        date: openingBalanceDate,
-        note: "Opening Balance",
-      });
+      if (initialBalance !== 0) {
+        const openingBalanceDate = data.date
+          ? `${data.date.slice(0, 10)} 00:00:00`
+          : `${new Date().getFullYear()}-01-01 00:00:00`;
+
+        createFundHistory(db, {
+          fund_id: fundId,
+          record_type: "opening_balance",
+          movement_type: balanceType === "increase" ? "in" : "out",
+          amount: initialBalance,
+          date: openingBalanceDate,
+          note: "Opening Balance",
+        });
+      }
+
+      return fundId;
+    });
+
+    try {
+      const fundId = createFundTxn(data);
+      return { success: true, id: fundId };
+    } catch (err) {
+      console.error("Failed to create fund:", err);
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("update-fund", (event, data) => {
+    if (!data.name) {
+      return { success: false, error: "MISSING_REQUIRED_FIELDS" };
     }
 
-    return {
-      success: true,
-      id: result.lastInsertRowid,
-    };
+    try {
+      db.prepare(
+        `
+        UPDATE funds
+        SET name = ?
+        WHERE id = ?
+      `
+      ).run(data.name, data.id);
+
+      return { success: true };
+    } catch (err) {
+      console.error("Failed to update fund:", err);
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("delete-fund", (event, id) => {
+    try {
+      const { count } = db
+        .prepare(
+          `
+        SELECT COUNT(*) AS count FROM fund_history WHERE fund_id = ?
+      `
+        )
+        .get(id);
+
+      if (count > 0) {
+        return { success: false, error: "FUND_HAS_HISTORY" };
+      }
+
+      db.prepare(
+        `
+        DELETE FROM funds WHERE id = ?
+      `
+      ).run(id);
+
+      return { success: true };
+    } catch (err) {
+      console.error("Failed to delete fund:", err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("get-funds", () => {
@@ -353,46 +424,6 @@ export default function registerFundIPC() {
     fetchFundHistory(db, params)
   );
 
-  ipcMain.handle("update-fund", (event, data) => {
-    if (!data.name || !data.currency_id) {
-      return { message: "ERROR ENTER DATA", status: 500 };
-    }
-    db.prepare(
-      `
-      UPDATE funds
-      SET name = ?
-      WHERE id = ?
-    `
-    ).run(data.name, data.id);
-
-    return { success: true };
-  });
-
-  ipcMain.handle("delete-fund", (event, id) => {
-    const { count } = db
-      .prepare(
-        `
-      SELECT COUNT(*) AS count FROM fund_history WHERE fund_id = ?
-    `
-      )
-      .get(id);
-
-    if (count > 0) {
-      return {
-        success: false,
-        message: "Cannot delete a fund that already has transaction history.",
-      };
-    }
-
-    db.prepare(
-      `
-      DELETE FROM funds WHERE id = ?
-    `
-    ).run(id);
-
-    return { success: true };
-  });
-
   ipcMain.handle("transfer-fund-to-fund", (event, transferData) => {
     try {
       const {
@@ -433,11 +464,25 @@ export default function registerFundIPC() {
       }
 
       const fromFund = db
-        .prepare("SELECT * FROM funds WHERE id = ?")
+        .prepare(
+          `
+          SELECT f.*, c.exchangeRate AS currency_exchangeRate, c.code AS currency_code
+          FROM funds f
+          LEFT JOIN currencies c ON c.id = f.currency_id
+          WHERE f.id = ?
+        `
+        )
         .get(from_fund_id);
 
       const toFund = db
-        .prepare("SELECT * FROM funds WHERE id = ?")
+        .prepare(
+          `
+          SELECT f.*, c.exchangeRate AS currency_exchangeRate, c.code AS currency_code
+          FROM funds f
+          LEFT JOIN currencies c ON c.id = f.currency_id
+          WHERE f.id = ?
+        `
+        )
         .get(to_fund_id);
 
       if (!fromFund || !toFund) {
@@ -561,11 +606,25 @@ export default function registerFundIPC() {
       }
 
       const fromFund = db
-        .prepare("SELECT * FROM funds WHERE id = ?")
+        .prepare(
+          `
+          SELECT f.*, c.exchangeRate AS currency_exchangeRate, c.code AS currency_code
+          FROM funds f
+          LEFT JOIN currencies c ON c.id = f.currency_id
+          WHERE f.id = ?
+        `
+        )
         .get(from_fund_id);
 
       const toFund = db
-        .prepare("SELECT * FROM funds WHERE id = ?")
+        .prepare(
+          `
+          SELECT f.*, c.exchangeRate AS currency_exchangeRate, c.code AS currency_code
+          FROM funds f
+          LEFT JOIN currencies c ON c.id = f.currency_id
+          WHERE f.id = ?
+        `
+        )
         .get(to_fund_id);
 
       if (!fromFund || !toFund) {
@@ -887,7 +946,7 @@ export default function registerFundIPC() {
             amount: r.amount,
             party_name: r.party_name || "",
             transaction: r.transaction_type
-              ? `${r.transaction_type} #${r.transaction_id}`
+              ? `${formatTransactionType(L, r.transaction_type)} #${r.transaction_id}`
               : "",
             note: r.note || "",
             running_balance: r.running_balance,
@@ -945,7 +1004,7 @@ export default function registerFundIPC() {
           <td>${r.movement_type === "in" ? L.in : L.out}</td>
           <td class="right">${Number(r.amount).toFixed(2)}</td>
           <td>${r.party_name || "-"}</td>
-          <td>${r.transaction_type ? `${r.transaction_type} #${r.transaction_id}` : "-"}</td>
+          <td>${r.transaction_type ? `${formatTransactionType(L, r.transaction_type)} #${r.transaction_id}` : "-"}</td>
           <td>${r.note || ""}</td>
           <td class="right">${Number(r.running_balance).toFixed(2)}</td>
         </tr>
