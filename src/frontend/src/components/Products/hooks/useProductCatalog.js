@@ -21,7 +21,7 @@ const normalizeProductUnits = (productUnits = []) =>
     .filter(
       (unit) =>
         String(unit.unit_name || "").trim() &&
-        Number(unit.conversion_factor) > 0
+        Number(unit.conversion_factor) > 1
     )
     .map((unit) => ({
       ...(unit.id ? { id: unit.id } : {}),
@@ -56,9 +56,6 @@ const productPayload = (product) => ({
   unit_id: product.unit_id ? Number(product.unit_id) : null,
   tax_id: product.tax_id ? Number(product.tax_id) : null,
   logo: product.logo || "",
-  // Only meaningful on create — update-product ignores this field entirely
-  // (type is immutable once a product exists), but harmless to keep sending
-  // it here rather than branching this payload builder by create vs. update.
   type: product.type || "normal",
   oldQuantity: product.oldQuantity || 0,
   productUnits: normalizeProductUnits(product.productUnits),
@@ -91,6 +88,30 @@ export default function useProductCatalog() {
   const canUseUnits = !unavailableHandlers.includes("units");
   const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
   const canUseTaxes = !unavailableHandlers.includes("taxes");
+
+  // Maps known backend error codes (from create/update-product) to a
+  // translated, user-facing message. Anything not in this map falls back
+  // to treating err.message as an already-human-readable string (or, if
+  // that's empty, the generic save-error text).
+  const mapProductErrorCode = useCallback(
+    (code) => {
+      switch (code) {
+        case "MISSING_REQUIRED_FIELDS":
+          return t(
+            "errors.missingRequiredFields",
+            "Please fill in all required fields."
+          );
+        case "DUPLICATE_UNIT_NAME":
+          return t(
+            "errors.duplicateUnitName",
+            "Two selling units can't have the same name (or match the base unit)."
+          );
+        default:
+          return null;
+      }
+    },
+    [t]
+  );
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -194,7 +215,11 @@ export default function useProductCatalog() {
     try {
       const result = await api.createProduct(productPayload(form));
       if (!result?.success) {
-        throw new Error(result?.error || t("errors.saveError"));
+        throw new Error(
+          mapProductErrorCode(result?.error) ||
+            result?.error ||
+            t("errors.saveError")
+        );
       }
 
       const productId = result?.id;
@@ -220,7 +245,10 @@ export default function useProductCatalog() {
       const result = await api.updateProduct(productPayload(form));
       if (!result?.success) {
         throw new Error(
-          result?.error || result?.message || t("errors.saveError")
+          mapProductErrorCode(result?.error) ||
+            result?.error ||
+            result?.message ||
+            t("errors.saveError")
         );
       }
 
@@ -268,7 +296,6 @@ export default function useProductCatalog() {
     setActionError("");
     setIsFormOpen(true);
 
-    // Pull full detail (including productUnits) since the list row only carries salePrice + unitCount
     const fullProduct = await api.getProduct(product.id);
     setActiveProduct(fullProduct || product);
   };

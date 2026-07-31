@@ -20,6 +20,7 @@ export default function ImportHistoryList() {
     total_skipped: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [itemsByImport, setItemsByImport] = useState({});
   const [loadingItems, setLoadingItems] = useState({});
@@ -30,6 +31,7 @@ export default function ImportHistoryList() {
     const load = async () => {
       try {
         setLoading(true);
+        setError("");
         const res = await api.getProductImports();
         if (!cancelled) {
           setImports(res?.data || []);
@@ -41,6 +43,9 @@ export default function ImportHistoryList() {
             }
           );
         }
+      } catch (err) {
+        console.error("Failed to load import history:", err);
+        if (!cancelled) setError(err?.message || t("errors.loadError"));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -61,6 +66,9 @@ export default function ImportHistoryList() {
       try {
         const res = await api.getProductImportItems(importRow.id);
         setItemsByImport((prev) => ({ ...prev, [importRow.id]: res || [] }));
+      } catch (err) {
+        console.error("Failed to load import items:", err);
+        setItemsByImport((prev) => ({ ...prev, [importRow.id]: [] }));
       } finally {
         setLoadingItems((prev) => ({ ...prev, [importRow.id]: false }));
       }
@@ -80,7 +88,7 @@ export default function ImportHistoryList() {
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <main className="mx-auto max-w-7xl space-y-6">
-        {/* HERO HEADER — matches ProductList's header exactly */}
+        {/* HERO HEADER */}
         <section className="overflow-hidden rounded-[32px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.14)] backdrop-blur">
           <div className="grid gap-6 p-7 xl:grid-cols-[1fr_420px]">
             <div>
@@ -127,6 +135,12 @@ export default function ImportHistoryList() {
           </div>
         </section>
 
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* LIST */}
         <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)]">
           {loading ? (
@@ -149,9 +163,11 @@ export default function ImportHistoryList() {
                 const isExpanded = expandedId === imp.id;
                 const items = itemsByImport[imp.id];
                 const isLoadingItems = loadingItems[imp.id];
-                const hasIssues =
-                  imp.skipped_products_count > 0 ||
-                  imp.skipped_barcodes_count > 0;
+                const totalSkippedForRow =
+                  (imp.skipped_products_count || 0) +
+                  (imp.skipped_barcodes_count || 0) +
+                  (imp.skipped_units_count || 0);
+                const hasIssues = totalSkippedForRow > 0;
 
                 return (
                   <div key={imp.id}>
@@ -192,8 +208,7 @@ export default function ImportHistoryList() {
                         {hasIssues && (
                           <span className="flex items-center gap-1 font-bold text-amber-600">
                             <AlertTriangle size={14} />
-                            {imp.skipped_products_count +
-                              imp.skipped_barcodes_count}
+                            {totalSkippedForRow}
                           </span>
                         )}
                       </div>
@@ -217,7 +232,7 @@ export default function ImportHistoryList() {
                                   {item.product_name || item.barcode}
                                 </span>
                                 <span className="shrink-0 text-amber-700">
-                                  {t(`screens.errors.${item.reason}`)}
+                                  {t(`errors.${item.reason}`)}
                                 </span>
                               </div>
                             ))}

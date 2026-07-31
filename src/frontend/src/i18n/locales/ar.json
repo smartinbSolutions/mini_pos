@@ -275,6 +275,7 @@
       "youOweThem": "مستحق عليهم"
     },
     "products": {
+      "skippedUnits": "الوحدات المتجاوزة",
       "productType": "نوع المنتج",
       "typeNormal": "عادي",
       "typeService": "خدمة",
@@ -286,6 +287,8 @@
         "details": "التفاصيل",
         "movements": "الحركات"
       },
+      "unitsHint": "الوحدة الأساسية هي أصغر وحدة لديك. يجب أن تمثل أي وحدة بيع كمية أكبر — يجب أن يكون معامل التحويل أكبر من 1 (مثال: صندوق يحتوي على 12 قطعة معامل تحويله 12).",
+      "conversionMustExceedOne": "يجب أن يكون معامل التحويل أكبر من 1 — لا يمكن أن يكون أصغر من أو يساوي الوحدة الأساسية.",
       "baseUnitBadge": "أساسي",
       "noTaxOption": "بدون ضريبة",
       "baseUnitHint": "ستكون هذه هي وحدة البيع الافتراضية للمنتج.",
@@ -1122,7 +1125,20 @@
     "lastAdminMustRemain": "يجب أن يبقى مسؤول واحد نشط على الأقل.",
     "adminAuthFailed": "فشل التحقق من هوية المسؤول.",
     "recoveryFailed": "تعذر إتمام عملية الاسترداد.",
-    "deactivateBeforeDelete": "يجب إلغاء تفعيل هذا المستخدم قبل حذفه."
+    "deactivateBeforeDelete": "يجب إلغاء تفعيل هذا المستخدم قبل حذفه.",
+    "missingRequiredFields": "يرجى تعبئة جميع الحقول المطلوبة.",
+    "duplicateUnitName": "لا يمكن أن يكون لوحدتي بيع نفس الاسم (أو مطابقة اسم الوحدة الأساسية).",
+    "invalidType": "نوع المنتج غير صالح — يجب أن يكون \"عادي\" أو \"خدمة\"",
+    "invalidCostPrice": "قيمة سعر التكلفة غير صالحة",
+    "invalidSalePrice": "قيمة سعر البيع غير صالحة",
+    "invalidQuantity": "قيمة الكمية غير صالحة",
+    "productNameExists": "يوجد منتج بهذا الاسم مسبقًا",
+    "unitCodeNotFound": "رمز الوحدة غير موجود",
+    "unitCodeRequired": "رمز الوحدة مطلوب",
+    "barcodeAlreadyUsed": "هذا الباركود مستخدم بالفعل من قبل منتج آخر",
+    "invalidConversionFactor": "يجب أن يكون معامل التحويل أكبر من 1",
+    "invalidUnitPrice": "قيمة سعر الوحدة غير صالحة",
+    "unitBarcodeAlreadyUsed": "هذا الباركود مستخدم بالفعل من قبل وحدة أخرى"
   },
   "success": {
     "created": "تم إنشاء {{field}} بنجاح",

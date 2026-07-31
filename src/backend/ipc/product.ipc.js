@@ -10,8 +10,24 @@ import { deleteLogoFile } from "../utils/helpers";
 
 export default function registerProductIPC() {
   ipcMain.handle("create-product", (event, data) => {
-    if (!data.name || !data.unit_id) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+    if (!data.name || !data.unit_id || Number(data.costPrice) < 0) {
+      return { success: false, error: "MISSING_REQUIRED_FIELDS" };
+    }
+
+    // Duplicate unit names within the same product are meaningless (which
+    // one would POS/pricing resolve to?) — checked here, not via a DB unique
+    // constraint, since unit_name is only unique *within* a product, not
+    // globally, and better-sqlite3 doesn't scope composite uniqueness
+    // conditionally on is_base.
+    const incomingUnitNames = (data.productUnits || [])
+      .filter((u) => u.unit_name && Number(u.conversion_factor) > 1)
+      .map((u) => String(u.unit_name).trim().toLowerCase());
+
+    const hasDuplicateUnitNames =
+      new Set(incomingUnitNames).size !== incomingUnitNames.length;
+
+    if (hasDuplicateUnitNames) {
+      return { success: false, error: "DUPLICATE_UNIT_NAME" };
     }
 
     const createProductTxn = db.transaction((data) => {
@@ -35,11 +51,16 @@ export default function registerProductIPC() {
 
       const productId = result.lastInsertRowid;
 
-      // Resolve the measurement unit's display name to seed the base product_units row
       const unitRow = db
         .prepare(`SELECT name FROM unit WHERE id = ?`)
         .get(data.unit_id);
       const baseUnitName = unitRow?.name || "Unit";
+
+      // A selling unit sharing the base unit's name would be ambiguous
+      // (two rows both meaning "the base"), so it's blocked the same way.
+      if (incomingUnitNames.includes(baseUnitName.trim().toLowerCase())) {
+        throw new Error("DUPLICATE_UNIT_NAME");
+      }
 
       db.prepare(
         `
@@ -48,7 +69,6 @@ export default function registerProductIPC() {
       `
       ).run(productId, baseUnitName, data.salePrice ?? 0);
 
-      // Insert any additional (non-base) selling units the user defined
       const insertUnit = db.prepare(
         `
         INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
@@ -57,7 +77,7 @@ export default function registerProductIPC() {
       );
 
       for (const unit of data.productUnits || []) {
-        if (!unit.unit_name || !unit.conversion_factor) continue;
+        if (!unit.unit_name || !(Number(unit.conversion_factor) > 1)) continue;
         insertUnit.run(
           productId,
           unit.unit_name,
@@ -67,14 +87,6 @@ export default function registerProductIPC() {
         );
       }
 
-      // Movement is recorded for every product regardless of type — service
-      // products still get their initial movement row for audit/history
-      // purposes. Whether that quantity actually means anything for stock
-      // is decided by whatever *reads* movements/quantity downstream (POS
-      // locking, stock reports), not here.
-      // Initial stock is always counted in the base unit, so the snapshot
-      // here is simply "base unit == unit used, factor == 1" rather than
-      // anything more elaborate.
       createProductMovement(db, {
         product_id: productId,
         reference_id: productId,
@@ -95,9 +107,6 @@ export default function registerProductIPC() {
       const productId = createProductTxn(data);
       return { success: true, id: productId };
     } catch (err) {
-      // The transaction rolled back, so no product row references data.logo.
-      // If a file was already uploaded via save-logo before this call, it's
-      // now an orphan — clean it up. Best-effort, never throws further.
       if (data.logo) {
         deleteLogoFile(data.logo);
       }
@@ -108,25 +117,27 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("update-product", (event, data) => {
-    if (!data.name || !data.unit_id || data.costPrice <= 0) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+    if (!data.name || !data.unit_id || Number(data.costPrice) < 0) {
+      return { success: false, error: "MISSING_REQUIRED_FIELDS" };
     }
 
-    // Captured before the transaction runs, so we know what (if anything) to
-    // clean up afterward — never delete a file before its DB reference is
-    // confirmed changed/gone.
+    const incomingUnitNames = (data.productUnits || [])
+      .filter((u) => u.unit_name && Number(u.conversion_factor) > 1)
+      .map((u) => String(u.unit_name).trim().toLowerCase());
+
+    const hasDuplicateUnitNames =
+      new Set(incomingUnitNames).size !== incomingUnitNames.length;
+
+    if (hasDuplicateUnitNames) {
+      return { success: false, error: "DUPLICATE_UNIT_NAME" };
+    }
+
     const existing = db
       .prepare(`SELECT logo FROM products WHERE id = ?`)
       .get(data.id);
     const oldLogo = existing?.logo || null;
 
     const updateProductTxn = db.transaction((data) => {
-      // type is intentionally NOT in this SET clause — it's fixed at
-      // creation and never changes. A product created as 'service' would
-      // have its stock/expiry semantics silently reinterpreted if this
-      // were editable later, so the safest way to enforce "immutable" is
-      // to simply never write it here, rather than accept it from the
-      // client and validate it matches.
       db.prepare(
         `
         UPDATE products
@@ -144,16 +155,16 @@ export default function registerProductIPC() {
         data.id
       );
 
-      // Needed for the adjustment movement snapshot below — a quantity
-      // adjustment here is always expressed in base-unit terms, so the
-      // "unit used" for that movement is whatever the base unit currently
-      // is, not a specific selling unit.
       const baseUnit = db
         .prepare(
           `SELECT unit_name FROM product_units WHERE product_id = ? AND is_base = 1`
         )
         .get(data.id);
       const baseUnitName = baseUnit?.unit_name || "Unit";
+
+      if (incomingUnitNames.includes(baseUnitName.trim().toLowerCase())) {
+        throw new Error("DUPLICATE_UNIT_NAME");
+      }
 
       if (data.quantity !== data.oldQuantity) {
         const delta = data.quantity - data.oldQuantity;
@@ -171,7 +182,6 @@ export default function registerProductIPC() {
         });
       }
 
-      // Keep the base unit's sale price in sync with the "Base Sale Price" field
       db.prepare(
         `
         UPDATE product_units
@@ -180,7 +190,6 @@ export default function registerProductIPC() {
       `
       ).run(data.salePrice ?? 0, data.id);
 
-      // Sync additional (non-base) selling units: update existing, insert new, delete removed
       const existingUnits = db
         .prepare(
           `SELECT id FROM product_units WHERE product_id = ? AND is_base = 0`
@@ -214,7 +223,7 @@ export default function registerProductIPC() {
       );
 
       for (const unit of incomingUnits) {
-        if (!unit.unit_name || !unit.conversion_factor) continue;
+        if (!unit.unit_name || !(Number(unit.conversion_factor) > 1)) continue;
 
         if (unit.id) {
           updateUnit.run(
@@ -236,15 +245,18 @@ export default function registerProductIPC() {
       }
     });
 
-    updateProductTxn(data);
+    try {
+      updateProductTxn(data);
 
-    // File cleanup happens only after the DB commit succeeds, and only if the
-    // logo actually changed — avoids deleting a file still in active use.
-    if (oldLogo && oldLogo !== data.logo) {
-      deleteLogoFile(oldLogo);
+      if (oldLogo && oldLogo !== data.logo) {
+        deleteLogoFile(oldLogo);
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error("Failed to update product:", err);
+      return { success: false, error: err.message || String(err) };
     }
-
-    return { success: true };
   });
 
   ipcMain.handle("update-product-tax", (event, data) => {
@@ -316,6 +328,7 @@ export default function registerProductIPC() {
         `
       SELECT
         products.*,
+        products.type AS type,
         unit.name AS unit_name,
         unit.code AS unit_code,
         taxes.name AS tax_name,
@@ -328,7 +341,22 @@ export default function registerProductIPC() {
         (
           SELECT COUNT(*) FROM product_units
           WHERE product_units.product_id = products.id AND product_units.is_base = 0
-        ) AS unitCount
+        ) AS unitCount,
+        (
+          SELECT json_group_array(
+            json_object(
+              'id', pu.id,
+              'unit_name', pu.unit_name,
+              'conversion_factor', pu.conversion_factor,
+              'is_base', pu.is_base,
+              'sale_price', pu.sale_price,
+              'barcode', pu.barcode
+            )
+          )
+          FROM product_units pu
+          WHERE pu.product_id = products.id
+          ORDER BY pu.is_base DESC, pu.id ASC
+        ) AS productUnitsJson
   
       FROM products
   
@@ -345,7 +373,14 @@ export default function registerProductIPC() {
       LIMIT ? OFFSET ?
       `
       )
-      .all(...queryParams, limit, offset);
+      .all(...queryParams, limit, offset)
+      .map((row) => ({
+        ...row,
+        productUnits: row.productUnitsJson
+          ? JSON.parse(row.productUnitsJson)
+          : [],
+        productUnitsJson: undefined,
+      }));
 
     const countQuery = db.prepare(`
       SELECT COUNT(*) AS total
@@ -366,6 +401,64 @@ export default function registerProductIPC() {
     };
   });
 
+  ipcMain.handle("get-product", (event, id) => {
+    const product = db
+      .prepare(
+        `
+        SELECT 
+          products.*,
+          products.type AS type,
+          unit.name as unit_name,
+          unit.code as unit_code,
+          taxes.name as tax_name,
+          taxes.rate as tax_rate
+        FROM products
+        LEFT JOIN unit ON unit.id = products.unit_id
+        LEFT JOIN taxes ON taxes.id = products.tax_id
+        WHERE products.id = ?
+      `
+      )
+      .get(id);
+
+    if (!product) return null;
+
+    const productUnits = db
+      .prepare(
+        `
+        SELECT id, unit_name, conversion_factor, is_base, sale_price, barcode
+        FROM product_units
+        WHERE product_id = ?
+        ORDER BY is_base DESC, id ASC
+      `
+      )
+      .all(id);
+
+    const baseUnit = productUnits.find((u) => u.is_base);
+
+    // Product-level barcodes (from product_barcodes) are distinct from
+    // unit-level barcodes (product_units.barcode) — a product can have
+    // several of these (e.g. old packaging codes, alternate scan codes)
+    // pointing at the same base unit, whereas a unit's own barcode is a
+    // single 1:1 field on that specific unit row.
+    const barcodes = db
+      .prepare(
+        `
+        SELECT id, barcode
+        FROM product_barcodes
+        WHERE product_id = ?
+        ORDER BY id ASC
+      `
+      )
+      .all(id);
+
+    return {
+      ...product,
+      salePrice: baseUnit?.sale_price ?? 0,
+      productUnits,
+      barcodes,
+    };
+  });
+
   ipcMain.handle("get-pos-products", (event, params = {}) => {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
@@ -373,13 +466,7 @@ export default function registerProductIPC() {
 
     const search = (params.search || "").trim();
 
-    // ---- Barcode short-circuit ----
-    // A barcode match (typed or scanned into the search box) is a precise
-    // code, not a name fragment — it should resolve to exactly ONE tile
-    // (the specific unit if matched via product_units.barcode, or the
-    // base unit if matched via product_barcodes), never the full fan-out
-    // of every unit on that product the way a name search does. Checked
-    // before any name-based logic runs, and returns immediately if found.
+    // ---- Barcode short-circuit ---- (unchanged)
     if (search) {
       const unitMatch = db
         .prepare(
@@ -480,7 +567,7 @@ export default function registerProductIPC() {
       }
     }
 
-    // ---- Regular name search / listing — unchanged from before ----
+    // ---- Regular name search / listing ----
     const whereConditions = [];
     const queryParams = [];
 
@@ -560,12 +647,37 @@ export default function registerProductIPC() {
       unitsByProduct.get(unit.product_id).push(unit);
     }
 
+    // Product-level barcodes — used as a fallback ONLY for the base unit's
+    // tile, matching the same fallback logic as the barcode short-circuit
+    // above (a base unit's real-world barcode usually lives here, not on
+    // product_units.barcode). Batched in one query rather than per-product,
+    // same pattern as `units` above.
+    const productBarcodeRows = db
+      .prepare(
+        `
+      SELECT product_id, barcode
+      FROM product_barcodes
+      WHERE product_id IN (${placeholders})
+      ORDER BY product_id ASC, id ASC
+      `
+      )
+      .all(...productIds);
+
+    const barcodesByProduct = new Map();
+    for (const row of productBarcodeRows) {
+      if (!barcodesByProduct.has(row.product_id)) {
+        barcodesByProduct.set(row.product_id, []);
+      }
+      barcodesByProduct.get(row.product_id).push(row.barcode);
+    }
+
     const data = [];
 
     for (const product of products) {
       const productUnits = unitsByProduct.get(product.id) || [];
       const baseUnit = productUnits.find((u) => u.is_base);
       const isService = product.type === "service";
+      const productLevelBarcodes = barcodesByProduct.get(product.id) || [];
 
       for (const unit of productUnits) {
         const factor = Number(unit.conversion_factor) || 1;
@@ -575,6 +687,13 @@ export default function registerProductIPC() {
         const unitQuantity = unit.is_base
           ? rawUnitQuantity
           : Math.floor(rawUnitQuantity);
+
+        // Base unit: its own product_units.barcode wins if set, otherwise
+        // fall back to the product's first product_barcodes entry. Non-base
+        // units always use their own barcode column only.
+        const resolvedBarcode = unit.is_base
+          ? unit.barcode || productLevelBarcodes[0] || null
+          : unit.barcode || null;
 
         data.push({
           id: `${product.id}-${unit.id}`,
@@ -588,15 +707,11 @@ export default function registerProductIPC() {
           is_base: Boolean(unit.is_base),
           conversion_factor: factor,
           price: unit.sale_price,
-          barcode: unit.barcode,
+          barcode: resolvedBarcode,
           tax_id: product.tax_id,
           tax_rate: Number(product.tax_rate || 0),
           logo: product.logo,
           type: product.type,
-          // A service tile has no real stock behind it, so its quantity
-          // numbers here are meaningless for locking/"out of stock" —
-          // the frontend should skip that logic entirely when isService
-          // is true rather than trust these values.
           base_quantity: isService ? null : product.quantity,
           quantity: isService ? null : unitQuantity,
         });
@@ -611,47 +726,6 @@ export default function registerProductIPC() {
       totalPages: Math.ceil(total / limit),
     };
   });
-
-  ipcMain.handle("get-product", (event, id) => {
-    const product = db
-      .prepare(
-        `
-        SELECT 
-          products.*,
-          unit.name as unit_name,
-          unit.code as unit_code,
-          taxes.name as tax_name,
-          taxes.rate as tax_rate
-        FROM products
-        LEFT JOIN unit ON unit.id = products.unit_id
-        LEFT JOIN taxes ON taxes.id = products.tax_id
-        WHERE products.id = ?
-      `
-      )
-      .get(id);
-
-    if (!product) return null;
-
-    const productUnits = db
-      .prepare(
-        `
-        SELECT id, unit_name, conversion_factor, is_base, sale_price, barcode
-        FROM product_units
-        WHERE product_id = ?
-        ORDER BY is_base DESC, id ASC
-      `
-      )
-      .all(id);
-
-    const baseUnit = productUnits.find((u) => u.is_base);
-
-    return {
-      ...product,
-      salePrice: baseUnit?.sale_price ?? 0,
-      productUnits,
-    };
-  });
-
   ipcMain.handle("delete-product", (event, id) => {
     try {
       const existing = db
@@ -697,9 +771,6 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("get-product-by-barcode", (event, barcode) => {
-    // Unit barcodes are checked first — scanning a unit-specific barcode
-    // (e.g. a "Box" barcode) should resolve directly to that unit's own
-    // price/conversion_factor, not fall back to the product's base unit.
     const unitMatch = db
       .prepare(
         `
@@ -709,6 +780,7 @@ export default function registerProductIPC() {
         pu.unit_name AS unit_name,
         pu.conversion_factor AS conversion_factor,
         pu.sale_price AS price,
+        pu.is_base AS is_base,
         taxes.id AS tax_id,
         taxes.rate AS tax_rate
       FROM product_units pu
@@ -722,10 +794,40 @@ export default function registerProductIPC() {
       .get(barcode);
 
     if (unitMatch) {
+      const isService = unitMatch.type === "service";
+      const isBase = Boolean(unitMatch.is_base);
+      const factor = Number(unitMatch.conversion_factor) || 1;
+      const rawUnitQuantity = factor
+        ? unitMatch.quantity / factor
+        : unitMatch.quantity;
+      const unitQuantity = isBase
+        ? rawUnitQuantity
+        : Math.floor(rawUnitQuantity);
+
+      const baseUnit = isBase
+        ? null
+        : db
+            .prepare(
+              `SELECT unit_name FROM product_units WHERE product_id = ? AND is_base = 1`
+            )
+            .get(unitMatch.id);
+
       return {
         ...unitMatch,
+        id: `${unitMatch.id}-${unitMatch.unit_id}`,
+        product_id: unitMatch.id,
+        name: isBase
+          ? unitMatch.name
+          : `${unitMatch.name} (${unitMatch.unit_name})`,
+        base_unit_name: isBase
+          ? unitMatch.unit_name
+          : (baseUnit?.unit_name ?? null),
+        is_base: isBase,
+        conversion_factor: factor,
         tax_id: unitMatch.tax_id,
         tax_rate: Number(unitMatch.tax_rate || 0),
+        base_quantity: isService ? null : unitMatch.quantity,
+        quantity: isService ? null : unitQuantity,
       };
     }
 
@@ -747,6 +849,8 @@ export default function registerProductIPC() {
 
     if (!row) return null;
 
+    const isService = row.type === "service";
+
     const baseUnit = db
       .prepare(
         `
@@ -760,12 +864,18 @@ export default function registerProductIPC() {
 
     return {
       ...row,
+      id: `${row.id}-${baseUnit?.id ?? "base"}`,
+      product_id: row.id,
       unit_id: baseUnit?.id ?? null,
       unit_name: baseUnit?.unit_name ?? null,
+      base_unit_name: baseUnit?.unit_name ?? null,
+      is_base: true,
       conversion_factor: baseUnit?.conversion_factor ?? 1,
       price: baseUnit?.sale_price ?? 0,
       tax_id: row.tax_id,
       tax_rate: Number(row.tax_rate || 0),
+      base_quantity: isService ? null : row.quantity,
+      quantity: isService ? null : row.quantity,
     };
   });
 
@@ -821,15 +931,20 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("download-product-import-template", async () => {
-    const buffer = await generateProductImportTemplate(db);
-    const { filePath, canceled } = await dialog.showSaveDialog({
-      title: "Save Product Import Template",
-      defaultPath: "product-import-template.xlsx",
-      filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
-    });
-    if (canceled || !filePath) return { success: false, canceled: true };
-    fs.writeFileSync(filePath, buffer);
-    return { success: true, filePath };
+    try {
+      const buffer = await generateProductImportTemplate(db);
+      const { filePath, canceled } = await dialog.showSaveDialog({
+        title: "Save Product Import Template",
+        defaultPath: "product-import-template.xlsx",
+        filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
+      });
+      if (canceled || !filePath) return { success: false, canceled: true };
+      fs.writeFileSync(filePath, buffer);
+      return { success: true, filePath };
+    } catch (err) {
+      console.error("Failed to generate import template:", err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("import-products", async () => {
@@ -851,42 +966,55 @@ export default function registerProductIPC() {
   });
 
   ipcMain.handle("get-product-imports", () => {
-    const imports = db
-      .prepare(`SELECT * FROM product_imports ORDER BY id DESC`)
-      .all();
+    try {
+      const imports = db
+        .prepare(`SELECT * FROM product_imports ORDER BY id DESC`)
+        .all();
 
-    const statsRow = db
-      .prepare(
+      const statsRow = db
+        .prepare(
+          `
+          SELECT
+            COUNT(*) AS total_imports,
+            COALESCE(SUM(created_count), 0) AS total_created,
+            COALESCE(SUM(skipped_products_count), 0) AS total_skipped_products,
+            COALESCE(SUM(skipped_barcodes_count), 0) AS total_skipped_barcodes,
+            COALESCE(SUM(skipped_units_count), 0) AS total_skipped_units
+          FROM product_imports
         `
-        SELECT
-          COUNT(*) AS total_imports,
-          COALESCE(SUM(created_count), 0) AS total_created,
-          COALESCE(SUM(skipped_products_count), 0) AS total_skipped_products,
-          COALESCE(SUM(skipped_barcodes_count), 0) AS total_skipped_barcodes,
-          COALESCE(SUM(skipped_units_count), 0) AS total_skipped_units
-        FROM product_imports
-      `
-      )
-      .get();
+        )
+        .get();
 
-    return {
-      data: imports,
-      stats: {
-        total_imports: statsRow?.total_imports || 0,
-        total_created: statsRow?.total_created || 0,
-        total_skipped:
-          (statsRow?.total_skipped_products || 0) +
-          (statsRow?.total_skipped_barcodes || 0) +
-          (statsRow?.total_skipped_units || 0),
-      },
-    };
+      return {
+        data: imports,
+        stats: {
+          total_imports: statsRow?.total_imports || 0,
+          total_created: statsRow?.total_created || 0,
+          total_skipped:
+            (statsRow?.total_skipped_products || 0) +
+            (statsRow?.total_skipped_barcodes || 0) +
+            (statsRow?.total_skipped_units || 0),
+        },
+      };
+    } catch (err) {
+      console.error("Failed to load product imports:", err);
+      return {
+        data: [],
+        stats: { total_imports: 0, total_created: 0, total_skipped: 0 },
+      };
+    }
   });
 
   ipcMain.handle("get-product-import-items", (event, importId) => {
-    return db
-      .prepare(
-        `SELECT * FROM product_import_items WHERE import_id = ? ORDER BY row_number ASC`
-      )
-      .all(importId);
+    try {
+      return db
+        .prepare(
+          `SELECT * FROM product_import_items WHERE import_id = ? ORDER BY row_number ASC`
+        )
+        .all(importId);
+    } catch (err) {
+      console.error("Failed to load product import items:", err);
+      return [];
+    }
   });
 }

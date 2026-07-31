@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../Global/AuthContext";
 import appLogo from "../../../assets/logo.png";
 import AdminRecoveryModal from "./AdminRecoveryModal";
+import { normalizeDigits } from "../../../Global/FormatNumber";
 
 const LoginScreen = () => {
   const { t } = useTranslation();
@@ -37,9 +38,11 @@ const LoginScreen = () => {
     const handleKeyDown = (e) => {
       if (loggingIn || recoveryOpen) return;
 
-      if (/^[0-9]$/.test(e.key)) {
+      const key = normalizeDigits(e.key);
+
+      if (/^[0-9]$/.test(key)) {
         e.preventDefault();
-        pressDigit(e.key);
+        pressDigit(key);
         return;
       }
 

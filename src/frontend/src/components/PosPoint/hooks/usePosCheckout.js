@@ -520,44 +520,17 @@ export default function usePosCheckout({ weight } = {}) {
             return;
           }
 
-          // barcode always resolves to the product's base unit
-          const lineId = `${product.id}-${product.unit_id}`;
+          const scannedQuantity = Math.max(0, toNumber(weightRef.current)) || 1;
 
-          setCart((prev) => {
-            const scannedQuantity =
-              Math.max(0, toNumber(weightRef.current)) || 1;
-            const existingIndex = prev.findIndex((i) => i.id === lineId);
+          // Reuse the exact same cart-add path as clicking a tile — the
+          // barcode result now has the identical shape as a get-pos-products
+          // tile (id, product_id, unit_id, is_base, unit_name, etc.), so
+          // there's no reason to hand-build the cart item separately here;
+          // doing so is what silently hardcoded is_base:true and drifted
+          // out of sync with the backend's actual field names.
+          addToCart(product, scannedQuantity, false);
 
-            if (existingIndex !== -1) {
-              const updated = [...prev];
-              updated[existingIndex] = recalcCartItem({
-                ...updated[existingIndex],
-                qty: toNumber(updated[existingIndex].qty) + scannedQuantity,
-              });
-              return updated;
-            }
-
-            return [
-              ...prev,
-              recalcCartItem({
-                id: lineId,
-                product_id: product.id,
-                unit_id: product.unit_id,
-                unit_name: product.unit_name,
-                is_base: true,
-                conversion_factor: toNumber(product.conversion_factor) || 1,
-                tax_id: product.tax_id ?? null,
-                tax_rate: toNumber(product.tax_rate) || 0,
-                name: product.name,
-                qty: scannedQuantity,
-                price: product.price || 0,
-                catalog_price: toNumber(product.price) || 0,
-                discount_rate: 0,
-                description: "",
-              }),
-            ];
-          });
-
+          setError("");
           barcode = "";
         } catch (err) {
           console.log(err);
@@ -571,6 +544,7 @@ export default function usePosCheckout({ weight } = {}) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api]);
 
   return {

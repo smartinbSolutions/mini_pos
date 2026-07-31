@@ -275,6 +275,7 @@
     },
     "products": {
       "productType": "Product Type",
+      "skippedUnits": "Skipped Units",
       "typeNormal": "Normal",
       "typeService": "Service",
       "typeLocked": "— can't be changed after creation",
@@ -285,6 +286,8 @@
         "details": "Details",
         "movements": "Movements"
       },
+      "unitsHint": "The base unit is your smallest unit. Any selling unit must represent a larger quantity — its conversion factor must be greater than 1 (e.g. a box of 12 has a conversion factor of 12).",
+      "conversionMustExceedOne": "Conversion factor must be greater than 1 — it can't be smaller than or equal to the base unit.",
       "selectBaseUnitFirst": "Select a base unit first",
       "baseUnitBadge": "Base",
       "noTaxOption": "No tax",
@@ -1117,7 +1120,20 @@
     "returnQtyExceeded": "Cannot return more than amount sold",
     "noItemsSelected": "Please specify at least one product to return",
     "invalidReturnTotal": "Total return value is invalid",
-    "supplierHasTransactions": "Cannot delete this supplier because it has existing transactions."
+    "supplierHasTransactions": "Cannot delete this supplier because it has existing transactions.",
+    "missingRequiredFields": "Please fill in all required fields.",
+    "duplicateUnitName": "Two selling units can't have the same name (or match the base unit).",
+    "invalidType": "Invalid product type — must be \"normal\" or \"service\"",
+    "invalidCostPrice": "Invalid cost price value",
+    "invalidSalePrice": "Invalid sale price value",
+    "invalidQuantity": "Invalid quantity value",
+    "productNameExists": "A product with this name already exists",
+    "unitCodeNotFound": "Unit code not found",
+    "unitCodeRequired": "Unit code is required",
+    "barcodeAlreadyUsed": "This barcode is already used by another product",
+    "invalidConversionFactor": "Conversion factor must be greater than 1",
+    "invalidUnitPrice": "Invalid unit price value",
+    "unitBarcodeAlreadyUsed": "This barcode is already used by another unit"
   },
   "success": {
     "created": "{{field}} created successfully",

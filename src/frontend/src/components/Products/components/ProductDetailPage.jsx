@@ -8,6 +8,7 @@ import {
   History,
   Info,
   Layers,
+  Barcode,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
@@ -16,6 +17,7 @@ import { getAssetUrl } from "../../../Global/assetUrl";
 import Pagination from "../../../Global/Pagination";
 import useProductMovements from "../hooks/useProductMovements";
 import GoTo from "../../../Global/GoTo";
+import BackButton from "../../../Global/BackButton";
 
 const TABS = [
   { key: "details", icon: Info },
@@ -94,14 +96,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
       <main className="mx-auto max-w-6xl space-y-6">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#dbe4ff] bg-white text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-            aria-label={t("common.back")}
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <BackButton />
           <div>
             <p className="text-xs font-bold uppercase text-[#4663ff]">
               {t("ui.inventory")}
@@ -218,7 +213,6 @@ export default function ProductDetailPage() {
                       <Layers size={17} className="text-[#4663ff]" />
                       {t("screens.products.sellingUnits")}
                     </h3>
-
                     {product.productUnits?.length ? (
                       <div className="overflow-hidden rounded-2xl border border-[#e5ebff]">
                         <table className="w-full text-sm">
@@ -233,27 +227,64 @@ export default function ProductDetailPage() {
                               <th className="px-4 py-2 text-start">
                                 {t("ui.price")}
                               </th>
+                              <th className="px-4 py-2 text-start">
+                                {t("ui.barcodes")}
+                              </th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[#eef1ff]">
-                            {product.productUnits.map((unit) => (
-                              <tr key={unit.id}>
-                                <td className="px-4 py-2 font-semibold text-slate-900">
-                                  {unit.unit_name}
-                                  {unit.is_base ? (
-                                    <span className="ml-2 rounded-full bg-[#eef3ff] px-2 py-0.5 text-xs font-bold text-[#4663ff]">
-                                      {t("screens.products.baseUnitBadge")}
-                                    </span>
-                                  ) : null}
-                                </td>
-                                <td className="px-4 py-2 tabular-nums text-slate-600">
-                                  × {formatNumber(unit.conversion_factor, 2)}
-                                </td>
-                                <td className="px-4 py-2 font-bold tabular-nums text-emerald-600">
-                                  {money(unit.sale_price || 0)}
-                                </td>
-                              </tr>
-                            ))}
+                            {product.productUnits.map((unit) => {
+                              // The base unit has no barcode column of its own in practice —
+                              // its real-world barcode(s) live in product_barcodes instead
+                              // (see get-pos-products' barcode short-circuit, which falls
+                              // back to product_barcodes for exactly this reason). A
+                              // non-base selling unit's barcode always comes from its own
+                              // product_units.barcode column.
+                              const rowBarcodes = unit.is_base
+                                ? unit.barcode
+                                  ? [unit.barcode]
+                                  : (product.barcodes || []).map(
+                                      (b) => b.barcode
+                                    )
+                                : unit.barcode
+                                  ? [unit.barcode]
+                                  : [];
+
+                              return (
+                                <tr key={unit.id}>
+                                  <td className="px-4 py-2 font-semibold text-slate-900">
+                                    {unit.unit_name}
+                                    {unit.is_base ? (
+                                      <span className="ml-2 rounded-full bg-[#eef3ff] px-2 py-0.5 text-xs font-bold text-[#4663ff]">
+                                        {t("screens.products.baseUnitBadge")}
+                                      </span>
+                                    ) : null}
+                                  </td>
+                                  <td className="px-4 py-2 tabular-nums text-slate-600">
+                                    × {formatNumber(unit.conversion_factor, 2)}
+                                  </td>
+                                  <td className="px-4 py-2 font-bold tabular-nums text-emerald-600">
+                                    {money(unit.sale_price || 0)}
+                                  </td>
+                                  <td className="px-4 py-2 text-slate-500">
+                                    {rowBarcodes.length ? (
+                                      <div className="flex flex-wrap gap-1">
+                                        {rowBarcodes.map((code) => (
+                                          <span
+                                            key={code}
+                                            className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600"
+                                          >
+                                            {code}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <span className="text-slate-300">—</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>

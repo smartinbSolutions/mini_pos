@@ -1,5 +1,6 @@
 import {
   Barcode,
+  Briefcase,
   Edit2,
   Eye,
   FileSpreadsheet,
@@ -58,6 +59,18 @@ export default function ProductList() {
     (total, product) => total + Number(product.quantity || 0),
     0
   );
+
+  // A product's full barcode count spans two sources: the product-level
+  // barcodes list (barcodesByProduct, from get-product-barcodes) and any
+  // barcode attached directly to a selling unit (product.productUnits).
+  // Neither alone is the real count a cashier could scan against.
+  const getBarcodeCount = (product) => {
+    const productLevel = (barcodesByProduct[product.id] || []).length;
+    const unitLevel = (product.productUnits || []).filter((u) =>
+      String(u.barcode || "").trim()
+    ).length;
+    return productLevel + unitLevel;
+  };
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
@@ -177,6 +190,9 @@ export default function ProductList() {
                 <thead>
                   <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                     <th className="px-5 py-3 text-start">{t("ui.product")}</th>
+                    <th className="px-5 py-3 text-start">
+                      {t("screens.products.productType", "Type")}
+                    </th>
                     <th className="px-5 py-3 text-start">{t("ui.unit")}</th>
                     <th className="px-5 py-3 text-start">{t("ui.qty")}</th>
                     <th className="px-5 py-3 text-start">{t("ui.cost")}</th>
@@ -193,7 +209,8 @@ export default function ProductList() {
                 </thead>
                 <tbody className="divide-y divide-[#eef1ff]">
                   {products.map((product) => {
-                    const productBarcodes = barcodesByProduct[product.id] || [];
+                    const isService = product.type === "service";
+                    const barcodeCount = getBarcodeCount(product);
 
                     return (
                       <tr
@@ -223,6 +240,19 @@ export default function ProductList() {
                             </div>
                           </div>
                         </td>
+                        <td className="px-5 py-3">
+                          {isService ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-600">
+                              <Briefcase size={12} />
+                              {t("screens.products.typeService", "Service")}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
+                              <Package size={12} />
+                              {t("screens.products.typeNormal", "Normal")}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-5 py-3 text-slate-600">
                           {product.unit_name ? (
                             <span className="font-semibold">
@@ -238,7 +268,13 @@ export default function ProductList() {
                           )}
                         </td>
                         <td className="px-5 py-3 text-start font-bold tabular-nums text-slate-950">
-                          {formatNumber(product.quantity || 0, 2)}
+                          {isService ? (
+                            <span className="font-normal text-slate-400">
+                              —
+                            </span>
+                          ) : (
+                            formatNumber(product.quantity || 0, 2)
+                          )}
                         </td>
                         <td className="px-5 py-3 text-start font-bold tabular-nums text-red-600">
                           {money(product.costPrice || 0)}
@@ -249,7 +285,7 @@ export default function ProductList() {
                         <td className="px-5 py-3 text-slate-600">
                           {product.tax_name ? (
                             <span className="font-semibold">
-                              {product.tax_name} ({product.tax_rate}%)
+                              {/* {product.tax_name} */}({product.tax_rate}%)
                             </span>
                           ) : (
                             <span className="text-slate-400">
@@ -269,8 +305,15 @@ export default function ProductList() {
                             <span className="text-slate-400">—</span>
                           )}
                         </td>
-                        <td className="px-5 py-3 text-start text-slate-500">
-                          {productBarcodes.length}
+                        <td className="px-5 py-3 text-start">
+                          {barcodeCount > 0 ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+                              <Barcode size={12} />
+                              {barcodeCount}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                         <td className="px-5 py-3">
                           <div className="flex items-center justify-start gap-1.5">

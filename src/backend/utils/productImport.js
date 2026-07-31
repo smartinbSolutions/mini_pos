@@ -129,6 +129,20 @@ export async function parseProductImport(db, filePath, fileName) {
   await workbook.xlsx.readFile(filePath);
   const sheet = workbook.worksheets[0];
 
+  const now = new Date();
+  const importCreatedAt =
+    now.getFullYear() +
+    "-" +
+    String(now.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(now.getDate()).padStart(2, "0") +
+    " " +
+    String(now.getHours()).padStart(2, "0") +
+    ":" +
+    String(now.getMinutes()).padStart(2, "0") +
+    ":" +
+    String(now.getSeconds()).padStart(2, "0");
+
   const unitRows = db.prepare(`SELECT id, code, name FROM unit`).all();
   const unitByCode = new Map(unitRows.map((u) => [u.code, u]));
 
@@ -148,8 +162,6 @@ export async function parseProductImport(db, filePath, fileName) {
       .map((b) => b.barcode)
   );
 
-  // Separate namespace from product_barcodes — unit-level barcodes live on
-  // product_units.barcode, checked independently of the product-level table.
   const existingUnitBarcodes = new Set(
     db
       .prepare(`SELECT barcode FROM product_units WHERE barcode IS NOT NULL`)
@@ -165,9 +177,6 @@ export async function parseProductImport(db, filePath, fileName) {
         INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
         VALUES (?, ?, 1, 1, ?)
       `);
-  // Additional (non-base) selling units — same table, is_base = 0, and
-  // these DO carry their own optional barcode (unlike the base unit, whose
-  // barcode still lives on product_barcodes, untouched by this).
   const insertAdditionalProductUnit = db.prepare(`
         INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
         VALUES (?, ?, ?, 0, ?, ?)
@@ -178,9 +187,9 @@ export async function parseProductImport(db, filePath, fileName) {
   const getProductByName = db.prepare(`SELECT id FROM products WHERE name = ?`);
 
   const insertImport = db.prepare(`
-        INSERT INTO product_imports (file_name, total_rows, created_count, skipped_products_count, skipped_barcodes_count, report_path)
-        VALUES (?, 0, 0, 0, 0, NULL)
-      `);
+    INSERT INTO product_imports (file_name, total_rows, created_count, skipped_products_count, skipped_barcodes_count, report_path, createdAt)
+    VALUES (?, 0, 0, 0, 0, NULL, ?)
+  `);
   const insertImportItem = db.prepare(`
         INSERT INTO product_import_items (import_id, row_number, status, product_id, product_name, barcode, reason)
         VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -202,10 +211,6 @@ export async function parseProductImport(db, filePath, fileName) {
       .replace(/\s*\([^)]*\)\s*$/, "")
       .trim();
 
-  // Distinguishes "blank/zero, that's on the user" from "malformed input we
-  // can't trust" (e.g. a cell Excel silently reinterpreted as a Date, turning
-  // 7.5 into a multi-trillion epoch-timestamp number). Blank cells pass
-  // through as 0; anything that looks like a misread value fails validation.
   const parseNumberCell = (raw) => {
     if (raw === null || raw === undefined || raw === "") {
       return { value: 0, valid: true };
@@ -215,8 +220,6 @@ export async function parseProductImport(db, filePath, fileName) {
       return { value: null, valid: false };
     }
 
-    // Text-formatted cells can come back with a comma decimal separator
-    // depending on the user's Excel locale (e.g. "7,5" instead of "7.5").
     const normalized =
       typeof raw === "string" ? raw.trim().replace(",", ".") : raw;
 
@@ -229,10 +232,6 @@ export async function parseProductImport(db, filePath, fileName) {
     return { value: n, valid: true };
   };
 
-  // ---- Header-name lookup instead of fixed column indices ----
-  // Lets columns move around and, critically, lets the additional-unit
-  // groups (unit2_*, unit3_*, ...) be discovered by name rather than
-  // assumed to live at one hardcoded position.
   const headerRow = sheet.getRow(1);
   const headerMap = {};
   headerRow.eachCell((cell, colNumber) => {
@@ -245,9 +244,6 @@ export async function parseProductImport(db, filePath, fileName) {
     return col ? row.getCell(col).value : null;
   };
 
-  // Discover every "unitN_name" header present, sorted by N, and pair each
-  // with its sibling unitN_conversion_factor/unitN_price/unitN_barcode
-  // columns (any of which may be absent — treated as blank if so).
   const unitGroupPattern = /^unit(\d+)_name$/;
   const additionalUnitGroups = Object.keys(headerMap)
     .map((header) => header.match(unitGroupPattern))
@@ -263,7 +259,7 @@ export async function parseProductImport(db, filePath, fileName) {
     }));
 
   const transaction = db.transaction(() => {
-    const importResult = insertImport.run(fileName);
+    const importResult = insertImport.run(fileName, importCreatedAt);
     const importId = importResult.lastInsertRowid;
 
     sheet.eachRow((row, rowNumber) => {
@@ -283,15 +279,10 @@ export async function parseProductImport(db, filePath, fileName) {
         .trim()
         .toLowerCase();
 
-      // Blank defaults to 'normal'; anything present but not one of the
-      // two known values is rejected outright — type drives downstream
-      // stock/expiry behavior and is immutable once created, so a silent
-      // guess here (the way tax falls back to "no tax" when unmatched)
-      // would be the wrong failure mode.
       let type = "normal";
       if (rawType) {
         if (rawType !== "normal" && rawType !== "service") {
-          const reason = `Invalid type "${rawType}" (must be normal or service)`;
+          const reason = "invalidType";
           skippedProducts.push({ row: rowNumber, name, reason });
           insertImportItem.run(
             importId,
@@ -314,12 +305,11 @@ export async function parseProductImport(db, filePath, fileName) {
       const quantityCell = parseNumberCell(cellByHeader(row, "quantity"));
 
       if (!costPriceCell.valid || !priceCell.valid || !quantityCell.valid) {
-        const badField = !costPriceCell.valid
-          ? "costPrice"
+        const reason = !costPriceCell.valid
+          ? "invalidCostPrice"
           : !priceCell.valid
-            ? "price"
-            : "quantity";
-        const reason = `Invalid number in ${badField}`;
+            ? "invalidSalePrice"
+            : "invalidQuantity";
         skippedProducts.push({ row: rowNumber, name, reason });
         insertImportItem.run(
           importId,
@@ -335,13 +325,10 @@ export async function parseProductImport(db, filePath, fileName) {
 
       const costPrice = costPriceCell.value;
       const price = priceCell.value;
-      // A service has no physical stock — quantity from the sheet is
-      // ignored for it rather than trusted, same rule the product form
-      // enforces on create/update.
       const quantity = isService ? 0 : quantityCell.value;
 
       if (getProductByName.get(name)) {
-        const reason = "Product name already exists";
+        const reason = "productNameExists";
         skippedProducts.push({ row: rowNumber, name, reason });
         insertImportItem.run(
           importId,
@@ -357,9 +344,7 @@ export async function parseProductImport(db, filePath, fileName) {
 
       const matchedUnit = unitByCode.get(unitCode) || null;
       if (!matchedUnit) {
-        const reason = unitCode
-          ? "Unit code not found"
-          : "Unit code is required";
+        const reason = unitCode ? "unitCodeNotFound" : "unitCodeRequired";
         skippedProducts.push({ row: rowNumber, name, reason });
         insertImportItem.run(
           importId,
@@ -391,10 +376,6 @@ export async function parseProductImport(db, filePath, fileName) {
 
       insertBaseProductUnit.run(productId, baseUnitName, price);
 
-      // Per-row, case-insensitive — catches a unit name colliding with the
-      // base unit OR with another additional unit on the SAME product.
-      // Never checked against other products' unit names — "Box" on
-      // Product A and "Box" on Product B are unrelated and both fine.
       const seenUnitNames = new Set([baseUnitName.toLowerCase()]);
 
       const barcodes = barcodesRaw
@@ -403,7 +384,7 @@ export async function parseProductImport(db, filePath, fileName) {
         .filter(Boolean);
       for (const barcode of barcodes) {
         if (existingBarcodes.has(barcode)) {
-          const reason = "Barcode already used by another product";
+          const reason = "barcodeAlreadyUsed";
           skippedBarcodes.push({ row: rowNumber, barcode, reason });
           insertImportItem.run(
             importId,
@@ -420,15 +401,11 @@ export async function parseProductImport(db, filePath, fileName) {
         existingBarcodes.add(barcode);
       }
 
-      // ---- Additional selling units — best-effort per group. An invalid,
-      // duplicate-name, or duplicate-barcode unit is skipped and logged;
-      // it never blocks the product itself, since these are optional
-      // extras on top of the base unit that's already been created above. ----
       for (const group of additionalUnitGroups) {
         const unitName = String(
           cellByHeader(row, group.nameHeader) || ""
         ).trim();
-        if (!unitName) continue; // group left blank for this row — fine
+        if (!unitName) continue;
 
         const factorCell = parseNumberCell(
           cellByHeader(row, group.factorHeader)
@@ -441,7 +418,7 @@ export async function parseProductImport(db, filePath, fileName) {
         ).trim();
 
         if (seenUnitNames.has(unitName.toLowerCase())) {
-          const reason = `Duplicate unit name "${unitName}" for this product`;
+          const reason = "duplicateUnitName";
           skippedUnits.push({ row: rowNumber, name, reason });
           insertImportItem.run(
             importId,
@@ -455,8 +432,8 @@ export async function parseProductImport(db, filePath, fileName) {
           continue;
         }
 
-        if (!factorCell.valid || factorCell.value <= 0) {
-          const reason = `Invalid conversion_factor for ${group.nameHeader}`;
+        if (!factorCell.valid || factorCell.value <= 1) {
+          const reason = "invalidConversionFactor";
           skippedUnits.push({ row: rowNumber, name, reason });
           insertImportItem.run(
             importId,
@@ -471,7 +448,7 @@ export async function parseProductImport(db, filePath, fileName) {
         }
 
         if (!unitPriceCell.valid) {
-          const reason = `Invalid price for ${group.nameHeader}`;
+          const reason = "invalidUnitPrice";
           skippedUnits.push({ row: rowNumber, name, reason });
           insertImportItem.run(
             importId,
@@ -486,7 +463,7 @@ export async function parseProductImport(db, filePath, fileName) {
         }
 
         if (unitBarcode && existingUnitBarcodes.has(unitBarcode)) {
-          const reason = `Barcode already used by another unit (${group.nameHeader})`;
+          const reason = "unitBarcodeAlreadyUsed";
           skippedUnits.push({ row: rowNumber, name, reason });
           insertImportItem.run(
             importId,

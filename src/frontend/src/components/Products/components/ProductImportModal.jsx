@@ -61,7 +61,9 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
 
   const hasIssues =
     result &&
-    (result.skippedProducts.length > 0 || result.skippedBarcodes.length > 0);
+    (result.skippedProducts.length > 0 ||
+      result.skippedBarcodes.length > 0 ||
+      result.skippedUnits.length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -130,7 +132,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
           ) : (
             <>
               {/* RESULTS COUNTER */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div className="rounded-2xl bg-emerald-50 p-4 text-center">
                   <p className="text-2xl font-black text-emerald-700">
                     {result.created.length}
@@ -153,6 +155,14 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                   </p>
                   <p className="text-xs font-semibold text-amber-600">
                     {t("screens.products.skippedBarcodes")}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-amber-50 p-4 text-center">
+                  <p className="text-2xl font-black text-amber-700">
+                    {result.skippedUnits.length}
+                  </p>
+                  <p className="text-xs font-semibold text-amber-600">
+                    {t("screens.products.skippedUnits")}
                   </p>
                 </div>
               </div>
@@ -182,7 +192,9 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                               {t("ui.row")} {item.row} · {item.name}
                             </span>
                             <span className="shrink-0 text-amber-700 font-medium">
-                              {item.reason ? t(item.reason) : t("ui.noReason")}
+                              {item.reason
+                                ? t(`errors.${item.reason}`)
+                                : t("ui.noReason")}
                             </span>
                           </div>
                         ))}
@@ -204,7 +216,33 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
                               {t("ui.row")} {item.row} · {item.barcode}
                             </span>
                             <span className="shrink-0 text-amber-700 font-medium">
-                              {item.reason ? t(item.reason) : t("ui.noReason")}
+                              {item.reason
+                                ? t(`errors.${item.reason}`)
+                                : t("ui.noReason")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {result.skippedUnits.length > 0 && (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                      <p className="mb-2 text-xs font-black uppercase  text-amber-700">
+                        {t("screens.products.skippedUnits")}
+                      </p>
+                      <div className="space-y-1.5">
+                        {result.skippedUnits.map((item, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between gap-3 text-xs"
+                          >
+                            <span className="font-bold text-slate-700">
+                              {t("ui.row")} {item.row} · {item.name}
+                            </span>
+                            <span className="shrink-0 text-amber-700 font-medium">
+                              {item.reason
+                                ? t(`errors.${item.reason}`)
+                                : t("ui.noReason")}
                             </span>
                           </div>
                         ))}

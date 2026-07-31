@@ -12,7 +12,7 @@ import {
   Briefcase,
   Lock,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import { getAssetUrl } from "../../../Global/assetUrl";
@@ -139,6 +139,23 @@ export default function ProductFormPage() {
   const [form, setForm] = useState(emptyForm);
 
   const isService = form.type === "service";
+  const barcodeInputRefs = useRef([]);
+
+  const handleBarcodeKeyDown = (event, onScanned) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    event.target.blur();
+    onScanned?.();
+  };
+
+  useEffect(() => {
+    const lastIndex = form.barcodes.length - 1;
+    const last = form.barcodes[lastIndex];
+    if (form.barcodes.length > 1 && last && !last.barcode) {
+      barcodeInputRefs.current[lastIndex]?.focus();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.barcodes.length]);
 
   useEffect(() => {
     let cancelled = false;
@@ -295,13 +312,30 @@ export default function ProductFormPage() {
       return;
     }
 
-    if (Number(form.costPrice) <= 0) {
+    if (Number(form.costPrice) < 0) {
       toast.error(t("screens.products.validCost"));
       return;
     }
 
     if (Number(form.salePrice) <= 0) {
       toast.error(t("screens.products.validSale"));
+      return;
+    }
+
+    const invalidUnit = form.productUnits.find(
+      (u) =>
+        u.unit_name.trim() &&
+        u.conversion_factor !== "" &&
+        Number(u.conversion_factor) <= 1
+    );
+
+    if (invalidUnit) {
+      toast.error(
+        t(
+          "screens.products.conversionMustExceedOne",
+          "Conversion factor must be greater than 1 — it can't be smaller than or equal to the base unit."
+        )
+      );
       return;
     }
 
@@ -319,9 +353,6 @@ export default function ProductFormPage() {
 
     await submitProduct({
       ...form,
-      // A service has no physical stock behind it — force quantity to 0
-      // regardless of whatever leftover value sits in the field, rather
-      // than trusting an input the UI itself hides for this type.
       quantity: isService ? 0 : Number(form.quantity || 0),
       costPrice: Number(form.costPrice || 0),
       salePrice: Number(form.salePrice || 0),
@@ -652,80 +683,117 @@ export default function ProductFormPage() {
                 />
               }
             >
+              <div className="mb-2.5 flex items-start gap-2 rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2 text-[11px] font-semibold leading-relaxed text-violet-700">
+                <Layers size={13} className="mt-0.5 shrink-0" />
+                <span>
+                  {t(
+                    "screens.products.unitsHint",
+                    "The base unit is your smallest unit. Any selling unit must represent a larger quantity — its conversion factor must be greater than 1 (e.g. a box of 12 has a conversion factor of 12)."
+                  )}
+                </span>
+              </div>
+
               {form.productUnits.length === 0 ? (
                 <div className="flex items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 py-4 text-xs font-semibold text-slate-400">
                   {t("screens.products.noSellingUnits")}
                 </div>
               ) : (
                 <div className="grid gap-2">
-                  {form.productUnits.map((unit, index) => (
-                    <div
-                      key={unit.id || index}
-                      className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-1.5 rounded-xl bg-slate-50/60 p-1.5"
-                    >
-                      <input
-                        value={unit.unit_name}
-                        onChange={(event) =>
-                          updateProductUnit(
-                            index,
-                            "unit_name",
-                            event.target.value
-                          )
-                        }
-                        placeholder={t("screens.products.unitNamePlaceholder")}
-                        className={inputClass}
-                      />
+                  {form.productUnits.map((unit, index) => {
+                    const factor = Number(unit.conversion_factor);
+                    const hasInvalidFactor =
+                      unit.conversion_factor !== "" &&
+                      unit.conversion_factor !== undefined &&
+                      !isNaN(factor) &&
+                      factor <= 1;
 
-                      <NumberInput
-                        value={unit.conversion_factor}
-                        onChange={(val) =>
-                          updateProductUnit(index, "conversion_factor", val)
-                        }
-                        placeholder={t(
-                          "screens.products.conversionPlaceholder"
-                        )}
-                        className={inputClass}
-                      />
-
-                      <NumberInput
-                        value={unit.sale_price}
-                        onChange={(val) =>
-                          updateProductUnit(index, "sale_price", val)
-                        }
-                        placeholder={t(
-                          "screens.products.unitSalePricePlaceholder"
-                        )}
-                        className={inputClass}
-                      />
-
-                      {canManageBarcodes && (
-                        <input
-                          value={unit.barcode || ""}
-                          onChange={(event) =>
-                            updateProductUnit(
-                              index,
-                              "barcode",
-                              event.target.value
-                            )
-                          }
-                          placeholder={t(
-                            "screens.products.unitBarcodePlaceholder",
-                            "Barcode"
-                          )}
-                          className={inputClass}
-                        />
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => removeProductUnit(index)}
-                        className={smallRemoveBtnClass}
-                        aria-label={t("screens.products.removeUnit")}
+                    return (
+                      <div
+                        key={unit.id ? `id-${unit.id}` : `new-${index}`}
+                        className="rounded-xl bg-slate-50/60 p-1.5"
                       >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-1.5">
+                          <input
+                            value={unit.unit_name}
+                            onChange={(event) =>
+                              updateProductUnit(
+                                index,
+                                "unit_name",
+                                event.target.value
+                              )
+                            }
+                            placeholder={t(
+                              "screens.products.unitNamePlaceholder"
+                            )}
+                            className={inputClass}
+                          />
+
+                          <NumberInput
+                            value={unit.conversion_factor}
+                            onChange={(val) =>
+                              updateProductUnit(index, "conversion_factor", val)
+                            }
+                            placeholder={t(
+                              "screens.products.conversionPlaceholder"
+                            )}
+                            className={
+                              hasInvalidFactor
+                                ? inputClass +
+                                  " border-red-300 focus:border-red-400 focus:ring-red-400/15"
+                                : inputClass
+                            }
+                          />
+
+                          <NumberInput
+                            value={unit.sale_price}
+                            onChange={(val) =>
+                              updateProductUnit(index, "sale_price", val)
+                            }
+                            placeholder={t(
+                              "screens.products.unitSalePricePlaceholder"
+                            )}
+                            className={inputClass}
+                          />
+
+                          {canManageBarcodes && (
+                            <input
+                              value={unit.barcode || ""}
+                              onChange={(event) =>
+                                updateProductUnit(
+                                  index,
+                                  "barcode",
+                                  normalizeDigits(event.target.value)
+                                )
+                              }
+                              onKeyDown={(event) => handleBarcodeKeyDown(event)}
+                              placeholder={t(
+                                "screens.products.unitBarcodePlaceholder",
+                                "Barcode"
+                              )}
+                              className={inputClass}
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeProductUnit(index)}
+                            className={smallRemoveBtnClass}
+                            aria-label={t("screens.products.removeUnit")}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+
+                        {hasInvalidFactor && (
+                          <p className="mt-1 px-1 text-[11px] font-semibold text-red-500">
+                            {t(
+                              "screens.products.conversionMustExceedOne",
+                              "Conversion factor must be greater than 1 — it can't be smaller than or equal to the base unit."
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </Panel>
@@ -746,13 +814,27 @@ export default function ProductFormPage() {
                 <div className="grid gap-2">
                   {form.barcodes.map((barcode, index) => (
                     <div
-                      key={barcode.id || index}
+                      key={barcode.id ? `id-${barcode.id}` : `new-${index}`}
                       className="grid grid-cols-[1fr_auto] gap-1.5 rounded-xl bg-slate-50/60 p-1.5"
                     >
                       <input
+                        ref={(el) => (barcodeInputRefs.current[index] = el)}
                         value={barcode.barcode}
                         onChange={(event) =>
-                          updateBarcode(index, event.target.value)
+                          updateBarcode(
+                            index,
+                            normalizeDigits(event.target.value)
+                          )
+                        }
+                        onKeyDown={(event) =>
+                          handleBarcodeKeyDown(event, () => {
+                            const isLastRow =
+                              index === form.barcodes.length - 1;
+                            const hasValue = barcode.barcode.trim();
+                            if (isLastRow && hasValue) {
+                              addBarcode();
+                            }
+                          })
                         }
                         placeholder={t("screens.products.enterBarcode")}
                         className={inputClass}

@@ -274,6 +274,7 @@
       "youOweThem": "Onlara borçlusunuz"
     },
     "products": {
+      "skippedUnits": "Atlanan Birimler",
       "productType": "Ürün Türü",
       "typeNormal": "Normal",
       "typeService": "Hizmet",
@@ -285,6 +286,8 @@
         "details": "Detaylar",
         "movements": "Hareketler"
       },
+      "unitsHint": "Temel birim en küçük biriminizdir. Herhangi bir satış birimi daha büyük bir miktarı temsil etmelidir — dönüşüm faktörü 1'den büyük olmalıdır (örneğin 12'lik bir kutunun dönüşüm faktörü 12'dir).",
+      "conversionMustExceedOne": "Dönüşüm faktörü 1'den büyük olmalıdır — temel birimden küçük veya ona eşit olamaz.",
       "baseUnitBadge": "Temel",
       "noTaxOption": "Vergisiz",
       "baseUnitHint": "Bu, ürünün varsayılan satış birimi olacaktır.",
@@ -1116,7 +1119,20 @@
     "lastAdminMustRemain": "En az bir aktif yönetici kalmalıdır.",
     "adminAuthFailed": "Yönetici kimlik doğrulaması başarısız oldu.",
     "recoveryFailed": "Kurtarma işlemi tamamlanamadı.",
-    "deactivateBeforeDelete": "Silmeden önce bu kullanıcıyı devre dışı bırakın."
+    "deactivateBeforeDelete": "Silmeden önce bu kullanıcıyı devre dışı bırakın.",
+    "missingRequiredFields": "Lütfen tüm gerekli alanları doldurun.",
+    "duplicateUnitName": "İki satış biriminin aynı isme sahip olamaz (veya temel birimle eşleşemez).",
+    "invalidType": "Geçersiz ürün türü — \"normal\" veya \"service\" olmalı",
+    "invalidCostPrice": "Geçersiz maliyet fiyatı değeri",
+    "invalidSalePrice": "Geçersiz satış fiyatı değeri",
+    "invalidQuantity": "Geçersiz miktar değeri",
+    "productNameExists": "Bu isimde bir ürün zaten mevcut",
+    "unitCodeNotFound": "Birim kodu bulunamadı",
+    "unitCodeRequired": "Birim kodu gerekli",
+    "barcodeAlreadyUsed": "Bu barkod başka bir ürün tarafından zaten kullanılıyor",
+    "invalidConversionFactor": "Dönüşüm faktörü 1'den büyük olmalıdır",
+    "invalidUnitPrice": "Geçersiz birim fiyatı değeri",
+    "unitBarcodeAlreadyUsed": "Bu barkod başka bir birim tarafından zaten kullanılıyor"
   },
   "success": {
     "created": "{{field}} başarıyla oluşturuldu",
