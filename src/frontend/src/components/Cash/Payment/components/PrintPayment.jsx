@@ -188,7 +188,7 @@ export default function PrintPayment() {
             <div className="flex justify-between text-[11px] text-[#6B6F76]">
               <span>{t("DOCS.EXCHANGE_RATE")}</span>
               <span className="font-mono tabular-nums">
-                {payment.exchange_rate}
+                {payment.effective_rate}
               </span>
             </div>
           )}

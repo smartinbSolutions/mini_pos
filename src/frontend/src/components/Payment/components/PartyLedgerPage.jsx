@@ -27,6 +27,7 @@ import { toast } from "react-toastify";
 import GoTo from "../../../Global/GoTo";
 import Pagination from "../../../Global/Pagination";
 import ExportModal from "../../../Global/ExportModal";
+import partyLedgerRowLabel from "./PartyLedgerRowLabel";
 
 const PARTY_ICONS = {
   customer: User,
@@ -126,14 +127,22 @@ const PartyLedgerPage = () => {
   // balance" — same rule for every party type.
   const isOutflow = (p) => p.movement_type === "decrease";
 
-  const kindLabel = (p) => {
-    if (p.record_type === "opening_balance")
-      return t("screens.ledger.openingBalance");
-    if (p.record_type === "return") return t("screens.ledger.return");
-    if (p.record_type === "payment") return t("screens.ledger.payment");
-    return t("screens.ledger.invoice");
+  const primaryLabel = (row) => {
+    if (row.record_type === "opening_balance") {
+      return t("screens.ledger.openingBalance", "Opening balance");
+    }
+    if (row.record_type === "payment") {
+      return row.note || t("ui.payment");
+    }
+    if (row.record_type === "invoice" || row.record_type === "return") {
+      const typeLabel = t(
+        `screens.invoices.invoiceType.${row.invoice_type}`,
+        row.invoice_type
+      );
+      return row.invoice_id ? `${typeLabel} #${row.invoice_id}` : typeLabel;
+    }
+    return t("ui.transaction", "Transaction");
   };
-
   // Group rows by calendar day for a lightweight timeline feel — purely a
   // display grouping, doesn't touch running_balance or pagination math.
   const groupedByDay = data.reduce((acc, row) => {
@@ -344,6 +353,13 @@ const PartyLedgerPage = () => {
                     const fundAmount = Number(
                       p.amount_fund_currency ?? Number(p.amount || 0) * rate
                     );
+                    const label = partyLedgerRowLabel({
+                      row: p,
+                      partyName,
+                      partyType: normalizedType,
+                      t,
+                      formattedAmount: money(p.amount),
+                    });
 
                     return (
                       <div
@@ -371,19 +387,15 @@ const PartyLedgerPage = () => {
 
                           <div className="min-w-0">
                             <div className="truncate font-bold text-slate-900">
-                              {p.note || t("screens.ledger.transaction")}
+                              {label}
                             </div>
 
                             <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                              <span
-                                className={`font-bold uppercase  ${
-                                  p.record_type === "return"
-                                    ? "text-amber-600"
-                                    : ""
-                                }`}
-                              >
-                                {kindLabel(p)}
-                              </span>
+                              {p.record_type === "return" && (
+                                <span className="font-bold uppercase text-amber-600">
+                                  {t("screens.ledger.return")}
+                                </span>
+                              )}
 
                               {p.record_type !== "payment" &&
                                 p.invoice_id &&
@@ -394,18 +406,23 @@ const PartyLedgerPage = () => {
                                 )}
 
                               {p.record_type === "payment" && p.payment_id && (
-                                <span>
-                                  <GoTo type="fund" id={p.payment_fund_id}>
-                                    {p.fund_name}{" "}
-                                  </GoTo>
-                                  <span className="mx-1">
-                                    <GoTo type="payment" id={p.payment_id}>
-                                      Payment # {p.payment_id}
-                                    </GoTo>
-                                  </span>
-                                </span>
+                                <GoTo type="payment" id={p.payment_id}>
+                                  {t("screens.ledger.payment")} #{p.payment_id}
+                                </GoTo>
+                              )}
+
+                              {p.record_type === "payment" && p.fund_name && (
+                                <GoTo type="fund" id={p.payment_fund_id}>
+                                  {p.fund_name}
+                                </GoTo>
                               )}
                             </div>
+
+                            {p.note && (
+                              <div className="mt-1 truncate text-[11px] italic text-slate-400/80">
+                                {p.note}
+                              </div>
+                            )}
 
                             {isForeignCurrency && (
                               <div className="mt-1.5 flex flex-wrap items-center gap-1.5 rounded-lg border border-dashed border-[#dbe4ff] bg-[#f8faff] px-2 py-1 text-[11px] text-slate-500">

@@ -45,7 +45,7 @@ const PaymentDocumentPage = () => {
       active = false;
     };
   }, [id]);
-  console.log(payment);
+
   const handlePrint = async () => {
     try {
       setIsPrinting(true);

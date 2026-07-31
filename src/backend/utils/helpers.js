@@ -30,6 +30,12 @@ const FOR_INVOICE_LABEL = {
   tr: "faturası için",
 };
 
+const OPENING_BALANCE_LABEL = {
+  en: "Opening Balance",
+  ar: "الرصيد الافتتاحي",
+  tr: "Açılış Bakiyesi",
+};
+
 export const toAppFileUrl = (filePath) =>
   `app-file://local/${encodeURIComponent(filePath)}`;
 
@@ -88,4 +94,9 @@ export function buildDefaultPaymentNote(db, kind, referenceId) {
   const lang = getCompanyLanguage(db);
   const label = PAYMENT_LABELS[kind][lang];
   return `${label} #${referenceId}`;
+}
+
+export function buildOpeningBalanceNote(db) {
+  const lang = getCompanyLanguage(db);
+  return OPENING_BALANCE_LABEL[lang];
 }

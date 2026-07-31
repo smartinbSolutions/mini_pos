@@ -737,6 +737,7 @@
     },
     "ledger": {
       "partyId": "{{type}} Defteri - Taraf ID: #{{id}}",
+      "paymentViaFund": "{{fund}} üzerinden ödeme",
       "partyTotal": "TARAF TOPLAMI",
       "totalPaid": "TOPLAM ÖDENEN",
       "pageIn": "SAYFA GİRİŞ",
@@ -759,7 +760,18 @@
       "fundRate": "Fon döviz kuru",
       "openingBalance": "Açılış Bakiyesi",
       "allTimeResults": "Tüm Zamanların Sonuçları",
-      "totalReturn": "Toplam İade"
+      "totalReturn": "Toplam İade",
+      "openingBalanceFor": "{{party}} için açılış bakiyesi",
+      "paymentCustomerToFund": "{{party}} müşterisinden {{fund}} kasasına ödeme yapıldı",
+      "paymentFundToCustomer": "{{fund}} kasasından {{party}} müşterisine ödeme yapıldı",
+      "paymentFundToSupplier": "{{fund}} kasasından {{party}} tedarikçisine ödeme yapıldı",
+      "paymentSupplierToFund": "{{party}} tedarikçisinden {{fund}} kasasına ödeme yapıldı",
+      "paymentPartnerToFund": "{{party}} ortağından {{fund}} kasasına ödeme yapıldı",
+      "paymentFundToPartner": "{{fund}} kasasından {{party}} ortağına ödeme yapıldı",
+      "invoiceCreatedFor": "{{party}} için {{type}} oluşturuldu",
+      "returnCreatedFor": "{{party}} için {{type}} iadesi oluşturuldu",
+      "openingBalancePositiveFor": "{{party}} {{amount}} bakiye ile başladı",
+      "openingBalanceNegativeFor": "{{party}} {{amount}} borçla başladı"
     },
     "fundMovements": {
       "title": "Kasa Hareketleri",

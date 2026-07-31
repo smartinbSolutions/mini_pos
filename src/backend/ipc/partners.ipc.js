@@ -1,43 +1,49 @@
 const { ipcMain } = require("electron");
 import db from "../db";
 import createPartyHistory from "../utils/createPaymentHistory";
+import { buildOpeningBalanceNote } from "../utils/helpers";
 export default function registerPartnersIPC() {
   // CREATE
   ipcMain.handle("create-partner", (event, data) => {
     if (!data.name) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
-    const result = db
-      .prepare(
-        `
-      INSERT INTO partners (name, phone, address)
-      VALUES (?,?,?)
-    `
-      )
-      .run(data.name, data.phone, data.address);
+    try {
+      const result = db
+        .prepare(
+          `
+        INSERT INTO partners (name, phone, address)
+        VALUES (?,?,?)
+      `
+        )
+        .run(data.name, data.phone, data.address);
 
-    const openingBalance = Number(data.opening_balance || 0);
-    if (openingBalance !== 0) {
-      const openingBalanceDate = data.date
-        ? `${data.date.slice(0, 10)} 00:00:00`
-        : `${new Date().getFullYear()}-01-01 00:00:00`;
+      const openingBalance = Number(data.opening_balance || 0);
+      if (openingBalance !== 0) {
+        const openingBalanceDate = data.date
+          ? `${data.date.slice(0, 10)} 00:00:00`
+          : `${new Date().getFullYear()}-01-01 00:00:00`;
 
-      createPartyHistory(db, {
-        party_type: "partner",
-        party_id: result.lastInsertRowid,
-        invoice_id: null,
-        invoice_type: "opening_balance",
-        record_type: "opening_balance",
-        movement_type: data.balance_type,
-        amount: openingBalance,
-        note: "Opening Balance",
-        date: openingBalanceDate,
-      });
+        createPartyHistory(db, {
+          party_type: "partner",
+          party_id: result.lastInsertRowid,
+          invoice_id: null,
+          invoice_type: "opening_balance",
+          record_type: "opening_balance",
+          movement_type: data.balance_type,
+          amount: openingBalance,
+          note: buildOpeningBalanceNote(db),
+          date: openingBalanceDate,
+        });
+      }
+      return {
+        success: true,
+        id: result.lastInsertRowid,
+      };
+    } catch (err) {
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
     }
-    return {
-      success: true,
-      id: result.lastInsertRowid,
-    };
   });
 
   ipcMain.handle("get-partners", (event, params = {}) => {
@@ -98,6 +104,9 @@ export default function registerPartnersIPC() {
     };
   });
 
+  // FIXED: movement_type values corrected from 'deposit'/'withdrawal'
+  // (never actually stored — schema only allows 'increase'/'decrease')
+  // to match get-partners and the real CHECK constraint.
   ipcMain.handle("get-partner", (event, id) => {
     const partner = db
       .prepare(
@@ -106,59 +115,20 @@ export default function registerPartnersIPC() {
         p.*,
 
         COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'deposit'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'deposit'
-                )
-              THEN ph.amount
-              ELSE 0
-            END
-          ),
+          SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
           0
         ) AS total_deposit,
 
         COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'withdrawal'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'withdrawal'
-                )
-              THEN ph.amount
-              ELSE 0
-            END
-          ),
+          SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END),
           0
         ) AS total_withdrawal,
 
         COALESCE(
           SUM(
             CASE
-              WHEN ph.movement_type = 'deposit'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'deposit'
-                )
-              THEN ph.amount
-              ELSE 0
-            END
-          ),
-          0
-        )
-        -
-        COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'withdrawal'
-                OR (
-                  ph.record_type = 'opening_balance'
-                  AND ph.movement_type = 'withdrawal'
-                )
-              THEN ph.amount
+              WHEN ph.movement_type = 'increase' THEN ph.amount
+              WHEN ph.movement_type = 'decrease' THEN -ph.amount
               ELSE 0
             END
           ),
@@ -182,41 +152,49 @@ export default function registerPartnersIPC() {
 
   ipcMain.handle("update-partner", (event, data) => {
     if (!data.name) {
-      return { message: "ERROR ENTER DATA", status: 500 };
+      return { success: false, error: "ERROR ENTER DATA" };
     }
-    db.prepare(
+    try {
+      db.prepare(
+        `
+        UPDATE partners
+        SET name = ?, phone = ?, address = ?
+        WHERE id = ?
       `
-      UPDATE partners
-      SET name = ?, phone = ?, address = ?
-      WHERE id = ?
-    `
-    ).run(data.name, data.phone, data.address, data.id);
+      ).run(data.name, data.phone, data.address, data.id);
 
-    return { success: true };
+      return { success: true };
+    } catch (err) {
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 
   ipcMain.handle("delete-partner", (event, id) => {
-    const { count } = db
-      .prepare(
-        `
-      SELECT COUNT(*) AS count FROM party_history
-      WHERE party_type = 'partner' AND party_id = ?
-    `
-      )
-      .get(id);
-
-    if (count > 0) {
-      throw new Error(
-        "Cannot delete a partner that already has transaction history."
-      );
-    }
-
-    db.prepare(
+    try {
+      const { count } = db
+        .prepare(
+          `
+        SELECT COUNT(*) AS count FROM party_history
+        WHERE party_type = 'partner' AND party_id = ?
       `
-      DELETE FROM partners WHERE id = ?
-    `
-    ).run(id);
+        )
+        .get(id);
 
-    return { success: true };
+      if (count > 0) {
+        return { success: false, error: "PARTNER_HAS_HISTORY" };
+      }
+
+      db.prepare(
+        `
+        DELETE FROM partners WHERE id = ?
+      `
+      ).run(id);
+
+      return { success: true };
+    } catch (err) {
+      console.error(err);
+      return { success: false, error: err.message || String(err) };
+    }
   });
 }

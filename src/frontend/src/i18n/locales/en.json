@@ -756,6 +756,7 @@
     },
     "ledger": {
       "partyId": "{{type}} Ledger - Party ID: #{{id}}",
+      "paymentViaFund": "Payment via {{fund}}",
       "partyTotal": "PARTY TOTAL",
       "totalPaid": "TOTAL PAID",
       "pageIn": "PAGE IN",
@@ -778,7 +779,18 @@
       "fundRate": "Fund rate",
       "openingBalance": "Opening Balance",
       "allTimeResults": "All-Time Results",
-      "totalReturn": "Total Return"
+      "totalReturn": "Total Return",
+      "openingBalanceFor": "Opening balance for {{party}}",
+      "paymentCustomerToFund": "Payment has been paid from customer {{party}} to {{fund}}",
+      "paymentFundToCustomer": "Payment has been paid from {{fund}} to customer {{party}}",
+      "paymentFundToSupplier": "Payment has been paid from {{fund}} to supplier {{party}}",
+      "paymentSupplierToFund": "Payment has been paid from supplier {{party}} to {{fund}}",
+      "paymentPartnerToFund": "Payment has been paid from partner {{party}} to {{fund}}",
+      "paymentFundToPartner": "Payment has been paid from {{fund}} to partner {{party}}",
+      "invoiceCreatedFor": "{{type}} created for {{party}}",
+      "returnCreatedFor": "{{type}} return created for {{party}}",
+      "openingBalancePositiveFor": "{{party}} started with a balance of {{amount}}",
+      "openingBalanceNegativeFor": "{{party}} started owing {{amount}}"
     },
     "fundMovements": {
       "title": "Fund Movements",

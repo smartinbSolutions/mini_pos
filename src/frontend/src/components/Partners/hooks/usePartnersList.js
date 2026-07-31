@@ -61,7 +61,7 @@ const usePartnersList = () => {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.partner") }),
+        err?.message || t("errors.createFailed", { field: t("ui.partner") })
       );
     } finally {
       setLoading(false);
@@ -105,8 +105,10 @@ const usePartnersList = () => {
   const deletePartner = async (part) => {
     setSaving(true);
     try {
-      await api.deletePartner(part.id);
-
+      const res = await api.deletePartner(part.id);
+      if (!res?.success) {
+        throw new Error(res?.error || "DELETE_FAILED");
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -154,7 +156,13 @@ const usePartnersList = () => {
       toast.success(t("success.deleted", { field: t("ui.partner") }));
     } catch (err) {
       console.error("Failed to delete Partner:", err);
-      const message = t("errors.deleteHasData", { field: t("ui.partner") });
+
+      const message =
+        err.message === "PARTNER_HAS_HISTORY"
+          ? t("errors.deleteHasData", { field: t("ui.partner") })
+          : err?.message ||
+            t("errors.deleteFailed", { field: t("ui.partner") });
+
       setActionError(message);
       toast.error(message);
     }

@@ -743,6 +743,7 @@
     },
     "ledger": {
       "partyId": "سجل {{type}} - رقم الجهة: #{{id}}",
+      "paymentViaFund": "دفعة عبر {{fund}}",
       "partyTotal": "إجمالي الجهة",
       "totalPaid": "إجمالي المدفوع",
       "pageIn": "إدخال الصفحة",
@@ -765,7 +766,18 @@
       "fundRate": "سعر صرف الصندوق",
       "openingBalance": "الرصيد الافتتاحي",
       "allTimeResults": "نتائج جميع الأوقات",
-      "totalReturn": "إجمالي المرتجعات"
+      "totalReturn": "إجمالي المرتجعات",
+      "openingBalanceFor": "الرصيد الافتتاحي لـ {{party}}",
+      "paymentCustomerToFund": "تم دفع مبلغ من العميل {{party}} إلى {{fund}}",
+      "paymentFundToCustomer": "تم دفع مبلغ من {{fund}} إلى العميل {{party}}",
+      "paymentFundToSupplier": "تم دفع مبلغ من {{fund}} إلى المورد {{party}}",
+      "paymentSupplierToFund": "تم دفع مبلغ من المورد {{party}} إلى {{fund}}",
+      "paymentPartnerToFund": "تم دفع مبلغ من الشريك {{party}} إلى {{fund}}",
+      "paymentFundToPartner": "تم دفع مبلغ من {{fund}} إلى الشريك {{party}}",
+      "invoiceCreatedFor": "تم إنشاء {{type}} لـ {{party}}",
+      "returnCreatedFor": "تم إنشاء مرتجع {{type}} لـ {{party}}",
+      "openingBalancePositiveFor": "بدأ {{party}} برصيد {{amount}}",
+      "openingBalanceNegativeFor": "بدأ {{party}} مديوناً بمبلغ {{amount}}"
     },
     "fundMovements": {
       "title": "حركات الصندوق",

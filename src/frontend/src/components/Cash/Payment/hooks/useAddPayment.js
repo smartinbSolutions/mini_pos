@@ -52,7 +52,7 @@ const useAddPayment = ({
 
   const initialBaseAmount = invoice
     ? Number(invoice.remaining_amount || 0)
-    : Number(invoice?.net_total || totalAmount);
+    : Number(totalAmount || 0);
 
   const [form, setForm] = useState({
     fund_id: "",
