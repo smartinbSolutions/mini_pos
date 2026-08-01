@@ -87,6 +87,7 @@ import PrintPurchaseInvoice from "./components/Invoices/Purchase/components/Prin
 import PrintPurchaseReturn from "./components/Invoices/PurchaseReturn/components/PrintPurchaseReturn";
 import PrintPayment from "./components/Cash/Payment/components/PrintPayment";
 import PrintExpense from "./components/Invoices/expense/components/PrintExpense";
+import ExpenseCategoryDetailPage from "./components/ExpenseCategory/components/ExpenseCategoryDetailPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -235,6 +236,10 @@ export default function App() {
               <Route
                 path="expense-category"
                 element={<ExpenseCategoryList />}
+              />
+              <Route
+                path="expense-category/:id"
+                element={<ExpenseCategoryDetailPage />}
               />
 
               {/* ================= CASH / FUNDS ================= */}

@@ -81,7 +81,7 @@ export default function ProductQuickAddModal({
                 <Package size={16} />
               </span>
               <h2 className="text-[15px] font-black text-slate-950">
-                {t("screens.products.quickAdd", "Quick add product")}
+                {t("screens.products.quickAddProduct", "Quick add product")}
               </h2>
             </div>
 

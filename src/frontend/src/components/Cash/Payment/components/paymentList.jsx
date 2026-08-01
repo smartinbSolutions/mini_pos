@@ -657,9 +657,34 @@ const PaymentList = () => {
                                 key={alloc.id}
                                 className="flex items-center justify-between rounded-xl border border-[#e5ebff] bg-white px-4 py-2 text-sm"
                               >
-                                <span className="font-semibold text-slate-600">
-                                  {alloc.invoice_type} #{alloc.invoice_id}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <GoTo
+                                    type={alloc.invoice_type}
+                                    id={alloc.invoice_id}
+                                    variant="light"
+                                  >
+                                    {t(
+                                      `screens.invoices.invoiceType.${alloc.invoice_type}`,
+                                      {
+                                        defaultValue: alloc.invoice_type,
+                                      }
+                                    )}{" "}
+                                    #{alloc.invoice_id}
+                                  </GoTo>
+                                  <span
+                                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                                      alloc.settlement_status === "full"
+                                        ? "bg-emerald-50 text-emerald-700"
+                                        : "bg-amber-50 text-amber-700"
+                                    }`}
+                                  >
+                                    {alloc.settlement_status === "full"
+                                      ? t("screens.payments.fullyPaid") ||
+                                        "Fully paid"
+                                      : t("screens.payments.partiallyPaid") ||
+                                        "Partially paid"}
+                                  </span>
+                                </div>
                                 <span className="font-black tabular-nums text-slate-900">
                                   {money(alloc.amount)}
                                 </span>

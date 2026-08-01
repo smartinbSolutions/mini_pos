@@ -15,6 +15,13 @@ const useSuppliersList = () => {
 
   const [saving, setSaving] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
+  const [stats, setStats] = useState({
+    count: 0,
+    totalPayable: 0,
+    totalPaid: 0,
+    netOutstanding: 0,
+  });
+  const [counts, setCounts] = useState({ all: 0, owing: 0, settled: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [unavailableHandlers, setUnavailableHandlers] = useState([]);
@@ -29,6 +36,7 @@ const useSuppliersList = () => {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [balanceFilter, setBalanceFilterState] = useState("all"); // all | owing | settled
 
   const api = window.api;
 
@@ -57,11 +65,24 @@ const useSuppliersList = () => {
     try {
       setLoading(true);
 
-      const res = await api.getSuppliers({ page, limit });
+      const res = await api.getSuppliers({
+        page,
+        limit,
+        balance_filter: balanceFilter,
+      });
 
       setSuppliers(res?.data || []);
       setTotal(res?.total || 0);
       setTotalPages(res?.totalPages || 1);
+      setStats(
+        res?.stats || {
+          count: 0,
+          totalPayable: 0,
+          totalPaid: 0,
+          netOutstanding: 0,
+        }
+      );
+      setCounts(res?.counts || { all: 0, owing: 0, settled: 0 });
     } catch (err) {
       console.error("Failed to load supplier list:", err);
       setUnavailableHandlers([]);
@@ -71,11 +92,18 @@ const useSuppliersList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, t]);
+  }, [api, page, limit, balanceFilter, t]);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
+
+  // Changing the filter re-queries the full dataset, so always snap back to page 1 —
+  // otherwise you could land on a page number that no longer exists for the new filter.
+  const setBalanceFilter = (nextFilter) => {
+    setBalanceFilterState(nextFilter);
+    setPage(1);
+  };
 
   const createSupplier = async (sup) => {
     const validationError = validateSupplier(sup);
@@ -208,6 +236,8 @@ const useSuppliersList = () => {
     deleteSupplier,
     saving,
     suppliers,
+    stats,
+    counts,
     handleDeleteSupplier,
     handleCreateSupplier,
     handleUpdateSupplier,
@@ -234,6 +264,8 @@ const useSuppliersList = () => {
     setLimit,
     total,
     totalPages,
+    balanceFilter,
+    setBalanceFilter,
   };
 };
 

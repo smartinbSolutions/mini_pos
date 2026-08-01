@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -116,32 +116,39 @@ export default function UpdateExpense() {
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();
-
   const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
-    () =>
+    () => new Set()
+  );
+
+  const [revealedItemNotes, setRevealedItemNotes] = useState(() => new Set());
+  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(false);
+  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
+  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
+
+  useEffect(() => {
+    if (loading) return;
+
+    setRevealedItemDiscounts(
       new Set(
         items
           .map((item, i) => (Number(item.discount_rate) > 0 ? i : null))
           .filter((i) => i !== null)
       )
-  );
-  const [revealedItemNotes, setRevealedItemNotes] = useState(
-    () =>
+    );
+
+    setRevealedItemNotes(
       new Set(
         items
           .map((item, i) => (item.description ? i : null))
           .filter((i) => i !== null)
       )
-  );
-  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(
-    () => Number(invoice?.discount_rate) > 0
-  );
-  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(
-    () => (invoice?.taxes || []).length > 0
-  );
-  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(() =>
-    Boolean(invoice?.description)
-  );
+    );
+
+    setInvoiceDiscountRevealed(Number(invoice?.discount_rate) > 0);
+    setInvoiceTaxRevealed((invoice?.taxes || []).length > 0);
+    setInvoiceNoteRevealed(Boolean(invoice?.description));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const supplierName =
     supplierOptions.find((s) => s.id === invoice.supplier_id)?.name || "";

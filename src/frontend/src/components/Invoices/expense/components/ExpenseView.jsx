@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
 import {
-  ArrowLeft,
   Receipt,
   HandCoins,
   FileText,
   Download,
   Printer,
+  StickyNote,
 } from "lucide-react";
 
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import GoTo from "../../../../Global/GoTo";
 import HoverTooltip from "../../../../Global/HoverTooltip";
+import BackButton from "../../../../Global/BackButton";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-green-100", text: "text-green-700" },
@@ -23,7 +24,6 @@ const STATUS_CONFIG = {
 export default function ExpenseView() {
   const { t } = useTranslation();
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const api = window.api;
   const { money } = usePrimaryCurrency();
@@ -32,7 +32,6 @@ export default function ExpenseView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // inside component
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSavingPdf, setIsSavingPdf] = useState(false);
 
@@ -117,6 +116,7 @@ export default function ExpenseView() {
   const invoiceTaxValue = Number(expense?.taxValue || 0);
   const hasAnyDiscount = itemDiscountTotal > 0 || invoiceDiscount > 0;
   const hasAnyTax = itemTaxTotal > 0 || invoiceTaxValue > 0;
+  const hasAnyItemNote = items.some((item) => item.description);
 
   if (loading) {
     return (
@@ -138,14 +138,7 @@ export default function ExpenseView() {
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900 print:bg-white">
       <div className="mx-auto max-w-5xl">
         <div className="print:hidden mb-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 hover:bg-[#eef3ff]"
-          >
-            <ArrowLeft size={18} />
-            {t("common.back")}
-          </button>
+          <BackButton />
 
           <div className="flex gap-2">
             <button
@@ -176,7 +169,7 @@ export default function ExpenseView() {
                 <Receipt size={24} />
               </span>
               <div>
-                <p className="text-xs font-bold uppercase  text-[#4663ff]">
+                <p className="text-xs font-bold uppercase text-[#4663ff]">
                   {t("ui.expenses")}
                 </p>
                 <h1 className="text-3xl font-black text-slate-950">
@@ -192,7 +185,17 @@ export default function ExpenseView() {
 
             <div className="text-left md:text-right">
               <p className="text-lg font-black text-slate-950">
-                {expense.supplier_name || t("ui.noSupplier")}
+                {expense.supplier_id ? (
+                  <GoTo
+                    type="supplier"
+                    id={expense.supplier_id}
+                    variant="light"
+                  >
+                    {expense.supplier_name || t("ui.noSupplier")}
+                  </GoTo>
+                ) : (
+                  expense.supplier_name || t("ui.noSupplier")
+                )}
               </p>
               <p className="text-sm text-slate-500">{t("ui.supplier")}</p>
               <span
@@ -218,7 +221,7 @@ export default function ExpenseView() {
 
             <div className="overflow-x-auto rounded-2xl border border-[#e5ebff]">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
+                <thead className="bg-[#f8faff] text-xs font-bold uppercase text-slate-500">
                   <tr>
                     <th className="p-3 text-start">{t("ui.category")}</th>
                     <th className="p-3 text-start">{t("ui.price")}</th>
@@ -248,8 +251,29 @@ export default function ExpenseView() {
 
                       return (
                         <tr key={item.id ?? index}>
-                          <td className="p-3 font-bold text-slate-900">
-                            {item.category_name || "-"}
+                          <td className="p-3">
+                            <div className="font-bold text-slate-900">
+                              {item.category_id ? (
+                                <GoTo
+                                  type="expense_category"
+                                  id={item.category_id}
+                                  variant="light"
+                                >
+                                  {item.category_name || "-"}
+                                </GoTo>
+                              ) : (
+                                item.category_name || "-"
+                              )}
+                            </div>
+                            {item.description && (
+                              <div className="mt-1 flex items-start gap-1 text-xs italic text-slate-400">
+                                <StickyNote
+                                  size={11}
+                                  className="mt-0.5 shrink-0"
+                                />
+                                {item.description}
+                              </div>
+                            )}
                           </td>
                           <td className="p-3 text-start tabular-nums">
                             {money(item.price)}
@@ -334,18 +358,26 @@ export default function ExpenseView() {
                       >
                         <div>
                           <div className="flex items-center gap-2 font-bold text-slate-800">
-                            <GoTo type="fund" id={alloc.fund_id}>
+                            <GoTo
+                              type="fund"
+                              id={alloc.fund_id}
+                              variant="light"
+                            >
                               {alloc.fund_name || "-"}
                             </GoTo>
                           </div>
                           <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
                             {formatDate(alloc.date)} ·{" "}
-                            <GoTo type="payment" id={alloc.payment_id}>
+                            <GoTo
+                              type="payment"
+                              id={alloc.payment_id}
+                              variant="light"
+                            >
                               {t("ui.payment")} #{alloc.payment_id}
                             </GoTo>
                           </div>
                         </div>
-                        <div className="tabular-nums text-emerald-700">
+                        <div className="tabular-nums font-bold text-emerald-700">
                           {money(alloc.amount)}
                         </div>
                       </div>

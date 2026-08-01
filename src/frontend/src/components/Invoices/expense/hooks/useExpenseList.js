@@ -34,7 +34,7 @@ const useExpenseList = () => {
 
   const setFilters = (patch) => {
     setFiltersState((prev) => ({ ...prev, ...patch }));
-    setPage(1); // reset to page 1 whenever filters change, same as changing limit
+    setPage(1);
   };
 
   const clearFilters = () => {
@@ -60,8 +60,6 @@ const useExpenseList = () => {
     }
   }, [api]);
 
-  // Bare array response (not { data: [...] }) — different shape than
-  // getSuppliers, confirmed against the actual IPC handler.
   useEffect(() => {
     if (api?.getExpensesCategory) {
       api
@@ -125,13 +123,36 @@ const useExpenseList = () => {
     refetch();
   }, [refetch]);
 
+  // Maps known backend error codes to a translated, user-facing message.
+  const mapErrorCode = useCallback(
+    (code) => {
+      switch (code) {
+        case "CANNOT_DELETE_PAID_EXPENSE":
+          return t("errors.cannotDeletePaidInvoice");
+        default:
+          return null;
+      }
+    },
+    [t]
+  );
+
   const handleDelete = async (id) => {
     try {
       setActionError("");
-      await window.api.deleteExpense(id);
+      const res = await window.api.deleteExpense(id);
+
+      if (!res?.success) {
+        throw new Error(
+          mapErrorCode(res?.error) ||
+            res?.error ||
+            t("screens.expenses.deleteFailed")
+        );
+      }
+
       await refetch();
     } catch (err) {
-      setActionError(t("screens.expenses.deleteFailed"));
+      console.error("Failed to delete expense:", err);
+      setActionError(err?.message || t("screens.expenses.deleteFailed"));
     }
   };
 
@@ -143,6 +164,7 @@ const useExpenseList = () => {
     loading,
     saving,
     error,
+    actionError,
     refetch,
     handleDelete,
 

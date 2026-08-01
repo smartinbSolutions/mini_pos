@@ -18,6 +18,28 @@ const useExpenseCategory = () => {
 
   const api = window.api;
 
+  // Maps known backend error codes to a translated, user-facing message.
+  // Falls back to treating the code as already-human-readable, then to
+  // a generic message.
+  const mapErrorCode = useCallback(
+    (code) => {
+      switch (code) {
+        case "MISSING_REQUIRED_FIELDS":
+          return t(
+            "errors.missingRequiredFields",
+            "Please fill in all required fields."
+          );
+        case "CATEGORY_IN_USE":
+          return t("errors.deleteHasData", {
+            field: t("ui.expenseCategory"),
+          });
+        default:
+          return null;
+      }
+    },
+    [t]
+  );
+
   const normalizeExpenseCategory = (expenseCategory) => ({
     ...expenseCategory,
     name: String(expenseCategory.name || "").trim(),
@@ -46,7 +68,7 @@ const useExpenseCategory = () => {
       let expenseCategoryResult = await api.getExpensesCategory(params);
       setExpenseCategory(expenseCategoryResult || []);
     } catch (err) {
-      console.error("Failed to load product catalog:", err);
+      console.error("Failed to load expense categories:", err);
       setUnavailableHandlers([]);
       setError(
         err?.message ||
@@ -69,9 +91,18 @@ const useExpenseCategory = () => {
 
     setSaving(true);
     try {
-      await api.createExpenseCategory(
+      const res = await api.createExpenseCategory(
         normalizeExpenseCategory(expenseCategory)
       );
+
+      if (!res?.success) {
+        throw new Error(
+          mapErrorCode(res?.error) ||
+            res?.error ||
+            t("errors.createFailed", { field: t("ui.expenseCategory") })
+        );
+      }
+
       await refetch();
     } finally {
       setSaving(false);
@@ -86,20 +117,38 @@ const useExpenseCategory = () => {
 
     setSaving(true);
     try {
-      await api.updateExpenseCategory(
+      const res = await api.updateExpenseCategory(
         normalizeExpenseCategory(expenseCategory)
       );
+
+      if (!res?.success) {
+        throw new Error(
+          mapErrorCode(res?.error) ||
+            res?.error ||
+            t("errors.updateFailed", { field: t("ui.expenseCategory") })
+        );
+      }
+
       await refetch();
     } finally {
       setSaving(false);
     }
   };
 
-  const deleteExpenseCategory = async (expenseCategory) => {
+  const deleteExpenseCategory = async (id) => {
     setSaving(true);
 
     try {
-      await api.deleteExpenseCategory(expenseCategory);
+      const res = await api.deleteExpenseCategory(id);
+
+      if (!res?.success) {
+        throw new Error(
+          mapErrorCode(res?.error) ||
+            res?.error ||
+            t("errors.deleteFailed", { field: t("ui.expenseCategory") })
+        );
+      }
+
       await refetch();
     } finally {
       setSaving(false);
@@ -112,7 +161,7 @@ const useExpenseCategory = () => {
       setActionError("");
       return true;
     } catch (err) {
-      console.error("Failed to create expense Category:", err);
+      console.error("Failed to create expense category:", err);
       setActionError(
         err?.message ||
           t("errors.createFailed", { field: t("ui.expenseCategory") })
@@ -127,7 +176,7 @@ const useExpenseCategory = () => {
       setActionError("");
       return true;
     } catch (err) {
-      console.error("Failed to update expense Category:", err);
+      console.error("Failed to update expense category:", err);
       setActionError(
         err?.message ||
           t("errors.updateFailed", { field: t("ui.expenseCategory") })
@@ -136,14 +185,15 @@ const useExpenseCategory = () => {
     }
   };
 
-  const handleDeleteExpenseCategory = async (expenseCategory) => {
+  const handleDeleteExpenseCategory = async (id) => {
     try {
-      await deleteExpenseCategory(expenseCategory);
+      await deleteExpenseCategory(id);
       setActionError("");
     } catch (err) {
-      console.error("Failed to delete expense Category:", err);
+      console.error("Failed to delete expense category:", err);
       setActionError(
-        t("errors.deleteHasData", { field: t("ui.expenseCategory") })
+        err?.message ||
+          t("errors.deleteHasData", { field: t("ui.expenseCategory") })
       );
     }
   };

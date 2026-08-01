@@ -36,9 +36,13 @@
     "print": "Yazdır",
     "filters": "Filtreler",
     "clear": "Filtreyi Temizle",
-    "confirm": "Onayla"
+    "confirm": "Onayla",
+    "all": "Tümü"
   },
   "ui": {
+    "settled": "Ödendi",
+    "owing": "Borçlu",
+    "unknown": "Bilinmiyor",
     "inStock": "stokta",
     "createPurchaseReturn": "Alış İadesi Oluştur",
     "available": "Mevcut",
@@ -305,6 +309,7 @@
       "youOweThem": "Onlara borçlusunuz"
     },
     "products": {
+      "quickAddProduct": "Hızlı Ürün Ekle",
       "skippedUnits": "Atlanan Birimler",
       "productType": "Ürün Türü",
       "typeNormal": "Normal",
@@ -412,6 +417,7 @@
         "expense": "Gider",
         "opening_balance": "Açılış bakiyesi"
       },
+      "addAnotherTax": "Başka Vergi Ekle",
       "lockedPosInvoice": "Bu fatura POS'ta oluşturuldu ve buradan düzenlenemez.",
       "manual": "Manuel",
       "pos": "POS",
@@ -681,6 +687,8 @@
       "fundRateShort": "Fon kuru"
     },
     "payments": {
+      "fullyPaid": "Tam Ödendi",
+      "partiallyPaid": "Kısmen Ödendi",
       "purchasePayment": "Satın Alma Ödemesi",
       "salesPayment": "Satış Ödemesi",
       "paymentForPurchase": "Satın Alma Faturası #{{id}} için ödeme",

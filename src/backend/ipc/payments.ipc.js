@@ -114,7 +114,17 @@ export default function registerPaymentIPC() {
 
         const paymentId = result;
 
-        if (data.party_type === "supplier") {
+        // createPayment already wrote the allocation above when a specific
+        // invoiceId was targeted (see its `if (data.invoice_id != null)` block).
+        // Only fall through to the FIFO/account-level allocator when NO
+        // invoice was targeted — otherwise this double-writes
+        // payment_allocations for the same payment: createPayment's row is
+        // uncapped (full data.amount) while the allocator's row is capped to
+        // the invoice's remaining balance, so together they overstate how
+        // much of the invoice was actually paid.
+        const isTargeted = Boolean(data.invoiceId && data.mode);
+
+        if (!isTargeted && data.party_type === "supplier") {
           allocateSupplierPayment(db, {
             supplierId: data.party_id,
             paymentId,
@@ -131,7 +141,7 @@ export default function registerPaymentIPC() {
           });
         }
 
-        if (data.party_type === "customer") {
+        if (!isTargeted && data.party_type === "customer") {
           allocateCustomerPayment(db, {
             customerId: data.party_id,
             paymentId,
@@ -413,13 +423,12 @@ export default function registerPaymentIPC() {
           c.code AS fund_currency_code,
           c.symbol AS fund_currency_symbol,
           creator.full_name AS created_by_name,
-
+  
           COALESCE(cust.name, supp.name, part.name) AS party_name
         FROM payments p
         LEFT JOIN funds f ON f.id = p.fund_id
         LEFT JOIN currencies c ON c.id = f.currency_id
-            LEFT JOIN users creator
-    ON creator.id = p.created_by
+        LEFT JOIN users creator ON creator.id = p.created_by
         LEFT JOIN customers cust ON cust.id = p.party_id AND p.party_type = 'customer'
         LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
         LEFT JOIN partners part ON part.id = p.party_id AND p.party_type = 'partner'
@@ -432,24 +441,96 @@ export default function registerPaymentIPC() {
 
     const allocations = db
       .prepare(
-        `SELECT * FROM payment_allocations WHERE payment_id = ? ORDER BY id ASC`
+        `
+        SELECT
+          pa.*,
+  
+          -- The invoice's full amount, pulled from whichever table its
+          -- invoice_type actually points to — same COALESCE-across-conditional-
+          -- joins pattern used above for party_name.
+          COALESCE(pi.net_total, si.net_total, ex.net_total, ob.amount) AS invoice_total,
+  
+          -- How much has been allocated to this SAME (invoice_id, invoice_type)
+          -- across ALL payments, not just this one — an invoice can be paid in
+          -- several installments, so "fully paid" has to look at the whole
+          -- history, not just this single allocation row.
+          (
+            SELECT COALESCE(SUM(pa2.amount), 0)
+            FROM payment_allocations pa2
+            WHERE pa2.invoice_id = pa.invoice_id
+              AND pa2.invoice_type = pa.invoice_type
+          ) AS total_allocated_to_invoice
+  
+        FROM payment_allocations pa
+        LEFT JOIN purchase_invoices pi ON pi.id = pa.invoice_id AND pa.invoice_type = 'purchase'
+        LEFT JOIN sales_invoices si ON si.id = pa.invoice_id AND pa.invoice_type = 'sales'
+        LEFT JOIN expense ex ON ex.id = pa.invoice_id AND pa.invoice_type = 'expense'
+        LEFT JOIN party_history ob ON ob.id = pa.invoice_id AND pa.invoice_type = 'opening_balance'
+        WHERE pa.payment_id = ?
+        ORDER BY pa.id ASC
+        `
       )
-      .all(id);
+      .all(id)
+      .map((a) => ({
+        ...a,
+        // Never trust client-sent computed values — recompute the status here
+        // rather than passing raw numbers and letting the frontend decide.
+        settlement_status:
+          a.invoice_total != null &&
+          a.total_allocated_to_invoice >= a.invoice_total
+            ? "full"
+            : "partial",
+      }));
 
     return { ...payment, allocations };
   });
 
   ipcMain.handle("get-payment-allocations", (event, paymentId) => {
-    return db
+    const allocations = db
       .prepare(
         `
-        SELECT *
-        FROM payment_allocations
-        WHERE payment_id = ?
-        ORDER BY id ASC
+        SELECT
+          pa.*,
+  
+          -- The invoice's full amount, pulled from whichever table its
+          -- invoice_type actually points to (polymorphic, same pattern as
+          -- get-payment's party_name COALESCE-across-conditional-joins).
+          COALESCE(pi.net_total, si.net_total, ex.net_total, ob.amount) AS invoice_total,
+  
+          -- How much has been allocated to this SAME (invoice_id, invoice_type)
+          -- across ALL payments, not just this one — an invoice can be paid
+          -- in several installments, so "fully paid" has to look at the
+          -- whole history, not just this single allocation row.
+          (
+            SELECT COALESCE(SUM(pa2.amount), 0)
+            FROM payment_allocations pa2
+            WHERE pa2.invoice_id = pa.invoice_id
+              AND pa2.invoice_type = pa.invoice_type
+          ) AS total_allocated_to_invoice
+  
+        FROM payment_allocations pa
+        LEFT JOIN purchase_invoices pi ON pi.id = pa.invoice_id AND pa.invoice_type = 'purchase'
+        LEFT JOIN sales_invoices si ON si.id = pa.invoice_id AND pa.invoice_type = 'sales'
+        LEFT JOIN expense ex ON ex.id = pa.invoice_id AND pa.invoice_type = 'expense'
+        LEFT JOIN party_history ob ON ob.id = pa.invoice_id AND pa.invoice_type = 'opening_balance'
+        WHERE pa.payment_id = ?
+        ORDER BY pa.id ASC
       `
       )
       .all(paymentId);
+
+    // Never trust client-sent computed values — recompute the status here
+    // rather than passing raw numbers and letting the frontend decide.
+    // Epsilon guard against float drift (see the discount-rounding fix
+    // elsewhere) so 99.99999999999999 still reads as "full", not "partial".
+    return allocations.map((a) => ({
+      ...a,
+      settlement_status:
+        a.invoice_total != null &&
+        a.total_allocated_to_invoice >= a.invoice_total - 0.005
+          ? "full"
+          : "partial",
+    }));
   });
 
   ipcMain.handle("get-payment-fund", (event, id) => {

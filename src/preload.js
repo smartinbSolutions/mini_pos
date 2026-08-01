@@ -209,6 +209,8 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("get-expence_category", params),
   getExpenseCategoryById: (id) =>
     ipcRenderer.invoke("get-expence_category-by-id", id),
+  getExpenseCategoryItems: (params) =>
+    ipcRenderer.invoke("get-expense-category-items", params),
   createExpenseCategory: (data) =>
     ipcRenderer.invoke("create-expence_category", data),
   updateExpenseCategory: (data) =>

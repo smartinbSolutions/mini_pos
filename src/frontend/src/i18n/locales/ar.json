@@ -36,9 +36,13 @@
     "print": "طباعة",
     "filters": "التصفيات",
     "clear": "مسح الفلتر",
-    "confirm": "تأكيد"
+    "confirm": "تأكيد",
+    "all": "الكل"
   },
   "ui": {
+    "settled": "تمت التسوية",
+    "owing": "مستحق",
+    "unknown": "غير معروف",
     "inStock": "متوفر",
     "available": "المتاح",
     "profit": "الربح",
@@ -306,6 +310,7 @@
       "youOweThem": "مستحق عليهم"
     },
     "products": {
+      "quickAddProduct": "إضافة سريعة للمنتج",
       "skippedUnits": "الوحدات المتجاوزة",
       "productType": "نوع المنتج",
       "typeNormal": "عادي",
@@ -419,6 +424,7 @@
         "expense": "مصروف",
         "opening_balance": "رصيد افتتاحي"
       },
+      "addAnotherTax": "إضافة ضريبة أخرى",
       "lockedPosInvoice": "تم إنشاء هذه الفاتورة من نقطة البيع ولا يمكن تعديلها من هنا.",
       "manual": "يدوي",
       "pos": "نقطة بيع",
@@ -687,6 +693,8 @@
       "fundRateShort": "سعر الصندوق"
     },
     "payments": {
+      "fullyPaid": "مدفوع بالكامل",
+      "partiallyPaid": "مدفوع جزئياً",
       "purchasePayment": "دفعة شراء",
       "salesPayment": "دفعة مبيعات",
       "paymentForPurchase": "دفعة لفاتورة الشراء #{{id}}",

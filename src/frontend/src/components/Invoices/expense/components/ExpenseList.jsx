@@ -25,6 +25,7 @@ import CategoryTags from "../../../../Global/CategoryTags";
 import Pagination from "../../../../Global/Pagination";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import DropdownMenu from "../../../../Global/DropdownMenu";
+import GoTo from "../../../../Global/GoTo";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -376,7 +377,9 @@ const ExpenseList = () => {
                         </td>
 
                         <td className="px-5 py-4 text-center font-bold text-slate-900">
-                          {exp.supplier_name || "-"}
+                          <GoTo id={exp.supplier_id} type={"supplier"}>
+                            {exp.supplier_name || "-"}
+                          </GoTo>
                         </td>
 
                         <td className="px-5 py-4 text-center">

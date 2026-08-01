@@ -10,6 +10,7 @@ import {
   ArrowRightLeft,
   Receipt,
   Package,
+  Layers,
 } from "lucide-react";
 
 const ROUTES = {
@@ -22,6 +23,7 @@ const ROUTES = {
   purchase: (id) => `/view-purchase/${id}`,
   purchase_return: (id) => `/view-purchase-return/${id}`,
   expense: (id) => `/view-expense/${id}`,
+  expense_category: (id) => `/expense-category/${id}`,
   payment: (id) => `/payments/${id}`,
   transfer: (id) => `/funds/transfers/${id}`,
 
@@ -39,6 +41,7 @@ const ICONS = {
   sales: ShoppingCart,
   purchase: CreditCard,
   expense: BanknoteArrowDown,
+  expense_category: Layers,
   payment: Receipt,
   transfer: ArrowRightLeft,
 
@@ -47,14 +50,6 @@ const ICONS = {
   sales_invoice: ShoppingCart,
 };
 
-// Two visual treatments:
-// - "solid" (default): filled tint background, bold saturated color —
-//   the original look, good for standalone chips/badges in dense tables.
-// - "light": no fill, hairline border, muted text that only brightens
-//   to the accent color on hover — quieter, reads as inline text with a
-//   hint of affordance rather than a loud pill. Better suited for rows
-//   where several GoTo links sit side by side (e.g. payment flow, fund
-//   transfer cards) and shouldn't compete visually with each other.
 const VARIANT_STYLES = {
   solid: {
     active: "bg-[#eef3ff] text-[#4663ff] hover:bg-[#4663ff]/15",

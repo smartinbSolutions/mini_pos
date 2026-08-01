@@ -36,9 +36,13 @@
     "print": "Print",
     "filters": "Filters",
     "clear": "Clear",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "all": "All"
   },
   "ui": {
+    "settled": "Settled",
+    "owing": "Owing",
+    "unknown": "Unknown",
     "inStock": "in stock",
     "available": "Available",
     "profit": "Profit",
@@ -305,6 +309,7 @@
       "youOweThem": "You owe them"
     },
     "products": {
+      "quickAddProduct": "Quick Add Product",
       "productType": "Product Type",
       "skippedUnits": "Skipped Units",
       "typeNormal": "Normal",
@@ -415,6 +420,7 @@
         "expense": "Expense",
         "opening_balance": "Opening balance"
       },
+      "addAnotherTax": "Add Another Tax",
       "pay": "Pay",
       "lockedPosInvoice": "This invoice was created at the POS and cannot be edited here.",
       "manual": "Manual",
@@ -701,6 +707,8 @@
       "fundRateShort": "Fund rate"
     },
     "payments": {
+      "fullyPaid": "Fully paid",
+      "partiallyPaid": "Partially paid",
       "purchasePayment": "Purchase Payment",
       "expensePayment": "Expense Payment",
       "salesPayment": "Sales Payment",

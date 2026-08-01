@@ -65,7 +65,7 @@ export default function allocateSupplierPayment(db, data) {
   }
 
   // Account-level mode (no specific invoice named): FIFO across every open
-  // invoice/expense for this supplier, oldest first — unchanged.
+  // invoice/expense/opening-balance for this supplier, oldest first.
   const purchaseInvoices = db
     .prepare(
       `
@@ -106,7 +106,36 @@ export default function allocateSupplierPayment(db, data) {
     )
     .all(data.supplierId);
 
-  const invoices = [...purchaseInvoices, ...expenseInvoices]
+  // Opening balance is just another outstanding amount owed — the
+  // party_history opening_balance row stands in for an invoice here, using
+  // its own id + 'opening_balance' as the (invoice_id, invoice_type) pair
+  // payment_allocations already expects. Its date is always the earliest
+  // for this supplier (recorded at creation, before any invoice can exist),
+  // so plain date-ascending FIFO naturally settles it first — no special
+  // "always first" rule needed.
+  const openingBalance = db
+    .prepare(
+      `
+      SELECT
+        id,
+        date,
+        amount AS net_total,
+        amount - COALESCE((
+          SELECT SUM(amount)
+          FROM payment_allocations
+          WHERE invoice_id = party_history.id
+            AND invoice_type = 'opening_balance'
+        ), 0) AS remaining,
+        'opening_balance' AS invoice_type
+      FROM party_history
+      WHERE party_id = ?
+        AND party_type = 'supplier'
+        AND record_type = 'opening_balance'
+      `
+    )
+    .all(data.supplierId);
+
+  const invoices = [...purchaseInvoices, ...expenseInvoices, ...openingBalance]
     .filter((invoice) => Number(invoice.remaining) > 0)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 

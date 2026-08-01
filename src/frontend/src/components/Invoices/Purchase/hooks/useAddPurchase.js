@@ -34,6 +34,8 @@ const emptyInvoice = {
   description: "",
 };
 
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
 // total is always entered_quantity × entered_price — deliberately unaffected
 // by which unit is selected, since the conversion factor cancels out
 // mathematically (base_quantity × base_price === entered_qty × entered_price).
@@ -51,11 +53,11 @@ function recalcItem(item) {
   const price = factor > 0 ? enteredPrice / factor : enteredPrice;
 
   const discountRate = Number(item.discount_rate || 0);
-  const discount = total * (discountRate / 100);
+  const discount = round2(total * (discountRate / 100));
   const afterDiscount = total - discount;
 
   const taxRate = Number(item.tax_rate || 0);
-  const taxValue = afterDiscount * (taxRate / 100);
+  const taxValue = round2(afterDiscount * (taxRate / 100));
 
   return {
     ...item,

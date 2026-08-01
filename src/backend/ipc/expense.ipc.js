@@ -15,7 +15,7 @@ export default function registerExpenseIPC() {
           !Array.isArray(data.items) ||
           data.items.length === 0
         ) {
-          throw new Error("ERROR ENTER DATA");
+          throw new Error("MISSING_REQUIRED_FIELDS");
         }
 
         const dateOnly = data.date.slice(0, 10);
@@ -59,7 +59,7 @@ export default function registerExpenseIPC() {
           const price = Number(item.price || 0);
 
           if (!item.category_id || price < 0) {
-            throw new Error("INVALID ITEM DATA");
+            throw new Error("INVALID_ITEM_DATA");
           }
 
           const total = price;
@@ -111,7 +111,7 @@ export default function registerExpenseIPC() {
         itemTaxTotal = Number(itemTaxTotal.toFixed(2));
 
         if (subtotal <= 0) {
-          throw new Error("INVALID TOTALS");
+          throw new Error("INVALID_TOTALS");
         }
 
         const afterItemDiscounts = subtotal - itemDiscountTotal;
@@ -372,226 +372,237 @@ export default function registerExpenseIPC() {
     const havingClause = status ? `HAVING status = ?` : "";
     const havingValues = status ? [status] : [];
 
-    const rows = db
-      .prepare(
-        `
-      SELECT
-        e.*,
-        s.name AS supplier_name,
-        s.phone AS supplier_phone,
-        creator.full_name AS created_by_name,
-        updater.full_name AS updated_by_name,
-  
-        COALESCE(SUM(pa.amount), 0) AS paid_amount,
-        e.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-  
-        CASE
-          WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
-          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
-          ELSE 'unpaid'
-        END AS status,
-  
-        COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
-        COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
-        (e.taxValue + COALESCE(itemAgg.item_tax_total, 0)) AS total_tax_value,
-        (e.discount + COALESCE(itemAgg.item_discount_total, 0)) AS total_discount_value,
-  
-        expenseTaxAgg.taxes_json,
-  
-        (
-          SELECT GROUP_CONCAT(DISTINCT ec.name)
-          FROM expense_items ei2
-          JOIN expence_category ec ON ec.id = ei2.category_id
-          WHERE ei2.expense_id = e.id
-        ) AS category_names
-  
-      FROM expense e
-  
-      LEFT JOIN suppliers s
-        ON s.id = e.supplier_id
-  
-      LEFT JOIN users creator
-        ON creator.id = e.created_by
-  
-      LEFT JOIN users updater
-        ON updater.id = e.updated_by
-  
-      LEFT JOIN payment_allocations pa
-        ON pa.invoice_id = e.id
-       AND pa.invoice_type = 'expense'
-  
-      LEFT JOIN (
+    try {
+      const rows = db
+        .prepare(
+          `
         SELECT
-          expense_id,
-          SUM(taxValue) AS item_tax_total,
-          SUM(discount) AS item_discount_total
-        FROM expense_items
-        GROUP BY expense_id
-      ) itemAgg ON itemAgg.expense_id = e.id
-  
-      LEFT JOIN (
-        SELECT
-          expense_id,
-          json_group_array(
-            json_object('tax_id', tax_id, 'name', tax_name, 'rate', tax_rate, 'value', tax_value)
-          ) AS taxes_json
-        FROM expense_taxes
-        GROUP BY expense_id
-      ) expenseTaxAgg ON expenseTaxAgg.expense_id = e.id
-  
-      ${whereClause}
-  
-      GROUP BY e.id
-  
-      ${havingClause}
-  
-      ORDER BY e.id DESC
-  
-      LIMIT ? OFFSET ?
-      `
-      )
-      .all(...whereValues, ...havingValues, limit, offset);
-
-    const countHaving = status
-      ? `
-    HAVING 
-      CASE
-        WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
-        WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
-        ELSE 'unpaid'
-      END = ?
-  `
-      : "";
-
-    const { total } = db
-      .prepare(
-        `
-    SELECT COUNT(*) AS total
-    FROM (
-      SELECT e.id
-      FROM expense e
-  
-      LEFT JOIN payment_allocations pa
-        ON pa.invoice_id = e.id
-       AND pa.invoice_type = 'expense'
-  
-      ${whereClause}
-  
-      GROUP BY e.id
-  
-      ${countHaving}
-    )
-    `
-      )
-      .get(...whereValues, ...(status ? [status] : []));
-
-    const rowsWithParsedTaxes = rows.map((row) => ({
-      ...row,
-      taxes: row.taxes_json ? JSON.parse(row.taxes_json) : [],
-    }));
-
-    return {
-      data: rowsWithParsedTaxes,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    };
-  });
-
-  // GET ONE
-  ipcMain.handle("get-expense", (event, id) => {
-    const invoice = db
-      .prepare(
-        `
-        SELECT 
           e.*,
           s.name AS supplier_name,
           s.phone AS supplier_phone,
           creator.full_name AS created_by_name,
           updater.full_name AS updated_by_name,
-          COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
-          e.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
-  
+    
+          COALESCE(SUM(pa.amount), 0) AS paid_amount,
+          e.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
+    
           CASE
-            WHEN COALESCE(pa_sum.paid_amount, 0) >= e.net_total THEN 'paid'
-            WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
+            WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
+            WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
             ELSE 'unpaid'
-          END AS status
-  
+          END AS status,
+    
+          COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
+          COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
+          (e.taxValue + COALESCE(itemAgg.item_tax_total, 0)) AS total_tax_value,
+          (e.discount + COALESCE(itemAgg.item_discount_total, 0)) AS total_discount_value,
+    
+          expenseTaxAgg.taxes_json,
+    
+          (
+            SELECT GROUP_CONCAT(DISTINCT ec.name)
+            FROM expense_items ei2
+            JOIN expence_category ec ON ec.id = ei2.category_id
+            WHERE ei2.expense_id = e.id
+          ) AS category_names
+    
         FROM expense e
-        LEFT JOIN users creator ON creator.id = e.created_by
-        LEFT JOIN users updater ON updater.id = e.updated_by
-        LEFT JOIN suppliers s ON s.id = e.supplier_id
+    
+        LEFT JOIN suppliers s
+          ON s.id = e.supplier_id
+    
+        LEFT JOIN users creator
+          ON creator.id = e.created_by
+    
+        LEFT JOIN users updater
+          ON updater.id = e.updated_by
+    
+        LEFT JOIN payment_allocations pa
+          ON pa.invoice_id = e.id
+         AND pa.invoice_type = 'expense'
+    
         LEFT JOIN (
-          SELECT invoice_id, SUM(amount) AS paid_amount
-          FROM payment_allocations
-          WHERE invoice_type = 'expense'
-          GROUP BY invoice_id
-        ) pa_sum ON pa_sum.invoice_id = e.id
-        WHERE e.id = ?
+          SELECT
+            expense_id,
+            SUM(taxValue) AS item_tax_total,
+            SUM(discount) AS item_discount_total
+          FROM expense_items
+          GROUP BY expense_id
+        ) itemAgg ON itemAgg.expense_id = e.id
+    
+        LEFT JOIN (
+          SELECT
+            expense_id,
+            json_group_array(
+              json_object('tax_id', tax_id, 'name', tax_name, 'rate', tax_rate, 'value', tax_value)
+            ) AS taxes_json
+          FROM expense_taxes
+          GROUP BY expense_id
+        ) expenseTaxAgg ON expenseTaxAgg.expense_id = e.id
+    
+        ${whereClause}
+    
+        GROUP BY e.id
+    
+        ${havingClause}
+    
+        ORDER BY e.id DESC
+    
+        LIMIT ? OFFSET ?
         `
+        )
+        .all(...whereValues, ...havingValues, limit, offset);
+
+      const countHaving = status
+        ? `
+      HAVING 
+        CASE
+          WHEN COALESCE(SUM(pa.amount), 0) >= e.net_total THEN 'paid'
+          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+          ELSE 'unpaid'
+        END = ?
+    `
+        : "";
+
+      const { total } = db
+        .prepare(
+          `
+      SELECT COUNT(*) AS total
+      FROM (
+        SELECT e.id
+        FROM expense e
+    
+        LEFT JOIN payment_allocations pa
+          ON pa.invoice_id = e.id
+         AND pa.invoice_type = 'expense'
+    
+        ${whereClause}
+    
+        GROUP BY e.id
+    
+        ${countHaving}
       )
-      .get(id);
+      `
+        )
+        .get(...whereValues, ...(status ? [status] : []));
 
-    if (!invoice) return null;
+      const rowsWithParsedTaxes = rows.map((row) => ({
+        ...row,
+        taxes: row.taxes_json ? JSON.parse(row.taxes_json) : [],
+      }));
 
-    const items = db
-      .prepare(
-        `
-        SELECT 
-          ei.*,
-          c.name AS category_name,
-          t.name AS tax_name
-        FROM expense_items ei
-        LEFT JOIN expence_category c ON c.id = ei.category_id
-        LEFT JOIN taxes t ON t.id = ei.tax_id
-        WHERE ei.expense_id = ?
-        `
-      )
-      .all(id);
-
-    const taxes = db
-      .prepare(
-        `
-        SELECT id, tax_id, tax_name, tax_rate, tax_value
-        FROM expense_taxes
-        WHERE expense_id = ?
-        ORDER BY id ASC
-        `
-      )
-      .all(id);
-
-    const allocations = db
-      .prepare(
-        `
-        SELECT
-          pa.id,
-          pa.payment_id,
-          pa.amount,
-          p.date,
-          p.fund_id,
-          f.name AS fund_name,
-          c.code AS fund_currency_code,
-          c.symbol AS fund_currency_symbol
-        FROM payment_allocations pa
-        LEFT JOIN payments p ON p.id = pa.payment_id
-        LEFT JOIN funds f ON f.id = p.fund_id
-        LEFT JOIN currencies c ON c.id = f.currency_id
-        WHERE pa.invoice_id = ?
-          AND pa.invoice_type = 'expense'
-        ORDER BY pa.id ASC
-        `
-      )
-      .all(id);
-
-    return {
-      ...invoice,
-      items,
-      taxes,
-      allocations,
-    };
+      return {
+        data: rowsWithParsedTaxes,
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (err) {
+      console.error("Failed to load expenses:", err);
+      return { data: [], page, limit, total: 0, totalPages: 1 };
+    }
   });
+
+  // GET ONE
+  ipcMain.handle("get-expense", (event, id) => {
+    try {
+      const invoice = db
+        .prepare(
+          `
+          SELECT 
+            e.*,
+            s.name AS supplier_name,
+            s.phone AS supplier_phone,
+            creator.full_name AS created_by_name,
+            updater.full_name AS updated_by_name,
+            COALESCE(pa_sum.paid_amount, 0) AS paid_amount,
+            e.net_total - COALESCE(pa_sum.paid_amount, 0) AS remaining_amount,
+    
+            CASE
+              WHEN COALESCE(pa_sum.paid_amount, 0) >= e.net_total THEN 'paid'
+              WHEN COALESCE(pa_sum.paid_amount, 0) > 0 THEN 'partial'
+              ELSE 'unpaid'
+            END AS status
+    
+          FROM expense e
+          LEFT JOIN users creator ON creator.id = e.created_by
+          LEFT JOIN users updater ON updater.id = e.updated_by
+          LEFT JOIN suppliers s ON s.id = e.supplier_id
+          LEFT JOIN (
+            SELECT invoice_id, SUM(amount) AS paid_amount
+            FROM payment_allocations
+            WHERE invoice_type = 'expense'
+            GROUP BY invoice_id
+          ) pa_sum ON pa_sum.invoice_id = e.id
+          WHERE e.id = ?
+          `
+        )
+        .get(id);
+
+      if (!invoice) return null;
+
+      const items = db
+        .prepare(
+          `
+          SELECT 
+            ei.*,
+            c.name AS category_name,
+            t.name AS tax_name
+          FROM expense_items ei
+          LEFT JOIN expence_category c ON c.id = ei.category_id
+          LEFT JOIN taxes t ON t.id = ei.tax_id
+          WHERE ei.expense_id = ?
+          `
+        )
+        .all(id);
+
+      const taxes = db
+        .prepare(
+          `
+          SELECT id, tax_id, tax_name, tax_rate, tax_value
+          FROM expense_taxes
+          WHERE expense_id = ?
+          ORDER BY id ASC
+          `
+        )
+        .all(id);
+
+      const allocations = db
+        .prepare(
+          `
+          SELECT
+            pa.id,
+            pa.payment_id,
+            pa.amount,
+            p.date,
+            p.fund_id,
+            f.name AS fund_name,
+            c.code AS fund_currency_code,
+            c.symbol AS fund_currency_symbol
+          FROM payment_allocations pa
+          LEFT JOIN payments p ON p.id = pa.payment_id
+          LEFT JOIN funds f ON f.id = p.fund_id
+          LEFT JOIN currencies c ON c.id = f.currency_id
+          WHERE pa.invoice_id = ?
+            AND pa.invoice_type = 'expense'
+          ORDER BY pa.id ASC
+          `
+        )
+        .all(id);
+
+      return {
+        ...invoice,
+        items,
+        taxes,
+        allocations,
+      };
+    } catch (err) {
+      console.error("Failed to load expense:", err);
+      return null;
+    }
+  });
+
   // UPDATE
   ipcMain.handle("update-expense", (event, data) => {
     if (
@@ -600,7 +611,7 @@ export default function registerExpenseIPC() {
       !Array.isArray(data.items) ||
       data.items.length === 0
     ) {
-      return { success: false, error: "ERROR ENTER DATA" };
+      return { success: false, error: "MISSING_REQUIRED_FIELDS" };
     }
 
     try {
@@ -610,7 +621,7 @@ export default function registerExpenseIPC() {
           .get(data.id);
 
         if (!oldInvoice) {
-          throw new Error("EXPENSE NOT FOUND");
+          throw new Error("EXPENSE_NOT_FOUND");
         }
 
         const existingPayment = db
@@ -625,7 +636,7 @@ export default function registerExpenseIPC() {
           .get(data.id);
 
         if (existingPayment) {
-          throw new Error("CANNOT EDIT A PAID EXPENSE INVOICE");
+          throw new Error("CANNOT_EDIT_PAID_EXPENSE");
         }
 
         const oldSupplierId = oldInvoice.supplier_id || null;
@@ -672,7 +683,7 @@ export default function registerExpenseIPC() {
           const price = Number(item.price || 0);
 
           if (!item.category_id || price < 0) {
-            throw new Error("INVALID ITEM DATA");
+            throw new Error("INVALID_ITEM_DATA");
           }
 
           const total = price;
@@ -724,7 +735,7 @@ export default function registerExpenseIPC() {
         itemTaxTotal = Number(itemTaxTotal.toFixed(2));
 
         if (subtotal <= 0) {
-          throw new Error("INVALID TOTALS");
+          throw new Error("INVALID_TOTALS");
         }
 
         const afterItemDiscounts = subtotal - itemDiscountTotal;
@@ -917,28 +928,44 @@ export default function registerExpenseIPC() {
       return { success: false, error: err.message || String(err) };
     }
   });
+
   // DELETE
   ipcMain.handle("delete-expense", (event, id) => {
-    const transaction = db.transaction(() => {
-      db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(id);
-      db.prepare(`DELETE FROM expense_taxes WHERE expense_id = ?`).run(id);
-      db.prepare(
-        `
-        DELETE FROM party_history
-        WHERE invoice_id = ?
-          AND invoice_type = 'expense'
-          AND record_type = 'invoice'
-      `
-      ).run(id);
-      db.prepare(`DELETE FROM expense WHERE id = ?`).run(id);
-    });
-
     try {
+      const existingPayment = db
+        .prepare(
+          `
+          SELECT pa.id
+          FROM payment_allocations pa
+          WHERE pa.invoice_id = ? AND pa.invoice_type = 'expense'
+          LIMIT 1
+          `
+        )
+        .get(id);
+
+      if (existingPayment) {
+        return { success: false, error: "CANNOT_DELETE_PAID_EXPENSE" };
+      }
+
+      const transaction = db.transaction(() => {
+        db.prepare(`DELETE FROM expense_items WHERE expense_id = ?`).run(id);
+        db.prepare(`DELETE FROM expense_taxes WHERE expense_id = ?`).run(id);
+        db.prepare(
+          `
+          DELETE FROM party_history
+          WHERE invoice_id = ?
+            AND invoice_type = 'expense'
+            AND record_type = 'invoice'
+        `
+        ).run(id);
+        db.prepare(`DELETE FROM expense WHERE id = ?`).run(id);
+      });
+
       transaction();
       return { success: true };
     } catch (err) {
       console.error(err);
-      return { success: false, error: err.message };
+      return { success: false, error: err.message || String(err) };
     }
   });
 }

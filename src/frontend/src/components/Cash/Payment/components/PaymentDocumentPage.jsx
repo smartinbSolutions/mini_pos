@@ -272,35 +272,35 @@ const PaymentDocumentPage = () => {
             </div>
           )}
 
-          {payment.allocations?.length > 0 && (
-            <div className="border-t border-[#e5ebff] p-7">
-              <p className="mb-3 text-xs font-bold uppercase text-slate-400">
-                {t("screens.payments.allocations")}
-              </p>
-              <div className="divide-y divide-[#e5ebff] overflow-hidden rounded-2xl border border-[#e5ebff]">
-                {payment.allocations.map((a) => (
-                  <div
-                    key={a.id}
-                    className="flex items-center justify-between bg-white px-5 py-4 text-sm"
-                  >
-                    <GoTo
-                      type={a.invoice_type}
-                      id={a.invoice_id}
-                      variant="light"
-                    >
-                      {t(`screens.invoices.invoiceType.${a.invoice_type}`, {
-                        defaultValue: a.invoice_type,
-                      })}{" "}
-                      #{a.invoice_id}
-                    </GoTo>
-                    <span className="font-black tabular-nums text-slate-900">
-                      {formatMoney(a.amount, fundCurrency)}
-                    </span>
-                  </div>
-                ))}
+          {payment.allocations.map((a) => (
+            <div
+              key={a.id}
+              className="flex items-center justify-between bg-white px-5 py-4 text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <GoTo type={a.invoice_type} id={a.invoice_id} variant="light">
+                  {t(`screens.invoices.invoiceType.${a.invoice_type}`, {
+                    defaultValue: a.invoice_type,
+                  })}{" "}
+                  #{a.invoice_id}
+                </GoTo>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                    a.settlement_status === "full"
+                      ? "bg-emerald-50 text-emerald-700"
+                      : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {a.settlement_status === "full"
+                    ? t("screens.payments.fullyPaid") || "Fully paid"
+                    : t("screens.payments.partiallyPaid") || "Partially paid"}
+                </span>
               </div>
+              <span className="font-black tabular-nums text-slate-900">
+                {formatMoney(a.amount, fundCurrency)}
+              </span>
             </div>
-          )}
+          ))}
         </section>
       </div>
 
