@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null); // null = not logged in
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
@@ -20,7 +22,7 @@ export function AuthProvider({ children }) {
           navigate(res.user.role === "pos" ? "/pos" : "/", { replace: true });
           return true;
         }
-        setError(res?.error || "Invalid PIN");
+        setError(t("errors.invalidPin") || res?.error);
         return false;
       } catch (err) {
         setError(err?.message || String(err));

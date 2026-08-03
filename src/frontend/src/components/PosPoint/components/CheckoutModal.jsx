@@ -91,8 +91,16 @@ export default function CheckoutModal({
       const key = String(fund.id);
       const rate = getRate(fund);
       const entry = allocations[key] || {};
-      const portion = toNumber(entry.portion);
-      const fundAmt = toNumber(entry.fundAmt);
+
+      // Raw values for display — preserve exactly what was typed, including
+      // an in-progress "5." or "0.5", so NumberInput doesn't collapse it
+      // (same bug class as recalcItem in useAddPurchase/useAddSales).
+      const rawPortion = entry.portion ?? "";
+      const rawFundAmt = entry.fundAmt ?? "";
+
+      // Numeric values for math only — never fed back into an input's value.
+      const portion = toNumber(rawPortion);
+      const fundAmt = toNumber(rawFundAmt);
       const sameCurrency = rate === 1;
 
       // for a foreign fund, the effective rate is whatever the two typed
@@ -109,6 +117,8 @@ export default function CheckoutModal({
         fund,
         rate,
         sameCurrency,
+        rawPortion,
+        rawFundAmt,
         portion,
         fundAmt,
         effectiveRate,
@@ -203,6 +213,8 @@ export default function CheckoutModal({
                   fund,
                   rate,
                   sameCurrency,
+                  rawPortion,
+                  rawFundAmt,
                   portion,
                   fundAmt,
                   effectiveRate,
@@ -241,7 +253,8 @@ export default function CheckoutModal({
 
                         <div className="flex h-11 overflow-hidden rounded-xl border border-stone-200 bg-white focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100">
                           <NumberInput
-                            value={portion || ""}
+                            value={rawPortion}
+                            allowDecimal
                             onChange={(val) => updatePortion(fund, val)}
                             className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400"
                             placeholder="0"
@@ -266,8 +279,9 @@ export default function CheckoutModal({
                           }`}
                         >
                           <NumberInput
-                            value={sameCurrency ? portion || "" : fundAmt || ""}
+                            value={sameCurrency ? rawPortion : rawFundAmt}
                             disabled={sameCurrency}
+                            allowDecimal
                             onChange={(val) => updateFundAmt(fund, val)}
                             className="min-w-0 flex-1 bg-transparent px-3 text-base font-black text-stone-950 outline-none placeholder:text-stone-400 disabled:text-stone-400"
                             placeholder="0"

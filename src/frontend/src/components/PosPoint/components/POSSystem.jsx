@@ -102,10 +102,42 @@ export default function POSSystem() {
   useEffect(() => {
     window.api?.pushCartToCustomerDisplay?.({
       items: cart,
+      subtotal,
+      itemDiscountTotal,
+      afterItemDiscounts,
+      itemTaxTotal,
+      itemDiscountSummary,
+      itemTaxSummary,
+      invoiceDiscountRate,
+      invoiceDiscount,
+      afterInvoiceDiscount,
+      invoiceTaxes,
+      invoiceTaxValue,
+      itemsNetTotal,
       total: netTotal,
       currencyCode: primaryCurrency?.symbol || primaryCurrency?.code || "",
+      language: i18n.language,
+      isRtl,
     });
-  }, [cart, netTotal, primaryCurrency]);
+  }, [
+    cart,
+    subtotal,
+    itemDiscountTotal,
+    afterItemDiscounts,
+    itemTaxTotal,
+    itemDiscountSummary,
+    itemTaxSummary,
+    invoiceDiscountRate,
+    invoiceDiscount,
+    afterInvoiceDiscount,
+    invoiceTaxes,
+    invoiceTaxValue,
+    itemsNetTotal,
+    netTotal,
+    primaryCurrency,
+    i18n.language,
+    isRtl,
+  ]);
 
   const activeWeight = Number(currentWeight) > 0 ? Number(currentWeight) : 0;
 
@@ -359,7 +391,9 @@ export default function POSSystem() {
               <div className="grid gap-3.5 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                 {products.map((product) => {
                   const outOfStock =
-                    !allowNegativeStock && Number(product.quantity) <= 0;
+                    product.type !== "service" &&
+                    !allowNegativeStock &&
+                    Number(product.quantity) <= 0;
 
                   return (
                     <POSProductTile

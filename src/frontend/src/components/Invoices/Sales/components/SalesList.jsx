@@ -179,7 +179,7 @@ const SalesList = () => {
       allLabel: t("filters.allReturnStatuses"),
       options: [
         { value: "none", label: t("filters.noReturn") },
-        { value: "partial", label: t("ui.partialy-refunded") },
+        { value: "partial", label: t("ui.partially-refunded") },
         { value: "full", label: t("ui.fully-refunded") },
       ],
     },

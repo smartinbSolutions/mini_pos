@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Printer, ArrowLeft, Undo2, HandCoins } from "lucide-react";
+import { Printer, ArrowLeft, Undo2, HandCoins, Download } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import GoTo from "../../../../Global/GoTo";
+import BackButton from "../../../../Global/BackButton";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-green-100", text: "text-green-700" },
@@ -14,11 +15,13 @@ const STATUS_CONFIG = {
 export default function SalesReturnView() {
   const { t } = useTranslation();
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const [returnInvoice, setReturnInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const { money } = usePrimaryCurrency();
+
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [isSavingPdf, setIsSavingPdf] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +52,37 @@ export default function SalesReturnView() {
       cancelled = true;
     };
   }, [id]);
+
+  const handlePrint = async () => {
+    try {
+      setIsPrinting(true);
+      const res = await window.api.printDocument(`/print-sales-return/${id}`);
+      if (!res.success && res.error === "NO_PRINTER") {
+        console.error("No printer found");
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleSavePdf = async () => {
+    try {
+      setIsSavingPdf(true);
+      const res = await window.api.saveDocumentPdf(
+        `/print-sales-return/${id}`,
+        `sales-return-${id}.pdf`
+      );
+      if (!res.success && res.error !== "CANCELED") {
+        console.error(res.error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingPdf(false);
+    }
+  };
 
   const formatDate = (value) => {
     if (!value) return "-";
@@ -87,23 +121,27 @@ export default function SalesReturnView() {
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900 print:bg-white">
       <div className="mx-auto max-w-5xl">
         <div className="print:hidden mb-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 hover:bg-[#eef3ff]"
-          >
-            <ArrowLeft size={18} />
-            {t("common.back")}
-          </button>
-
-          {/* <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 hover:bg-slate-50"
-          >
-            <Printer size={18} />
-            {t("common.print", "طباعة")}
-          </button> */}
+          <BackButton />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSavePdf}
+              disabled={isSavingPdf}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/25 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Download size={14} />
+              {isSavingPdf ? t("common.saving") : t("common.savePdf")}
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              disabled={isPrinting}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 text-sm font-bold text-white shadow-md shadow-amber-500/25 transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Printer size={14} />
+              {isPrinting ? t("common.saving") : t("common.print")}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-hidden rounded-[32px] border border-white/80 bg-white shadow-[0_24px_80px_rgba(70,99,255,0.14)] print:rounded-none print:border-none print:shadow-none">
@@ -126,9 +164,9 @@ export default function SalesReturnView() {
                   </p>
                   <p className="text-xs">
                     {t("ui.originalInvoice", "الفاتورة الأصلية")}:{" "}
-                    <span className="font-semibold text-slate-700">
+                    <GoTo type="sales" id={returnInvoice.sales_invoice_id}>
                       #{returnInvoice.sales_invoice_id}
-                    </span>
+                    </GoTo>
                     {returnInvoice.original_invoice_name &&
                       ` (${returnInvoice.original_invoice_name})`}
                   </p>
@@ -138,7 +176,9 @@ export default function SalesReturnView() {
 
             <div className="text-left md:text-right">
               <p className="text-lg text-slate-950 font-bold">
-                {returnInvoice.customer_name || "-"}
+                <GoTo type="customer" id={returnInvoice.customer_id}>
+                  {returnInvoice.customer_name || "-"}
+                </GoTo>
               </p>
               <p className="text-sm text-slate-500">{t("ui.customer")}</p>
               <span
@@ -190,7 +230,13 @@ export default function SalesReturnView() {
                     items.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50/40">
                         <td className="p-3 text-center">
-                          {item.product_name || item.name || "-"}
+                          <GoTo
+                            id={item.product_id}
+                            type={"products"}
+                            variant="light"
+                          >
+                            {item.product_name || item.name || "-"}
+                          </GoTo>
                         </td>
                         <td className="p-3 text-center tabular-nums">
                           {money(item.price)}

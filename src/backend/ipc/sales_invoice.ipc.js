@@ -1,5 +1,11 @@
 const { ipcMain, BrowserWindow } = require("electron");
 import db from "../db";
+import {
+  buildReceiptHtml,
+  printReceiptHtml,
+  receiptLabels,
+  getReceiptLanguage,
+} from "../services/receiptPrinter";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -9,50 +15,6 @@ import {
   buildDefaultPaymentNote,
 } from "../utils/helpers";
 import { applyPartyCredit } from "../utils/partyCredit";
-
-const receiptLabels = {
-  en: {
-    invoice: "Invoice",
-    item: "Item",
-    quantity: "Qty",
-    price: "Price",
-    total: "Total",
-    subtotal: "Subtotal",
-    paid: "Paid",
-    change: "Change",
-    thankYou: "Thank you",
-    visitAgain: "Visit again",
-  },
-  tr: {
-    invoice: "Fatura",
-    item: "Urun",
-    quantity: "Miktar",
-    price: "Fiyat",
-    total: "Toplam",
-    subtotal: "Ara Toplam",
-    paid: "Odenen",
-    change: "Para Ustu",
-    thankYou: "Tesekkurler",
-    visitAgain: "Yine bekleriz",
-  },
-  ar: {
-    invoice: "فاتورة",
-    item: "الصنف",
-    quantity: "الكمية",
-    price: "السعر",
-    total: "الإجمالي",
-    subtotal: "المجموع الفرعي",
-    paid: "المدفوع",
-    change: "الباقي",
-    thankYou: "شكرا لك",
-    visitAgain: "نراك مرة أخرى",
-  },
-};
-
-const getReceiptLanguage = (value) => {
-  const language = String(value || "en").split("-")[0];
-  return receiptLabels[language] ? language : "en";
-};
 
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -2007,47 +1969,43 @@ export default function registerSalesInvoiceIPC() {
       companySettings?.company_latin_name ||
       "POS System";
 
-    const win = new BrowserWindow({
-      show: false,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
-      },
-    });
+    const items = data.items || [];
 
-    const itemsHtml = (data.items || [])
-      .map(
-        (item) => `
-      <tr>
-        <td class="item">${escapeHtml(item.name)}</td>
-        <td class="center">${escapeHtml(item.quantity)}</td>
-        <td class="right">${Number(item.price).toFixed(2)}</td>
-        <td class="right">${(item.quantity * item.price).toFixed(2)}</td>
-      </tr>
-    `
-      )
+    const hasAnyItemDiscount = items.some(
+      (item) => Number(item.discount || 0) > 0
+    );
+    const hasAnyItemTax = items.some((item) => Number(item.taxValue || 0) > 0);
+
+    const itemsHtml = items
+      .map((item) => {
+        const total = Number(item.total || 0);
+        const discount = Number(item.discount || 0);
+        const taxValue = Number(item.taxValue || 0);
+        const lineTotal = total - discount + taxValue;
+        return `
+        <tr>
+          <td class="item">${escapeHtml(item.name)}</td>
+          <td class="center">${escapeHtml(item.quantity)}</td>
+          <td class="right">${Number(item.price).toFixed(2)}</td>
+          <td class="right">${lineTotal.toFixed(2)}</td>
+        </tr>
+      `;
+      })
       .join("");
 
-    // ---- Tax breakdown — one line per applied tax (item-level total
-    // folded in as its own line if present), never a single flat value ----
-    const taxLines = [];
-
+    const subtotal = Number(data.subtotal || 0);
+    const itemDiscountTotal = Number(data.itemDiscountTotal || 0);
     const itemTaxTotal = Number(data.itemTaxTotal || 0);
-    if (itemTaxTotal > 0) {
-      taxLines.push({
-        label: labels.itemTax || "Item tax",
-        value: itemTaxTotal,
-      });
-    }
+    const invoiceDiscount = Number(data.invoiceDiscount || 0);
 
-    for (const tax of data.taxes || []) {
-      const value = Number(tax.value || tax.tax_value || 0);
-      if (value <= 0) continue;
-      taxLines.push({
-        label: `${tax.name || tax.tax_name} (${tax.rate ?? tax.tax_rate}%)`,
-        value,
-      });
-    }
+    const taxLines = (data.taxes || [])
+      .filter((tax) => Number(tax.value || 0) > 0)
+      .map((tax) => ({
+        label: `${tax.name} (${tax.rate}%)`,
+        value: Number(tax.value || 0),
+      }));
+
+    const invoiceTaxTotal = taxLines.reduce((sum, t) => sum + t.value, 0);
 
     const taxLinesHtml = taxLines
       .map(
@@ -2057,72 +2015,28 @@ export default function registerSalesInvoiceIPC() {
       )
       .join("");
 
-    const html = `
-  <html>
-    <head>
-      <meta charset="UTF-8" />
-      <style>
-        @page { margin: 0; size: 80mm auto; }
-        body { font-family: monospace; width: 270px; margin: 0; padding: 4mm; box-sizing: border-box; color: #000; direction: ${direction}; }
-        .header { text-align: center; margin-bottom: 8px; }
-        .header h1 { font-size: 16px; margin: 0; letter-spacing: 2px; }
-        .header p { font-size: 12px; margin: 2px 0; }
-        .line { border-top: 1px dashed #000; margin: 6px 0; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { text-align: start; border-bottom: 1px solid #000; padding-bottom: 4px; }
-        td { padding: 3px 0; border-bottom: 1px dotted #ccc; }
-        .item { word-break: break-word; }
-        .center { text-align: center; }
-        .right { text-align: right; }
-        .summary { margin-top: 8px; font-size: 13px; }
-        .summary div { display: flex; justify-content: space-between; margin: 3px 0; }
-        .total { border-top: 1px dashed #000; margin-top: 6px; padding-top: 4px; font-weight: bold; font-size: 14px; }
-        .footer { text-align: center; font-size: 12px; margin-top: 10px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>${escapeHtml(companyName)}</h1>
-        <p>${labels.invoice} #${escapeHtml(data.id)}</p>
-        <p>${escapeHtml(data.date)}</p>
-      </div>
-      <div class="line"></div>
-      <table>
-        <thead>
-          <tr>
-            <th>${labels.item}</th>
-            <th class="center">${labels.quantity}</th>
-            <th class="right">${labels.price}</th>
-            <th class="right">${labels.total}</th>
-          </tr>
-        </thead>
-        <tbody>${itemsHtml}</tbody>
-      </table>
-      <div class="line"></div>
-      <div class="summary">
-        <div><span>${labels.subtotal}</span><span>${escapeHtml(data.subtotal ?? data.total)}</span></div>
-        ${taxLinesHtml}
-        <div><span>${labels.paid}</span><span>${escapeHtml(data.received)}</span></div>
-        <div><span>${labels.change}</span><span>${escapeHtml(data.change)}</span></div>
-        <div class="total"><span>${labels.total}</span><span>${escapeHtml(data.total)}</span></div>
-      </div>
-      <div class="footer">${labels.thankYou} <br/> ${labels.visitAgain}</div>
-    </body>
-  </html>
-  `;
-
-    await win.loadURL(
-      "data:text/html;charset=utf-8," + encodeURIComponent(html)
-    );
-
-    win.webContents.print(
-      {
-        silent: true,
-        printBackground: true,
-        margins: { marginType: "none" },
-        scaleFactor: 100,
+    const html = buildReceiptHtml({
+      companyName: escapeHtml(companyName),
+      labels,
+      direction,
+      data: {
+        id: escapeHtml(data.invoice_name || data.id),
+        date: escapeHtml(data.date),
+        subtotal: subtotal.toFixed(2),
+        itemDiscountTotal: itemDiscountTotal.toFixed(2),
+        itemTaxTotal: itemTaxTotal.toFixed(2),
+        invoiceDiscount: invoiceDiscount.toFixed(2),
+        total: Number(data.total || 0).toFixed(2),
       },
-      () => win.close()
-    );
+      itemsHtml,
+      taxLinesHtml,
+      showItemDiscount: itemDiscountTotal > 0,
+      showInvoiceDiscount: invoiceDiscount > 0,
+      showItemTax: itemTaxTotal + invoiceTaxTotal > 0,
+      hasAnyItemDiscount,
+      hasAnyItemTax,
+    });
+
+    return printReceiptHtml(html, data.printerName);
   });
 }

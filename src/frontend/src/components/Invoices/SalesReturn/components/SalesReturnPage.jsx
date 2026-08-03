@@ -107,7 +107,7 @@ export default function SalesReturnPage() {
             </span>
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-rose-600">
-                {t("screens.salesReturn.createSalesReturn")}
+                {t("ui.createSalesReturn")}
               </p>
               <h1 className="text-lg font-black leading-tight text-slate-950">
                 {t("ui.invoice")} #{invoice.id}

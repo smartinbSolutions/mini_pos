@@ -40,6 +40,7 @@
     "all": "Tümü"
   },
   "ui": {
+    "walk-in": "Perakende müşteri",
     "settled": "Ödendi",
     "owing": "Borçlu",
     "unknown": "Bilinmiyor",

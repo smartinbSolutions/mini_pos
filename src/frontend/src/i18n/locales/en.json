@@ -40,6 +40,7 @@
     "all": "All"
   },
   "ui": {
+    "walk-in": "walk In Customer",
     "settled": "Settled",
     "owing": "Owing",
     "unknown": "Unknown",

@@ -439,10 +439,6 @@ export default function usePosCheckout({ weight } = {}) {
             payment.amount_fund_currency > 0
         );
 
-      // pos-checkout re-derives everything server-side from these raw
-      // entered values — we send BASE price/qty plus the locked tax_id
-      // and the item's own discount_rate; server recomputes the exact
-      // same cascade and is the actual source of truth for netTotal.
       const checkoutItems = cart.map((i) => ({
         product_id: i.product_id,
         name: i.name,
@@ -455,20 +451,35 @@ export default function usePosCheckout({ weight } = {}) {
         description: i.description,
       }));
 
+      // Invoice-level taxes with their actual computed value — same math
+      // as invoiceTaxValue above, just per-tax instead of summed.
+      const invoiceTaxesWithValue = invoiceTaxes.map((tax) => ({
+        id: tax.id,
+        name: tax.name,
+        rate: toNumber(tax.rate),
+        value: afterInvoiceDiscount * (toNumber(tax.rate) / 100),
+      }));
+
       const payload = {
-        items: checkoutItems.map((i) => ({
+        items: cart.map((i) => ({
           name: i.name,
-          quantity: i.entered_quantity,
+          quantity: i.qty,
           unit_name: i.unit_name,
-          price: i.entered_price,
+          price: i.price,
+          discount_rate: i.discount_rate,
+          discount: i.discount,
+          tax_rate: i.tax_rate,
+          taxValue: i.taxValue,
+          total: i.total,
         })),
-        subtotal: afterItemDiscounts,
+        subtotal,
+        itemDiscountTotal,
         itemTaxTotal,
-        taxes: invoiceTaxes,
+        taxes: invoiceTaxesWithValue,
         discount_rate: invoiceDiscountRate,
+        invoiceDiscount,
         total: netTotal,
         received,
-        payments: normalizedPayments,
         customer_id: selectedCustomerId,
         language: i18n.language,
         date,
@@ -489,6 +500,8 @@ export default function usePosCheckout({ weight } = {}) {
       });
 
       payload.id = sales.invoiceId;
+      payload.invoice_name = sales.invoiceName;
+
       const res = await api.printReceipt(payload);
       setCart([]);
       setSelectedCustomerId("");
