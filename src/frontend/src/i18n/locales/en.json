@@ -1120,6 +1120,9 @@
     "topExpenseCategories": "Top Expense Categories"
   },
   "activation": {
+    "clockTamperedTitle": "System Clock Issue Detected",
+    "clockTamperedDescription": "Your device's date and time appear to be set incorrectly. Please correct your system clock and restart the app.",
+    "clockTamperedHint": "This check protects your license from being affected by an incorrect system clock.",
     "title": "Activate POS License",
     "description": "Internet is required only for this first activation.",
     "licenseKey": "License key",

@@ -3,6 +3,7 @@ import { app } from "electron";
 import getDeviceHash from "./getDeviceHash";
 import saveLicenseFile from "./saveLicenseFile";
 import verifyLicenseFile from "./verifyLicenseFile";
+import seedLastSeenFromServerTime from "./seedLastSeenFromServerTime";
 
 const DEFAULT_ACTIVATION_URL =
   "https://panel-server.smartinb.com/api/activateLicense";
@@ -26,7 +27,7 @@ export default async function activateLicense(licenseKey) {
       }),
     });
   } catch (e) {
-    console.log(`e`, e);
+    console.error("Activation request failed:", e);
     return {
       success: false,
       message:
@@ -47,6 +48,17 @@ export default async function activateLicense(licenseKey) {
     payload: result.payload,
     signature: result.signature,
   });
+
+  // Seed the clock-integrity baseline with a server-trusted timestamp —
+  // prefer the HTTP response's own Date header (always present on any
+  // successful response) over payload.issuedAt (only present if the
+  // license payload shape happens to include it).
+  const serverDateHeader = response.headers.get("date");
+  const trustedTimestamp = serverDateHeader || result.payload.issuedAt;
+
+  if (trustedTimestamp) {
+    await seedLastSeenFromServerTime(trustedTimestamp);
+  }
 
   const status = await verifyLicenseFile();
 

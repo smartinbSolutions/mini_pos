@@ -1101,6 +1101,9 @@
     "topExpenseCategories": "En Çok Harcanan Kategoriler"
   },
   "activation": {
+    "clockTamperedTitle": "Sistem Saati Sorunu",
+    "clockTamperedDescription": "Cihazınızın tarih ve saati yanlış görünüyor. Lütfen sistem saatinizi düzeltin ve uygulamayı yeniden başlatın.",
+    "clockTamperedHint": "Bu kontrol, lisansınızın yanlış bir sistem saatinden etkilenmesini önler.",
     "title": "POS Lisansını Etkinleştir",
     "description": "İnternet yalnızca ilk etkinleştirme için gereklidir.",
     "licenseKey": "Lisans anahtarı",

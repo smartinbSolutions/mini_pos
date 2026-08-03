@@ -125,10 +125,10 @@ export default function App() {
     const checkLicense = async () => {
       try {
         const status = await window.license?.status();
-        setLicenseStatus(status?.valid === true);
+        setLicenseStatus(status || { valid: false, reason: "missing_license" });
       } catch (err) {
         console.error(err);
-        setLicenseStatus(false);
+        setLicenseStatus({ valid: false, reason: "missing_license" });
       }
     };
 
@@ -136,7 +136,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!licenseStatus) return;
+    if (!licenseStatus?.valid) return;
 
     const check = async () => {
       try {
@@ -153,8 +153,13 @@ export default function App() {
 
   if (licenseStatus === null) return <div>{t("common.loading")}</div>;
 
-  if (!licenseStatus) {
-    return <ActivationPage onActivated={() => setLicenseStatus(true)} />;
+  if (!licenseStatus.valid) {
+    return (
+      <ActivationPage
+        reason={licenseStatus.reason}
+        onActivated={() => setLicenseStatus({ valid: true })}
+      />
+    );
   }
 
   if (isSetup === null) return <div>{t("common.loading")}</div>;
