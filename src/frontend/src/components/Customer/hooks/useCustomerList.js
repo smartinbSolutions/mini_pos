@@ -14,6 +14,13 @@ const useCustomerList = () => {
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState([]);
+  const [stats, setStats] = useState({
+    count: 0,
+    totalPayable: 0,
+    totalPaid: 0,
+    netOutstanding: 0,
+  });
+  const [counts, setCounts] = useState({ all: 0, owing: 0, settled: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [unavailableHandlers, setUnavailableHandlers] = useState([]);
@@ -28,6 +35,8 @@ const useCustomerList = () => {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [balanceFilter, setBalanceFilterState] = useState("all"); // all | owing | settled
+
   const api = window.api;
 
   const normalizeCustomer = (cust) => ({
@@ -35,8 +44,6 @@ const useCustomerList = () => {
     name: String(cust.name || "").trim(),
     phone: String(cust.phone || "").trim(),
     address: String(cust.address || "").trim(),
-    opening_balance: cust.opening_balance,
-    balance_type: cust.balance_type || "deposit",
   });
 
   const validateCustomer = (cust) => {
@@ -56,13 +63,26 @@ const useCustomerList = () => {
     try {
       setLoading(true);
 
-      let res = await api.getCustomers({ page, limit });
+      const res = await api.getCustomers({
+        page,
+        limit,
+        balance_filter: balanceFilter,
+      });
 
-      setCustomers(res.data || []);
+      setCustomers(res?.data || []);
       setTotal(res?.total || 0);
       setTotalPages(res?.totalPages || 1);
+      setStats(
+        res?.stats || {
+          count: 0,
+          totalPayable: 0,
+          totalPaid: 0,
+          netOutstanding: 0,
+        }
+      );
+      setCounts(res?.counts || { all: 0, owing: 0, settled: 0 });
     } catch (err) {
-      console.error("Failed to load product catalog:", err);
+      console.error("Failed to load customer list:", err);
       setUnavailableHandlers([]);
       setError(
         err?.message || t("errors.createFailed", { field: t("ui.customer") })
@@ -70,11 +90,17 @@ const useCustomerList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api]);
+  }, [api, page, limit, balanceFilter, t]);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
+
+  // Changing the filter re-queries the full dataset, so always snap back to page 1.
+  const setBalanceFilter = (nextFilter) => {
+    setBalanceFilterState(nextFilter);
+    setPage(1);
+  };
 
   const createCustomer = async (cust) => {
     const validationError = validateCustomer(cust);
@@ -85,6 +111,9 @@ const useCustomerList = () => {
     setSaving(true);
     try {
       const res = await api.createCustomer(normalizeCustomer(cust));
+      if (!res?.success) {
+        throw new Error(res?.error || res?.message);
+      }
       await refetch();
       return res;
     } finally {
@@ -100,7 +129,10 @@ const useCustomerList = () => {
 
     setSaving(true);
     try {
-      await api.updateCustomer(normalizeCustomer(cust));
+      const res = await api.updateCustomer(normalizeCustomer(cust));
+      if (!res?.success) {
+        throw new Error(res?.error || res?.message);
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -112,10 +144,10 @@ const useCustomerList = () => {
     try {
       const res = await api.deleteCustomer(cust.id);
 
-      if (res?.success === false) {
+      if (!res?.success) {
         throw new Error(
-          res.message ||
-            res.error ||
+          res?.error ||
+            res?.message ||
             t("errors.deleteHasData", { field: t("ui.customer") })
         );
       }
@@ -169,7 +201,7 @@ const useCustomerList = () => {
     } catch (err) {
       console.error("Failed to delete Customer:", err);
       const message =
-        t("errors.deleteHasData", { field: t("ui.customer") }) || err?.message;
+        err?.message || t("errors.deleteHasData", { field: t("ui.customer") });
       setActionError(message);
       toast.error(message);
     }
@@ -209,6 +241,8 @@ const useCustomerList = () => {
     deleteCustomer,
     saving,
     customers,
+    stats,
+    counts,
     handleDeleteCustomer,
     handleCreateCustomer,
     handleUpdateCustomer,
@@ -234,6 +268,8 @@ const useCustomerList = () => {
     setLimit,
     total,
     totalPages,
+    balanceFilter,
+    setBalanceFilter,
   };
 };
 

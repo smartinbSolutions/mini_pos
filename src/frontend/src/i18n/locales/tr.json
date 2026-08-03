@@ -281,6 +281,8 @@
       "genericPaymentOut": "Ödeme yapıldı"
     },
     "contacts": {
+      "createCustomerDescription": "Kişi listenize yeni bir müşteri ekleyin",
+      "balanceLockedWhileEditing": "Bakiye değişmedi",
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
       "suppliersSubtitle": "Tedarikçilerinizi kolayca yönetin",
       "partnerSubtitle": "ortaklarınızı kolayca yönetin",
@@ -384,7 +386,8 @@
         "create": "Oluşturma",
         "update": "Güncelleme",
         "edit": "Düzenleme",
-        "return": "İade"
+        "return": "İade",
+        "delete": "Sil"
       },
       "selectBaseUnitFirst": "Önce temel birimi seçin",
       "refType": {

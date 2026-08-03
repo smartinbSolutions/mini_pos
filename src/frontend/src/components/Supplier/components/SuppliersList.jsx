@@ -241,45 +241,62 @@ export const SuppliersList = () => {
                     if (editingId === supplier.id) {
                       return (
                         <tr key={supplier.id} className="bg-[#f8faff]">
-                          <td className="px-5 py-3" colSpan={5}>
+                          <td className="px-5 py-3">
+                            <input
+                              required
+                              form={`edit-supplier-${supplier.id}`}
+                              value={editing.name}
+                              onChange={(e) =>
+                                setEditing({
+                                  ...editing,
+                                  name: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} w-full`}
+                              placeholder={t("ui.name")}
+                            />
+                          </td>
+                          <td className="px-5 py-3">
+                            <input
+                              form={`edit-supplier-${supplier.id}`}
+                              value={editing.phone}
+                              onChange={(e) =>
+                                setEditing({
+                                  ...editing,
+                                  phone: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} w-full`}
+                              placeholder={t("ui.phone")}
+                            />
+                          </td>
+                          <td className="px-5 py-3">
+                            <input
+                              form={`edit-supplier-${supplier.id}`}
+                              value={editing.address}
+                              onChange={(e) =>
+                                setEditing({
+                                  ...editing,
+                                  address: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} w-full`}
+                              placeholder={t("ui.address")}
+                            />
+                          </td>
+                          <td className="px-5 py-3 text-end">
+                            <span className="text-xs font-medium text-slate-400">
+                              {t(
+                                "screens.contacts.balanceLockedWhileEditing"
+                              ) || "Balance unchanged"}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3">
                             <form
+                              id={`edit-supplier-${supplier.id}`}
                               onSubmit={submitEdit}
-                              className="flex flex-wrap items-center gap-2"
+                              className="flex items-center gap-1"
                             >
-                              <input
-                                required
-                                value={editing.name}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    name: e.target.value,
-                                  })
-                                }
-                                className={`${inputClass} flex-1 min-w-[160px]`}
-                                placeholder={t("ui.name")}
-                              />
-                              <input
-                                value={editing.phone}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    phone: e.target.value,
-                                  })
-                                }
-                                className={`${inputClass} flex-1 min-w-[140px]`}
-                                placeholder={t("ui.phone")}
-                              />
-                              <input
-                                value={editing.address}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    address: e.target.value,
-                                  })
-                                }
-                                className={`${inputClass} flex-1 min-w-[160px]`}
-                                placeholder={t("ui.address")}
-                              />
                               <button className="flex items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 py-2 text-xs font-bold text-white hover:bg-[#3854e8]">
                                 {t("common.save")}
                               </button>

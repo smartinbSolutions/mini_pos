@@ -47,15 +47,17 @@ const PartyLedgerPage = () => {
   const PartyIcon = PARTY_ICONS[normalizedType] || User;
 
   const {
-    data = [],
+    data,
     summary,
     loading,
+    refetch: fetchData,
     party,
     page,
     setPage,
     total,
     totalPages,
     limit,
+    setLimit,
     dateFrom,
     setDateFrom,
     dateTo,
@@ -482,6 +484,10 @@ const PartyLedgerPage = () => {
             total={total}
             limit={limit}
             onPageChange={setPage}
+            onLimitChange={(newLimit) => {
+              setLimit(newLimit);
+              setPage(1);
+            }}
           />
         </section>
       </div>

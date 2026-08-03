@@ -19,6 +19,7 @@ const ROUTES = {
   partner: (id) => `/payment/partner/${id}`,
   fund: (id) => `/fund/${id}`,
   sales: (id) => `/view-sales/${id}`,
+  sale: (id) => `/view-sales/${id}`,
   sales_return: (id) => `/view-sales-return/${id}`,
   purchase: (id) => `/view-purchase/${id}`,
   purchase_return: (id) => `/view-purchase-return/${id}`,

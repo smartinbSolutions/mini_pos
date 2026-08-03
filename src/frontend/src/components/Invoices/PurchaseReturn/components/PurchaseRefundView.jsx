@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import GoTo from "../../../../Global/GoTo";
 import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
+import BackButton from "../../../../Global/BackButton";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-emerald-50", text: "text-emerald-600" },
@@ -143,14 +144,7 @@ export default function PurchaseReturnView() {
     <div className="min-h-screen bg-[#f6f8fd] p-5 text-slate-900 print:bg-white">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center justify-between print:hidden">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50"
-          >
-            <ArrowLeft size={14} />
-            {t("common.back")}
-          </button>
+          <BackButton />
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -212,7 +206,7 @@ export default function PurchaseReturnView() {
                   {returnInvoice.supplier_name || "-"}
                 </GoTo>
               </p>
-              <p className="text-xs text-slate-500">{t("ui.supplier")}</p>
+
               <span
                 className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${statusStyle.bg} ${statusStyle.text}`}
               >
@@ -244,15 +238,15 @@ export default function PurchaseReturnView() {
                   <thead className="bg-[#f8faff] text-[11px] font-bold uppercase tracking-wide text-slate-400">
                     <tr>
                       <th className="p-3 text-right">{t("ui.product")}</th>
-                      <th className="p-3 text-right">
+                      <th className="p-3 text-center">
                         {t("screens.purchaseReturn.returnQty")}
                       </th>
-                      <th className="p-3 text-right">
+                      <th className="p-3 text-center">
                         {t("screens.purchaseReturn.returnPrice")}
                       </th>
-                      <th className="p-3 text-right">{t("ui.discount")}</th>
-                      <th className="p-3 text-right">{t("ui.tax")}</th>
-                      <th className="p-3 text-right">{t("ui.total")}</th>
+                      <th className="p-3 text-center">{t("ui.discount")}</th>
+                      <th className="p-3 text-center">{t("ui.tax")}</th>
+                      <th className="p-3 text-center">{t("ui.total")}</th>
                     </tr>
                   </thead>
 
@@ -280,12 +274,26 @@ export default function PurchaseReturnView() {
                           <tr key={item.id} className="align-top">
                             <td className="p-3">
                               <div className="font-bold text-slate-900">
-                                {item.product_name || item.name || "-"}
+                                <GoTo
+                                  id={item.product_id}
+                                  type={"products"}
+                                  variant="light"
+                                >
+                                  {item.product_name || item.name || "-"}
+                                </GoTo>
                               </div>
                               {isNonBaseUnit && (
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
-                                  {item.unit_name}
+                                  {t("screens.invoices.unitConversionDetail", {
+                                    enteredQty: (
+                                      Number(item.quantity) /
+                                      Number(item.unit_conversion_factor)
+                                    ).toFixed(2),
+                                    unitName: item.unit_name,
+                                    factor: item.unit_conversion_factor,
+                                    baseQty: item.quantity,
+                                  })}
                                 </div>
                               )}
                               {item.description && (
@@ -298,18 +306,26 @@ export default function PurchaseReturnView() {
                                 </div>
                               )}
                             </td>
-                            <td className="p-3 text-right font-semibold tabular-nums text-amber-700">
-                              {Number(item.quantity || 0)}
+                            <td className="p-3 text-center font-semibold tabular-nums text-amber-700">
+                              {isNonBaseUnit
+                                ? Number(item.quantity || 0) /
+                                  Number(item.unit_conversion_factor || 1)
+                                : Number(item.quantity || 0)}
                               {item.unit_name && (
                                 <span className="ml-1 text-[11px] font-normal text-slate-400">
                                   {item.unit_name}
                                 </span>
                               )}
+                              {isNonBaseUnit && (
+                                <span className="ml-1 text-[11px] font-normal text-slate-400">
+                                  ({Number(item.quantity || 0)})
+                                </span>
+                              )}
                             </td>
-                            <td className="p-3 text-right tabular-nums text-slate-700">
+                            <td className="p-3 text-center tabular-nums text-slate-700">
                               {money(item.price)}
                             </td>
-                            <td className="p-3 text-right tabular-nums">
+                            <td className="p-3 text-center tabular-nums">
                               {Number(item.discount || 0) > 0 ? (
                                 <HoverTooltip
                                   trigger={
@@ -330,7 +346,7 @@ export default function PurchaseReturnView() {
                                 <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="p-3 text-right tabular-nums">
+                            <td className="p-3 text-center tabular-nums">
                               {Number(item.taxValue || 0) > 0 ? (
                                 <HoverTooltip
                                   trigger={
@@ -353,7 +369,7 @@ export default function PurchaseReturnView() {
                                 <span className="text-slate-300">—</span>
                               )}
                             </td>
-                            <td className="p-3 text-right font-black tabular-nums text-amber-700">
+                            <td className="p-3 text-center font-black tabular-nums text-amber-700">
                               {money(lineTotal)}
                             </td>
                           </tr>

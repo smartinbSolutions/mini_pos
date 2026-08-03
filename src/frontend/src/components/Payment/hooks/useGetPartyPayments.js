@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const LIMIT = 50;
+const DEFAULT_LIMIT = 10;
 
 export default function usePartyLedger(partyId, partyType) {
   const api = window.api;
@@ -18,12 +18,20 @@ export default function usePartyLedger(partyId, partyType) {
   const [party, setParty] = useState(null);
 
   const [page, setPage] = useState(1);
+  const [limit, setLimitState] = useState(DEFAULT_LIMIT);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   // Page-level date filter — independent of the export modal's own range.
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
+  // Changing page size mid-list is confusing without also snapping back to
+  // page 1 — same reasoning as the date-filter reset below.
+  const setLimit = (nextLimit) => {
+    setLimitState(nextLimit);
+    setPage(1);
+  };
 
   const fetchData = async () => {
     if (!partyId || !partyType) return;
@@ -40,7 +48,7 @@ export default function usePartyLedger(partyId, partyType) {
         partyId,
         partyType,
         page,
-        limit: LIMIT,
+        limit,
         startDate: dateFrom || undefined,
         endDate: dateTo || undefined,
       });
@@ -71,7 +79,7 @@ export default function usePartyLedger(partyId, partyType) {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partyId, partyType, page, dateFrom, dateTo]);
+  }, [partyId, partyType, page, limit, dateFrom, dateTo]);
 
   useEffect(() => {
     setPage(1);
@@ -93,7 +101,8 @@ export default function usePartyLedger(partyId, partyType) {
     setPage,
     total,
     totalPages,
-    limit: LIMIT,
+    limit,
+    setLimit,
     dateFrom,
     setDateFrom,
     dateTo,

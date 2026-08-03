@@ -206,11 +206,23 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
   };
 
   // Directly applies a known product to a row without depending on
-  // `products` state — used by the quick-add modal. No unit list is
-  // available for a freshly created product yet.
+  // `products` state — used by the quick-add modal. available_units/unit_id/
+  // unit_name are optional: pass them when the caller already fetched the
+  // full product (e.g. right after quick-add creation); omit them and the
+  // row falls back to no units, same as before.
   const setItemProduct = (
     index,
-    { id, name, price, buyingPrice, tax_id, tax_rate }
+    {
+      id,
+      name,
+      price,
+      buyingPrice,
+      tax_id,
+      tax_rate,
+      available_units,
+      unit_id,
+      unit_name,
+    }
   ) => {
     setItems((prev) => {
       const copy = [...prev];
@@ -220,9 +232,9 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
       item.name = name || "";
       item.entered_price = Number(price || 0);
       item.buyingPrice = Number(buyingPrice || 0);
-      item.available_units = [];
-      item.unit_id = null;
-      item.unit_name = "";
+      item.available_units = available_units || [];
+      item.unit_id = unit_id ?? null;
+      item.unit_name = unit_name || "";
       item.unit_conversion_factor = 1;
       item.tax_id = tax_id || null;
       item.tax_rate = Number(tax_rate || 0);
@@ -241,6 +253,9 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
     buyingPrice,
     tax_id,
     tax_rate,
+    available_units,
+    unit_id,
+    unit_name,
   }) => {
     setItems((prev) => [
       ...prev,
@@ -254,6 +269,9 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
         tax_id: tax_id || null,
         tax_rate: Number(tax_rate || 0),
         tax_capable: Boolean(tax_id),
+        available_units: available_units || [],
+        unit_id: unit_id ?? null,
+        unit_name: unit_name || "",
       }),
     ]);
   };

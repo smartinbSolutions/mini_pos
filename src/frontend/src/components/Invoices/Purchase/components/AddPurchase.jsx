@@ -1120,27 +1120,30 @@ export default function AddPurchase() {
           onSubmit={async (form) => {
             try {
               const result = await submitProduct(form);
+              const fullProduct = await api.getProduct(result.id); // new line
+              const productUnits = fullProduct.productUnits || []; // new line
+              const baseUnit = productUnits.find((u) => u.is_base) || null; // new line
+
               const targetIndex = items.findIndex((i) => !i.product_id);
               const matchedTax = productTaxes?.find(
                 (tx) => tx.id === form.tax_id
               );
 
+              const productPayload = {
+                id: result.id,
+                name: form.name,
+                price: form.costPrice,
+                tax_id: form.tax_id,
+                tax_rate: matchedTax?.rate || 0,
+                available_units: productUnits, // new
+                unit_id: baseUnit?.id ?? null, // new
+                unit_name: baseUnit?.unit_name || "", // new
+              };
+
               if (targetIndex === -1) {
-                addItemWithProduct({
-                  id: result.id,
-                  name: form.name,
-                  price: form.costPrice,
-                  tax_id: form.tax_id,
-                  tax_rate: matchedTax?.rate || 0,
-                });
+                addItemWithProduct(productPayload);
               } else {
-                setItemProduct(targetIndex, {
-                  id: result.id,
-                  name: form.name,
-                  price: form.costPrice,
-                  tax_id: form.tax_id,
-                  tax_rate: matchedTax?.rate || 0,
-                });
+                setItemProduct(targetIndex, productPayload);
               }
 
               setIsFormOpen(false);

@@ -1,14 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import {
-  X,
-  Plus,
-  Wallet,
-  Calendar,
-  PlusCircle,
-  MinusCircle,
-  Info,
-} from "lucide-react";
+import { X, Plus, Wallet, Calendar, PlusCircle } from "lucide-react";
 import NumberInput from "../../../../Global/NumberInput";
 
 const defaultOpeningDate = () => `${new Date().getFullYear()}-01-01`;
@@ -152,30 +144,25 @@ export default function CustomerFormModal({
             {meaning}
 
             {hasOpeningBalance && (
-              <>
-                <input type="hidden" value="increase" readOnly />
+              <div>
+                <label className="mb-1 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                  <Calendar size={12} />
+                  {t("screens.contacts.balanceAsOf")}
+                </label>
 
-                <div>
-                  <label className="mb-1 flex items-center gap-2 text-xs font-semibold text-slate-500">
-                    <Calendar size={12} />
-                    {t("screens.contacts.balanceAsOf")}
-                  </label>
-
-                  <input
-                    type="date"
-                    value={draft.date || defaultOpeningDate()}
-                    max={new Date().toISOString().slice(0, 10)}
-                    onChange={(e) =>
-                      setDraft({
-                        ...draft,
-                        date: e.target.value,
-                        balance_type: "increase",
-                      })
-                    }
-                    className={inputClass}
-                  />
-                </div>
-              </>
+                <input
+                  type="date"
+                  value={draft.date || defaultOpeningDate()}
+                  max={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      date: e.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </div>
             )}
           </div>
 

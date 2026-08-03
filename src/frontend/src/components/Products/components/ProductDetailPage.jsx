@@ -367,25 +367,36 @@ export default function ProductDetailPage() {
                                       `screens.products.action.${movement.action}`,
                                       { defaultValue: movement.action }
                                     )}
+
                                     <span className="ml-1.5 inline-flex items-center align-middle">
-                                      <GoTo
-                                        type={movement.reference_type}
-                                        id={movement.reference_id}
-                                      >
-                                        {t(
-                                          `screens.products.refType.${movement.reference_type}`,
-                                          {
-                                            defaultValue:
-                                              movement.reference_type,
-                                          }
-                                        )}
-                                      </GoTo>
+                                      {movement.action === "delete" ? (
+                                        <span className="text-slate-400">
+                                          {t(
+                                            `screens.products.refType.${movement.reference_type}`,
+                                            {
+                                              defaultValue:
+                                                movement.reference_type,
+                                            }
+                                          )}
+                                        </span>
+                                      ) : (
+                                        <GoTo
+                                          type={movement.reference_type}
+                                          id={movement.reference_id}
+                                        >
+                                          {t(
+                                            `screens.products.refType.${movement.reference_type}`,
+                                            {
+                                              defaultValue:
+                                                movement.reference_type,
+                                            }
+                                          )}
+                                        </GoTo>
+                                      )}
                                     </span>
                                   </div>
                                   <div className="text-xs text-slate-500">
-                                    {new Date(
-                                      movement.createdAt
-                                    ).toLocaleString()}
+                                    {new Date(movement.date).toLocaleString()}
                                   </div>
                                 </div>
                               </div>
@@ -403,19 +414,33 @@ export default function ProductDetailPage() {
                                     }`}
                                   >
                                     {isIn ? "+" : "-"}
-                                    {formatNumber(movement.quantity, 2)}{" "}
-                                    {movement.unit_name ||
-                                      movement.unit_code ||
-                                      ""}
+                                    {wasNonBaseUnit
+                                      ? formatNumber(
+                                          movement.quantity /
+                                            movement.conversion_factor,
+                                          2
+                                        )
+                                      : formatNumber(movement.quantity, 2)}{" "}
+                                    {wasNonBaseUnit
+                                      ? movement.unit_name
+                                      : movement.unit_name ||
+                                        movement.unit_code ||
+                                        ""}
                                   </div>
                                   {wasNonBaseUnit && (
                                     <div className="text-xs text-slate-400">
-                                      ×{" "}
-                                      {formatNumber(
-                                        movement.conversion_factor,
-                                        2
-                                      )}{" "}
-                                      {movement.base_unit_name}
+                                      {t(
+                                        "screens.products.movementBaseEquivalent",
+                                        {
+                                          defaultValue:
+                                            "= {{baseQty}} {{baseUnit}}",
+                                          baseQty: formatNumber(
+                                            movement.quantity,
+                                            2
+                                          ),
+                                          baseUnit: movement.base_unit_name,
+                                        }
+                                      )}
                                     </div>
                                   )}
                                   {(movement.enterPrice > 0 ||

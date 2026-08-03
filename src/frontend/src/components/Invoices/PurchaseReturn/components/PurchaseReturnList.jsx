@@ -286,10 +286,12 @@ const PurchaseReturnList = () => {
             <table className="w-full min-w-[1000px] text-left text-sm">
               <thead className="bg-[#f8faff] text-xs font-bold uppercase text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">{t("ui.returnId")}</th>
-                  <th className="px-4 py-3">{t("ui.originalInvoice")}</th>
-                  <th className="px-4 py-3">{t("ui.supplier")}</th>
-                  <th className="px-4 py-3">{t("ui.date")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.returnId")}</th>
+                  <th className="px-4 py-3 text-center">
+                    {t("ui.originalInvoice")}
+                  </th>
+                  <th className="px-4 py-3 text-center">{t("ui.supplier")}</th>
+                  <th className="px-4 py-3 text-center">{t("ui.date")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.subtotal")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.discount")}</th>
                   <th className="px-4 py-3 text-center">{t("ui.tax")}</th>
@@ -333,30 +335,30 @@ const PurchaseReturnList = () => {
                         key={inv.id}
                         className="transition hover:bg-[#f8faff]"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           <span className="rounded-lg bg-[#eef3ff] px-2.5 py-1 text-xs font-bold text-[#4663ff]">
                             #{inv.id}
                           </span>
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-600">
+                        <td className="px-4 py-3  text-center font-medium text-slate-600">
                           <GoTo type="purchase" id={inv.purchase_invoice_id}>
                             {inv.purchase_invoice_name ||
                               `#${inv.purchase_invoice_id}`}
                           </GoTo>
                         </td>
-                        <td className="px-4 py-3 font-bold text-slate-900">
+                        <td className="px-4 py-3 text-center font-bold text-slate-900">
                           <GoTo type="supplier" id={inv.supplier_id}>
                             {inv.supplier_name || "-"}
                           </GoTo>
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3  text-center text-slate-500">
                           <FormattedDate value={inv.date} />
                         </td>
-                        <td className="px-4 py-3 text-right font-semibold tabular-nums text-slate-700">
+                        <td className="px-4 py-3 text-center font-semibold tabular-nums text-slate-700">
                           {money(inv.subtotal || 0)}
                         </td>
 
-                        <td className="px-4 py-3 text-right tabular-nums">
+                        <td className="px-4 py-3 text-center tabular-nums">
                           {totalDiscountValue > 0 ? (
                             <BreakdownTooltip
                               trigger={
@@ -384,7 +386,7 @@ const PurchaseReturnList = () => {
                           )}
                         </td>
 
-                        <td className="px-4 py-3 text-right tabular-nums">
+                        <td className="px-4 py-3 text-center tabular-nums">
                           {totalTaxValue > 0 ? (
                             <BreakdownTooltip
                               trigger={
@@ -412,7 +414,7 @@ const PurchaseReturnList = () => {
                           )}
                         </td>
 
-                        <td className="px-4 py-3 text-right font-bold tabular-nums text-amber-700">
+                        <td className="px-4 py-3 text-center font-bold tabular-nums text-amber-700">
                           {money(inv.net_total || 0)}
                         </td>
 
@@ -433,7 +435,7 @@ const PurchaseReturnList = () => {
                                 <MoreVertical size={16} />
                               </button>
                             }
-                            align={i18n.dir() === "rtl" ? "left" : "right"}
+                            align={i18n.dir() === "rtl" ? "left" : "cetner"}
                             options={[
                               {
                                 key: "view",

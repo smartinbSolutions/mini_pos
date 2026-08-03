@@ -68,7 +68,7 @@ export default function Pagination({
             disabled={page <= 1}
             className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronLeft size={16} />
+            <ChevronRight size={16} />
           </button>
 
           {pages.map((p, i) =>
@@ -96,7 +96,7 @@ export default function Pagination({
             disabled={page >= totalPages}
             className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <ChevronRight size={16} />
+            <ChevronLeft size={16} />
           </button>
         </div>
       )}

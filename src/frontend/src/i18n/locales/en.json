@@ -281,6 +281,8 @@
       "genericPaymentOut": "Payment made"
     },
     "contacts": {
+      "createCustomerDescription": "Add a new customer to your contacts",
+      "balanceLockedWhileEditing": "Balance unchanged",
       "customersSubtitle": "Manage your customers easily",
       "suppliersSubtitle": "Manage your suppliers easily",
       "partnerSubtitle": "Manage your partner easily",
@@ -386,7 +388,8 @@
         "create": "Create",
         "update": "Update",
         "edit": "Edit",
-        "return": "Return"
+        "return": "Return",
+        "delete": "Delete"
       },
       "refType": {
         "purchase": "Purchase",

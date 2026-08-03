@@ -45,7 +45,6 @@ const useSuppliersList = () => {
     name: String(sup.name || "").trim(),
     phone: String(sup.phone || "").trim(),
     address: String(sup.address || "").trim(),
-    balance_type: sup.balance_type || "deposit",
   });
 
   const validateSupplier = (sup) => {

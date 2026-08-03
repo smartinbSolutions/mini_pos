@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   Printer,
-  ArrowLeft,
   Receipt,
   TrendingUp,
   Tag,
@@ -15,6 +14,7 @@ import GoTo from "../../../../Global/GoTo";
 import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import { useAuth } from "../../../../Global/AuthContext";
+import BackButton from "../../../../Global/BackButton";
 
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
@@ -26,7 +26,6 @@ function AccentRule({ colorClass }) {
 export default function SalesInvoiceView() {
   const { t } = useTranslation();
   const { id } = useParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
@@ -42,8 +41,7 @@ export default function SalesInvoiceView() {
       try {
         setLoading(true);
         const data = await window.api.getSalesInvoiceById(id);
-        const company = await window.api.getCompanySetting();
-        console.log(company);
+
         if (!cancelled) {
           setInvoice(data);
         }
@@ -145,14 +143,7 @@ export default function SalesInvoiceView() {
     <div className="min-h-screen bg-[#f6f8fd] p-5 text-slate-900 print:bg-white">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="flex items-center justify-between print:hidden">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50"
-          >
-            <ArrowLeft size={14} />
-            {t("common.back")}
-          </button>
+          <BackButton />
 
           <div className="flex items-center gap-2">
             <button
@@ -198,9 +189,15 @@ export default function SalesInvoiceView() {
 
             <div className="text-left md:text-right">
               <p className="text-base font-black text-slate-950">
-                {invoice.customer_name || "-"}
+                <GoTo
+                  id={invoice?.customer_id}
+                  type={"customer"}
+                  variant="light"
+                >
+                  {invoice.customer_name || "-"}
+                </GoTo>
               </p>
-              <p className="text-xs text-slate-500">{t("ui.customer")}</p>
+              {/* <p className="text-xs text-slate-500">{t("ui.customer")}</p> */}
               <span
                 className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${statusStyle.bg} ${statusStyle.text}`}
               >
@@ -266,7 +263,13 @@ export default function SalesInvoiceView() {
                           <tr key={item.id} className="align-top">
                             <td className="p-3">
                               <div className="font-bold text-slate-900">
-                                {item.product_name || item.name || "-"}
+                                <GoTo
+                                  id={item.product_id}
+                                  type={"products"}
+                                  variant="light"
+                                >
+                                  {item.product_name || item.name || "-"}
+                                </GoTo>
                               </div>
                               {isNonBaseUnit && (
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Eye, Edit2, Trash2, HandCoins } from "lucide-react";
 import useCustomerList from "../hooks/useCustomerList";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
@@ -9,32 +9,82 @@ import ContactListHeader from "../../../Global/Contactlistheader";
 import Pagination from "../../../Global/Pagination";
 import { ToastContainer } from "react-toastify";
 
+// dir="ltr" font-mono tabular-nums wrapper, per the app's RTL-number convention.
+// TODO: swap for the shared <Num> component if you'd rather keep one source of truth.
+const Num = ({ children, className = "" }) => (
+  <span dir="ltr" className={`font-mono tabular-nums ${className}`}>
+    {children}
+  </span>
+);
+
+const StatCard = ({ label, value, tone = "neutral" }) => {
+  const toneClass =
+    tone === "danger"
+      ? "text-red-600"
+      : tone === "success"
+        ? "text-emerald-600"
+        : "text-slate-900";
+
+  return (
+    <div className="rounded-2xl border border-white/80 bg-white/70 px-4 py-3 shadow-[0_10px_30px_rgba(70,99,255,0.06)]">
+      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+        {label}
+      </p>
+      <p className={`mt-1 text-xl font-black ${toneClass}`}>
+        <Num>{value}</Num>
+      </p>
+    </div>
+  );
+};
+
+const SettlementBar = ({ paid, total }) => {
+  const ratio = total > 0 ? Math.min(1, Math.max(0, paid / total)) : 1;
+  return (
+    <div className="mt-1.5 h-1.5 w-28 overflow-hidden rounded-full bg-slate-100">
+      <div
+        className="h-full rounded-full bg-emerald-500"
+        style={{ width: `${ratio * 100}%` }}
+      />
+    </div>
+  );
+};
+
 const BalanceCell = ({ total, paid, balance, money, t }) => {
   const isSettled = balance <= 0;
 
   return (
-    <span className="group relative inline-flex cursor-help items-center justify-end">
-      <span
-        className={`font-black tabular-nums ${
-          isSettled ? "text-emerald-600" : "text-red-500"
-        }`}
-      >
-        {money(balance)}
-      </span>
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        <span
+          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+            isSettled
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-red-50 text-red-600"
+          }`}
+        >
+          {isSettled ? t("ui.settled") || "Settled" : t("ui.owing") || "Owing"}
+        </span>
+        <span
+          className={`text-base font-black ${
+            isSettled ? "text-emerald-600" : "text-red-500"
+          }`}
+        >
+          <Num>{money(balance)}</Num>
+        </span>
+      </div>
 
-      <span className="pointer-events-none absolute bottom-full right-0 z-10 mb-1.5 w-48 whitespace-normal rounded-lg bg-slate-900 px-3 py-2 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-        <span className="flex justify-between">
-          <span className="text-slate-300">
-            {t("screens.contacts.sales") || "Sales"}
-          </span>
-          <span className="font-bold">{money(total)}</span>
+      <SettlementBar paid={paid} total={total} />
+
+      <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400">
+        <span>
+          <Num>{money(paid)}</Num> {t("ui.paid") || "paid"}
         </span>
-        <span className="mt-1 flex justify-between">
-          <span className="text-slate-300">{t("ui.paid") || "Paid"}</span>
-          <span className="font-bold text-emerald-300">{money(paid)}</span>
+        <span className="text-slate-300">/</span>
+        <span>
+          <Num>{money(total)}</Num> {t("screens.contacts.sales") || "total"}
         </span>
-      </span>
-    </span>
+      </div>
+    </div>
   );
 };
 
@@ -43,6 +93,8 @@ export const CustomerList = () => {
   const {
     saving,
     customers,
+    stats,
+    counts,
     handleDeleteCustomer,
     submitDraft,
     startEdit,
@@ -66,8 +118,9 @@ export const CustomerList = () => {
     setLimit,
     total,
     totalPages,
+    balanceFilter,
+    setBalanceFilter,
   } = useCustomerList();
-  console.log(actionError);
 
   const { money } = usePrimaryCurrency();
 
@@ -80,17 +133,45 @@ export const CustomerList = () => {
   const inputClass =
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
 
-  const filteredCustomer = useMemo(() => {
-    return customers.filter((s) =>
-      `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
-        .toLowerCase()
-        .includes(search.toLowerCase())
-    );
-  }, [customers, search]);
+  // Search stays client-side (name/phone/address on the current page);
+  // balance filtering is server-side, so it isn't duplicated here.
+  const filteredCustomer = (customers || []).filter((s) =>
+    `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  const filterChipClass = (key) =>
+    `rounded-full px-3 py-1.5 text-xs font-bold transition ${
+      balanceFilter === key
+        ? "bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/20"
+        : "bg-white/80 text-slate-500 border border-[#dbe4ff] hover:bg-[#eef3ff]"
+    }`;
 
   return (
     <div className={pageClass}>
       <div className="max-w-7xl mx-auto flex flex-col gap-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard
+            label={t("ui.customers") || "Customers"}
+            value={stats.count}
+          />
+          <StatCard
+            label={t("screens.contacts.sales") || "Total sales"}
+            value={money(stats.totalPayable)}
+          />
+          <StatCard
+            label={t("ui.paid") || "Total paid"}
+            value={money(stats.totalPaid)}
+            tone="success"
+          />
+          <StatCard
+            label={t("ui.balance") || "Net outstanding"}
+            value={money(stats.netOutstanding)}
+            tone={stats.netOutstanding > 0 ? "danger" : "success"}
+          />
+        </div>
+
         <div className={panelClass}>
           <ContactListHeader
             eyebrow={t("ui.contacts")}
@@ -110,19 +191,40 @@ export const CustomerList = () => {
             t={t}
           />
 
+          <div className="flex items-center gap-2 border-b border-[#eef1ff] px-5 py-3">
+            <button
+              className={filterChipClass("all")}
+              onClick={() => setBalanceFilter("all")}
+            >
+              {t("common.all") || "All"} ({counts.all})
+            </button>
+            <button
+              className={filterChipClass("owing")}
+              onClick={() => setBalanceFilter("owing")}
+            >
+              {t("ui.owing") || "Owing"} ({counts.owing})
+            </button>
+            <button
+              className={filterChipClass("settled")}
+              onClick={() => setBalanceFilter("settled")}
+            >
+              {t("ui.settled") || "Settled"} ({counts.settled})
+            </button>
+          </div>
+
           {filteredCustomer.length === 0 ? (
             <div className="text-center text-gray-400 text-sm py-10">
               {t("screens.contacts.noCustomers")}
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-start text-sm">
+              <table className="w-full min-w-[760px] text-start text-sm">
                 <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
                   <tr>
                     <th className="px-5 py-4 text-start">{t("ui.name")}</th>
                     <th className="px-5 py-4 text-start">{t("ui.phone")}</th>
                     <th className="px-5 py-4 text-start">{t("ui.address")}</th>
-                    <th className="px-5 py-4 text-start">{t("ui.balance")}</th>
+                    <th className="px-5 py-4 text-end">{t("ui.balance")}</th>
                     <th className="px-5 py-4 text-start">
                       {t("common.actions")}
                     </th>
@@ -138,45 +240,62 @@ export const CustomerList = () => {
                     if (editingId === customer.id) {
                       return (
                         <tr key={customer.id} className="bg-[#f8faff]">
-                          <td className="px-5 py-3" colSpan={5}>
+                          <td className="px-5 py-3">
+                            <input
+                              required
+                              form={`edit-customer-${customer.id}`}
+                              value={editing.name}
+                              onChange={(e) =>
+                                setEditing({
+                                  ...editing,
+                                  name: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} w-full`}
+                              placeholder={t("ui.name")}
+                            />
+                          </td>
+                          <td className="px-5 py-3">
+                            <input
+                              form={`edit-customer-${customer.id}`}
+                              value={editing.phone}
+                              onChange={(e) =>
+                                setEditing({
+                                  ...editing,
+                                  phone: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} w-full`}
+                              placeholder={t("ui.phone")}
+                            />
+                          </td>
+                          <td className="px-5 py-3">
+                            <input
+                              form={`edit-customer-${customer.id}`}
+                              value={editing.address}
+                              onChange={(e) =>
+                                setEditing({
+                                  ...editing,
+                                  address: e.target.value,
+                                })
+                              }
+                              className={`${inputClass} w-full`}
+                              placeholder={t("ui.address")}
+                            />
+                          </td>
+                          <td className="px-5 py-3 text-end">
+                            <span className="text-xs font-medium text-slate-400">
+                              {t(
+                                "screens.contacts.balanceLockedWhileEditing"
+                              ) || "Balance unchanged"}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3">
                             <form
+                              id={`edit-customer-${customer.id}`}
                               onSubmit={submitEdit}
-                              className="flex flex-wrap items-center gap-2"
+                              className="flex items-center gap-1"
                             >
-                              <input
-                                required
-                                value={editing.name}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    name: e.target.value,
-                                  })
-                                }
-                                className={`${inputClass} flex-1 min-w-[160px]`}
-                                placeholder={t("ui.name")}
-                              />
-                              <input
-                                value={editing.phone}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    phone: e.target.value,
-                                  })
-                                }
-                                className={`${inputClass} flex-1 min-w-[140px]`}
-                                placeholder={t("ui.phone")}
-                              />
-                              <input
-                                value={editing.address}
-                                onChange={(e) =>
-                                  setEditing({
-                                    ...editing,
-                                    address: e.target.value,
-                                  })
-                                }
-                                className={`${inputClass} flex-1 min-w-[160px]`}
-                                placeholder={t("ui.address")}
-                              />
                               <button className="flex items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 py-2 text-xs font-bold text-white hover:bg-[#3854e8]">
                                 {t("common.save")}
                               </button>
@@ -214,7 +333,7 @@ export const CustomerList = () => {
                         <td className="px-5 py-3 max-w-[200px] truncate text-slate-500">
                           {customer.address || t("ui.noAddress")}
                         </td>
-                        <td className="px-5 py-3 text-start">
+                        <td className="px-5 py-3 text-end">
                           <BalanceCell
                             total={sales}
                             paid={paid}

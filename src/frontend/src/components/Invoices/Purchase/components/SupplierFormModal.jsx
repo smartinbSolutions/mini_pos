@@ -1,15 +1,6 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import {
-  X,
-  Plus,
-  Wallet,
-  Calendar,
-  PlusCircle,
-  MinusCircle,
-  Info,
-} from "lucide-react";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
+import { X, Plus, Wallet, Calendar, MinusCircle } from "lucide-react";
 import NumberInput from "../../../../Global/NumberInput";
 
 const defaultOpeningDate = () => `${new Date().getFullYear()}-01-01`;
@@ -42,7 +33,6 @@ export default function SupplierFormModal({
     "flex w-full items-center justify-center gap-2 rounded-xl bg-[#4663ff] px-4 py-2 font-bold text-white transition hover:bg-[#3854e8] disabled:opacity-50";
 
   const hasOpeningBalance = Number(draft.opening_balance || 0) !== 0;
-  const isDebit = draft.balance_type !== "decrease";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,19 +45,16 @@ export default function SupplierFormModal({
   };
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
       <div
-        className="relative w-full max-w-lg rounded-[28px] bg-white p-6 shadow-2xl"
+        className="relative w-full max-w-lg rounded-[28px] border border-white/80 bg-white/95 p-6 shadow-[0_24px_80px_rgba(70,99,255,0.25)] backdrop-blur"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-2 hover:bg-slate-100"
+          className="absolute -right-3 -top-3 rounded-full bg-white p-2 shadow hover:bg-slate-100"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
 
         <h2 className="text-xl font-black">
@@ -142,52 +129,17 @@ export default function SupplierFormModal({
               placeholder="0"
             />
 
+            {/* Direction is a fixed accounting convention (you owe the
+                supplier), not a user choice — see CustomerFormModal for the
+                mirrored "this customer owes you" fixed messaging. */}
             {hasOpeningBalance && (
               <>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDraft((p) => ({
-                        ...p,
-                        balance_type: "increase",
-                      }))
-                    }
-                    className={`rounded-xl border-2 p-3 ${
-                      isDebit
-                        ? "border-green-400 bg-green-50"
-                        : "border-slate-200"
-                    }`}
-                  >
-                    <PlusCircle
-                      className="mx-auto mb-2 text-green-600"
-                      size={26}
-                    />
-                    <div className="text-xs font-bold">
-                      {t("screens.contacts.theyOweYou")}
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDraft((p) => ({
-                        ...p,
-                        balance_type: "decrease",
-                      }))
-                    }
-                    className={`rounded-xl border-2 p-3 ${
-                      !isDebit ? "border-red-400 bg-red-50" : "border-slate-200"
-                    }`}
-                  >
-                    <MinusCircle
-                      className="mx-auto mb-2 text-red-600"
-                      size={26}
-                    />
-                    <div className="text-xs font-bold">
-                      {t("screens.contacts.youOweThem")}
-                    </div>
-                  </button>
+                <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-red-700">
+                  <MinusCircle size={20} />
+                  <p className="text-sm font-semibold">
+                    {t("screens.contacts.youOweSupplier") ||
+                      "You owe this supplier this amount"}
+                  </p>
                 </div>
 
                 <div>
@@ -199,6 +151,7 @@ export default function SupplierFormModal({
                   <input
                     type="date"
                     value={draft.date || defaultOpeningDate()}
+                    max={new Date().toISOString().slice(0, 10)}
                     onChange={(e) =>
                       setDraft((p) => ({
                         ...p,

@@ -282,6 +282,8 @@
       "genericPaymentOut": "تم دفع مبلغ"
     },
     "contacts": {
+      "createCustomerDescription": "أضف عميلاً جديداً إلى جهات الاتصال",
+      "balanceLockedWhileEditing": "الرصيد لم يتغير",
       "customersSubtitle": "إدارة العملاء بسهولة",
       "suppliersSubtitle": "إدارة الموردين بسهولة",
       "partnerSubtitle": "إدارة الشركاء بسهولة",
@@ -389,7 +391,8 @@
         "create": "إنشاء",
         "update": "تحديث",
         "edit": "تعديل",
-        "return": "مرتجع"
+        "return": "مرتجع",
+        "delete": "حذف"
       },
       "selectBaseUnitFirst": "اختر الوحدة الأساسية أولاً",
       "refType": {

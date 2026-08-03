@@ -213,7 +213,10 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
   // available yet here (quick-add products only ever have a base unit), so
   // unit switching is unavailable for these rows until refetch completes and
   // the row's product is re-selected properly.
-  const setItemProduct = (index, { id, name, price, tax_id, tax_rate }) => {
+  const setItemProduct = (
+    index,
+    { id, name, price, tax_id, tax_rate, available_units, unit_id, unit_name }
+  ) => {
     setItems((prev) => {
       const copy = [...prev];
       const item = { ...copy[index] };
@@ -222,9 +225,9 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
       item.name = name || "";
       item.entered_price = Number(price || 0);
       item.base_cost_price = Number(price || 0);
-      item.available_units = [];
-      item.unit_id = null;
-      item.unit_name = "";
+      item.available_units = available_units || [];
+      item.unit_id = unit_id ?? null;
+      item.unit_name = unit_name || "";
       item.unit_conversion_factor = 1;
       item.tax_id = tax_id || null;
       item.tax_rate = Number(tax_rate || 0);
@@ -235,10 +238,18 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
       return copy;
     });
   };
-
   // Appends a brand-new row pre-filled with a known product — used when
   // there's no empty row left to reuse (quick-adding a 2nd, 3rd, ... product).
-  const addItemWithProduct = ({ id, name, price, tax_id, tax_rate }) => {
+  const addItemWithProduct = ({
+    id,
+    name,
+    price,
+    tax_id,
+    tax_rate,
+    available_units,
+    unit_id,
+    unit_name,
+  }) => {
     setItems((prev) => [
       ...prev,
       recalcItem({
@@ -251,6 +262,9 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
         tax_id: tax_id || null,
         tax_rate: Number(tax_rate || 0),
         tax_capable: Boolean(tax_id),
+        available_units: available_units || [],
+        unit_id: unit_id ?? null,
+        unit_name: unit_name || "",
       }),
     ]);
   };

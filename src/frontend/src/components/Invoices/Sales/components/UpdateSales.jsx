@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -146,30 +146,39 @@ export default function UpdateSales() {
   const [confirmingTaxUpdate, setConfirmingTaxUpdate] = useState(false);
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
-    () =>
+    () => new Set()
+  );
+  const [revealedItemNotes, setRevealedItemNotes] = useState(() => new Set());
+  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(false);
+  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
+  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
+
+  // The initializers above can't see real data yet — `load()` is async and
+  // hasn't populated items/invoice at mount time. Recompute once the actual
+  // invoice data has arrived (loading flips false), so existing discounts/
+  // taxes/notes are visible and removable, not silently hidden.
+  useEffect(() => {
+    if (loading) return;
+
+    setRevealedItemDiscounts(
       new Set(
         items
           .map((item, i) => (Number(item.discount_rate) > 0 ? i : null))
           .filter((i) => i !== null)
       )
-  );
-  const [revealedItemNotes, setRevealedItemNotes] = useState(
-    () =>
+    );
+    setRevealedItemNotes(
       new Set(
         items
           .map((item, i) => (item.description ? i : null))
           .filter((i) => i !== null)
       )
-  );
-  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(
-    () => Number(invoice?.discount_rate) > 0
-  );
-  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(
-    () => (invoice?.taxes || []).length > 0
-  );
-  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(() =>
-    Boolean(invoice?.description)
-  );
+    );
+    setInvoiceDiscountRevealed(Number(invoice?.discount_rate) > 0);
+    setInvoiceTaxRevealed((invoice?.taxes || []).length > 0);
+    setInvoiceNoteRevealed(Boolean(invoice?.description));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const customerName =
     customers?.data?.find((c) => c.id === invoice?.customer_id)?.name || "";

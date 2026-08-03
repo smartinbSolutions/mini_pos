@@ -353,27 +353,22 @@ const PurchaseList = () => {
                         className="transition hover:bg-[#f8faff]"
                       >
                         <td className="px-4 py-3 text-center">
-                          <span className="rounded-lg bg-[#eef3ff] px-2.5 py-1 text-xs font-bold text-[#4663ff]">
-                            <InvoiceIdBadge
-                              id={inv.id}
-                              name={inv.invoice_name}
-                            />
-                          </span>
+                          <InvoiceIdBadge id={inv.id} name={inv.invoice_name} />
                         </td>
-                        <td className="px-4 py-3 font-bold text-slate-900">
+                        <td className="px-4 py-3 font-bold text-slate-900 text-center">
                           <GoTo type={"supplier"} id={inv?.supplier_id}>
                             {" "}
                             {inv.supplier_name || "-"}
                           </GoTo>
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
+                        <td className="px-4 py-3 text-slate-500 text-center">
                           <FormattedDate value={inv.date} />
                         </td>
-                        <td className="px-4 py-3 text-right font-semibold tabular-nums text-slate-700">
+                        <td className="px-4 py-3 font-semibold tabular-nums text-slate-700 text-center">
                           {money(inv.subtotal || 0)}
                         </td>
 
-                        <td className="px-4 py-3 text-right tabular-nums">
+                        <td className="px-4 py-3 text-center tabular-nums ">
                           {totalDiscountValue > 0 ? (
                             <BreakdownTooltip
                               trigger={
@@ -401,7 +396,7 @@ const PurchaseList = () => {
                           )}
                         </td>
 
-                        <td className="px-4 py-3 text-right tabular-nums">
+                        <td className="px-4 py-3 text-center tabular-nums">
                           {totalTaxValue > 0 ? (
                             <BreakdownTooltip
                               trigger={
@@ -429,11 +424,11 @@ const PurchaseList = () => {
                           )}
                         </td>
 
-                        <td className="px-4 py-3 text-right font-bold tabular-nums text-emerald-700">
+                        <td className="px-4 py-3 text-center font-bold tabular-nums text-emerald-700">
                           {money(inv.net_total || 0)}
                         </td>
 
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 text-center">
                           <div className="flex flex-col items-center gap-1">
                             <StatusBadge
                               status={inv.status}

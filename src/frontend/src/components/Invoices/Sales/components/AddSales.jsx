@@ -1107,29 +1107,34 @@ export default function AddSales() {
           onSubmit={async (form) => {
             try {
               const result = await submitProduct(form);
-              const targetIndex = items.findIndex((i) => !i.product_id);
+              const fullProduct = await api.getProduct(result.id);
+              const productUnits = fullProduct.productUnits || [];
+              const baseUnit = productUnits.find((u) => u.is_base) || null;
               const matchedTax = productTaxes?.find(
                 (tx) => tx.id === form.tax_id
               );
 
+              const targetIndex = items.findIndex((i) => !i.product_id);
+
+              const productPayload = {
+                id: result.id,
+                name: form.name,
+                // Prefer the base unit's own registered sale_price (matches how
+                // selectProductForItem/updateItemUnit price every line here) — falls
+                // back to the raw form value only if the base unit somehow wasn't found.
+                price: baseUnit?.sale_price ?? form.salePrice,
+                buyingPrice: form.costPrice,
+                tax_id: form.tax_id,
+                tax_rate: matchedTax?.rate || 0,
+                available_units: productUnits,
+                unit_id: baseUnit?.id ?? null,
+                unit_name: baseUnit?.unit_name || "",
+              };
+
               if (targetIndex === -1) {
-                addItemWithProduct({
-                  id: result.id,
-                  name: form.name,
-                  price: form.salePrice,
-                  buyingPrice: form.costPrice,
-                  tax_id: form.tax_id,
-                  tax_rate: matchedTax?.rate || 0,
-                });
+                addItemWithProduct(productPayload);
               } else {
-                setItemProduct(targetIndex, {
-                  id: result.id,
-                  name: form.name,
-                  price: form.salePrice,
-                  buyingPrice: form.costPrice,
-                  tax_id: form.tax_id,
-                  tax_rate: matchedTax?.rate || 0,
-                });
+                setItemProduct(targetIndex, productPayload);
               }
 
               setIsFormOpen(false);
