@@ -47,6 +47,7 @@ export async function generateProductImportTemplate(db) {
   sheet.columns = [
     { header: "name", key: "name", width: 24 },
     { header: "latinName", key: "latinName", width: 24 },
+    { header: "code", key: "code", width: 18 },
     { header: "type", key: "type", width: 12 },
     { header: "unit_code", key: "unit_code", width: 14 },
     {
@@ -80,7 +81,7 @@ export async function generateProductImportTemplate(db) {
   // (unit2_*). More can be added by copying that same 4-column group
   // rightward as unit3_*, unit4_*, etc. — the importer discovers any
   // "unitN_name" header dynamically rather than expecting a fixed count.
-  sheet.getCell("J1").note = {
+  sheet.getCell("K1").note = {
     texts: [
       {
         text: "Optional. To add another selling unit beyond this one, copy these 4 columns (name/conversion_factor/price/barcode) and rename them unit3_*, unit4_*, and so on.",
@@ -91,7 +92,7 @@ export async function generateProductImportTemplate(db) {
   if (units.length > 0) {
     const ref = `Units!$A$1:$A$${units.length}`;
     for (let row = 2; row <= 500; row++) {
-      sheet.getCell(`D${row}`).dataValidation = {
+      sheet.getCell(`E${row}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [ref],
@@ -102,7 +103,7 @@ export async function generateProductImportTemplate(db) {
   if (taxLabels.length > 0) {
     const ref = `Taxes!$A$1:$A$${taxLabels.length}`;
     for (let row = 2; row <= 500; row++) {
-      sheet.getCell(`G${row}`).dataValidation = {
+      sheet.getCell(`H${row}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [ref],
@@ -113,7 +114,7 @@ export async function generateProductImportTemplate(db) {
   {
     const ref = `Types!$A$1:$A$${typeCodes.length}`;
     for (let row = 2; row <= 500; row++) {
-      sheet.getCell(`C${row}`).dataValidation = {
+      sheet.getCell(`D${row}`).dataValidation = {
         type: "list",
         allowBlank: true,
         formulae: [ref],
@@ -170,8 +171,8 @@ export async function parseProductImport(db, filePath, fileName) {
   );
 
   const insertProduct = db.prepare(`
-        INSERT INTO products (name, latinName, costPrice, quantity, unit_id, tax_id, type)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO products (name, latinName, code, costPrice, quantity, unit_id, tax_id, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
   const insertBaseProductUnit = db.prepare(`
         INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
@@ -185,6 +186,13 @@ export async function parseProductImport(db, filePath, fileName) {
         INSERT INTO product_barcodes (product_id, barcode) VALUES (?, ?)
       `);
   const getProductByName = db.prepare(`SELECT id FROM products WHERE name = ?`);
+
+  const existingCodes = new Set(
+    db
+      .prepare(`SELECT code FROM products WHERE code IS NOT NULL`)
+      .all()
+      .map((p) => p.code)
+  );
 
   const insertImport = db.prepare(`
     INSERT INTO product_imports (file_name, total_rows, created_count, skipped_products_count, skipped_barcodes_count, report_path, createdAt)
@@ -271,6 +279,7 @@ export async function parseProductImport(db, filePath, fileName) {
       totalRows++;
 
       const latinName = String(cellByHeader(row, "latinName") || "").trim();
+      const code = String(cellByHeader(row, "code") || "").trim();
       const unitCode = String(cellByHeader(row, "unit_code") || "").trim();
       const taxName = stripTaxLabel(cellByHeader(row, "tax"));
       const barcodesRaw = String(cellByHeader(row, "barcodes") || "");
@@ -342,6 +351,21 @@ export async function parseProductImport(db, filePath, fileName) {
         return;
       }
 
+      if (code && existingCodes.has(code)) {
+        const reason = "productCodeExists";
+        skippedProducts.push({ row: rowNumber, name, reason });
+        insertImportItem.run(
+          importId,
+          rowNumber,
+          "skipped_product",
+          null,
+          name,
+          null,
+          reason
+        );
+        return;
+      }
+
       const matchedUnit = unitByCode.get(unitCode) || null;
       if (!matchedUnit) {
         const reason = unitCode ? "unitCodeNotFound" : "unitCodeRequired";
@@ -366,6 +390,7 @@ export async function parseProductImport(db, filePath, fileName) {
       const result = insertProduct.run(
         name,
         latinName,
+        code || null,
         costPrice,
         quantity,
         unitId,
@@ -373,6 +398,10 @@ export async function parseProductImport(db, filePath, fileName) {
         type
       );
       const productId = result.lastInsertRowid;
+
+      if (code) {
+        existingCodes.add(code);
+      }
 
       insertBaseProductUnit.run(productId, baseUnitName, price);
 

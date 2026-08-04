@@ -312,6 +312,26 @@
       "youOweThem": "You owe them"
     },
     "products": {
+      "updateProducts": "Update Products",
+      "updateFieldsHint": "Select which fields you want to update, then export the current product data. Only the fields you select will be editable in the exported file — everything else stays locked.",
+      "selectAtLeastOneField": "Select at least one field to update.",
+      "exportForUpdate": "Export for Update",
+      "uploadAndUpdate": "Upload and Update",
+      "updated": "Updated",
+      "updateSuccess": "Products updated successfully.",
+      "updateAnother": "Update More",
+      "updateField": {
+        "name": "Name",
+        "latinName": "Latin Name",
+        "code": "Code",
+        "costPrice": "Cost Price",
+        "baseUnit": "Base Unit & Price",
+        "tax": "Tax",
+        "description": "Description",
+        "quantity": "Quantity",
+        "barcodes": "Barcodes",
+        "units": "Selling Units"
+      },
       "quickAddProduct": "Quick Add Product",
       "productType": "Product Type",
       "skippedUnits": "Skipped Units",
@@ -1131,7 +1151,18 @@
     "failed": "Activation failed",
     "success": "Activation successful",
     "activating": "Activating...",
-    "activate": "Activate"
+    "activate": "Activate",
+    "errors": {
+      "licenseExpired": "This license has expired. Please renew your subscription.",
+      "licenseNotFound": "License key not found. Please check and try again.",
+      "deviceLimitReached": "This license has reached its maximum number of devices.",
+      "invalidLicenseKey": "Invalid license key format.",
+      "licenseRevoked": "This license has been revoked. Please contact support."
+    },
+    "brandTitle": "Activate Noon POS",
+    "brandSubtitle": "One-time activation ties this installation to your device.",
+    "brandHint": "Secured and verified per device",
+    "enterKey": "Enter your license key"
   },
   "deleteModal": {
     "title": "Delete Item",
@@ -1183,6 +1214,9 @@
     "invalidSalePrice": "Invalid sale price value",
     "invalidQuantity": "Invalid quantity value",
     "productNameExists": "A product with this name already exists",
+    "productCodeExists": "A product with this code already exists",
+    "productIdNotFound": "No product found with this ID",
+    "taxNotFound": "Tax not found",
     "unitCodeNotFound": "Unit code not found",
     "unitCodeRequired": "Unit code is required",
     "barcodeAlreadyUsed": "This barcode is already used by another product",

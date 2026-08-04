@@ -7,6 +7,10 @@ import {
   parseProductImport,
 } from "../utils/productImport";
 import { deleteLogoFile } from "../utils/helpers";
+import {
+  exportProductsForUpdate,
+  parseProductUpdateImport,
+} from "../utils/productUpdateImport";
 
 export default function registerProductIPC() {
   ipcMain.handle("create-product", (event, data) => {
@@ -34,13 +38,15 @@ export default function registerProductIPC() {
       const result = db
         .prepare(
           `
-          INSERT INTO products (name, latinName, costPrice, quantity, unit_id, tax_id, logo, type)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `
+        INSERT INTO products (name, latinName, code, description, costPrice, quantity, unit_id, tax_id, logo, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
         )
         .run(
           data.name,
           data.latinName,
+          data.code || null,
+          data.description || null,
           data.costPrice,
           data.quantity,
           data.unit_id,
@@ -48,7 +54,6 @@ export default function registerProductIPC() {
           data.logo,
           data.type || "normal"
         );
-
       const productId = result.lastInsertRowid;
 
       const unitRow = db
@@ -141,12 +146,14 @@ export default function registerProductIPC() {
       db.prepare(
         `
         UPDATE products
-        SET name=?, latinName=?, costPrice=?, quantity=?, unit_id=?, tax_id=?, logo=?
+        SET name=?, latinName=?, code=?, description=?, costPrice=?, quantity=?, unit_id=?, tax_id=?, logo=?
         WHERE id=?
       `
       ).run(
         data.name,
         data.latinName,
+        data.code || null,
+        data.description || null,
         data.costPrice,
         data.quantity,
         data.unit_id,
@@ -310,8 +317,8 @@ export default function registerProductIPC() {
     const queryParams = [];
 
     if (search) {
-      whereConditions.push(`products.name LIKE ?`);
-      queryParams.push(`%${search}%`);
+      whereConditions.push(`(products.name LIKE ? OR products.code LIKE ?)`);
+      queryParams.push(`%${search}%`, `%${search}%`);
     }
 
     if (params.type) {
@@ -572,8 +579,8 @@ export default function registerProductIPC() {
     const queryParams = [];
 
     if (search) {
-      whereConditions.push(`products.name LIKE ?`);
-      queryParams.push(`%${search}%`);
+      whereConditions.push(`(products.name LIKE ? OR products.code LIKE ?)`);
+      queryParams.push(`%${search}%`, `%${search}%`);
     }
 
     if (params.type) {
@@ -1015,6 +1022,45 @@ export default function registerProductIPC() {
     } catch (err) {
       console.error("Failed to load product import items:", err);
       return [];
+    }
+  });
+
+  ipcMain.handle("export-products-for-update", async (event, { fields }) => {
+    try {
+      const buffer = await exportProductsForUpdate(db, fields);
+      const { filePath, canceled } = await dialog.showSaveDialog({
+        title: "Save Product Update File",
+        defaultPath: "product-update-export.xlsx",
+        filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
+      });
+      if (canceled || !filePath) return { success: false, canceled: true };
+      fs.writeFileSync(filePath, buffer);
+      return { success: true, filePath };
+    } catch (err) {
+      console.error("Failed to export products for update:", err);
+      return { success: false, error: err.message || String(err) };
+    }
+  });
+
+  ipcMain.handle("import-products-update", async () => {
+    const { filePaths, canceled } = await dialog.showOpenDialog({
+      title: "Select Product Update File",
+      filters: [{ name: "Excel Files", extensions: ["xlsx"] }],
+      properties: ["openFile"],
+    });
+    if (canceled || !filePaths[0]) return { success: false, canceled: true };
+
+    try {
+      const fileName = filePaths[0].split(/[\\/]/).pop();
+      const summary = await parseProductUpdateImport(
+        db,
+        filePaths[0],
+        fileName
+      );
+
+      return { success: true, ...summary };
+    } catch (err) {
+      return { success: false, error: err.message || String(err) };
     }
   });
 }

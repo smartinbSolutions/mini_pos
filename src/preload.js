@@ -110,6 +110,9 @@ contextBridge.exposeInMainWorld("api", {
   getProductImports: () => ipcRenderer.invoke("get-product-imports"),
   getProductImportItems: (importId) =>
     ipcRenderer.invoke("get-product-import-items", importId),
+  exportProductsForUpdate: (data) =>
+    ipcRenderer.invoke("export-products-for-update", data),
+  importProductsUpdate: () => ipcRenderer.invoke("import-products-update"),
 
   /* ================= PURCHASE INVOICE ================= */
   getPurchaseInvoices: (params) =>

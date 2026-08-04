@@ -313,6 +313,26 @@
       "youOweThem": "مستحق عليهم"
     },
     "products": {
+      "updateProducts": "تحديث المنتجات",
+      "updateFieldsHint": "حدد الحقول التي تريد تحديثها، ثم قم بتصدير بيانات المنتجات الحالية. فقط الحقول التي تحددها ستكون قابلة للتعديل في الملف المُصدَّر — وستبقى باقي الحقول مقفلة.",
+      "selectAtLeastOneField": "يرجى تحديد حقل واحد على الأقل للتحديث.",
+      "exportForUpdate": "تصدير للتحديث",
+      "uploadAndUpdate": "رفع وتحديث",
+      "updated": "تم التحديث",
+      "updateSuccess": "تم تحديث المنتجات بنجاح.",
+      "updateAnother": "تحديث المزيد",
+      "updateField": {
+        "name": "الاسم",
+        "latinName": "الاسم اللاتيني",
+        "code": "الرمز",
+        "costPrice": "سعر التكلفة",
+        "baseUnit": "الوحدة الأساسية والسعر",
+        "tax": "الضريبة",
+        "description": "الوصف",
+        "quantity": "الكمية",
+        "barcodes": "الباركود",
+        "units": "وحدات البيع"
+      },
       "quickAddProduct": "إضافة سريعة للمنتج",
       "skippedUnits": "الوحدات المتجاوزة",
       "productType": "نوع المنتج",
@@ -1118,7 +1138,18 @@
     "failed": "فشل التفعيل",
     "success": "تم التفعيل بنجاح",
     "activating": "جار التفعيل...",
-    "activate": "تفعيل"
+    "activate": "تفعيل",
+    "errors": {
+      "licenseExpired": "انتهت صلاحية هذا الترخيص. يرجى تجديد الاشتراك.",
+      "licenseNotFound": "لم يتم العثور على مفتاح الترخيص. يرجى التحقق والمحاولة مرة أخرى.",
+      "deviceLimitReached": "وصل هذا الترخيص إلى الحد الأقصى لعدد الأجهزة.",
+      "invalidLicenseKey": "صيغة مفتاح الترخيص غير صالحة.",
+      "licenseRevoked": "تم إلغاء هذا الترخيص. يرجى التواصل مع الدعم."
+    },
+    "brandTitle": "تفعيل Noon POS",
+    "brandSubtitle": "التفعيل لمرة واحدة يربط هذا التثبيت بجهازك.",
+    "brandHint": "محمي ومُتحقق منه لكل جهاز",
+    "enterKey": "أدخل مفتاح الترخيص"
   },
   "deleteModal": {
     "title": "حذف العنصر",
@@ -1188,6 +1219,9 @@
     "invalidSalePrice": "قيمة سعر البيع غير صالحة",
     "invalidQuantity": "قيمة الكمية غير صالحة",
     "productNameExists": "يوجد منتج بهذا الاسم مسبقًا",
+    "productCodeExists": "يوجد منتج بهذا الرمز بالفعل",
+    "productIdNotFound": "لا يوجد منتج بهذا الرقم التعريفي",
+    "taxNotFound": "الضريبة غير موجودة",
     "unitCodeNotFound": "رمز الوحدة غير موجود",
     "unitCodeRequired": "رمز الوحدة مطلوب",
     "barcodeAlreadyUsed": "هذا الباركود مستخدم بالفعل من قبل منتج آخر",

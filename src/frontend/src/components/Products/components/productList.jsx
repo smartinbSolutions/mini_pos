@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import ProductImportModal from "./ProductImportModal";
 import Pagination from "../../../Global/Pagination";
 import { useNavigate } from "react-router-dom";
+import ProductUpdateModal from "./ProductUpdateModal";
 
 export default function ProductList() {
   const { t } = useTranslation();
@@ -31,6 +32,7 @@ export default function ProductList() {
   const { money } = usePrimaryCurrency();
 
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [updateExportModalOpen, setUpdateExportModalOpen] = useState(false);
   const {
     products,
     barcodesByProduct,
@@ -153,6 +155,14 @@ export default function ProductList() {
               </button>
               <button
                 type="button"
+                onClick={() => setUpdateExportModalOpen(true)}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+              >
+                <FileSpreadsheet size={16} />
+                {t("screens.products.updateProducts", "Update Products")}
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate("/products/new")}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#4663ff] px-5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8]"
               >
@@ -237,6 +247,11 @@ export default function ProductList() {
                               >
                                 {product.name || t("ui.unnamedProduct")}
                               </div>
+                              {product.code && (
+                                <div className="truncate text-[11px] font-semibold text-slate-400">
+                                  {product.code}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -376,6 +391,12 @@ export default function ProductList() {
         isOpen={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         onImported={refetch}
+      />
+
+      <ProductUpdateModal
+        isOpen={updateExportModalOpen}
+        onClose={() => setUpdateExportModalOpen(false)}
+        onUpdated={refetch}
       />
 
       <DeleteModal

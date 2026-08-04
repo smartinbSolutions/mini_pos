@@ -339,7 +339,7 @@ export default function Dashboard() {
                 {hasReturns && (
                   <div className="mx-5 mb-1 flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-xs">
                     <span className="text-rose-600">
-                      {t("dashboard.returns", "Returns")}
+                      {t("ui.returns", "Returns")}
                       <span className="ms-1 text-rose-400">
                         ({stat.returns.count})
                       </span>

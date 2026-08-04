@@ -100,6 +100,8 @@ const AddButton = ({ onClick, colorClass, label, disabled, tooltip }) => {
 const emptyForm = {
   name: "",
   latinName: "",
+  code: "",
+  description: "",
   costPrice: "",
   salePrice: "",
   quantity: 0,
@@ -193,6 +195,8 @@ export default function ProductFormPage() {
         id: activeProduct.id,
         name: activeProduct.name || "",
         latinName: activeProduct.latinName || "",
+        code: activeProduct.code || "",
+        description: activeProduct.description || "",
         costPrice: Number(activeProduct.costPrice ?? 0),
         salePrice: Number(activeProduct.salePrice ?? 0),
         quantity: Number(activeProduct.quantity ?? 0),
@@ -460,75 +464,107 @@ export default function ProductFormPage() {
                 />
               </label>
 
-              <div className="grid flex-1 grid-cols-2 gap-3 md:grid-cols-5">
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className={labelClass}>
-                    {t("ui.name")} <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    required
-                    value={form.name}
-                    onChange={(event) =>
-                      updateField("name", event.target.value)
-                    }
-                    placeholder={t("screens.products.enterProductName")}
-                    className={inputClass}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className={labelClass}>{t("ui.latinName")}</label>
-                  <input
-                    value={form.latinName}
-                    onChange={(event) =>
-                      updateField("latinName", event.target.value)
-                    }
-                    placeholder={t("ui.optional")}
-                    className={inputClass}
-                  />
-                </div>
-
-                {/* Quantity is meaningless for a service — no physical stock
-                    behind it — so it's hidden entirely rather than shown
-                    disabled-at-zero. */}
-                {!isService && (
-                  <div className="space-y-1.5">
-                    <label className={labelClass}>{t("ui.quantity")}</label>
-                    <NumberInput
-                      value={form.quantity}
-                      onChange={(val) => updateField("quantity", val)}
+              <div className="flex-1 space-y-3">
+                {/* Row 1: naming/identifying fields */}
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className={labelClass}>
+                      {t("ui.name")} <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      required
+                      value={form.name}
+                      onChange={(event) =>
+                        updateField("name", event.target.value)
+                      }
+                      placeholder={t("screens.products.enterProductName")}
                       className={inputClass}
                     />
                   </div>
-                )}
 
-                <div className="space-y-1.5">
-                  <label className={labelClass}>
-                    {t("ui.unit")} <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    value={form.unit_id}
-                    onChange={(event) =>
-                      updateField("unit_id", event.target.value)
-                    }
-                    disabled={!canUseUnits}
-                    className={inputClass}
-                    required
-                  >
-                    <option value="">
-                      {canUseUnits
-                        ? t("ui.selectUnit")
-                        : t("ui.unitsUnavailable")}
-                    </option>
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>{t("ui.latinName")}</label>
+                    <input
+                      value={form.latinName}
+                      onChange={(event) =>
+                        updateField("latinName", event.target.value)
+                      }
+                      placeholder={t("ui.optional")}
+                      className={inputClass}
+                    />
+                  </div>
 
-                    {units?.map((unit) => (
-                      <option key={unit.id} value={unit.id}>
-                        {unit.name} {unit.code ? `(${unit.code})` : ""}
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>{t("ui.code")}</label>
+                    <input
+                      value={form.code}
+                      onChange={(event) =>
+                        updateField("code", event.target.value)
+                      }
+                      placeholder={t("ui.optional")}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                {/* Row 2: stock/unit fields */}
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {/* Quantity is meaningless for a service — no physical stock
+                      behind it — so it's hidden entirely rather than shown
+                      disabled-at-zero. */}
+                  {!isService && (
+                    <div className="space-y-1.5">
+                      <label className={labelClass}>{t("ui.quantity")}</label>
+                      <NumberInput
+                        value={form.quantity}
+                        onChange={(val) => updateField("quantity", val)}
+                        className={inputClass}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>
+                      {t("ui.unit")} <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      value={form.unit_id}
+                      onChange={(event) =>
+                        updateField("unit_id", event.target.value)
+                      }
+                      disabled={!canUseUnits}
+                      className={inputClass}
+                      required
+                    >
+                      <option value="">
+                        {canUseUnits
+                          ? t("ui.selectUnit")
+                          : t("ui.unitsUnavailable")}
                       </option>
-                    ))}
-                  </select>
+
+                      {units?.map((unit) => (
+                        <option key={unit.id} value={unit.id}>
+                          {unit.name} {unit.code ? `(${unit.code})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
+            </div>
+
+            {/* Row 3: description, full width */}
+            <div className="mt-3.5 space-y-1.5">
+              <label className={labelClass}>{t("ui.description")}</label>
+              <textarea
+                value={form.description}
+                onChange={(event) =>
+                  updateField("description", event.target.value)
+                }
+                placeholder={t("ui.optional")}
+                rows={2}
+                className={inputClass + " h-auto resize-none py-2"}
+              />
             </div>
 
             {/* Product type — editable only at creation. Once a product has

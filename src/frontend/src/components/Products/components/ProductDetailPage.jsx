@@ -208,6 +208,45 @@ export default function ProductDetailPage() {
             <section className={panelClass}>
               {activeTab === "details" && (
                 <div className="space-y-5">
+                  {(product.latinName ||
+                    product.code ||
+                    product.description) && (
+                    <div className="grid gap-4 rounded-2xl border border-[#e5ebff] bg-[#f8faff] p-4 sm:grid-cols-2">
+                      {product.latinName ? (
+                        <div>
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                            {t("ui.latinName")}
+                          </span>
+                          <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                            {product.latinName}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {product.code ? (
+                        <div>
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                            {t("ui.code")}
+                          </span>
+                          <p className="mt-0.5 font-mono text-sm font-semibold text-slate-800">
+                            {product.code}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {product.description ? (
+                        <div className="sm:col-span-2">
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                            {t("ui.description")}
+                          </span>
+                          <p className="mt-0.5 whitespace-pre-wrap text-sm font-semibold text-slate-800">
+                            {product.description}
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  )}
+
                   <div>
                     <h3 className="mb-3 flex items-center gap-2 font-black text-slate-950">
                       <Layers size={17} className="text-[#4663ff]" />
@@ -294,17 +333,6 @@ export default function ProductDetailPage() {
                       </p>
                     )}
                   </div>
-
-                  {product.latinName ? (
-                    <div>
-                      <h3 className="mb-2 font-black text-slate-950">
-                        {t("ui.latinName")}
-                      </h3>
-                      <p className="text-sm text-slate-600">
-                        {product.latinName}
-                      </p>
-                    </div>
-                  ) : null}
                 </div>
               )}
 

@@ -50,6 +50,8 @@ const productPayload = (product) => ({
   id: product.id,
   name: String(product.name || "").trim(),
   latinName: String(product.latinName || "").trim(),
+  code: String(product.code || "").trim(),
+  description: String(product.description || "").trim(),
   costPrice: Number(product.costPrice || 0),
   salePrice: Number(product.salePrice || 0),
   quantity: Number(product.quantity || 0),
@@ -61,7 +63,6 @@ const productPayload = (product) => ({
   productUnits: normalizeProductUnits(product.productUnits),
   date,
 });
-
 export default function useProductCatalog() {
   const { t } = useTranslation();
   const [products, setProducts] = useState([]);

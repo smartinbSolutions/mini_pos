@@ -312,6 +312,26 @@
       "youOweThem": "Onlara borçlusunuz"
     },
     "products": {
+      "updateProducts": "Ürünleri Güncelle",
+      "updateFieldsHint": "Güncellemek istediğiniz alanları seçin, ardından mevcut ürün verilerini dışa aktarın. Yalnızca seçtiğiniz alanlar dışa aktarılan dosyada düzenlenebilir olacak — diğer her şey kilitli kalır.",
+      "selectAtLeastOneField": "Güncellemek için en az bir alan seçin.",
+      "exportForUpdate": "Güncelleme İçin Dışa Aktar",
+      "uploadAndUpdate": "Yükle ve Güncelle",
+      "updated": "Güncellendi",
+      "updateSuccess": "Ürünler başarıyla güncellendi.",
+      "updateAnother": "Daha Fazla Güncelle",
+      "updateField": {
+        "name": "Ad",
+        "latinName": "Latin Adı",
+        "code": "Kod",
+        "costPrice": "Maliyet Fiyatı",
+        "baseUnit": "Temel Birim ve Fiyat",
+        "tax": "Vergi",
+        "description": "Açıklama",
+        "quantity": "Miktar",
+        "barcodes": "Barkodlar",
+        "units": "Satış Birimleri"
+      },
       "quickAddProduct": "Hızlı Ürün Ekle",
       "skippedUnits": "Atlanan Birimler",
       "productType": "Ürün Türü",
@@ -1112,7 +1132,20 @@
     "failed": "Etkinleştirme başarısız",
     "success": "Etkinleştirme başarılı",
     "activating": "Etkinleştiriliyor...",
-    "activate": "Etkinleştir"
+    "activate": "Etkinleştir",
+    "errors": {
+      "licenseExpired": "Bu lisansın süresi doldu. Lütfen aboneliğinizi yenileyin.",
+      "licenseNotFound": "Lisans anahtarı bulunamadı. Lütfen kontrol edip tekrar deneyin.",
+      "deviceLimitReached": "Bu lisans maksimum cihaz sayısına ulaştı.",
+      "invalidLicenseKey": "Geçersiz lisans anahtarı biçimi.",
+      "licenseRevoked": "Bu lisans iptal edildi. Lütfen destek ile iletişime geçin."
+    },
+    "activation": {
+      "brandTitle": "Noon POS Etkinleştir",
+      "brandSubtitle": "Tek seferlik etkinleştirme bu kurulumu cihazınıza bağlar.",
+      "brandHint": "Cihaz başına güvenli ve doğrulanmış",
+      "enterKey": "Lisans anahtarınızı girin"
+    }
   },
   "deleteModal": {
     "title": "Öğeyi Sil",
@@ -1182,7 +1215,10 @@
     "invalidSalePrice": "Geçersiz satış fiyatı değeri",
     "invalidQuantity": "Geçersiz miktar değeri",
     "productNameExists": "Bu isimde bir ürün zaten mevcut",
+    "productCodeExists": "Bu koda sahip bir ürün zaten mevcut",
     "unitCodeNotFound": "Birim kodu bulunamadı",
+    "productIdNotFound": "Bu kimliğe sahip ürün bulunamadı",
+    "taxNotFound": "Vergi bulunamadı",
     "unitCodeRequired": "Birim kodu gerekli",
     "barcodeAlreadyUsed": "Bu barkod başka bir ürün tarafından zaten kullanılıyor",
     "invalidConversionFactor": "Dönüşüm faktörü 1'den büyük olmalıdır",

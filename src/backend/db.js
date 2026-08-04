@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS products (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT,
   latinName TEXT,
+  code TEXT,
+  description TEXT,
   costPrice REAL DEFAULT 0,
   quantity REAL DEFAULT 0,
   logo TEXT,
@@ -162,7 +164,7 @@ CREATE TABLE IF NOT EXISTS product_import_items (
   barcode TEXT,
   reason TEXT,
   FOREIGN KEY (import_id) REFERENCES product_imports(id),
-  FOREIGN KEY (product_id) REFERENCES products(id)
+   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 );
 `
 ).run();
