@@ -12,6 +12,7 @@ import useUpdateCompanySettings from "../hooks/useUpdateCompanySettings";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
+import { COUNTRIES } from "../../../Global/countries";
 
 export default function CompanyGeneralInfo() {
   const { t } = useTranslation();
@@ -145,6 +146,34 @@ export default function CompanyGeneralInfo() {
                     placeholder={t("screens.company.companyAddress")}
                     className={inputClass}
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  {t("ui.country")} <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <MapPin
+                    size={16}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-350"
+                  />
+                  <select
+                    name="country"
+                    value={form.country || ""}
+                    // onChange={handleChange}
+                    className={inputClass}
+                    disabled
+                  >
+                    <option value="" disabled>
+                      {t("screens.setupPage.selectCountry")}
+                    </option>
+                    {COUNTRIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

@@ -32,6 +32,7 @@ const LANGUAGES = [
 export default function CompanySettings({ onSetupComplete }) {
   const { t } = useTranslation();
   const {
+    countries,
     step,
     furthestStep,
     goNext,
@@ -323,6 +324,7 @@ export default function CompanySettings({ onSetupComplete }) {
               )}
 
               {/* Step: contact */}
+
               {STEPS[step] === "contact" && (
                 <div>
                   <h2 className="mb-5 text-base font-black text-slate-950">
@@ -359,6 +361,29 @@ export default function CompanySettings({ onSetupComplete }) {
                         className={fieldClass("email")}
                       />
                       {errorText("email")}
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>
+                        <MapPin size={12} />
+                        {t("ui.country")} {requiredMark}
+                      </span>
+                      <select
+                        name="country"
+                        value={form.country}
+                        onChange={handleChange}
+                        className={fieldClass("country")}
+                      >
+                        <option value="" disabled>
+                          {t("screens.setupPage.selectCountry")}
+                        </option>
+                        {countries.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                      {errorText("country")}
                     </label>
 
                     <label className="md:col-span-2">

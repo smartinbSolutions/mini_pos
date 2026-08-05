@@ -40,6 +40,7 @@
     "all": "All"
   },
   "ui": {
+    "country": "Country",
     "walk-in": "walk In Customer",
     "settled": "Settled",
     "owing": "Owing",
@@ -564,6 +565,8 @@
       "businessSettingsSubtitle": "Rules that shape how sales and POS behave across the app.",
       "allowNegativeStock": "Allow selling out-of-stock items",
       "allowNegativeStockHint": "When off, the POS and manual sales block checkout on items with zero stock.",
+      "minimumStock": "Minimum Stock Threshold",
+      "minimumStockHint": "Products with quantity at or below this number are flagged as low stock on the dashboard. Set to 0 to disable low-stock alerts.",
       "posTaxMode": "POS invoice-level tax",
       "posTaxModeHint": "Choose whether the cashier can pick invoice taxes freely, or the taxes are fixed by you and applied automatically.",
       "taxModeManual": "Manual — cashier picks",
@@ -586,6 +589,7 @@
       "regionalSection": "Regional preferences"
     },
     "setupPage": {
+      "selectCountry": "Select your country",
       "title": "Company Setup",
       "language": "Language",
       "firstTime": "First-time configuration",
@@ -1114,6 +1118,7 @@
     "cash": "Cash"
   },
   "dashboard": {
+    "inventoryBelowThreshold": "Below your {{threshold}} threshold",
     "loading": "Loading dashboard...",
     "products": "Products",
     "customers": "Customers",

@@ -14,11 +14,13 @@ const useUpdateCompanySettings = () => {
     phone: "",
     address: "",
     email: "",
+    country: "",
     language: "en",
     timezone: "UTC",
     base_currency_id: null,
     logo: "",
     allow_negative_stock: false,
+    minimum_stock: 0,
     pos_invoice_tax_mode: "manual",
     default_pos_taxes: [],
   });
@@ -36,6 +38,7 @@ const useUpdateCompanySettings = () => {
             ...prev,
             ...res.settings,
             allow_negative_stock: Boolean(res.settings.allow_negative_stock),
+            minimum_stock: Number(res.settings.minimum_stock ?? 0),
             pos_invoice_tax_mode: res.settings.pos_invoice_tax_mode || "manual",
             default_pos_taxes: res.settings.default_pos_taxes || [],
           }));
@@ -137,9 +140,16 @@ const useUpdateCompanySettings = () => {
     try {
       setSaving(true);
 
+      if (!form.country?.trim()) {
+        toast.error(t("errors.valueRequired", { field: t("ui.country") }));
+        setSaving(false);
+        return;
+      }
+
       const payload = {
         ...form,
         allow_negative_stock: form.allow_negative_stock ? 1 : 0,
+        minimum_stock: Number(form.minimum_stock || 0),
         default_pos_tax_ids: form.default_pos_taxes.map((t) => t.tax_id),
       };
 

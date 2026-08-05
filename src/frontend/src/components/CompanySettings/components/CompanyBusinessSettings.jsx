@@ -32,6 +32,7 @@ export default function CompanyBusinessSettings() {
     setPosInvoiceTaxMode,
     addDefaultPosTax,
     removeDefaultPosTax,
+    handleChange,
     form,
     taxes,
     saving,
@@ -89,6 +90,39 @@ export default function CompanyBusinessSettings() {
               <Toggle
                 checked={Boolean(form.allow_negative_stock)}
                 onChange={toggleAllowNegativeStock}
+              />
+            </div>
+            {/* Minimum stock threshold */}
+            <div className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50/60 p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                  <PackageX size={17} />
+                </span>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">
+                    {t(
+                      "screens.company.minimumStock",
+                      "Minimum stock threshold"
+                    )}
+                  </p>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    {t(
+                      "screens.company.minimumStockHint",
+                      "Products at or below this quantity are flagged as low stock on the dashboard."
+                    )}
+                  </p>
+                </div>
+              </div>
+              <input
+                type="number"
+                min={0}
+                value={form.minimum_stock}
+                onChange={(e) =>
+                  handleChange({
+                    target: { name: "minimum_stock", value: e.target.value },
+                  })
+                }
+                className="h-10 w-24 rounded-xl border border-gray-200 bg-white px-3 text-center text-sm font-bold outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
 

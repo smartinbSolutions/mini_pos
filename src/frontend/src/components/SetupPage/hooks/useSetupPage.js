@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { COUNTRIES } from "../../../Global/countries";
 
 const currencies = [
   {
@@ -74,6 +75,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
     phone: "",
     address: "",
     email: "",
+    country: "",
     language: "ar",
     timezone: "UTC",
     base_currency_id: defaultCurrency.id,
@@ -197,6 +199,11 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
       if (form.email?.trim() && !EMAIL_RE.test(form.email.trim())) {
         nextErrors.email = t("errors.emailInvalid");
       }
+      if (!form.country?.trim()) {
+        nextErrors.country = t("errors.valueRequired", {
+          field: t("ui.country"),
+        });
+      }
     }
 
     if (key === "admin") {
@@ -269,6 +276,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
         phone: form.phone,
         address: form.address,
         email: form.email,
+        country: form.country,
         logo: form.logo,
         language: form.language,
         timezone: form.timezone,
@@ -300,6 +308,7 @@ const useSetupPage = ({ onSetupComplete } = {}) => {
   };
 
   return {
+    countries: COUNTRIES,
     step,
     furthestStep,
     goNext,

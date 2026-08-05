@@ -63,7 +63,8 @@ const emptyStats = {
   products: 0,
   customers: 0,
   inventoryValue: 0,
-  lowStockProducts: 0,
+  minimumStock: 0,
+  isInventoryLow: false,
 };
 
 const MODULE_META = {
@@ -263,12 +264,14 @@ export default function Dashboard() {
             <Num className="text-xl font-black text-slate-900">
               {money(data.inventoryValue)}
             </Num>
-            {data.lowStockProducts > 0 && (
+            {data.isInventoryLow > 0 && (
               <p className="mt-1 flex items-center gap-1 text-[11px] font-bold text-amber-600">
                 <AlertTriangle size={11} />
-                {t("dashboard.lowStock", "{{count}} low stock", {
-                  count: data.lowStockProducts,
-                })}
+                {t(
+                  "dashboard.inventoryBelowThreshold",
+                  "Below your {{threshold}} threshold",
+                  { threshold: money(data.minimumStock) }
+                )}
               </p>
             )}
           </div>

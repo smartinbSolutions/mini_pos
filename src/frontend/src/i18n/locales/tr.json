@@ -40,6 +40,7 @@
     "all": "Tümü"
   },
   "ui": {
+    "country": "Ülke",
     "walk-in": "Perakende müşteri",
     "settled": "Ödendi",
     "owing": "Borçlu",
@@ -560,6 +561,8 @@
       "businessSettingsSubtitle": "Satış ve POS'un uygulama genelinde nasıl davranacağını belirleyen kurallar.",
       "allowNegativeStock": "Stokta olmayan ürünlerin satışına izin ver",
       "allowNegativeStockHint": "Kapalıyken, POS ve manuel satışlar stoğu sıfır olan ürünlerde ödemeyi engeller.",
+      "minimumStock": "Minimum Stok Eşiği",
+      "minimumStockHint": "Miktarı bu sayıya eşit veya daha az olan ürünler panoda düşük stok olarak işaretlenir. Düşük stok uyarılarını devre dışı bırakmak için 0 olarak ayarlayın.",
       "posTaxMode": "POS fatura düzeyinde vergi",
       "posTaxModeHint": "Kasiyerin fatura vergilerini serbestçe seçip seçemeyeceğini, ya da vergilerin sizin tarafınızdan sabitlenip otomatik uygulanacağını seçin.",
       "taxModeManual": "Manuel — kasiyer seçer",
@@ -582,6 +585,7 @@
       "regionalSection": "Bölgesel tercihler"
     },
     "setupPage": {
+      "selectCountry": "Ülkenizi seçin",
       "title": "Şirket Kurulumu",
       "language": "Dil",
       "firstTime": "İlk kurulum",
@@ -1095,6 +1099,7 @@
     "cash": "Nakit"
   },
   "dashboard": {
+    "inventoryBelowThreshold": "{{threshold}} eşiğinizin altında",
     "loading": "Kontrol paneli yükleniyor...",
     "totalSales": "Toplam Satış",
     "products": "Ürünler",

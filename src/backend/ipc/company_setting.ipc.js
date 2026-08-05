@@ -341,6 +341,9 @@ export default function registerCompanySettingsIPC() {
     if (!data.admin_username?.trim()) {
       return { success: false, error: "Admin username is required" };
     }
+    if (!data.country?.trim()) {
+      return { success: false, error: "Country is required" };
+    }
     if (isPinTaken(db, data.admin_pin)) {
       return { success: false, error: "PIN already in use" };
     }
@@ -372,8 +375,8 @@ export default function registerCompanySettingsIPC() {
         `
         INSERT INTO company_settings (
           company_name, company_latin_name, phone, address, email, logo,
-          base_currency_id, language, timezone
-        ) VALUES (?,?,?,?,?,?,?,?,?)
+          country, base_currency_id, language, timezone
+        ) VALUES (?,?,?,?,?,?,?,?,?,?)
       `
       )
       .run(
@@ -383,6 +386,7 @@ export default function registerCompanySettingsIPC() {
         data.address,
         data.email,
         data.logo,
+        data.country,
         currencyResult.lastInsertRowid,
         language,
         data.timezone
@@ -432,6 +436,10 @@ export default function registerCompanySettingsIPC() {
   });
 
   ipcMain.handle("update-company-settings", (event, data) => {
+    if (!data.country?.trim()) {
+      return { success: false, error: "Country is required" };
+    }
+
     db.prepare(
       `
       UPDATE company_settings SET
@@ -441,10 +449,12 @@ export default function registerCompanySettingsIPC() {
         address = ?,
         email = ?,
         logo = ?,
+        country = ?,
         base_currency_id = ?,
         language = ?,
         timezone = ?,
         allow_negative_stock = ?,
+        minimum_stock = ?,
         pos_invoice_tax_mode = ?,
         updatedAt = datetime('now')
       WHERE id = ?
@@ -456,10 +466,12 @@ export default function registerCompanySettingsIPC() {
       data.address,
       data.email,
       data.logo,
+      data.country,
       data.base_currency_id,
       data.language,
       data.timezone,
       data.allow_negative_stock ? 1 : 0,
+      Number(data.minimum_stock || 0),
       data.pos_invoice_tax_mode === "fixed" ? "fixed" : "manual",
       data.id
     );
@@ -514,12 +526,12 @@ export default function registerCompanySettingsIPC() {
           `SELECT COALESCE(SUM(quantity * costPrice), 0) AS value FROM products`
         )
         .get()?.value || 0;
-    const lowStockProducts =
-      db
-        .prepare(
-          `SELECT COUNT(*) AS value FROM products WHERE COALESCE(quantity, 0) <= 5`
-        )
-        .get()?.value || 0;
+
+    const minimumStock =
+      db.prepare(`SELECT minimum_stock FROM company_settings LIMIT 1`).get()
+        ?.minimum_stock ?? 5;
+
+    const isInventoryLow = minimumStock > 0 && inventoryValue < minimumStock;
 
     return {
       sales,
@@ -533,7 +545,8 @@ export default function registerCompanySettingsIPC() {
       products,
       customers,
       inventoryValue,
-      lowStockProducts,
+      isInventoryLow,
+      minimumStock,
     };
   });
 }
