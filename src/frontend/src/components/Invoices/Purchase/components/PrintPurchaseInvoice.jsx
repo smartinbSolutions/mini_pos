@@ -163,6 +163,11 @@ export default function PrintPurchaseInvoice() {
                 <tr key={item.id} className="border-b border-[#E5E5E2]">
                   <td className="p-2">
                     {item.product_name || item.name}
+                    {item.product_code && (
+                      <div className="text-[10px] text-[#6B6F76]">
+                        #{item.product_code}
+                      </div>
+                    )}
                     {item.description && (
                       <div className="text-[10px] text-[#6B6F76] whitespace-pre-wrap mt-0.5">
                         {item.description}

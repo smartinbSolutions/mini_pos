@@ -422,6 +422,11 @@ export default function UpdatePurchase() {
                               }
                             }}
                           />
+                          {item.code && (
+                            <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
+                              #{item.code}
+                            </p>
+                          )}
                         </div>
 
                         <button
@@ -697,7 +702,7 @@ export default function UpdatePurchase() {
                     >
                       <span className="text-xs text-slate-400">
                         {t("screens.invoices.itemDiscountAt", {
-                          rate: group.rate,
+                          rate: Number(group.rate).toFixed(2),
                         })}
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-red-500">

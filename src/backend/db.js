@@ -298,6 +298,7 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
   buyingPrice REAL DEFAULT 0,
   total REAL NOT NULL,
   product_name TEXT,
+  product_code TEXT,
   unit_name TEXT,
   unit_conversion_factor REAL DEFAULT 1,
   tax_id INTEGER,
@@ -372,6 +373,7 @@ CREATE TABLE IF NOT EXISTS sales_return_items (
   price REAL NOT NULL,
   total REAL NOT NULL,
   product_name TEXT,
+  product_code TEXT,
   unit_name TEXT,
   unit_conversion_factor REAL DEFAULT 1,
   tax_id INTEGER,
@@ -391,6 +393,74 @@ CREATE TABLE IF NOT EXISTS sales_return_items (
     ON UPDATE CASCADE,
   FOREIGN KEY (tax_id)
     REFERENCES taxes(id)
+);
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS sales_quotations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quotation_name TEXT,
+  customer_id INTEGER,
+  status TEXT NOT NULL DEFAULT 'draft' CHECK(status IN ('draft', 'sent', 'accepted', 'rejected', 'expired')),
+  date TEXT,
+  subtotal REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  taxRate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
+  description TEXT,
+  created_by INTEGER,
+  updated_by INTEGER,
+  net_total REAL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS sales_quotation_taxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quotation_id INTEGER NOT NULL,
+  tax_id INTEGER,
+  tax_name TEXT,
+  tax_rate REAL NOT NULL DEFAULT 0,
+  tax_value REAL NOT NULL DEFAULT 0,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (quotation_id) REFERENCES sales_quotations(id) ON DELETE CASCADE,
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
+);
+`
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS sales_quotation_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  quotation_id INTEGER NOT NULL,
+  product_id INTEGER,
+  quantity REAL NOT NULL,
+  price REAL NOT NULL,
+  total REAL NOT NULL,
+  product_name TEXT,
+  product_code TEXT,
+  unit_name TEXT,
+  unit_conversion_factor REAL DEFAULT 1,
+  tax_id INTEGER,
+  tax_rate REAL DEFAULT 0,
+  taxValue REAL DEFAULT 0,
+  discount REAL DEFAULT 0,
+  discount_rate REAL DEFAULT 0,
+  description TEXT,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (quotation_id) REFERENCES sales_quotations(id) ON DELETE CASCADE,
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
+  FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
 `
 ).run();
@@ -448,6 +518,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoice_items (
   price REAL NOT NULL,
   total REAL NOT NULL,
   product_name TEXT,
+  product_code TEXT,
   unit_name TEXT,
   unit_conversion_factor REAL DEFAULT 1,
   tax_id INTEGER,
@@ -528,6 +599,7 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
   price REAL NOT NULL,
   total REAL NOT NULL,
   product_name TEXT,
+  product_code TEXT,
   unit_name TEXT,
   unit_conversion_factor REAL DEFAULT 1,
   tax_id INTEGER,

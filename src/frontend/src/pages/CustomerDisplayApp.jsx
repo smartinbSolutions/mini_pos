@@ -140,7 +140,9 @@ export default function CustomerDisplayApp() {
               className="flex items-center justify-between text-rose-400"
             >
               <span>
-                {t("screens.invoices.itemDiscountAt", { rate: group.rate })}
+                {t("screens.invoices.itemDiscountAt", {
+                  rate: Number(group.rate).toFixed(2),
+                })}
               </span>
               <span className="font-bold tabular-nums">
                 -{money(group.amount)}

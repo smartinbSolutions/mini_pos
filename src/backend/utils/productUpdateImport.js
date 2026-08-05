@@ -316,7 +316,7 @@ export async function parseProductUpdateImport(db, filePath, fileName) {
     const val = String(row.getCell(1).value || "").trim();
     if (val) enabled.add(val);
   });
-  console.log("enabled fields:", Array.from(enabled));
+
   const now = new Date();
   const importCreatedAt =
     now.getFullYear() +

@@ -176,7 +176,14 @@ export default function PrintSalesReturn() {
 
               return (
                 <tr key={item.id} className="border-b border-[#E5E5E2]">
-                  <td className="p-2">{item.name}</td>
+                  <td className="p-2">
+                    {item.product_name || item.name}
+                    {item.product_code && (
+                      <div className="text-[10px] text-[#6B6F76]">
+                        #{item.product_code}
+                      </div>
+                    )}
+                  </td>
                   <td className="p-2 font-mono tabular-nums">
                     {item.quantity}
                   </td>

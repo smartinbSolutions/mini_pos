@@ -311,6 +311,32 @@
       "theyOweYou": "They owe you",
       "youOweThem": "You owe them"
     },
+    "quotations": {
+      "salesQuotation": "Sales Quotation",
+      "quotation": "Quotation",
+      "quotations": "Quotations",
+      "createQuotation": "Create Sales Quotation",
+      "editQuotation": "Edit Sales Quotation",
+      "saveQuotation": "Save Quotation",
+      "saved": "Quotation saved",
+      "listTitle": "Sales Quotations",
+      "listSubtitle": "Manage quotes sent to customers before they become invoices",
+      "search": "Search quotations...",
+      "addQuotation": "Add Quotation",
+      "empty": "No quotations yet",
+      "noCustomer": "No customer",
+      "notFound": "Quotation not found",
+      "loadingQuotation": "Loading quotation...",
+      "cannotDeleteAccepted": "This quotation has been accepted and cannot be deleted",
+      "deleteFailed": "Failed to delete quotation",
+      "status": {
+        "draft": "Draft",
+        "sent": "Sent",
+        "accepted": "Accepted",
+        "rejected": "Rejected",
+        "expired": "Expired"
+      }
+    },
     "products": {
       "updateProducts": "Update Products",
       "updateFieldsHint": "Select which fields you want to update, then export the current product data. Only the fields you select will be editable in the exported file — everything else stays locked.",
@@ -1056,6 +1082,7 @@
     "tr": "Turkish"
   },
   "navigation": {
+    "salesQuotations": "Sales Quotations",
     "main": "MAIN",
     "management": "MANAGEMENT",
     "people": "PEOPLE",
@@ -1230,6 +1257,7 @@
     "deleted": "{{field}} deleted successfully"
   },
   "DOCS": {
+    "CODE": "Code",
     "PHONE": "Phone",
     "EMAIL": "Email",
     "TAX_NO": "Tax No",
@@ -1266,6 +1294,14 @@
     "INVOICE_TYPE_PURCHASE": "Purchase Invoice",
     "INVOICE_TYPE_SALES_RETURN": "Sales Return",
     "INVOICE_TYPE_PURCHASE_RETURN": "Purchase Return",
-    "INVOICE_TYPE_EXPENSE": "Expense"
+    "INVOICE_TYPE_EXPENSE": "Expense",
+    "QUOTATION_NO": "Quotation No",
+    "QUOTATION_DATE": "Quotation Date",
+    "NO_CUSTOMER": "No Customer",
+    "QUOTATION_STATUS_DRAFT": "Draft",
+    "QUOTATION_STATUS_SENT": "Sent",
+    "QUOTATION_STATUS_ACCEPTED": "Accepted",
+    "QUOTATION_STATUS_REJECTED": "Rejected",
+    "QUOTATION_STATUS_EXPIRED": "Expired"
   }
 }

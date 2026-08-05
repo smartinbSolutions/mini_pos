@@ -1,12 +1,14 @@
+// useUpdateSalesQuotation.js
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
 
-const emptyInvoice = {
+const emptyQuotation = {
   customer_id: "",
-  invoice_name: "",
+  quotation_name: "",
   date: new Date().toISOString().slice(0, 10),
+  status: "draft",
   discount_rate: 0,
   discount: 0,
   taxes: [], // array of { id, name, rate }
@@ -44,7 +46,8 @@ function recalcItem(item) {
 }
 
 // Reconstructs entered_quantity/entered_price from stored base-unit
-// quantity/price + factor — inverse of what recalcItem derives forward.
+// quantity/price + factor — inverse of recalcItem, same as invoices.
+// product_id may be null here (typed-only line), unlike invoices.
 function toEditableItem(raw, availableUnits) {
   const factor = Number(raw.unit_conversion_factor || 1);
   const baseQuantity = Number(raw.quantity || 0);
@@ -64,11 +67,10 @@ function toEditableItem(raw, availableUnits) {
   return recalcItem({
     id: raw.id,
     product_id: raw.product_id,
-    name: raw.name || raw.product_name || "",
-    code: raw.product_code || "",
+    product_name: raw.name || raw.product_name || "",
+    product_code: raw.product_code || "",
     entered_quantity: enteredQuantity,
     entered_price: enteredPrice,
-    buyingPrice: Number(raw.buyingPrice || 0),
     available_units: availableUnits || [],
     unit_id: matchedUnit?.id ?? null,
     unit_name: raw.unit_name || matchedUnit?.unit_name || "",
@@ -80,18 +82,17 @@ function toEditableItem(raw, availableUnits) {
     taxValue: Number(raw.taxValue || 0),
     tax_capable: Boolean(raw.tax_id),
     description: raw.description || "",
-    returned_quantity: raw.returned_quantity,
-    available_quantity: raw.available_quantity,
   });
 }
-export default function useUpdateSales() {
+
+export default function useUpdateSalesQuotation() {
   const { t } = useTranslation();
   const { id } = useParams();
   const api = window.api;
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [invoice, setInvoiceState] = useState(emptyInvoice);
+  const [quotation, setQuotationState] = useState(emptyQuotation);
   const [items, setItems] = useState([]);
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -101,8 +102,8 @@ export default function useUpdateSales() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const setInvoice = (updater) => {
-    setInvoiceState((prev) =>
+  const setQuotation = (updater) => {
+    setQuotationState((prev) =>
       typeof updater === "function" ? updater(prev) : { ...prev, ...updater }
     );
   };
@@ -111,39 +112,42 @@ export default function useUpdateSales() {
     try {
       setLoading(true);
 
-      const [inv, prodsRes, custsRes, taxRes] = await Promise.all([
-        api.getSalesInvoiceById(id),
+      const [q, prodsRes, custsRes, taxRes] = await Promise.all([
+        api.getSalesQuotationById(id),
         api.getProducts({ limit: 100 }),
         api.getCustomers(),
         api.getTaxes(),
       ]);
 
-      if (!inv) {
-        setError(t("screens.invoices.notFound"));
+      if (!q) {
+        setError(t("screens.quotations.notFound"));
         return;
       }
 
-      setInvoiceState({
-        id: inv.id,
-        customer_id: inv.customer_id,
-        date: inv.date?.slice(0, 10) || emptyInvoice.date,
-        discount_rate: Number(inv.discount_rate || 0),
-        discount: Number(inv.discount || 0),
-        taxes: (inv.taxes || []).map((t) => ({
+      setQuotationState({
+        id: q.id,
+        customer_id: q.customer_id,
+        date: q.date?.slice(0, 10) || emptyQuotation.date,
+        status: q.status || "draft",
+        discount_rate: Number(q.discount_rate || 0),
+        discount: Number(q.discount || 0),
+        taxes: (q.taxes || []).map((t) => ({
           id: t.tax_id,
           name: t.tax_name,
           rate: Number(t.tax_rate || 0),
         })),
-        description: inv.description || "",
-        invoice_name: inv.invoice_name || "",
-        status: inv.status || "unpaid",
-        channel: inv.channel || "manual",
-        paid_amount: inv.paid_amount,
-        remaining_amount: inv.remaining_amount,
+        description: q.description || "",
+        quotation_name: q.quotation_name || "",
       });
 
-      const rawItems = inv.items || [];
-      const productIds = [...new Set(rawItems.map((i) => i.product_id))];
+      const rawItems = q.items || [];
+      // Only fetch full product detail (for unit lists) for lines that
+      // actually reference a real, still-existing product — rawItems with
+      // a null/deleted product_id simply keep whatever unit_name was
+      // snapshotted, with no unit dropdown.
+      const productIds = [
+        ...new Set(rawItems.map((i) => i.product_id).filter(Boolean)),
+      ];
 
       const fullProducts = await Promise.all(
         productIds.map((pid) => api.getProduct(pid).catch(() => null))
@@ -186,6 +190,7 @@ export default function useUpdateSales() {
       setError(err.message || t("errors.loadError"));
     }
   }, [api, t]);
+
   useEffect(() => {
     load();
   }, [load]);
@@ -194,12 +199,11 @@ export default function useUpdateSales() {
     setItems((prev) => [
       ...prev,
       recalcItem({
-        product_id: "",
-        name: "",
-        code: "",
+        product_id: null,
+        product_name: "",
+        product_code: "",
         entered_quantity: 1,
         entered_price: 0,
-        buyingPrice: 0,
         available_units: [],
         unit_id: null,
         unit_name: "",
@@ -234,15 +238,14 @@ export default function useUpdateSales() {
         copy[index] = recalcItem({
           ...current,
           product_id: fullProduct.id,
-          name: fullProduct.name,
-          code: fullProduct.code || "",
+          product_name: fullProduct.name,
+          product_code: fullProduct.code || "",
           available_units: productUnits,
           unit_id: baseUnit?.id ?? null,
           unit_name: baseUnit?.unit_name || "",
           unit_conversion_factor: 1,
           entered_quantity: current.entered_quantity || 1,
           entered_price: Number(baseUnit?.sale_price || 0),
-          buyingPrice: Number(fullProduct.costPrice || 0),
           tax_id: fullProduct.tax_id || null,
           tax_rate: Number(fullProduct.tax_rate || 0),
           tax_capable: Boolean(fullProduct.tax_id),
@@ -253,6 +256,24 @@ export default function useUpdateSales() {
     } catch (err) {
       console.error("Failed to load product detail:", err);
     }
+  };
+
+  // Free-typed name with no catalog match — product_id stays null.
+  const setItemProductName = (index, name) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      copy[index] = {
+        ...copy[index],
+        product_id: null,
+        product_name: name,
+        product_code: "",
+        available_units: [],
+        unit_id: null,
+        unit_name: copy[index].unit_name || "",
+        unit_conversion_factor: 1,
+      };
+      return copy;
+    });
   };
 
   const updateItemUnit = (index, unitId) => {
@@ -281,29 +302,38 @@ export default function useUpdateSales() {
     });
   };
 
+  // Used by the quick-add modal — mirrors useAddSalesQuotation.
   const setItemProduct = (
     index,
-    { id, name, code, price, buyingPrice, tax_id, tax_rate }
+    {
+      id,
+      name,
+      code,
+      price,
+      tax_id,
+      tax_rate,
+      available_units,
+      unit_id,
+      unit_name,
+    }
   ) => {
     setItems((prev) => {
       const copy = [...prev];
       const item = { ...copy[index] };
 
       item.product_id = id;
-      item.name = name || "";
-      item.code = code || "";
+      item.product_name = name || "";
+      item.product_code = code || "";
       item.entered_price = Number(price || 0);
-      item.buyingPrice = Number(buyingPrice || 0);
-      item.available_units = [];
-      item.unit_id = null;
-      item.unit_name = "";
+      item.available_units = available_units || [];
+      item.unit_id = unit_id ?? null;
+      item.unit_name = unit_name || "";
       item.unit_conversion_factor = 1;
       item.tax_id = tax_id || null;
       item.tax_rate = Number(tax_rate || 0);
       item.tax_capable = Boolean(tax_id);
 
       copy[index] = recalcItem(item);
-
       return copy;
     });
   };
@@ -313,27 +343,27 @@ export default function useUpdateSales() {
     name,
     code,
     price,
-    buyingPrice,
     tax_id,
     tax_rate,
+    available_units,
+    unit_id,
+    unit_name,
   }) => {
     setItems((prev) => [
       ...prev,
       recalcItem({
         product_id: id,
-        name: name || "",
-        code: code || "",
+        product_name: name || "",
+        product_code: code || "",
         entered_quantity: 1,
         entered_price: Number(price || 0),
-        buyingPrice: Number(buyingPrice || 0),
-        available_units: [],
-        unit_id: null,
-        unit_name: "",
-        unit_conversion_factor: 1,
-        discount_rate: 0,
         tax_id: tax_id || null,
         tax_rate: Number(tax_rate || 0),
         tax_capable: Boolean(tax_id),
+        available_units: available_units || [],
+        unit_id: unit_id ?? null,
+        unit_name: unit_name || "",
+        discount_rate: 0,
         description: "",
       }),
     ]);
@@ -342,6 +372,10 @@ export default function useUpdateSales() {
   const updateItem = (index, key, value) => {
     if (key === "product_id") {
       selectProductForItem(index, value);
+      return;
+    }
+    if (key === "product_name") {
+      setItemProductName(index, value);
       return;
     }
 
@@ -390,29 +424,15 @@ export default function useUpdateSales() {
   };
 
   const updateItemTax = (index, taxId, taxRate) => {
-    const normalizedNewId = taxId || null;
-    let changed = false;
-
     setItems((prev) => {
-      const current = prev[index];
-      const normalizedCurrentId = current.tax_id || null;
-
-      if (normalizedNewId === normalizedCurrentId) {
-        return prev;
-      }
-
-      changed = true;
-
       const copy = [...prev];
       copy[index] = recalcItem({
-        ...current,
-        tax_id: normalizedNewId,
+        ...copy[index],
+        tax_id: taxId || null,
         tax_rate: Number(taxRate || 0),
       });
       return copy;
     });
-
-    return changed;
   };
 
   const enableItemTax = (index) => {
@@ -444,6 +464,7 @@ export default function useUpdateSales() {
     });
   };
 
+  // Barcode scanning — same as useAddSalesQuotation.
   useEffect(() => {
     let barcode = "";
 
@@ -479,18 +500,17 @@ export default function useUpdateSales() {
               ...prev,
               recalcItem({
                 product_id: product.id,
-                name: product.name,
-                code: product.code || "",
+                product_name: product.name,
                 entered_quantity: 1,
                 entered_price: Number(product.salePrice || 0),
-                buyingPrice: Number(product.costPrice || 0),
+                tax_id: product.tax_id || null,
+                tax_rate: Number(product.tax_rate || 0),
+                tax_capable: Boolean(product.tax_id),
                 available_units: [],
                 unit_id: null,
                 unit_name: "",
                 unit_conversion_factor: 1,
-                tax_id: product.tax_id || null,
-                tax_rate: Number(product.tax_rate || 0),
-                tax_capable: Boolean(product.tax_id),
+                discount_rate: 0,
                 description: "",
               }),
             ];
@@ -512,91 +532,73 @@ export default function useUpdateSales() {
     };
   }, [api, t]);
 
-  const subtotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + (item.total || 0), 0);
-  }, [items]);
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + (item.total || 0), 0),
+    [items]
+  );
 
-  const itemDiscountTotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + (item.discount || 0), 0);
-  }, [items]);
+  const itemDiscountTotal = useMemo(
+    () => items.reduce((sum, item) => sum + (item.discount || 0), 0),
+    [items]
+  );
 
-  const afterItemDiscounts = useMemo(() => {
-    return subtotal - itemDiscountTotal;
-  }, [subtotal, itemDiscountTotal]);
+  const afterItemDiscounts = useMemo(
+    () => subtotal - itemDiscountTotal,
+    [subtotal, itemDiscountTotal]
+  );
 
-  const itemTaxTotal = useMemo(() => {
-    return items.reduce((sum, item) => sum + (item.taxValue || 0), 0);
-  }, [items]);
+  const itemTaxTotal = useMemo(
+    () => items.reduce((sum, item) => sum + (item.taxValue || 0), 0),
+    [items]
+  );
 
   const itemTaxSummary = useMemo(() => {
     const groups = new Map();
-
     for (const item of items) {
       if (!item.tax_id || !item.tax_rate) continue;
-
-      const afterDiscount = (item.total || 0) - (item.discount || 0);
       const key = item.tax_id;
-
       if (!groups.has(key)) {
-        groups.set(key, {
-          tax_id: item.tax_id,
-          rate: item.tax_rate,
-          base: 0,
-          value: 0,
-        });
+        groups.set(key, { tax_id: item.tax_id, rate: item.tax_rate, value: 0 });
       }
-
-      const group = groups.get(key);
-      group.base += afterDiscount;
-      group.value += item.taxValue || 0;
+      groups.get(key).value += item.taxValue || 0;
     }
-
     return Array.from(groups.values());
   }, [items]);
 
   const itemDiscountSummary = useMemo(() => {
     const groups = new Map();
-
     for (const item of items) {
       const rate = Number(item.discount_rate || 0);
       if (!rate) continue;
-
-      if (!groups.has(rate)) {
-        groups.set(rate, { rate, base: 0, amount: 0 });
-      }
-
-      const group = groups.get(rate);
-      group.base += item.total || 0;
-      group.amount += item.discount || 0;
+      if (!groups.has(rate)) groups.set(rate, { rate, amount: 0 });
+      groups.get(rate).amount += item.discount || 0;
     }
-
     return Array.from(groups.values());
   }, [items]);
 
-  const invoiceDiscount = useMemo(() => {
-    const rate = Number(invoice.discount_rate || 0);
+  const quotationDiscount = useMemo(() => {
+    const rate = Number(quotation.discount_rate || 0);
     return afterItemDiscounts * (rate / 100);
-  }, [afterItemDiscounts, invoice.discount_rate]);
+  }, [afterItemDiscounts, quotation.discount_rate]);
 
-  const afterInvoiceDiscount = useMemo(() => {
-    return afterItemDiscounts - invoiceDiscount;
-  }, [afterItemDiscounts, invoiceDiscount]);
+  const afterQuotationDiscount = useMemo(
+    () => afterItemDiscounts - quotationDiscount,
+    [afterItemDiscounts, quotationDiscount]
+  );
 
-  const invoiceTaxValue = useMemo(() => {
-    const taxes = invoice.taxes || [];
-    return taxes.reduce((sum, tax) => {
+  const quotationTaxValue = useMemo(() => {
+    const list = quotation.taxes || [];
+    return list.reduce((sum, tax) => {
       const rate = Number(tax.rate || 0);
-      return sum + afterInvoiceDiscount * (rate / 100);
+      return sum + afterQuotationDiscount * (rate / 100);
     }, 0);
-  }, [afterInvoiceDiscount, invoice.taxes]);
+  }, [afterQuotationDiscount, quotation.taxes]);
 
-  const addInvoiceTax = (selectedTax) => {
+  const addQuotationTax = (selectedTax) => {
     if (!selectedTax?.id) return;
-
-    setInvoice((prev) => {
+    setQuotation((prev) => {
       const current = prev.taxes || [];
       if (current.some((t) => t.id === selectedTax.id)) return prev;
-
       return {
         ...prev,
         taxes: [
@@ -611,59 +613,70 @@ export default function useUpdateSales() {
     });
   };
 
-  const removeInvoiceTax = (taxId) => {
-    setInvoice((prev) => ({
+  const removeQuotationTax = (taxId) => {
+    setQuotation((prev) => ({
       ...prev,
       taxes: (prev.taxes || []).filter((t) => t.id !== taxId),
     }));
   };
 
-  const clearInvoiceTaxes = () => {
-    setInvoice((prev) => ({ ...prev, taxes: [] }));
-  };
-  const netTotal = useMemo(() => {
-    return Math.max(0, afterInvoiceDiscount + itemTaxTotal + invoiceTaxValue);
-  }, [afterInvoiceDiscount, itemTaxTotal, invoiceTaxValue]);
-
-  const setInvoiceDiscountRate = (rate) => {
-    setInvoice((prev) => ({ ...prev, discount_rate: Number(rate || 0) }));
+  const clearQuotationTaxes = () => {
+    setQuotation((prev) => ({ ...prev, taxes: [] }));
   };
 
-  const setInvoiceDiscountAmount = (amount) => {
+  const netTotal = useMemo(
+    () =>
+      Math.max(0, afterQuotationDiscount + itemTaxTotal + quotationTaxValue),
+    [afterQuotationDiscount, itemTaxTotal, quotationTaxValue]
+  );
+
+  const setQuotationDiscountRate = (rate) => {
+    setQuotation((prev) => ({ ...prev, discount_rate: Number(rate || 0) }));
+  };
+
+  const setQuotationDiscountAmount = (amount) => {
     const amt = Number(amount || 0);
     const rate = afterItemDiscounts > 0 ? (amt / afterItemDiscounts) * 100 : 0;
-    setInvoice((prev) => ({ ...prev, discount_rate: rate }));
+    setQuotation((prev) => ({ ...prev, discount_rate: rate }));
   };
 
-  const clearInvoiceDiscount = () => {
-    setInvoice((prev) => ({ ...prev, discount_rate: 0 }));
+  const clearQuotationDiscount = () => {
+    setQuotation((prev) => ({ ...prev, discount_rate: 0 }));
   };
 
-  const submit = async (paymentData = null) => {
+  const submit = async () => {
     try {
       setSaving(true);
       setError("");
 
+      const usableItems = items.filter(
+        (i) =>
+          (i.product_id || i.product_name?.trim()) && i.entered_quantity > 0
+      );
+
       const payload = {
-        ...invoice,
+        ...quotation,
         id,
-        taxes: (invoice.taxes || []).map((t) => t.id),
-        items,
-        discount: invoiceDiscount,
-        taxValue: invoiceTaxValue,
+        taxes: (quotation.taxes || []).map((t) => t.id),
+        items: usableItems.map((i) => ({
+          ...i,
+          name: i.product_name,
+          code: i.product_code,
+        })),
+        discount: quotationDiscount,
+        taxValue: quotationTaxValue,
         subtotal,
         net_total: netTotal,
-        payment: paymentData,
         updated_by: user.id,
       };
-      const res = await api.updateSalesInvoice(payload);
+      const res = await api.updateSalesQuotation(payload);
 
       if (!res?.success) {
         setError(res?.error || t("errors.updateFailed"));
         return { success: false, error: res?.error };
       }
 
-      navigate("/sales");
+      navigate("/sales-quotations");
       return { success: true };
     } catch (err) {
       setError(err?.message || t("errors.updateFailed"));
@@ -672,15 +685,16 @@ export default function useUpdateSales() {
       setSaving(false);
     }
   };
+
   return {
-    invoice,
-    setInvoice,
-    addInvoiceTax,
-    removeInvoiceTax,
-    clearInvoiceTaxes,
-    setInvoiceDiscountRate,
-    setInvoiceDiscountAmount,
-    clearInvoiceDiscount,
+    quotation,
+    setQuotation,
+    addQuotationTax,
+    removeQuotationTax,
+    clearQuotationTaxes,
+    setQuotationDiscountRate,
+    setQuotationDiscountAmount,
+    clearQuotationDiscount,
     items,
     products,
     customers,
@@ -700,14 +714,10 @@ export default function useUpdateSales() {
     addItemWithProduct,
     submit,
     subtotal,
-    itemDiscountTotal,
     itemDiscountSummary,
-    afterItemDiscounts,
-    itemTaxTotal,
     itemTaxSummary,
-    invoiceDiscount,
-    afterInvoiceDiscount,
-    invoiceTaxValue,
+    quotationDiscount,
+    quotationTaxValue,
     netTotal,
     loading,
     saving,
@@ -715,6 +725,6 @@ export default function useUpdateSales() {
     api,
     setProducts,
     refetch,
-    status: invoice?.status || "unpaid",
+    status: quotation?.status || "draft",
   };
 }

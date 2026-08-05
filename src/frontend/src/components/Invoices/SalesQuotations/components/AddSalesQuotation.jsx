@@ -1,10 +1,11 @@
+// AddSalesQuotation.jsx
 import React, { useState } from "react";
 import {
   ArrowLeft,
   Plus,
   Trash2,
   Save,
-  HandCoins,
+  FileText,
   PackageOpen,
   AlertCircle,
   Loader2,
@@ -15,21 +16,17 @@ import {
   StickyNote,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import useAddSales from "../hooks/useAddSales";
+import useAddSalesQuotation from "../hooks/useAddSalesQuotation";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import ConfirmModal from "../../../../Global/ConfirmModal";
-import AddPayment from "../../../Cash/Payment/components/AddPayment";
-import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
-import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import useCustomerList from "../../../Customer/hooks/useCustomerList";
-import CustomerFormModal from "./CustomerFormModal";
+
 import DropdownMenu from "../../../../Global/DropdownMenu";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
 import NumberInput from "../../../../Global/NumberInput";
+import CustomerFormModal from "../../Sales/components/CustomerFormModal";
 
 // ---- Shared, module-level so re-renders never remount them ----
 
@@ -40,6 +37,8 @@ const smallInputClass =
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
 const panelBodyClass = "p-4";
+
+const STATUS_OPTIONS = ["draft", "sent", "accepted", "rejected", "expired"];
 
 function AccentRule({ colorClass }) {
   return <div className={`absolute inset-x-0 top-0 h-[3px] ${colorClass}`} />;
@@ -82,31 +81,19 @@ function AdjustmentChip({ icon, tone, children, onRemove }) {
   );
 }
 
-export default function AddSales() {
+export default function AddSalesQuotation() {
   const { t } = useTranslation();
-  const catalog = useProductCatalog();
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
 
   const {
-    saving: productSaving,
-    canUseUnits,
-    canUseTaxes,
-    isFormOpen,
-    setIsFormOpen,
-    submitProduct,
-    units,
-    taxes: productTaxes,
-  } = catalog;
-
-  const {
-    invoice,
-    setInvoice,
-    addInvoiceTax,
-    removeInvoiceTax,
-    clearInvoiceTaxes,
-    setInvoiceDiscountRate,
-    setInvoiceDiscountAmount,
-    clearInvoiceDiscount,
+    quotation,
+    setQuotation,
+    addQuotationTax,
+    removeQuotationTax,
+    clearQuotationTaxes,
+    setQuotationDiscountRate,
+    setQuotationDiscountAmount,
+    clearQuotationDiscount,
     items,
     customers,
     taxes,
@@ -121,14 +108,12 @@ export default function AddSales() {
     enableItemTax,
     disableItemTax,
     updateItemDescription,
-    setItemProduct,
-    addItemWithProduct,
     submit,
     subtotal,
     itemDiscountSummary,
     itemTaxSummary,
-    invoiceDiscount,
-    invoiceTaxValue,
+    quotationDiscount,
+    quotationTaxValue,
     netTotal,
     loading,
     saving,
@@ -137,31 +122,27 @@ export default function AddSales() {
     api,
     setProducts,
     products,
-    refetch,
-  } = useAddSales({ customerModalOpen, isFormOpen });
+  } = useAddSalesQuotation({ customerModalOpen });
 
   const { submitDraft, setDraft, draft, actionError } = useCustomerList();
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [pendingTaxConfirm, setPendingTaxConfirm] = useState(null);
-  const [confirmingTaxUpdate, setConfirmingTaxUpdate] = useState(false);
 
   const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
     () => new Set()
   );
   const [revealedItemNotes, setRevealedItemNotes] = useState(() => new Set());
-  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(false);
-  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
-  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
+  const [quotationDiscountRevealed, setQuotationDiscountRevealed] =
+    useState(false);
+  const [quotationTaxRevealed, setQuotationTaxRevealed] = useState(false);
+  const [quotationNoteRevealed, setQuotationNoteRevealed] = useState(false);
 
   const { money } = usePrimaryCurrency();
 
-  const customerName =
-    customers?.data?.find((c) => c.id === invoice.customer_id)?.name || "";
-
-  const hasUsableItems = items.some((i) => i.product_id);
-  const canSave = !!invoice.customer_id && hasUsableItems && !saving;
+  const hasUsableItems = items.some(
+    (i) => i.product_id || i.product_name?.trim()
+  );
+  const canSave = hasUsableItems && !saving;
 
   const toggleItemDiscount = (index, revealed) => {
     setRevealedItemDiscounts((prev) => {
@@ -189,64 +170,11 @@ export default function AddSales() {
     });
   };
 
-  const handleSaveUnpaid = async () => {
+  const handleSave = async () => {
     if (!canSave) return;
     const res = await submit();
     if (res?.success) {
-      toast.success(t("screens.invoices.savedUnpaid"));
-    }
-  };
-
-  const handleOpenPayModal = () => {
-    if (!invoice.customer_id) {
-      toast.error(t("errors.customer_required"));
-      return;
-    }
-    if (!hasUsableItems) {
-      toast.error(t("errors.addOneItem"));
-      return;
-    }
-    setPaymentModalOpen(true);
-  };
-
-  const handlePaymentCollected = async (paymentData) => {
-    const res = await submit(paymentData);
-    if (res?.success) {
-      toast.success(t("screens.invoices.savedPaid"));
-    }
-  };
-
-  const handleItemTaxChange = (index, item, newTaxId) => {
-    const selectedTax = productTaxes?.find((tx) => tx.id === newTaxId) || null;
-    const changed = updateItemTax(index, newTaxId, selectedTax?.rate || 0);
-
-    if (changed && item.product_id) {
-      setPendingTaxConfirm({
-        productId: item.product_id,
-        productName: item.name,
-        newTaxId,
-        newTaxName: selectedTax?.name || null,
-      });
-    }
-  };
-
-  const handleConfirmProductTaxUpdate = async () => {
-    if (!pendingTaxConfirm) return;
-
-    setConfirmingTaxUpdate(true);
-
-    try {
-      await api.updateProductTax({
-        product_id: pendingTaxConfirm.productId,
-        tax_id: pendingTaxConfirm.newTaxId,
-      });
-      await refetch();
-    } catch (err) {
-      console.error("Failed to update product default tax:", err);
-      toast.error(t("errors.saveError"));
-    } finally {
-      setConfirmingTaxUpdate(false);
-      setPendingTaxConfirm(null);
+      toast.success(t("screens.quotations.saved"));
     }
   };
 
@@ -257,14 +185,14 @@ export default function AddSales() {
         <section className="flex flex-col gap-3 rounded-2xl border border-[#e9edfb] bg-white px-5 py-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25">
-              <Receipt size={18} />
+              <FileText size={18} />
             </span>
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
                 {t("ui.sales")}
               </p>
               <h1 className="text-lg font-black leading-tight text-slate-950">
-                {t("screens.invoices.createSales")}
+                {t("screens.quotations.createQuotation")}
               </h1>
             </div>
           </div>
@@ -291,20 +219,20 @@ export default function AddSales() {
 
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
           <main className="space-y-4">
-            {/* Customer + date + name */}
+            {/* Customer + date + status */}
             <section className={panelClass}>
               <AccentRule colorClass="bg-[#4663ff]" />
               <div className={panelBodyClass}>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="md:col-span-1">
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <SearchableSelect
-                          placeholder={t("ui.selectCustomer")}
+                          placeholder={t("ui.selectCustomerOptional")}
                           options={customers}
-                          selectedValue={invoice?.customer_id}
+                          selectedValue={quotation?.customer_id}
                           onChange={(customer) =>
-                            setInvoice((p) => ({
+                            setQuotation((p) => ({
                               ...p,
                               customer_id: customer.id,
                             }))
@@ -321,23 +249,30 @@ export default function AddSales() {
                         <span>{t("screens.contacts.addCustomer")}</span>
                       </button>
                     </div>
-
-                    {!invoice.customer_id && (
-                      <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-amber-600">
-                        <AlertCircle size={12} />
-                        {t("errors.customer_required")}
-                      </p>
-                    )}
                   </div>
 
                   <input
                     type="date"
                     className={inputClass}
-                    value={invoice.date}
+                    value={quotation.date}
                     onChange={(e) =>
-                      setInvoice((p) => ({ ...p, date: e.target.value }))
+                      setQuotation((p) => ({ ...p, date: e.target.value }))
                     }
                   />
+
+                  <select
+                    className={inputClass}
+                    value={quotation.status}
+                    onChange={(e) =>
+                      setQuotation((p) => ({ ...p, status: e.target.value }))
+                    }
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {t(`screens.quotations.status.${s}`)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </section>
@@ -357,24 +292,14 @@ export default function AddSales() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
-                  >
-                    <Plus size={13} />
-                    {t("screens.invoices.addItem")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsFormOpen(true)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-600 transition hover:bg-violet-100"
-                  >
-                    <Plus size={13} />
-                    {t("screens.products.create")}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
+                >
+                  <Plus size={13} />
+                  {t("screens.invoices.addItem")}
+                </button>
               </div>
 
               {loading ? (
@@ -410,7 +335,9 @@ export default function AddSales() {
                     const afterDiscount =
                       (item.total || 0) - (item.discount || 0);
                     const lineTotal = afterDiscount + (item.taxValue || 0);
-                    const hasProduct = Boolean(item.product_id);
+                    const hasProduct = Boolean(
+                      item.product_id || item.product_name?.trim()
+                    );
                     const hasTax = hasProduct && item.tax_capable;
                     const isNonBaseUnit =
                       item.unit_conversion_factor &&
@@ -424,15 +351,20 @@ export default function AddSales() {
                       >
                         <div className="flex items-start gap-2">
                           <div className="flex-1">
+                            {/* Combo: pick a real catalog product, or type any
+                                name — product_id stays null if it's not a
+                                catalog match, matching the nullable schema. */}
                             <SearchableSelect
-                              placeholder={t("ui.selectProduct")}
+                              placeholder={t("ui.productNameOrSelect")}
                               options={products}
                               selectedValue={item.product_id}
-                              selectedLabel={item.name}
+                              selectedLabel={item.product_name}
                               onChange={(e) => {
                                 updateItem(index, "product_id", e.id);
                               }}
                               onInputChange={async (value) => {
+                                updateItem(index, "product_name", value);
+
                                 if (!value.trim()) return;
 
                                 try {
@@ -448,9 +380,9 @@ export default function AddSales() {
                                 }
                               }}
                             />
-                            {item.code && (
+                            {item.product_code && (
                               <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
-                                #{item.code}
+                                #{item.product_code}
                               </p>
                             )}
                           </div>
@@ -516,9 +448,15 @@ export default function AddSales() {
                                 ))}
                               </select>
                             ) : (
-                              <div className="flex h-9 items-center rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs text-slate-400">
-                                {item.unit_name || "—"}
-                              </div>
+                              <input
+                                type="text"
+                                className={inputClass}
+                                value={item.unit_name || ""}
+                                onChange={(e) =>
+                                  updateItem(index, "unit_name", e.target.value)
+                                }
+                                placeholder="—"
+                              />
                             )}
                           </div>
 
@@ -613,13 +551,20 @@ export default function AddSales() {
                                   const newTaxId = e.target.value
                                     ? Number(e.target.value)
                                     : null;
-                                  handleItemTaxChange(index, item, newTaxId);
+                                  const selectedTax = taxes?.find(
+                                    (tx) => tx.id === newTaxId
+                                  );
+                                  updateItemTax(
+                                    index,
+                                    newTaxId,
+                                    selectedTax?.rate || 0
+                                  );
                                 }}
                               >
                                 <option value="">
                                   {t("screens.products.noTaxOption")}
                                 </option>
-                                {productTaxes
+                                {taxes
                                   ?.filter(
                                     (tax) =>
                                       tax.category === "product" ||
@@ -710,7 +655,7 @@ export default function AddSales() {
               <div className={panelBodyClass}>
                 <div className="mb-3 flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                    <HandCoins size={15} />
+                    <FileText size={15} />
                   </span>
                   <h3 className="text-[13px] font-black text-slate-950">
                     {t("ui.summary")}
@@ -761,7 +706,7 @@ export default function AddSales() {
                 <div className="my-3 h-px bg-[#eef1ff]" />
 
                 <div className="space-y-2">
-                  {invoiceDiscountRevealed && (
+                  {quotationDiscountRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-red-100 bg-red-50/40 p-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold text-red-600">
@@ -771,8 +716,8 @@ export default function AddSales() {
                         <button
                           type="button"
                           onClick={() => {
-                            clearInvoiceDiscount();
-                            setInvoiceDiscountRevealed(false);
+                            clearQuotationDiscount();
+                            setQuotationDiscountRevealed(false);
                           }}
                           className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
                         >
@@ -783,8 +728,8 @@ export default function AddSales() {
                         <div className="relative flex-1">
                           <NumberInput
                             className={`${smallInputClass} pe-5 text-end tabular-nums`}
-                            value={invoice.discount_rate || ""}
-                            onChange={setInvoiceDiscountRate}
+                            value={quotation.discount_rate || ""}
+                            onChange={setQuotationDiscountRate}
                             max={100}
                             placeholder="0"
                           />
@@ -795,15 +740,15 @@ export default function AddSales() {
                         <span className="text-xs text-slate-300">=</span>
                         <NumberInput
                           className={`${smallInputClass} flex-1 text-end tabular-nums`}
-                          value={invoiceDiscount || ""}
-                          onChange={setInvoiceDiscountAmount}
+                          value={quotationDiscount || ""}
+                          onChange={setQuotationDiscountAmount}
                           placeholder="0"
                         />
                       </div>
                     </div>
                   )}
 
-                  {invoiceTaxRevealed && (
+                  {quotationTaxRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
@@ -813,8 +758,8 @@ export default function AddSales() {
                         <button
                           type="button"
                           onClick={() => {
-                            clearInvoiceTaxes();
-                            setInvoiceTaxRevealed(false);
+                            clearQuotationTaxes();
+                            setQuotationTaxRevealed(false);
                           }}
                           className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
                         >
@@ -822,9 +767,9 @@ export default function AddSales() {
                         </button>
                       </div>
 
-                      {(invoice.taxes || []).length > 0 && (
+                      {(quotation.taxes || []).length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                          {invoice.taxes.map((tax) => (
+                          {quotation.taxes.map((tax) => (
                             <span
                               key={tax.id}
                               className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-emerald-700 shadow-sm"
@@ -832,7 +777,7 @@ export default function AddSales() {
                               {tax.name} ({tax.rate}%)
                               <button
                                 type="button"
-                                onClick={() => removeInvoiceTax(tax.id)}
+                                onClick={() => removeQuotationTax(tax.id)}
                                 className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                               >
                                 <X size={11} />
@@ -849,7 +794,7 @@ export default function AddSales() {
                           const selected = taxes.find(
                             (tax) => tax.id === Number(e.target.value)
                           );
-                          if (selected) addInvoiceTax(selected);
+                          if (selected) addQuotationTax(selected);
                         }}
                       >
                         <option value="">
@@ -863,7 +808,7 @@ export default function AddSales() {
                             (tax) =>
                               (tax.category === "invoice" ||
                                 tax.category === "both") &&
-                              !(invoice.taxes || []).some(
+                              !(quotation.taxes || []).some(
                                 (applied) => applied.id === tax.id
                               )
                           )
@@ -876,32 +821,32 @@ export default function AddSales() {
                     </div>
                   )}
 
-                  {(!invoiceDiscountRevealed ||
-                    !invoiceTaxRevealed ||
-                    !invoiceNoteRevealed) && (
+                  {(!quotationDiscountRevealed ||
+                    !quotationTaxRevealed ||
+                    !quotationNoteRevealed) && (
                     <div className="flex">
                       <AddOptionsMenu
                         options={[
                           {
-                            key: "invoice-discount",
+                            key: "quotation-discount",
                             label: t("screens.invoices.addInvoiceDiscount"),
                             icon: (
                               <Percent size={13} className="text-red-500" />
                             ),
-                            visible: !invoiceDiscountRevealed,
-                            onClick: () => setInvoiceDiscountRevealed(true),
+                            visible: !quotationDiscountRevealed,
+                            onClick: () => setQuotationDiscountRevealed(true),
                           },
                           {
-                            key: "invoice-tax",
+                            key: "quotation-tax",
                             label: t("screens.invoices.addInvoiceTax"),
                             icon: (
                               <Receipt size={13} className="text-emerald-600" />
                             ),
-                            visible: !invoiceTaxRevealed,
-                            onClick: () => setInvoiceTaxRevealed(true),
+                            visible: !quotationTaxRevealed,
+                            onClick: () => setQuotationTaxRevealed(true),
                           },
                           {
-                            key: "invoice-note",
+                            key: "quotation-note",
                             label: t("screens.invoices.addInvoiceNote"),
                             icon: (
                               <StickyNote
@@ -909,37 +854,37 @@ export default function AddSales() {
                                 className="text-amber-500"
                               />
                             ),
-                            visible: !invoiceNoteRevealed,
-                            onClick: () => setInvoiceNoteRevealed(true),
+                            visible: !quotationNoteRevealed,
+                            onClick: () => setQuotationNoteRevealed(true),
                           },
                         ]}
                       />
                     </div>
                   )}
 
-                  {invoiceDiscount > 0 && (
+                  {quotationDiscount > 0 && (
                     <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
                       <span className="text-xs text-slate-400">
                         {t("screens.invoices.invoiceDiscountAmount")}
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-red-500">
-                        -{money(invoiceDiscount)}
+                        -{money(quotationDiscount)}
                       </span>
                     </div>
                   )}
 
-                  {invoiceTaxValue > 0 && (
+                  {quotationTaxValue > 0 && (
                     <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
                       <span className="text-xs text-slate-400">
                         {t("screens.invoices.invoiceTaxAmount")}
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
-                        +{money(invoiceTaxValue)}
+                        +{money(quotationTaxValue)}
                       </span>
                     </div>
                   )}
 
-                  {invoiceNoteRevealed && (
+                  {quotationNoteRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-amber-100 bg-amber-50/40 p-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold text-amber-600">
@@ -949,11 +894,11 @@ export default function AddSales() {
                         <button
                           type="button"
                           onClick={() => {
-                            setInvoice((prev) => ({
+                            setQuotation((prev) => ({
                               ...prev,
                               description: "",
                             }));
-                            setInvoiceNoteRevealed(false);
+                            setQuotationNoteRevealed(false);
                           }}
                           className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
                         >
@@ -962,9 +907,9 @@ export default function AddSales() {
                       </div>
                       <textarea
                         className={`${smallInputClass} min-h-[2.5rem] resize-none overflow-hidden py-1.5`}
-                        value={invoice.description || ""}
+                        value={quotation.description || ""}
                         onChange={(e) => {
-                          setInvoice((prev) => ({
+                          setQuotation((prev) => ({
                             ...prev,
                             description: e.target.value,
                           }));
@@ -989,48 +934,28 @@ export default function AddSales() {
               </div>
             </section>
 
-            {/* Payment choice */}
+            {/* Save */}
             <section className={panelClass}>
               <AccentRule colorClass="bg-amber-500" />
               <div className={`${panelBodyClass} space-y-2.5`}>
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                    <Save size={14} />
-                  </span>
-                  <h3 className="text-[13px] font-black text-slate-950">
-                    {t("ui.payment")}
-                  </h3>
-                </div>
-
-                <div className="grid gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSaveUnpaid}
-                    disabled={!canSave}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {saving ? (
-                      <Loader2 size={15} className="animate-spin" />
-                    ) : null}
-                    {t("screens.invoices.saveUnpaid")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleOpenPayModal}
-                    disabled={!canSave}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-                  >
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!canSave}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {saving ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
                     <Save size={15} />
-                    {t("screens.invoices.saveAndPay")}
-                  </button>
-                </div>
+                  )}
+                  {t("screens.quotations.saveQuotation")}
+                </button>
 
                 {!canSave && !saving && (
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
                     <AlertCircle size={12} />
-                    {!invoice.customer_id
-                      ? t("errors.customer_required")
-                      : t("errors.addOneItem")}
+                    {t("errors.addOneItem")}
                   </p>
                 )}
               </div>
@@ -1050,38 +975,6 @@ export default function AddSales() {
         message={t("deleteModal.message")}
       />
 
-      <ConfirmModal
-        open={Boolean(pendingTaxConfirm)}
-        onClose={() => setPendingTaxConfirm(null)}
-        onConfirm={handleConfirmProductTaxUpdate}
-        confirming={confirmingTaxUpdate}
-        title={t("screens.invoices.updateProductTaxTitle")}
-        message={
-          pendingTaxConfirm
-            ? pendingTaxConfirm.newTaxId
-              ? t("screens.invoices.updateProductTaxSetMessage", {
-                  taxName: pendingTaxConfirm.newTaxName,
-                  productName: pendingTaxConfirm.productName,
-                })
-              : t("screens.invoices.updateProductTaxRemoveMessage", {
-                  productName: pendingTaxConfirm.productName,
-                })
-            : ""
-        }
-      />
-
-      <AddPayment
-        isOpen={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
-        invoice={null}
-        totalAmount={netTotal}
-        party={invoice.customer_id}
-        partyName={customerName}
-        mode="sales"
-        onSubmit={handlePaymentCollected}
-        confirmLabel={t("screens.invoices.saveInvoice")}
-      />
-
       {customerModalOpen && (
         <CustomerFormModal
           open={customerModalOpen}
@@ -1091,63 +984,13 @@ export default function AddSales() {
           onSubmit={async (event) => {
             const result = await submitDraft(event);
             if (result && result.id) {
-              setInvoice((prev) => ({ ...prev, customer_id: result.id }));
+              setQuotation((prev) => ({ ...prev, customer_id: result.id }));
               setCustomerModalOpen(false);
             }
           }}
           saving={saving}
           actionError={actionError}
           t={t}
-        />
-      )}
-
-      {isFormOpen && (
-        <ProductQuickAddModal
-          units={units}
-          taxes={productTaxes}
-          canUseUnits={canUseUnits}
-          canUseTaxes={canUseTaxes}
-          saving={productSaving}
-          onClose={() => setIsFormOpen(false)}
-          onSubmit={async (form) => {
-            try {
-              const result = await submitProduct(form);
-              const fullProduct = await api.getProduct(result.id);
-              const productUnits = fullProduct.productUnits || [];
-              const baseUnit = productUnits.find((u) => u.is_base) || null;
-              const matchedTax = productTaxes?.find(
-                (tx) => tx.id === form.tax_id
-              );
-
-              const targetIndex = items.findIndex((i) => !i.product_id);
-
-              const productPayload = {
-                id: result.id,
-                name: form.name,
-                // Prefer the base unit's own registered sale_price (matches how
-                // selectProductForItem/updateItemUnit price every line here) — falls
-                // back to the raw form value only if the base unit somehow wasn't found.
-                price: baseUnit?.sale_price ?? form.salePrice,
-                buyingPrice: form.costPrice,
-                tax_id: form.tax_id,
-                tax_rate: matchedTax?.rate || 0,
-                available_units: productUnits,
-                unit_id: baseUnit?.id ?? null,
-                unit_name: baseUnit?.unit_name || "",
-              };
-
-              if (targetIndex === -1) {
-                addItemWithProduct(productPayload);
-              } else {
-                setItemProduct(targetIndex, productPayload);
-              }
-
-              setIsFormOpen(false);
-              await refetch();
-            } catch {
-              // actionError already set inside submitProduct/useProductCatalog
-            }
-          }}
         />
       )}
 

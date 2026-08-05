@@ -67,6 +67,7 @@ function toEditableItem(raw, availableUnits) {
     id: raw.id,
     product_id: raw.product_id,
     name: raw.name || raw.product_name || "",
+    code: raw.product_code || "",
     entered_quantity: enteredQuantity,
     entered_price: enteredPrice,
     base_cost_price: basePrice, // best-known base price for this product at load time
@@ -200,6 +201,7 @@ export default function useUpdatePurchase() {
       recalcItem({
         product_id: "",
         name: "",
+        code: "",
         entered_quantity: 1,
         entered_price: 0,
         base_cost_price: 0,
@@ -238,6 +240,7 @@ export default function useUpdatePurchase() {
           ...current,
           product_id: fullProduct.id,
           name: fullProduct.name,
+          code: fullProduct.code || "",
           available_units: productUnits,
           unit_id: baseUnit?.id ?? null,
           unit_name: baseUnit?.unit_name || "",
@@ -389,13 +392,17 @@ export default function useUpdatePurchase() {
     });
   };
 
-  const setItemProduct = (index, { id, name, price, tax_id, tax_rate }) => {
+  const setItemProduct = (
+    index,
+    { id, name, code, price, tax_id, tax_rate }
+  ) => {
     setItems((prev) => {
       const copy = [...prev];
       const item = { ...copy[index] };
 
       item.product_id = id;
       item.name = name || "";
+      item.code = code || "";
       item.entered_price = Number(price || 0);
       item.base_cost_price = Number(price || 0);
       item.available_units = [];
@@ -412,12 +419,13 @@ export default function useUpdatePurchase() {
     });
   };
 
-  const addItemWithProduct = ({ id, name, price, tax_id, tax_rate }) => {
+  const addItemWithProduct = ({ id, name, code, price, tax_id, tax_rate }) => {
     setItems((prev) => [
       ...prev,
       recalcItem({
         product_id: id,
         name: name || "",
+        code: code || "",
         entered_quantity: 1,
         entered_price: Number(price || 0),
         base_cost_price: Number(price || 0),
@@ -473,6 +481,7 @@ export default function useUpdatePurchase() {
             const built = recalcItem({
               product_id: product.id,
               name: product.name,
+              code: product.code || "",
               entered_quantity: 1,
               entered_price: product.costPrice || 0,
               base_cost_price: product.costPrice || 0,

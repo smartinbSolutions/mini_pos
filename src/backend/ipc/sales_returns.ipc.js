@@ -54,7 +54,7 @@ export default function registerSalesReturnsIpc() {
           SELECT
             quantity, price, total, discount, discount_rate,
             tax_id, tax_rate, taxValue,
-            product_name, unit_name, unit_conversion_factor, description
+            product_name, product_code , unit_name, unit_conversion_factor, description
           FROM sales_invoice_items
           WHERE id = ?
         `);
@@ -126,6 +126,7 @@ export default function registerSalesReturnsIpc() {
             price,
             total: returnedTotal,
             product_name: originalItem.product_name || null,
+            product_code: originalItem.product_code || null,
             unit_name: originalItem.unit_name || null,
             unit_conversion_factor: Number(
               originalItem.unit_conversion_factor || 1
@@ -263,11 +264,11 @@ export default function registerSalesReturnsIpc() {
           INSERT INTO sales_return_items
           (
             return_id, sales_invoice_item_id, product_id, quantity, price, total,
-            product_name, unit_name, unit_conversion_factor,
+            product_name, product_code , unit_name, unit_conversion_factor,
             tax_id, tax_rate, taxValue,
             discount, discount_rate, description
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? , ?)
         `);
 
         const updateStock = db.prepare(`
@@ -283,6 +284,7 @@ export default function registerSalesReturnsIpc() {
             item.price,
             item.total,
             item.product_name,
+            item.product_code,
             item.unit_name,
             item.unit_conversion_factor,
             item.tax_id,

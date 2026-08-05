@@ -17,6 +17,11 @@ const INVOICE_LABELS = {
     ar: "مرتجع مشتريات",
     tr: "Alış İadesi",
   },
+  sales_quotation: {
+    en: "Sales Quotation",
+    ar: "عرض سعر مبيعات",
+    tr: "Satış Teklifi",
+  },
 };
 
 const PAYMENT_LABELS = {

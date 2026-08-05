@@ -6,6 +6,7 @@ import { useAuth } from "../../../../Global/AuthContext";
 const emptyItem = {
   product_id: "",
   name: "",
+  code: "",
   entered_quantity: 1,
   entered_price: 0,
   buyingPrice: 0,
@@ -144,6 +145,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
           ...current,
           product_id: fullProduct.id,
           name: fullProduct.name,
+          code: fullProduct.code || "",
           available_units: productUnits,
           unit_id: baseUnit?.id ?? null,
           unit_name: baseUnit?.unit_name || "",
@@ -215,6 +217,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
     {
       id,
       name,
+      code,
       price,
       buyingPrice,
       tax_id,
@@ -230,6 +233,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
 
       item.product_id = id;
       item.name = name || "";
+      item.code = code || "";
       item.entered_price = Number(price || 0);
       item.buyingPrice = Number(buyingPrice || 0);
       item.available_units = available_units || [];
@@ -249,6 +253,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
   const addItemWithProduct = ({
     id,
     name,
+    code,
     price,
     buyingPrice,
     tax_id,
@@ -263,6 +268,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
         ...emptyItem,
         product_id: id,
         name: name || "",
+        code: code || "",
         entered_quantity: 1,
         entered_price: Number(price || 0),
         buyingPrice: Number(buyingPrice || 0),
@@ -407,6 +413,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
               ...emptyItem,
               product_id: product.id,
               name: product.name,
+              code: product.code || "",
               entered_quantity: 1,
               entered_price: Number(product.salePrice || 0),
               buyingPrice: Number(product.costPrice || 0),

@@ -1,41 +1,42 @@
+// UpdateSalesQuotation.jsx
 import React, { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Plus,
   Trash2,
   Save,
-  Receipt,
+  FileText,
   AlertCircle,
-  Lock,
   X,
   Percent,
   Tag,
   StickyNote,
+  Receipt,
 } from "lucide-react";
 import { toast } from "react-toastify";
-import useUpdateSales from "../hooks/useUpdateSales";
+import useUpdateSalesQuotation from "../hooks/useUpdateSalesQuotation";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import ConfirmModal from "../../../../Global/ConfirmModal";
-import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import { ToastContainer } from "react-toastify";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import useCustomerList from "../../../Customer/hooks/useCustomerList";
-import CustomerFormModal from "./CustomerFormModal";
+
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
 import NumberInput from "../../../../Global/NumberInput";
+import CustomerFormModal from "../../Sales/components/CustomerFormModal";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
 const smallInputClass =
-  "h-8 w-full rounded-lg border border-[#e1e7fb] bg-white px-2 text-xs font-semibold text-slate-900 outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+  "h-8 w-full rounded-lg border border-[#e1e7fb] bg-white px-2 text-xs font-semibold text-slate-900 outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12";
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
 const panelBodyClass = "p-4";
+
+const STATUS_OPTIONS = ["draft", "sent", "accepted", "rejected", "expired"];
 
 function AccentRule({ colorClass }) {
   return <div className={`absolute inset-x-0 top-0 h-[3px] ${colorClass}`} />;
@@ -55,7 +56,7 @@ function AddOptionsMenu({ options, align = "right" }) {
   return <DropdownMenu trigger={trigger} options={options} align={align} />;
 }
 
-function AdjustmentChip({ icon, tone, children, onRemove, disabled }) {
+function AdjustmentChip({ icon, tone, children, onRemove }) {
   const toneClasses =
     tone === "danger"
       ? "border-red-100 bg-red-50/60"
@@ -67,33 +68,31 @@ function AdjustmentChip({ icon, tone, children, onRemove, disabled }) {
     >
       {icon}
       {children}
-      {!disabled && (
-        <button
-          type="button"
-          onClick={onRemove}
-          className="ml-0.5 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
-        >
-          <X size={12} />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        className="ml-0.5 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+      >
+        <X size={12} />
+      </button>
     </div>
   );
 }
 
-export default function UpdateSales() {
+export default function UpdateSalesQuotation() {
   const { t } = useTranslation();
   const api = window.api;
   const catalog = useProductCatalog();
 
   const {
-    invoice,
-    setInvoice,
-    addInvoiceTax,
-    removeInvoiceTax,
-    clearInvoiceTaxes,
-    setInvoiceDiscountRate,
-    setInvoiceDiscountAmount,
-    clearInvoiceDiscount,
+    quotation,
+    setQuotation,
+    addQuotationTax,
+    removeQuotationTax,
+    clearQuotationTaxes,
+    setQuotationDiscountRate,
+    setQuotationDiscountAmount,
+    clearQuotationDiscount,
     items,
     products,
     customers,
@@ -115,8 +114,8 @@ export default function UpdateSales() {
     subtotal,
     itemDiscountSummary,
     itemTaxSummary,
-    invoiceDiscount,
-    invoiceTaxValue,
+    quotationDiscount,
+    quotationTaxValue,
     netTotal,
     saving,
     error,
@@ -124,7 +123,7 @@ export default function UpdateSales() {
     setProducts,
     refetch,
     status,
-  } = useUpdateSales();
+  } = useUpdateSalesQuotation();
 
   const {
     saving: productSaving,
@@ -141,22 +140,18 @@ export default function UpdateSales() {
 
   const { money } = usePrimaryCurrency();
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [pendingTaxConfirm, setPendingTaxConfirm] = useState(null);
-  const [confirmingTaxUpdate, setConfirmingTaxUpdate] = useState(false);
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
     () => new Set()
   );
   const [revealedItemNotes, setRevealedItemNotes] = useState(() => new Set());
-  const [invoiceDiscountRevealed, setInvoiceDiscountRevealed] = useState(false);
-  const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
-  const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
+  const [quotationDiscountRevealed, setQuotationDiscountRevealed] =
+    useState(false);
+  const [quotationTaxRevealed, setQuotationTaxRevealed] = useState(false);
+  const [quotationNoteRevealed, setQuotationNoteRevealed] = useState(false);
 
-  // The initializers above can't see real data yet — `load()` is async and
-  // hasn't populated items/invoice at mount time. Recompute once the actual
-  // invoice data has arrived (loading flips false), so existing discounts/
-  // taxes/notes are visible and removable, not silently hidden.
+  // Same reasoning as UpdateSales: `load()` is async, so the reveal state
+  // has to be computed once real data has actually arrived.
   useEffect(() => {
     if (loading) return;
 
@@ -174,22 +169,16 @@ export default function UpdateSales() {
           .filter((i) => i !== null)
       )
     );
-    setInvoiceDiscountRevealed(Number(invoice?.discount_rate) > 0);
-    setInvoiceTaxRevealed((invoice?.taxes || []).length > 0);
-    setInvoiceNoteRevealed(Boolean(invoice?.description));
+    setQuotationDiscountRevealed(Number(quotation?.discount_rate) > 0);
+    setQuotationTaxRevealed((quotation?.taxes || []).length > 0);
+    setQuotationNoteRevealed(Boolean(quotation?.description));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
-  const customerName =
-    customers?.data?.find((c) => c.id === invoice?.customer_id)?.name || "";
-
-  const hasReturn = items.some((i) => Number(i.returned_quantity || 0) > 0);
-  const isPosInvoice = invoice?.channel === "pos";
-  const isLocked =
-    status === "paid" || status === "partial" || hasReturn || isPosInvoice;
-  const hasUsableItems = items.some((i) => i.product_id);
-  const canSave =
-    !!invoice?.customer_id && hasUsableItems && !saving && !isLocked;
+  const hasUsableItems = items.some(
+    (i) => i.product_id || i.product_name?.trim()
+  );
+  const canSave = hasUsableItems && !saving;
 
   const toggleItemDiscount = (index, revealed) => {
     setRevealedItemDiscounts((prev) => {
@@ -217,64 +206,11 @@ export default function UpdateSales() {
     });
   };
 
-  const handleSaveUnpaid = async () => {
+  const handleSave = async () => {
     if (!canSave) return;
     const res = await submit();
     if (res?.success) {
-      toast.success(t("screens.invoices.savedUnpaid"));
-    }
-  };
-
-  const handleOpenPayModal = () => {
-    if (!invoice?.customer_id) {
-      toast.error(t("errors.customer_required"));
-      return;
-    }
-    if (!hasUsableItems) {
-      toast.error(t("errors.addOneItem"));
-      return;
-    }
-    setPaymentModalOpen(true);
-  };
-
-  const handlePaymentCollected = async (paymentData) => {
-    const res = await submit(paymentData);
-    if (res?.success) {
-      toast.success(t("screens.invoices.savedPaid"));
-      setPaymentModalOpen(false);
-    }
-  };
-
-  const handleItemTaxChange = (index, item, newTaxId) => {
-    const selectedTax = taxes?.find((tx) => tx.id === newTaxId) || null;
-    const changed = updateItemTax(index, newTaxId, selectedTax?.rate || 0);
-
-    if (changed && item.product_id) {
-      setPendingTaxConfirm({
-        productId: item.product_id,
-        productName: item.name,
-        newTaxId,
-        newTaxName: selectedTax?.name || null,
-      });
-    }
-  };
-
-  const handleConfirmProductTaxUpdate = async () => {
-    if (!pendingTaxConfirm) return;
-
-    setConfirmingTaxUpdate(true);
-
-    try {
-      await api.updateProductTax({
-        product_id: pendingTaxConfirm.productId,
-        tax_id: pendingTaxConfirm.newTaxId,
-      });
-      await refetch(); // ADD
-    } catch (err) {
-      console.error("Failed to update product default tax:", err);
-    } finally {
-      setConfirmingTaxUpdate(false);
-      setPendingTaxConfirm(null);
+      toast.success(t("screens.quotations.saved"));
     }
   };
 
@@ -292,41 +228,19 @@ export default function UpdateSales() {
         <section className="flex flex-col gap-3 rounded-2xl border border-[#e9edfb] bg-white px-5 py-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25">
-              <Receipt size={18} />
+              <FileText size={18} />
             </span>
             <div>
               <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
                 {t("ui.sales")}
               </p>
               <h1 className="text-lg font-black leading-tight text-slate-950">
-                {t("screens.invoices.editSales")}
+                {t("screens.quotations.editQuotation")}
               </h1>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase ${
-                status === "paid"
-                  ? "bg-emerald-50 text-emerald-600"
-                  : status === "partial"
-                    ? "bg-amber-50 text-amber-600"
-                    : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              {t(`screens.invoices.${status}`)}
-            </span>
-            <span
-              className={`rounded-lg px-2.5 py-1 text-[10px] font-black uppercase ${
-                isPosInvoice
-                  ? "bg-violet-50 text-violet-600"
-                  : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              {isPosInvoice
-                ? t("screens.invoices.pos")
-                : t("screens.invoices.manual")}
-            </span>
             <button
               type="button"
               onClick={() => window.history.back()}
@@ -345,63 +259,64 @@ export default function UpdateSales() {
           </div>
         )}
 
-        {isLocked && (
-          <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs font-bold text-amber-700">
-            <Lock size={15} className="mt-0.5 shrink-0" />
-            <span>
-              {isPosInvoice
-                ? t("screens.invoices.lockedPosInvoice")
-                : hasReturn
-                  ? t(
-                      "screens.invoices.lockedAfterReturn",
-                      "This invoice has a return and can no longer be edited."
-                    )
-                  : t("screens.invoices.lockedAfterPayment")}
-            </span>
-          </div>
-        )}
-
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
           <main className="space-y-4">
             <section className={panelClass}>
               <AccentRule colorClass="bg-[#4663ff]" />
               <div className={panelBodyClass}>
-                <div className="grid gap-3 md:grid-cols-2">
+                <div className="grid gap-3 md:grid-cols-3">
                   <div className="flex items-center gap-1">
                     <div className="flex-1">
                       <SearchableSelect
-                        placeholder={t("ui.selectCustomer")}
+                        placeholder={t("ui.selectCustomerOptional")}
                         options={customers}
-                        selectedValue={invoice?.customer_id}
+                        selectedValue={quotation?.customer_id}
                         onChange={(customer) =>
-                          setInvoice((prev) => ({
+                          setQuotation((prev) => ({
                             ...prev,
                             customer_id: customer.id,
                           }))
                         }
-                        disabled={isLocked}
                       />
                     </div>
-                    {!isLocked && (
-                      <button
-                        type="button"
-                        onClick={() => setCustomerModalOpen(true)}
-                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
-                      >
-                        <Plus size={14} />
-                        <span>{t("screens.contacts.addCustomer")}</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setCustomerModalOpen(true)}
+                      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+                    >
+                      <Plus size={14} />
+                      <span>{t("screens.contacts.addCustomer")}</span>
+                    </button>
                   </div>
+
                   <input
                     type="date"
                     className={inputClass}
-                    value={invoice?.date || ""}
-                    disabled={isLocked}
+                    value={quotation?.date || ""}
                     onChange={(e) =>
-                      setInvoice((prev) => ({ ...prev, date: e.target.value }))
+                      setQuotation((prev) => ({
+                        ...prev,
+                        date: e.target.value,
+                      }))
                     }
                   />
+
+                  <select
+                    className={inputClass}
+                    value={quotation?.status || "draft"}
+                    onChange={(e) =>
+                      setQuotation((prev) => ({
+                        ...prev,
+                        status: e.target.value,
+                      }))
+                    }
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {t(`screens.quotations.status.${s}`)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </section>
@@ -421,22 +336,19 @@ export default function UpdateSales() {
                   <button
                     type="button"
                     onClick={addItem}
-                    disabled={isLocked}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
                   >
                     <Plus size={13} />
                     {t("screens.invoices.addItem")}
                   </button>
-                  {!isLocked && (
-                    <button
-                      type="button"
-                      onClick={() => setIsFormOpen(true)}
-                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-600 transition hover:bg-violet-100"
-                    >
-                      <Plus size={13} />
-                      {t("screens.products.create")}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setIsFormOpen(true)}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-600 transition hover:bg-violet-100"
+                  >
+                    <Plus size={13} />
+                    {t("screens.products.create")}
+                  </button>
                 </div>
               </div>
 
@@ -445,7 +357,9 @@ export default function UpdateSales() {
                   const afterDiscount =
                     (item.total || 0) - (item.discount || 0);
                   const lineTotal = afterDiscount + (item.taxValue || 0);
-                  const hasProduct = Boolean(item.product_id);
+                  const hasProduct = Boolean(
+                    item.product_id || item.product_name?.trim()
+                  );
                   const hasTax = hasProduct && item.tax_capable;
                   const isNonBaseUnit =
                     item.unit_conversion_factor &&
@@ -458,15 +372,16 @@ export default function UpdateSales() {
                       <div className="flex items-start gap-2">
                         <div className="flex-1">
                           <SearchableSelect
-                            placeholder={t("ui.selectProduct")}
+                            placeholder={t("ui.productNameOrSelect")}
                             options={products}
                             selectedValue={item.product_id}
-                            selectedLabel={item.name}
-                            disabled={isLocked}
+                            selectedLabel={item.product_name}
                             onChange={(e) => {
                               updateItem(index, "product_id", e.id);
                             }}
                             onInputChange={async (value) => {
+                              updateItem(index, "product_name", value);
+
                               if (!value.trim()) return;
                               try {
                                 const res = await api.getProducts({
@@ -480,9 +395,9 @@ export default function UpdateSales() {
                               }
                             }}
                           />
-                          {item.code && (
+                          {item.product_code && (
                             <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
-                              #{item.code}
+                              #{item.product_code}
                             </p>
                           )}
                         </div>
@@ -490,7 +405,7 @@ export default function UpdateSales() {
                         <button
                           type="button"
                           onClick={() => setDeleteItemIndex(index)}
-                          disabled={items.length === 1 || isLocked}
+                          disabled={items.length === 1}
                           className="mt-0.5 rounded-lg p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed"
                         >
                           <Trash2 size={16} />
@@ -505,7 +420,6 @@ export default function UpdateSales() {
                           <NumberInput
                             className={inputClass}
                             value={item.entered_quantity}
-                            disabled={isLocked}
                             onChange={(val) =>
                               updateItem(index, "entered_quantity", val)
                             }
@@ -519,7 +433,6 @@ export default function UpdateSales() {
                           <NumberInput
                             className={inputClass}
                             value={item.entered_price}
-                            disabled={isLocked}
                             onChange={(val) =>
                               updateItem(index, "entered_price", val)
                             }
@@ -534,7 +447,6 @@ export default function UpdateSales() {
                             <select
                               className={inputClass}
                               value={item.unit_id || ""}
-                              disabled={isLocked}
                               onChange={(e) =>
                                 updateItemUnit(index, e.target.value)
                               }
@@ -546,9 +458,15 @@ export default function UpdateSales() {
                               ))}
                             </select>
                           ) : (
-                            <div className="flex h-9 items-center rounded-xl border border-slate-100 bg-slate-50 px-3 text-xs text-slate-400">
-                              {item.unit_name || "—"}
-                            </div>
+                            <input
+                              type="text"
+                              className={inputClass}
+                              value={item.unit_name || ""}
+                              onChange={(e) =>
+                                updateItem(index, "unit_name", e.target.value)
+                              }
+                              placeholder="—"
+                            />
                           )}
                         </div>
 
@@ -561,7 +479,7 @@ export default function UpdateSales() {
                           </div>
                         </div>
 
-                        {hasProduct && !isLocked && (
+                        {hasProduct && (
                           <div className="flex items-end">
                             <AddOptionsMenu
                               align="right"
@@ -631,18 +549,23 @@ export default function UpdateSales() {
                               />
                             }
                             tone="success"
-                            disabled={isLocked}
                             onRemove={() => disableItemTax(index)}
                           >
                             <select
-                              className="h-6 border-none bg-transparent text-xs font-bold text-emerald-700 outline-none disabled:text-emerald-700"
+                              className="h-6 border-none bg-transparent text-xs font-bold text-emerald-700 outline-none"
                               value={item.tax_id || ""}
-                              disabled={isLocked}
                               onChange={(e) => {
                                 const newTaxId = e.target.value
                                   ? Number(e.target.value)
                                   : null;
-                                handleItemTaxChange(index, item, newTaxId);
+                                const selectedTax = taxes?.find(
+                                  (tx) => tx.id === newTaxId
+                                );
+                                updateItemTax(
+                                  index,
+                                  newTaxId,
+                                  selectedTax?.rate || 0
+                                );
                               }}
                             >
                               <option value="">
@@ -672,11 +595,9 @@ export default function UpdateSales() {
                               />
                             }
                             tone="danger"
-                            disabled={isLocked}
                             onRemove={() => toggleItemDiscount(index, true)}
                           >
                             <NumberInput
-                              disabled={isLocked}
                               className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
                               value={item.discount_rate || ""}
                               onChange={(val) =>
@@ -689,7 +610,6 @@ export default function UpdateSales() {
                               % =
                             </span>
                             <NumberInput
-                              disabled={isLocked}
                               className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
                               value={item.discount || ""}
                               onChange={(val) =>
@@ -709,7 +629,6 @@ export default function UpdateSales() {
                           />
                           <input
                             type="text"
-                            disabled={isLocked}
                             className="h-6 w-full min-w-0 flex-1 border-none bg-transparent text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400"
                             value={item.description || ""}
                             onChange={(e) =>
@@ -717,15 +636,13 @@ export default function UpdateSales() {
                             }
                             placeholder={t("screens.invoices.notePlaceholder")}
                           />
-                          {!isLocked && (
-                            <button
-                              type="button"
-                              onClick={() => toggleItemNote(index, true)}
-                              className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
-                            >
-                              <X size={13} />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => toggleItemNote(index, true)}
+                            className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+                          >
+                            <X size={13} />
+                          </button>
                         </div>
                       )}
                     </div>
@@ -787,33 +704,30 @@ export default function UpdateSales() {
                 <div className="my-3 h-px bg-[#eef1ff]" />
 
                 <div className="space-y-2">
-                  {invoiceDiscountRevealed && (
+                  {quotationDiscountRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-red-100 bg-red-50/40 p-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold text-red-600">
                           <Percent size={12} />
                           {t("screens.invoices.invoiceDiscountRate")}
                         </label>
-                        {!isLocked && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              clearInvoiceDiscount();
-                              setInvoiceDiscountRevealed(false);
-                            }}
-                            className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
-                          >
-                            <X size={13} />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearQuotationDiscount();
+                            setQuotationDiscountRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="relative flex-1">
                           <NumberInput
-                            disabled={isLocked}
                             className={`${smallInputClass} pe-5 text-end tabular-nums`}
-                            value={invoice.discount_rate || ""}
-                            onChange={setInvoiceDiscountRate}
+                            value={quotation.discount_rate || ""}
+                            onChange={setQuotationDiscountRate}
                             max={100}
                             placeholder="0"
                           />
@@ -823,191 +737,177 @@ export default function UpdateSales() {
                         </div>
                         <span className="text-xs text-slate-300">=</span>
                         <NumberInput
-                          disabled={isLocked}
                           className={`${smallInputClass} flex-1 text-end tabular-nums`}
-                          value={invoiceDiscount || ""}
-                          onChange={setInvoiceDiscountAmount}
+                          value={quotationDiscount || ""}
+                          onChange={setQuotationDiscountAmount}
                           placeholder="0"
                         />
                       </div>
                     </div>
                   )}
 
-                  {invoiceTaxRevealed && (
+                  {quotationTaxRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
                           <Receipt size={12} />
                           {t("ui.tax")}
                         </label>
-                        {!isLocked && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              clearInvoiceTaxes();
-                              setInvoiceTaxRevealed(false);
-                            }}
-                            className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
-                          >
-                            <X size={13} />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            clearQuotationTaxes();
+                            setQuotationTaxRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
                       </div>
 
-                      {(invoice.taxes || []).length > 0 && (
+                      {(quotation.taxes || []).length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                          {invoice.taxes.map((tax) => (
+                          {quotation.taxes.map((tax) => (
                             <span
                               key={tax.id}
                               className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-emerald-700 shadow-sm"
                             >
                               {tax.name} ({tax.rate}%)
-                              {!isLocked && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeInvoiceTax(tax.id)}
-                                  className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                                >
-                                  <X size={11} />
-                                </button>
-                              )}
+                              <button
+                                type="button"
+                                onClick={() => removeQuotationTax(tax.id)}
+                                className="rounded p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                              >
+                                <X size={11} />
+                              </button>
                             </span>
                           ))}
                         </div>
                       )}
 
-                      {!isLocked && (
-                        <select
-                          className={`${smallInputClass} text-right`}
-                          value=""
-                          onChange={(e) => {
-                            const selected = taxes.find(
-                              (tax) => tax.id === Number(e.target.value)
-                            );
-                            if (selected) addInvoiceTax(selected);
-                          }}
-                        >
-                          <option value="">
-                            {t(
-                              "screens.invoices.addAnotherTax",
-                              "Add another tax"
-                            )}
-                          </option>
-                          {taxes
-                            .filter(
-                              (tax) =>
-                                (tax.category === "invoice" ||
-                                  tax.category === "both") &&
-                                !(invoice.taxes || []).some(
-                                  (applied) => applied.id === tax.id
-                                )
-                            )
-                            .map((tax) => (
-                              <option key={tax.id} value={tax.id}>
-                                {tax.name} ({tax.rate}%)
-                              </option>
-                            ))}
-                        </select>
-                      )}
+                      <select
+                        className={`${smallInputClass} text-right`}
+                        value=""
+                        onChange={(e) => {
+                          const selected = taxes.find(
+                            (tax) => tax.id === Number(e.target.value)
+                          );
+                          if (selected) addQuotationTax(selected);
+                        }}
+                      >
+                        <option value="">
+                          {t(
+                            "screens.invoices.addAnotherTax",
+                            "Add another tax"
+                          )}
+                        </option>
+                        {taxes
+                          .filter(
+                            (tax) =>
+                              (tax.category === "invoice" ||
+                                tax.category === "both") &&
+                              !(quotation.taxes || []).some(
+                                (applied) => applied.id === tax.id
+                              )
+                          )
+                          .map((tax) => (
+                            <option key={tax.id} value={tax.id}>
+                              {tax.name} ({tax.rate}%)
+                            </option>
+                          ))}
+                      </select>
                     </div>
                   )}
 
-                  {!isLocked &&
-                    (!invoiceDiscountRevealed ||
-                      !invoiceTaxRevealed ||
-                      !invoiceNoteRevealed) && (
-                      <div className="flex">
-                        <AddOptionsMenu
-                          options={[
-                            {
-                              key: "invoice-discount",
-                              label: t("screens.invoices.addInvoiceDiscount"),
-                              icon: (
-                                <Percent size={13} className="text-red-500" />
-                              ),
-                              visible: !invoiceDiscountRevealed,
-                              onClick: () => setInvoiceDiscountRevealed(true),
-                            },
-                            {
-                              key: "invoice-tax",
-                              label: t("screens.invoices.addInvoiceTax"),
-                              icon: (
-                                <Receipt
-                                  size={13}
-                                  className="text-emerald-600"
-                                />
-                              ),
-                              visible: !invoiceTaxRevealed,
-                              onClick: () => setInvoiceTaxRevealed(true),
-                            },
-                            {
-                              key: "invoice-note",
-                              label: t("screens.invoices.addInvoiceNote"),
-                              icon: (
-                                <StickyNote
-                                  size={13}
-                                  className="text-amber-500"
-                                />
-                              ),
-                              visible: !invoiceNoteRevealed,
-                              onClick: () => setInvoiceNoteRevealed(true),
-                            },
-                          ]}
-                        />
-                      </div>
-                    )}
+                  {(!quotationDiscountRevealed ||
+                    !quotationTaxRevealed ||
+                    !quotationNoteRevealed) && (
+                    <div className="flex">
+                      <AddOptionsMenu
+                        options={[
+                          {
+                            key: "quotation-discount",
+                            label: t("screens.invoices.addInvoiceDiscount"),
+                            icon: (
+                              <Percent size={13} className="text-red-500" />
+                            ),
+                            visible: !quotationDiscountRevealed,
+                            onClick: () => setQuotationDiscountRevealed(true),
+                          },
+                          {
+                            key: "quotation-tax",
+                            label: t("screens.invoices.addInvoiceTax"),
+                            icon: (
+                              <Receipt size={13} className="text-emerald-600" />
+                            ),
+                            visible: !quotationTaxRevealed,
+                            onClick: () => setQuotationTaxRevealed(true),
+                          },
+                          {
+                            key: "quotation-note",
+                            label: t("screens.invoices.addInvoiceNote"),
+                            icon: (
+                              <StickyNote
+                                size={13}
+                                className="text-amber-500"
+                              />
+                            ),
+                            visible: !quotationNoteRevealed,
+                            onClick: () => setQuotationNoteRevealed(true),
+                          },
+                        ]}
+                      />
+                    </div>
+                  )}
 
-                  {invoiceDiscount > 0 && (
+                  {quotationDiscount > 0 && (
                     <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
                       <span className="text-xs text-slate-400">
                         {t("screens.invoices.invoiceDiscountAmount")}
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-red-500">
-                        -{money(invoiceDiscount)}
+                        -{money(quotationDiscount)}
                       </span>
                     </div>
                   )}
 
-                  {invoiceTaxValue > 0 && (
+                  {quotationTaxValue > 0 && (
                     <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
                       <span className="text-xs text-slate-400">
                         {t("screens.invoices.invoiceTaxAmount")}
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
-                        +{money(invoiceTaxValue)}
+                        +{money(quotationTaxValue)}
                       </span>
                     </div>
                   )}
 
-                  {invoiceNoteRevealed && (
+                  {quotationNoteRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-amber-100 bg-amber-50/40 p-2.5">
                       <div className="flex items-center justify-between">
                         <label className="flex items-center gap-1.5 text-xs font-bold text-amber-600">
                           <StickyNote size={12} />
                           {t("screens.invoices.invoiceNote")}
                         </label>
-                        {!isLocked && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setInvoice((prev) => ({
-                                ...prev,
-                                description: "",
-                              }));
-                              setInvoiceNoteRevealed(false);
-                            }}
-                            className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
-                          >
-                            <X size={13} />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQuotation((prev) => ({
+                              ...prev,
+                              description: "",
+                            }));
+                            setQuotationNoteRevealed(false);
+                          }}
+                          className="rounded-lg p-1 text-slate-400 transition hover:bg-white hover:text-red-600"
+                        >
+                          <X size={13} />
+                        </button>
                       </div>
                       <textarea
-                        disabled={isLocked}
                         className={`${smallInputClass} min-h-[2.5rem] resize-none overflow-hidden py-1.5`}
-                        value={invoice.description || ""}
+                        value={quotation.description || ""}
                         onChange={(e) => {
-                          setInvoice((prev) => ({
+                          setQuotation((prev) => ({
                             ...prev,
                             description: e.target.value,
                           }));
@@ -1032,39 +932,29 @@ export default function UpdateSales() {
               </div>
             </section>
 
-            {!isLocked && (
-              <section className={panelClass}>
-                <AccentRule colorClass="bg-amber-500" />
-                <div className={`${panelBodyClass} space-y-2.5`}>
-                  <h3 className="text-[13px] font-black text-slate-950">
-                    {t("ui.payment")}
-                  </h3>
+            <section className={panelClass}>
+              <AccentRule colorClass="bg-amber-500" />
+              <div className={`${panelBodyClass} space-y-2.5`}>
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={!canSave}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Save size={15} />
+                  {saving
+                    ? t("common.saving")
+                    : t("screens.quotations.saveQuotation")}
+                </button>
 
-                  <div className="grid gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSaveUnpaid}
-                      disabled={!canSave}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <Save size={15} />
-                      {saving
-                        ? t("common.saving")
-                        : t("screens.invoices.saveInvoice")}
-                    </button>
-                  </div>
-
-                  {!canSave && !saving && (
-                    <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
-                      <AlertCircle size={12} />
-                      {!invoice?.customer_id
-                        ? t("errors.customer_required")
-                        : t("errors.addOneItem")}
-                    </p>
-                  )}
-                </div>
-              </section>
-            )}
+                {!canSave && !saving && (
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                    <AlertCircle size={12} />
+                    {t("errors.addOneItem")}
+                  </p>
+                )}
+              </div>
+            </section>
           </aside>
         </div>
       </div>
@@ -1080,38 +970,6 @@ export default function UpdateSales() {
         message={t("deleteModal.message")}
       />
 
-      <ConfirmModal
-        open={Boolean(pendingTaxConfirm)}
-        onClose={() => setPendingTaxConfirm(null)}
-        onConfirm={handleConfirmProductTaxUpdate}
-        confirming={confirmingTaxUpdate}
-        title={t("screens.invoices.updateProductTaxTitle")}
-        message={
-          pendingTaxConfirm
-            ? pendingTaxConfirm.newTaxId
-              ? t("screens.invoices.updateProductTaxSetMessage", {
-                  taxName: pendingTaxConfirm.newTaxName,
-                  productName: pendingTaxConfirm.productName,
-                })
-              : t("screens.invoices.updateProductTaxRemoveMessage", {
-                  productName: pendingTaxConfirm.productName,
-                })
-            : ""
-        }
-      />
-
-      <AddPayment
-        isOpen={paymentModalOpen}
-        onClose={() => setPaymentModalOpen(false)}
-        invoice={null}
-        totalAmount={netTotal}
-        party={invoice?.customer_id}
-        partyName={customerName}
-        mode="sales"
-        onSubmit={handlePaymentCollected}
-        confirmLabel={t("screens.invoices.saveInvoice")}
-      />
-
       {customerModalOpen && (
         <CustomerFormModal
           open={customerModalOpen}
@@ -1121,7 +979,7 @@ export default function UpdateSales() {
           onSubmit={async (event) => {
             const result = await submitDraft(event);
             if (result && result.id) {
-              setInvoice((prev) => ({ ...prev, customer_id: result.id }));
+              setQuotation((prev) => ({ ...prev, customer_id: result.id }));
               setCustomerModalOpen(false);
               await refetch();
             }
@@ -1143,29 +1001,32 @@ export default function UpdateSales() {
           onSubmit={async (form) => {
             try {
               const result = await submitProduct(form);
-              const targetIndex = items.findIndex((i) => !i.product_id);
+              const fullProduct = await api.getProduct(result.id);
+              const productUnits = fullProduct.productUnits || [];
+              const baseUnit = productUnits.find((u) => u.is_base) || null;
               const matchedTax = productTaxes?.find(
                 (tx) => tx.id === form.tax_id
               );
 
+              const targetIndex = items.findIndex(
+                (i) => !i.product_id && !i.product_name?.trim()
+              );
+
+              const productPayload = {
+                id: result.id,
+                name: form.name,
+                price: baseUnit?.sale_price ?? form.salePrice,
+                tax_id: form.tax_id,
+                tax_rate: matchedTax?.rate || 0,
+                available_units: productUnits,
+                unit_id: baseUnit?.id ?? null,
+                unit_name: baseUnit?.unit_name || "",
+              };
+
               if (targetIndex === -1) {
-                addItemWithProduct({
-                  id: result.id,
-                  name: form.name,
-                  price: form.salePrice,
-                  buyingPrice: form.costPrice,
-                  tax_id: form.tax_id,
-                  tax_rate: matchedTax?.rate || 0,
-                });
+                addItemWithProduct(productPayload);
               } else {
-                setItemProduct(targetIndex, {
-                  id: result.id,
-                  name: form.name,
-                  price: form.salePrice,
-                  buyingPrice: form.costPrice,
-                  tax_id: form.tax_id,
-                  tax_rate: matchedTax?.rate || 0,
-                });
+                setItemProduct(targetIndex, productPayload);
               }
 
               setIsFormOpen(false);

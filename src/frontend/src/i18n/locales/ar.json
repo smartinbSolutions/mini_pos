@@ -312,6 +312,32 @@
       "theyOweYou": "مستحق لك",
       "youOweThem": "مستحق عليهم"
     },
+    "quotations": {
+      "salesQuotation": "عرض سعر مبيعات",
+      "quotation": "عرض سعر",
+      "quotations": "عروض الأسعار",
+      "createQuotation": "إنشاء عرض سعر مبيعات",
+      "editQuotation": "تعديل عرض سعر مبيعات",
+      "saveQuotation": "حفظ عرض السعر",
+      "saved": "تم حفظ عرض السعر",
+      "listTitle": "عروض أسعار المبيعات",
+      "listSubtitle": "إدارة عروض الأسعار المرسلة للعملاء قبل تحويلها إلى فواتير",
+      "search": "بحث في عروض الأسعار...",
+      "addQuotation": "إضافة عرض سعر",
+      "empty": "لا توجد عروض أسعار بعد",
+      "noCustomer": "بدون عميل",
+      "notFound": "عرض السعر غير موجود",
+      "loadingQuotation": "جاري تحميل عرض السعر...",
+      "cannotDeleteAccepted": "تم قبول عرض السعر هذا ولا يمكن حذفه",
+      "deleteFailed": "فشل حذف عرض السعر",
+      "status": {
+        "draft": "مسودة",
+        "sent": "مُرسل",
+        "accepted": "مقبول",
+        "rejected": "مرفوض",
+        "expired": "منتهي"
+      }
+    },
     "products": {
       "updateProducts": "تحديث المنتجات",
       "updateFieldsHint": "حدد الحقول التي تريد تحديثها، ثم قم بتصدير بيانات المنتجات الحالية. فقط الحقول التي تحددها ستكون قابلة للتعديل في الملف المُصدَّر — وستبقى باقي الحقول مقفلة.",
@@ -1043,6 +1069,7 @@
     "tr": "التركية"
   },
   "navigation": {
+    "salesQuotations": "عروض أسعار المبيعات",
     "main": "الرئيسية",
     "management": "الإدارة",
     "people": "الأشخاص",
@@ -1235,6 +1262,7 @@
     "deleted": "تم حذف {{field}} بنجاح"
   },
   "DOCS": {
+    "CODE": "الكود",
     "PHONE": "الهاتف",
     "EMAIL": "البريد الإلكتروني",
     "TAX_NO": "الرقم الضريبي",
@@ -1271,6 +1299,14 @@
     "INVOICE_TYPE_PURCHASE": "فاتورة مشتريات",
     "INVOICE_TYPE_SALES_RETURN": "مرتجع مبيعات",
     "INVOICE_TYPE_PURCHASE_RETURN": "مرتجع مشتريات",
-    "INVOICE_TYPE_EXPENSE": "مصروف"
+    "INVOICE_TYPE_EXPENSE": "مصروف",
+    "QUOTATION_NO": "رقم عرض السعر",
+    "QUOTATION_DATE": "تاريخ عرض السعر",
+    "NO_CUSTOMER": "بدون عميل",
+    "QUOTATION_STATUS_DRAFT": "مسودة",
+    "QUOTATION_STATUS_SENT": "مُرسل",
+    "QUOTATION_STATUS_ACCEPTED": "مقبول",
+    "QUOTATION_STATUS_REJECTED": "مرفوض",
+    "QUOTATION_STATUS_EXPIRED": "منتهي"
   }
 }

@@ -88,6 +88,11 @@ import PrintPurchaseReturn from "./components/Invoices/PurchaseReturn/components
 import PrintPayment from "./components/Cash/Payment/components/PrintPayment";
 import PrintExpense from "./components/Invoices/expense/components/PrintExpense";
 import ExpenseCategoryDetailPage from "./components/ExpenseCategory/components/ExpenseCategoryDetailPage";
+import SalesQuotationList from "./components/Invoices/SalesQuotations/components/SalesQuotationList";
+import AddSalesQuotation from "./components/Invoices/SalesQuotations/components/AddSalesQuotation";
+import UpdateSalesQuotation from "./components/Invoices/SalesQuotations/components/UpdateSalesQuotation";
+import PrintSalesQuotation from "./components/Invoices/SalesQuotations/components/PrintSalesQuotation";
+import SalesQuotationView from "./components/Invoices/SalesQuotations/components/SalesQuotationView";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -201,6 +206,21 @@ export default function App() {
               <Route path="edit-sales/:id" element={<UpdateSales />} />
               <Route path="customer" element={<CustomerList />} />
 
+              {/* ================= SALES QUOTATIONS ================= */}
+              <Route path="sales-quotations" element={<SalesQuotationList />} />
+              <Route
+                path="add-sales-quotation"
+                element={<AddSalesQuotation />}
+              />
+              <Route
+                path="view-sales-quotation/:id"
+                element={<SalesQuotationView />}
+              />
+              <Route
+                path="edit-sales-quotation/:id"
+                element={<UpdateSalesQuotation />}
+              />
+
               {/* ================= SALES RETURN ================= */}
               <Route path="/sales-return" element={<SalesReturnList />} />
               <Route
@@ -288,6 +308,10 @@ export default function App() {
               />
             </Route>
             <Route path="/print-sales/:id" element={<PrintSalesInvoice />} />
+            <Route
+              path="/print-sales-quotation/:id"
+              element={<PrintSalesQuotation />}
+            />
             <Route
               path="/print-sales-return/:id"
               element={<PrintSalesReturn />}

@@ -570,7 +570,7 @@ export default function UpdateExpense() {
                     >
                       <span className="text-xs text-slate-400">
                         {t("screens.invoices.itemDiscountAt", {
-                          rate: group.rate,
+                          rate: Number(group.rate).toFixed(2),
                         })}
                       </span>
                       <span className="text-right text-xs font-bold tabular-nums text-red-500">

@@ -181,6 +181,11 @@ export default function PurchaseReturnPage() {
                             {item.name ||
                               `${t("ui.product")} #${item.product_id}`}
                           </p>
+                          {item.product_code && (
+                            <p className="text-[11px] font-semibold text-slate-400">
+                              #{item.product_code}
+                            </p>
+                          )}
                           <p className="text-[11px] font-semibold text-slate-400">
                             {t("ui.boughtQty")}: {boughtInUnit} {unitLabel} ·{" "}
                             {t("ui.price")}: {money(item.price)}

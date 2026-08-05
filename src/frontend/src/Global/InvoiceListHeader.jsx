@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { RefreshCw, Search, Filter, X, SlidersHorizontal } from "lucide-react";
-import { normalizeDigits } from "./FormatNumber";
 import NumberInput from "./NumberInput";
 
 const VARIANTS = {

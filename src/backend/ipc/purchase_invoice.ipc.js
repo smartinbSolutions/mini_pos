@@ -106,6 +106,7 @@ export default function registerPurchaseInvoicesIPC() {
           preparedItems.push({
             product_id: item.product_id,
             product_name: item.name || null,
+            product_code: item.code || null,
             unit_name: item.unit_name || null,
             unit_conversion_factor: factor,
             baseQuantity,
@@ -247,11 +248,11 @@ export default function registerPurchaseInvoicesIPC() {
           INSERT INTO purchase_invoice_items
           (
             invoice_id, product_id, quantity, price, total,
-            product_name, unit_name, unit_conversion_factor,
+           product_name, product_code, unit_name, unit_conversion_factor,
             tax_id, tax_rate, taxValue,
             discount, discount_rate, description
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const updateStockAndCost = db.prepare(`
@@ -277,6 +278,7 @@ export default function registerPurchaseInvoicesIPC() {
             item.basePrice,
             item.total,
             item.product_name,
+            item.product_code,
             item.unit_name,
             item.unit_conversion_factor,
             item.tax_id,
@@ -868,6 +870,7 @@ export default function registerPurchaseInvoicesIPC() {
           preparedItems.push({
             product_id: item.product_id,
             product_name: item.name || null,
+            product_code: item.code || null,
             unit_name: item.unit_name || null,
             unit_conversion_factor: factor,
             baseQuantity,
@@ -1081,11 +1084,11 @@ export default function registerPurchaseInvoicesIPC() {
         INSERT INTO purchase_invoice_items
         (
           invoice_id, product_id, quantity, price, total,
-          product_name, unit_name, unit_conversion_factor,
+        product_name, product_code, unit_name, unit_conversion_factor,
           tax_id, tax_rate, taxValue,
           discount, discount_rate, description
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
         for (const item of preparedItems) {
@@ -1096,6 +1099,7 @@ export default function registerPurchaseInvoicesIPC() {
             item.basePrice,
             item.total,
             item.product_name,
+            item.product_code,
             item.unit_name,
             item.unit_conversion_factor,
             item.tax_id,

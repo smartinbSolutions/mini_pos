@@ -149,6 +149,17 @@ contextBridge.exposeInMainWorld("api", {
   getDailyPosReport: (params) =>
     ipcRenderer.invoke("get-daily-pos-report", params),
 
+  /* ================= SALES QUOTATIONS ================= */
+  getSalesQuotations: (params) =>
+    ipcRenderer.invoke("get-sales-quotations", params),
+  getSalesQuotationById: (id) => ipcRenderer.invoke("get-sales-quotation", id),
+  createSalesQuotation: (data) =>
+    ipcRenderer.invoke("create-sales-quotation", data),
+  updateSalesQuotation: (data) =>
+    ipcRenderer.invoke("update-sales-quotation", data),
+  deleteSalesQuotation: (id) =>
+    ipcRenderer.invoke("delete-sales-quotation", id),
+
   /* ================= SALES RETURN ================= */
   getSalesReturns: (params) => ipcRenderer.invoke("get-sales-returns", params),
   getSalesReturnById: (id) => ipcRenderer.invoke("get-sales-return-by-id", id),

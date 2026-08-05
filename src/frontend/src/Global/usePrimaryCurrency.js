@@ -36,7 +36,7 @@ export default function usePrimaryCurrency() {
   const money = useMemo(
     () =>
       (value, currency = primaryCurrency, options) =>
-        formatMoney(value, currency, options),
+        formatMoney(value, currency, { decimals: 2, ...options }),
     [primaryCurrency]
   );
 

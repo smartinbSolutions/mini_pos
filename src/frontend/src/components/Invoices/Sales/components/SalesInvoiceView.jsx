@@ -270,6 +270,11 @@ export default function SalesInvoiceView() {
                                 >
                                   {item.product_name || item.name || "-"}
                                 </GoTo>
+                                {item.product_code && (
+                                  <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
+                                    #{item.product_code}
+                                  </p>
+                                )}
                               </div>
                               {isNonBaseUnit && (
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">

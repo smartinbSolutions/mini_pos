@@ -1,24 +1,25 @@
+// PrintSalesQuotation.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 
-export default function PrintSalesInvoice() {
+export default function PrintSalesQuotation() {
   const { t, i18n } = useTranslation();
   const { id } = useParams();
   const { money } = usePrimaryCurrency();
 
-  const [invoice, setInvoice] = useState(null);
+  const [quotation, setQuotation] = useState(null);
   const [company, setCompany] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      window.api.getSalesInvoiceById(id),
+      window.api.getSalesQuotationById(id),
       window.api.getCompanySetting(),
-    ]).then(([invoiceData, companyRes]) => {
+    ]).then(([quotationData, companyRes]) => {
       if (!cancelled) {
-        setInvoice(invoiceData);
+        setQuotation(quotationData);
         setCompany(companyRes?.settings || null);
       }
     });
@@ -27,20 +28,20 @@ export default function PrintSalesInvoice() {
     };
   }, [id]);
 
-  if (!invoice) return null;
+  if (!quotation) return null;
 
-  const items = invoice.items || [];
+  const items = quotation.items || [];
   const hasAnyTax =
-    items.some((i) => Number(i.tax_rate) > 0) || Number(invoice.taxValue) > 0;
+    items.some((i) => Number(i.tax_rate) > 0) || Number(quotation.taxValue) > 0;
   const hasAnyDiscount =
-    items.some((i) => Number(i.discount) > 0) || Number(invoice.discount) > 0;
+    items.some((i) => Number(i.discount) > 0) || Number(quotation.discount) > 0;
 
   const itemDiscountTotal = items.reduce(
     (sum, item) => sum + Number(item.discount || 0),
     0
   );
-
-  // Group item-level tax by tax_id, same treatment as invoice.taxes[]
+  const hasAnyCode = items.some((i) => i.product_code);
+  // Group item-level tax by tax_id, same treatment as quotation.taxes[]
   const itemTaxGroups = Object.values(
     items.reduce((groups, item) => {
       if (!item.tax_id || Number(item.taxValue || 0) <= 0) return groups;
@@ -59,7 +60,7 @@ export default function PrintSalesInvoice() {
   );
 
   const itemTaxTotal = itemTaxGroups.reduce((sum, g) => sum + g.tax_value, 0);
-  const hasDeductions = itemDiscountTotal > 0 || Number(invoice.discount) > 0;
+  const hasDeductions = itemDiscountTotal > 0 || Number(quotation.discount) > 0;
 
   return (
     <div
@@ -88,25 +89,23 @@ export default function PrintSalesInvoice() {
           </div>
           <div className="w-2/5 text-start">
             <h3 className="text-[11px] uppercase tracking-wide text-[#6B6F76] mb-1">
-              {t("DOCS.INVOICE_NO")}
-              {invoice.channel === "pos" && (
-                <span className="ms-2 bg-[#33363D] text-white text-[9px] px-1.5 py-0.5 rounded">
-                  {t("DOCS.POS_BADGE")}
-                </span>
-              )}
+              {t("DOCS.QUOTATION_NO")}
+              <span className="ms-2 bg-[#33363D] text-white text-[9px] px-1.5 py-0.5 rounded">
+                {t(`DOCS.QUOTATION_STATUS_${quotation.status?.toUpperCase()}`)}
+              </span>
             </h3>
             <p className="font-mono tabular-nums text-base font-semibold mb-2">
-              {invoice.invoice_name}
+              {quotation.quotation_name}
             </p>
             <div
               className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 pt-2"
               style={{ borderTop: "1px dashed #C9C8C2" }}
             >
               <p className="text-[10px] uppercase text-[#6B6F76] whitespace-nowrap">
-                {t("DOCS.INVOICE_DATE")} :
+                {t("DOCS.QUOTATION_DATE")} :
               </p>
               <p className="font-mono tabular-nums text-[13px]">
-                {invoice.date}
+                {quotation.date}
               </p>
             </div>
           </div>
@@ -121,15 +120,17 @@ export default function PrintSalesInvoice() {
             <h4 className="text-[11px] uppercase text-[#6B6F76] mb-2">
               {t("DOCS.ISSUED_TO")}
             </h4>
-            <p className="font-medium">{invoice.customer_name}</p>
-            <p className="text-[#6B6F76]">{invoice.customer_phone}</p>
+            <p className="font-medium">
+              {quotation.customer_name || t("DOCS.NO_CUSTOMER")}
+            </p>
+            <p className="text-[#6B6F76]">{quotation.customer_phone}</p>
           </div>
           <div className="w-[1px] bg-[#E5E5E2]" />
           <div className="w-1/2">
             <h4 className="text-[11px] uppercase text-[#6B6F76] mb-2">
               {t("DOCS.ISSUED_BY")}
             </h4>
-            <p className="font-medium">{invoice.created_by_name}</p>
+            <p className="font-medium">{quotation.created_by_name}</p>
           </div>
         </div>
       </div>
@@ -139,6 +140,9 @@ export default function PrintSalesInvoice() {
         <table className="w-full border-collapse text-xs">
           <thead>
             <tr className="border-b border-[#33363D]">
+              {hasAnyCode && (
+                <th className="p-2 text-start font-medium">{t("DOCS.CODE")}</th>
+              )}
               <th className="p-2 text-start font-medium">
                 {t("DOCS.PRODUCT")}
               </th>
@@ -168,13 +172,13 @@ export default function PrintSalesInvoice() {
 
               return (
                 <tr key={item.id} className="border-b border-[#E5E5E2]">
+                  {hasAnyCode && (
+                    <td className="p-2 font-mono tabular-nums text-[#6B6F76]">
+                      {item.product_code || "—"}
+                    </td>
+                  )}
                   <td className="p-2">
-                    {item.product_name}
-                    {item.product_code && (
-                      <div className="text-[10px] text-[#6B6F76]">
-                        #{item.product_code}
-                      </div>
-                    )}
+                    {item.product_name || item.name}
                     {item.description && (
                       <div className="text-[10px] text-[#6B6F76] whitespace-pre-wrap mt-0.5">
                         {item.description}
@@ -225,11 +229,11 @@ export default function PrintSalesInvoice() {
       {/* Totals */}
       <div className="rounded border border-[#E5E5E2] p-6 flex justify-between gap-8">
         <div className="w-1/2 pe-3">
-          {invoice.description && (
+          {quotation.description && (
             <>
               <span className="text-[#6B6F76]">{t("DOCS.NOTES")} :</span>
               <p className="text-[#6B6F76] whitespace-pre-wrap">
-                {invoice.description}
+                {quotation.description}
               </p>
             </>
           )}
@@ -242,7 +246,7 @@ export default function PrintSalesInvoice() {
               {t("DOCS.TOTAL")}
             </span>
             <span className="font-mono tabular-nums text-base font-semibold">
-              {money(invoice.subtotal)}
+              {money(quotation.subtotal)}
             </span>
           </div>
 
@@ -257,16 +261,16 @@ export default function PrintSalesInvoice() {
                   </span>
                 </div>
               )}
-              {invoice.discount > 0 && (
+              {quotation.discount > 0 && (
                 <div className="flex justify-between text-[11px] text-[#9B3B3B]">
                   <span>
                     {t("DOCS.DISCOUNT")}
-                    {invoice.discount_rate
-                      ? ` [${invoice.discount_rate}%]`
+                    {quotation.discount_rate
+                      ? ` [${quotation.discount_rate}%]`
                       : ""}
                   </span>
                   <span className="font-mono tabular-nums">
-                    −{money(invoice.discount)}
+                    −{money(quotation.discount)}
                   </span>
                 </div>
               )}
@@ -289,9 +293,9 @@ export default function PrintSalesInvoice() {
                   </span>
                 </div>
               ))}
-              {(invoice.taxes || []).map((tax) => (
+              {(quotation.taxes || []).map((tax) => (
                 <div
-                  key={`invoice-tax-${tax.id}`}
+                  key={`quotation-tax-${tax.id}`}
                   className="flex justify-between gap-2 text-[11px] text-[#8A6A32]"
                 >
                   <span className="flex-1 min-w-0 break-words">
@@ -305,7 +309,7 @@ export default function PrintSalesInvoice() {
               <div className="flex justify-between text-[11px] font-medium text-[#8A6A32] pt-1.5 border-t border-[#EADFC5]">
                 <span>{t("DOCS.TOTAL_TAX")}</span>
                 <span className="font-mono tabular-nums">
-                  +{money(itemTaxTotal + Number(invoice.taxValue || 0))}
+                  +{money(itemTaxTotal + Number(quotation.taxValue || 0))}
                 </span>
               </div>
             </div>
@@ -317,7 +321,7 @@ export default function PrintSalesInvoice() {
               {t("DOCS.TOTAL_WITH_TAX")}
             </span>
             <span className="font-mono tabular-nums text-2xl font-semibold text-white">
-              {money(invoice.net_total)}
+              {money(quotation.net_total)}
             </span>
           </div>
         </div>

@@ -124,21 +124,23 @@ export default function registerSalesInvoiceIPC() {
           const productRow = db
             .prepare(
               `
-              SELECT p.costPrice, p.type, pu.unit_name AS base_unit_name
-              FROM products p
-              LEFT JOIN product_units pu
-                ON pu.product_id = p.id AND pu.is_base = 1
-              WHERE p.id = ?
-              `
+            SELECT p.costPrice, p.type, p.code, pu.unit_name AS base_unit_name
+            FROM products p
+            LEFT JOIN product_units pu
+              ON pu.product_id = p.id AND pu.is_base = 1
+            WHERE p.id = ?
+            `
             )
             .get(item.product_id);
           const buyingPrice = Number(productRow?.costPrice || 0);
           const isService = productRow?.type === "service";
           const baseUnitName = productRow?.base_unit_name || null;
+          const productCode = productRow?.code || null;
 
           preparedItems.push({
             product_id: item.product_id,
             product_name: item.name || null,
+            product_code: productCode,
             unit_name: item.unit_name || null,
             unit_conversion_factor: factor,
             baseQuantity,
@@ -277,11 +279,11 @@ export default function registerSalesInvoiceIPC() {
           INSERT INTO sales_invoice_items
           (
             invoice_id, product_id, quantity, price, buyingPrice, total,
-            product_name, unit_name, unit_conversion_factor,
+            product_name, product_code, unit_name, unit_conversion_factor,
             tax_id, tax_rate, taxValue,
             discount, discount_rate, description
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const updateStock = db.prepare(`
@@ -299,6 +301,7 @@ export default function registerSalesInvoiceIPC() {
             item.buyingPrice,
             item.total,
             item.product_name,
+            item.product_code,
             item.unit_name,
             item.unit_conversion_factor,
             item.tax_id,
@@ -952,21 +955,23 @@ export default function registerSalesInvoiceIPC() {
           const productRow = db
             .prepare(
               `
-              SELECT p.costPrice, p.type, pu.unit_name AS base_unit_name
-              FROM products p
-              LEFT JOIN product_units pu
-                ON pu.product_id = p.id AND pu.is_base = 1
-              WHERE p.id = ?
-              `
+            SELECT p.costPrice, p.type, p.code, pu.unit_name AS base_unit_name
+            FROM products p
+            LEFT JOIN product_units pu
+              ON pu.product_id = p.id AND pu.is_base = 1
+            WHERE p.id = ?
+            `
             )
             .get(item.product_id);
           const buyingPrice = Number(productRow?.costPrice || 0);
           const isService = productRow?.type === "service";
           const baseUnitName = productRow?.base_unit_name || null;
+          const productCode = productRow?.code || null;
 
           preparedItems.push({
             product_id: item.product_id,
             product_name: item.name || null,
+            product_code: productCode,
             unit_name: item.unit_name || null,
             unit_conversion_factor: factor,
             baseQuantity,
@@ -1081,15 +1086,15 @@ export default function registerSalesInvoiceIPC() {
 
         // ---- Insert new items + apply stock + record movements ----
         const insertItem = db.prepare(`
-        INSERT INTO sales_invoice_items
-        (
-          invoice_id, product_id, quantity, price, buyingPrice, total,
-          product_name, unit_name, unit_conversion_factor,
-          tax_id, tax_rate, taxValue,
-          discount, discount_rate, description
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+          INSERT INTO sales_invoice_items
+          (
+            invoice_id, product_id, quantity, price, buyingPrice, total,
+            product_name, product_code, unit_name, unit_conversion_factor,
+            tax_id, tax_rate, taxValue,
+            discount, discount_rate, description
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
 
         for (const item of preparedItems) {
           insertItem.run(
@@ -1100,6 +1105,7 @@ export default function registerSalesInvoiceIPC() {
             item.buyingPrice,
             item.total,
             item.product_name,
+            item.product_code,
             item.unit_name,
             item.unit_conversion_factor,
             item.tax_id,
@@ -1381,21 +1387,16 @@ export default function registerSalesInvoiceIPC() {
           const basePrice = factor > 0 ? enteredPrice / factor : enteredPrice;
           const total = enteredQuantity * enteredPrice;
 
-          // One query per item covering everything product-related this
-          // loop needs: quantity (stock guard), costPrice (buyingPrice
-          // snapshot), type (service check), and the current base unit
-          // name (movement snapshot) — was two separate product queries
-          // before (one for the stock guard, one for costPrice).
           const productRow = db
             .prepare(
               `
-              SELECT p.name, p.quantity, p.costPrice, p.type,
-                     pu.unit_name AS base_unit_name
-              FROM products p
-              LEFT JOIN product_units pu
-                ON pu.product_id = p.id AND pu.is_base = 1
-              WHERE p.id = ?
-              `
+            SELECT p.name, p.quantity, p.costPrice, p.type, p.code,
+                   pu.unit_name AS base_unit_name
+            FROM products p
+            LEFT JOIN product_units pu
+              ON pu.product_id = p.id AND pu.is_base = 1
+            WHERE p.id = ?
+            `
             )
             .get(productId);
 
@@ -1405,11 +1406,6 @@ export default function registerSalesInvoiceIPC() {
 
           const isService = productRow.type === "service";
 
-          // A service has no physical stock — its quantity column stays 0
-          // forever (never incremented by purchase), so this guard would
-          // otherwise reject EVERY service sale as "insufficient stock".
-          // Skipped entirely for services, same as the POS tile's
-          // out-of-stock logic already does on the frontend.
           if (!allowNegativeStock && !isService) {
             if (productRow.quantity - baseQuantity < 0) {
               throw new Error(`INSUFFICIENT_STOCK:${productRow.name}`);
@@ -1450,6 +1446,7 @@ export default function registerSalesInvoiceIPC() {
           preparedItems.push({
             product_id: productId,
             product_name: item.name || null,
+            product_code: productRow.code || null,
             unit_name: item.unit_name || null,
             unit_conversion_factor: factor,
             baseQuantity,
@@ -1610,11 +1607,11 @@ export default function registerSalesInvoiceIPC() {
           INSERT INTO sales_invoice_items
           (
             invoice_id, product_id, quantity, price, buyingPrice, total,
-            product_name, unit_name, unit_conversion_factor,
+            product_name, product_code, unit_name, unit_conversion_factor,
             tax_id, tax_rate, taxValue,
             discount, discount_rate, description
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const updateStock = db.prepare(`
@@ -1630,6 +1627,7 @@ export default function registerSalesInvoiceIPC() {
             item.buyingPrice,
             item.total,
             item.product_name,
+            item.product_code,
             item.unit_name,
             item.unit_conversion_factor,
             item.tax_id,

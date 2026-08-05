@@ -311,6 +311,32 @@
       "theyOweYou": "Size borçlular",
       "youOweThem": "Onlara borçlusunuz"
     },
+    "quotations": {
+      "salesQuotation": "Satış Teklifi",
+      "quotation": "Teklif",
+      "quotations": "Teklifler",
+      "createQuotation": "Satış Teklifi Oluştur",
+      "editQuotation": "Satış Teklifini Düzenle",
+      "saveQuotation": "Teklifi Kaydet",
+      "saved": "Teklif kaydedildi",
+      "listTitle": "Satış Teklifleri",
+      "listSubtitle": "Faturaya dönüşmeden önce müşterilere gönderilen teklifleri yönetin",
+      "search": "Tekliflerde ara...",
+      "addQuotation": "Teklif Ekle",
+      "empty": "Henüz teklif yok",
+      "noCustomer": "Müşteri yok",
+      "notFound": "Teklif bulunamadı",
+      "loadingQuotation": "Teklif yükleniyor...",
+      "cannotDeleteAccepted": "Bu teklif kabul edildi ve silinemez",
+      "deleteFailed": "Teklif silinemedi",
+      "status": {
+        "draft": "Taslak",
+        "sent": "Gönderildi",
+        "accepted": "Kabul Edildi",
+        "rejected": "Reddedildi",
+        "expired": "Süresi Doldu"
+      }
+    },
     "products": {
       "updateProducts": "Ürünleri Güncelle",
       "updateFieldsHint": "Güncellemek istediğiniz alanları seçin, ardından mevcut ürün verilerini dışa aktarın. Yalnızca seçtiğiniz alanlar dışa aktarılan dosyada düzenlenebilir olacak — diğer her şey kilitli kalır.",
@@ -1037,6 +1063,7 @@
     "tr": "Türkçe"
   },
   "navigation": {
+    "salesQuotations": "Satış Teklifleri",
     "main": "ANA",
     "management": "YÖNETİM",
     "people": "KİŞİLER",
@@ -1232,6 +1259,7 @@
   },
 
   "DOCS": {
+    "CODE": "Kod",
     "PHONE": "Telefon",
     "EMAIL": "E-posta",
     "TAX_NO": "Vergi No",
@@ -1268,6 +1296,14 @@
     "INVOICE_TYPE_PURCHASE": "Alış Faturası",
     "INVOICE_TYPE_SALES_RETURN": "Satış İadesi",
     "INVOICE_TYPE_PURCHASE_RETURN": "Alış İadesi",
-    "INVOICE_TYPE_EXPENSE": "Gider"
+    "INVOICE_TYPE_EXPENSE": "Gider",
+    "QUOTATION_NO": "Teklif No",
+    "QUOTATION_DATE": "Teklif Tarihi",
+    "NO_CUSTOMER": "Müşteri Yok",
+    "QUOTATION_STATUS_DRAFT": "Taslak",
+    "QUOTATION_STATUS_SENT": "Gönderildi",
+    "QUOTATION_STATUS_ACCEPTED": "Kabul Edildi",
+    "QUOTATION_STATUS_REJECTED": "Reddedildi",
+    "QUOTATION_STATUS_EXPIRED": "Süresi Doldu"
   }
 }

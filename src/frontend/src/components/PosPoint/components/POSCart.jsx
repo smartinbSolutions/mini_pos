@@ -128,7 +128,9 @@ export default function POSCart({
                   className="mt-1 flex items-center justify-between"
                 >
                   <span className="text-stone-400">
-                    {t("screens.invoices.itemDiscountAt", { rate: group.rate })}
+                    {t("screens.invoices.itemDiscountAt", {
+                      rate: Number(group.rate).toFixed(2),
+                    })}
                   </span>
                   <span dir="ltr" className="font-bold text-red-500">
                     -{money(group.amount)}

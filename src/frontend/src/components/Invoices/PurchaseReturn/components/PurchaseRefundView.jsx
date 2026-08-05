@@ -282,6 +282,11 @@ export default function PurchaseReturnView() {
                                   {item.product_name || item.name || "-"}
                                 </GoTo>
                               </div>
+                              {item.product_code && (
+                                <div className="mt-0.5 text-[11px] font-semibold text-slate-400">
+                                  #{item.product_code}
+                                </div>
+                              )}
                               {isNonBaseUnit && (
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
