@@ -52,7 +52,6 @@ export default function useTax() {
       setLoading(true);
 
       let taxResult = await api.getTaxes();
-      console.log(taxResult);
 
       setTaxes(taxResult || []);
     } catch (err) {
