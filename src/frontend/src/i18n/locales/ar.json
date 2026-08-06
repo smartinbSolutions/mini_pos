@@ -1062,6 +1062,7 @@
       "subtitle": "إدارة مرتجعات المشتريات وإشعارات الدائن",
       "createPurchaseReturn": "إنشاء مرتجع مشتريات"
     },
+
     "customerDisplay": {
       "welcome": "أهلًا وسهلًا",
       "thanks": "شكرًا لتسوقكم معنا"
@@ -1072,7 +1073,51 @@
     "ar": "العربية",
     "tr": "التركية"
   },
+  "reports": {
+    "salesTitle": "تقرير المبيعات",
+    "salesSubtitle": "ما تم بيعه، ومن اشتراه، وكم حققت من ربح — للفترة التي تختارها.",
+    "netSales": "صافي المبيعات",
+    "invoiceCount": "الفواتير",
+    "avgInvoiceValue": "متوسط قيمة الفاتورة",
+    "returnsTotal": "المرتجعات",
+    "salesTrend": "المبيعات خلال الفترة",
+    "salesByProduct": "المبيعات حسب المنتج",
+    "salesByCustomer": "المبيعات حسب العميل",
+    "cost": "التكلفة",
+    "margin": "الربح",
+    "marginPercent": "نسبة الربح",
+    "totalPurchased": "إجمالي المشتريات",
+    "avgOrderValue": "متوسط قيمة الطلب",
+    "showAll": "عرض الكل",
+    "showTop20": "عرض أفضل 20",
+    "noProductData": "لا توجد مبيعات في هذه الفترة.",
+    "noCustomerData": "لا توجد مبيعات في هذه الفترة.",
+    "netProfit": "صافي الربح",
+    "thisPeriod": "هذه الفترة",
+    "previousPeriod": "الفترة السابقة",
+    "previous": "السابق",
+    "eyebrow": "التقارير",
+    "profitLossTitle": "الأرباح والخسائر",
+    "profitLossSubtitle": "الإيرادات والتكاليف والأرباح للفترة التي تختارها، مقارنة بالفترة التي سبقتها.",
+    "newActivity": "جديد",
+    "invalidRange": "يجب أن يكون تاريخ الانتهاء بعد تاريخ البداية أو يساويه.",
+    "loadFailed": "تعذر تحميل التقرير.",
+    "comparedTo": "مقارنة بـ",
+    "expenseByCategory": "المصروفات حسب الفئة",
+    "trendOverTime": "الاتجاه خلال الفترة",
+    "noTrendData": "لا توجد حركة خلال هذه الفترة.",
+    "presets": {
+      "last7Days": "آخر 7 أيام",
+      "thisMonth": "هذا الشهر",
+      "lastMonth": "الشهر الماضي",
+      "thisYear": "هذا العام",
+      "custom": "مخصص"
+    }
+  },
   "navigation": {
+    "salesReport": "تقرير المبيعات",
+    "reports": "التقارير",
+    "profitLoss": "الأرباح والخسائر",
     "salesQuotations": "عروض أسعار المبيعات",
     "main": "الرئيسية",
     "management": "الإدارة",
@@ -1312,6 +1357,25 @@
     "QUOTATION_STATUS_SENT": "مُرسل",
     "QUOTATION_STATUS_ACCEPTED": "مقبول",
     "QUOTATION_STATUS_REJECTED": "مرفوض",
-    "QUOTATION_STATUS_EXPIRED": "منتهي"
+    "QUOTATION_STATUS_EXPIRED": "منتهي",
+    "PROFIT_LOSS_REPORT": "تقرير الأرباح والخسائر",
+    "GENERATED_ON": "تاريخ الإنشاء",
+    "EXPENSE_CATEGORY": "تصنيف المصروف",
+    "ITEM_COUNT": "عدد العناصر",
+    "REVENUE": "الإيرادات",
+    "SALES_RETURNS": "مرتجعات المبيعات",
+    "COST_OF_GOODS_SOLD": "تكلفة البضائع المباعة",
+    "GROSS_PROFIT": "إجمالي الربح",
+    "EXPENSES": "المصروفات",
+    "NET_PROFIT": "صافي الربح",
+    "SALES_BY_PRODUCT_REPORT": "تقرير المبيعات حسب المنتج",
+    "SALES_BY_CUSTOMER_REPORT": "تقرير المبيعات حسب العميل",
+    "COST": "التكلفة",
+    "MARGIN": "الربح",
+    "MARGIN_PERCENT": "نسبة الربح",
+    "CUSTOMER": "العميل",
+    "INVOICES": "الفواتير",
+    "TOTAL_PURCHASED": "إجمالي المشتريات",
+    "AVG_ORDER_VALUE": "متوسط قيمة الطلب"
   }
 }

@@ -93,6 +93,11 @@ import AddSalesQuotation from "./components/Invoices/SalesQuotations/components/
 import UpdateSalesQuotation from "./components/Invoices/SalesQuotations/components/UpdateSalesQuotation";
 import PrintSalesQuotation from "./components/Invoices/SalesQuotations/components/PrintSalesQuotation";
 import SalesQuotationView from "./components/Invoices/SalesQuotations/components/SalesQuotationView";
+import ProfitLossReport from "./components/Reports/components/ProfitLossReport";
+import SalesReport from "./components/Reports/components/SalesReport";
+import PrintProfitLossReport from "./components/Reports/components/PrintProfitLossReport";
+import PrintSalesByProduct from "./components/Reports/components/PrintSalesByProduct";
+import PrintSalesByCustomer from "./components/Reports/components/PrintSalesByCustomer";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -289,6 +294,12 @@ export default function App() {
 
               {/* ================= PARTNERS ================= */}
               <Route path="partners" element={<PartnersList />} />
+              {/* ================= REPORTS ================= */}
+              <Route
+                path="/reports/profit-loss"
+                element={<ProfitLossReport />}
+              />
+              <Route path="/reports/sales" element={<SalesReport />} />
 
               {/* ================= SETTINGS ================= */}
               <Route path="unit" element={<UnitList />} />
@@ -326,6 +337,18 @@ export default function App() {
             />
             <Route path="/print-payment/:id" element={<PrintPayment />} />
             <Route path="/print-expense/:id" element={<PrintExpense />} />
+            <Route
+              path="/print-profit-loss"
+              element={<PrintProfitLossReport />}
+            />
+            <Route
+              path="/print-sales-by-product"
+              element={<PrintSalesByProduct />}
+            />
+            <Route
+              path="/print-sales-by-customer"
+              element={<PrintSalesByCustomer />}
+            />
             {/* fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </>

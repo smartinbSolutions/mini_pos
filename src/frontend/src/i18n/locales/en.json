@@ -1075,6 +1075,7 @@
       "subtitle": "Manage your purchase returns and credit notes",
       "createPurchaseReturn": "Create purchase return"
     },
+
     "customerDisplay": {
       "welcome": "Welcome",
       "thanks": "Thank you for shopping with us"
@@ -1085,7 +1086,51 @@
     "ar": "Arabic",
     "tr": "Turkish"
   },
+  "reports": {
+    "salesTitle": "Sales report",
+    "salesSubtitle": "What sold, who bought it, and how much you made — for the period you choose.",
+    "netSales": "Net sales",
+    "invoiceCount": "Invoices",
+    "avgInvoiceValue": "Avg invoice value",
+    "returnsTotal": "Returns",
+    "salesTrend": "Sales over time",
+    "salesByProduct": "Sales by product",
+    "salesByCustomer": "Sales by customer",
+    "cost": "Cost",
+    "margin": "Margin",
+    "marginPercent": "Margin %",
+    "totalPurchased": "Total purchased",
+    "avgOrderValue": "Avg order value",
+    "showAll": "Show all",
+    "showTop20": "Show top 20",
+    "noProductData": "No sales in this range.",
+    "noCustomerData": "No sales in this range.",
+    "netProfit": "Net profit",
+    "thisPeriod": "This period",
+    "previousPeriod": "Previous period",
+    "previous": "Previous",
+    "eyebrow": "Reports",
+    "profitLossTitle": "Profit & loss",
+    "profitLossSubtitle": "Revenue, cost, and profit for the period you choose, compared to the period before it.",
+    "newActivity": "New",
+    "invalidRange": "The end date must be on or after the start date.",
+    "loadFailed": "Couldn't load the report.",
+    "comparedTo": "Compared to",
+    "expenseByCategory": "Expenses by category",
+    "trendOverTime": "Trend over time",
+    "noTrendData": "No activity in this range.",
+    "presets": {
+      "last7Days": "Last 7 days",
+      "thisMonth": "This month",
+      "lastMonth": "Last month",
+      "thisYear": "This year",
+      "custom": "Custom"
+    }
+  },
   "navigation": {
+    "salesReport": "Sales report",
+    "reports": "Reports",
+    "profitLoss": "Profit & Loss",
     "salesQuotations": "Sales Quotations",
     "main": "MAIN",
     "management": "MANAGEMENT",
@@ -1307,6 +1352,25 @@
     "QUOTATION_STATUS_SENT": "Sent",
     "QUOTATION_STATUS_ACCEPTED": "Accepted",
     "QUOTATION_STATUS_REJECTED": "Rejected",
-    "QUOTATION_STATUS_EXPIRED": "Expired"
+    "QUOTATION_STATUS_EXPIRED": "Expired",
+    "PROFIT_LOSS_REPORT": "Profit & loss report",
+    "GENERATED_ON": "Generated on",
+    "EXPENSE_CATEGORY": "Expense category",
+    "ITEM_COUNT": "Items",
+    "REVENUE": "Revenue",
+    "SALES_RETURNS": "Sales returns",
+    "COST_OF_GOODS_SOLD": "Cost of goods sold",
+    "GROSS_PROFIT": "Gross profit",
+    "EXPENSES": "Expenses",
+    "NET_PROFIT": "Net profit",
+    "SALES_BY_PRODUCT_REPORT": "Sales by product report",
+    "SALES_BY_CUSTOMER_REPORT": "Sales by customer report",
+    "COST": "Cost",
+    "MARGIN": "Margin",
+    "MARGIN_PERCENT": "Margin %",
+    "CUSTOMER": "Customer",
+    "INVOICES": "Invoices",
+    "TOTAL_PURCHASED": "Total purchased",
+    "AVG_ORDER_VALUE": "Avg order value"
   }
 }

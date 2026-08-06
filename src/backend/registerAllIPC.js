@@ -21,6 +21,7 @@ import registerPurchaseReturnIPC from "./ipc/purchase_returns.ipc";
 import registerSalesReturnsIpc from "./ipc/sales_returns.ipc";
 import registerPrintDocsIPC from "./ipc/printDocs.ipc";
 import registerSalesQuotationsIPC from "./ipc/sales_quotations.ipc";
+import registerReportsIPC from "./ipc/reportsIpc";
 
 export default function registerAllIPC() {
   registerAuthHandlersIPC();
@@ -46,4 +47,5 @@ export default function registerAllIPC() {
   registerPurchaseReturnIPC();
   registerSalesReturnsIpc();
   registerPrintDocsIPC();
+  registerReportsIPC();
 }

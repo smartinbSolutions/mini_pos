@@ -241,6 +241,10 @@ contextBridge.exposeInMainWorld("api", {
   isCustomerDisplayOpen: () => ipcRenderer.invoke("customer-display:is-open"),
   pushCartToCustomerDisplay: (cartPayload) =>
     ipcRenderer.send("customer-display:push-cart", cartPayload),
+  /* ================= REPORTS ================= */
+  getProfitLossReport: (params) =>
+    ipcRenderer.invoke("get-profit-loss-report", params),
+  getSalesReport: (params) => ipcRenderer.invoke("get-sales-report", params),
 
   // received by the customer display window only - the POS window never
   // calls this, since it's the one sending, not receiving

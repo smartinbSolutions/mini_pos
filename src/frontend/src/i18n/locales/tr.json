@@ -1056,6 +1056,7 @@
       "subtitle": "Alış iadelerinizi ve alacak dekontlarınızı yönetin",
       "createPurchaseReturn": "Alış iadesi oluştur"
     },
+
     "customerDisplay": {
       "welcome": "Hoşgeldiniz",
       "thanks": "Bizimle alışveriş yaptığınız için teşekkür ederiz"
@@ -1066,8 +1067,52 @@
     "ar": "Arapça",
     "tr": "Türkçe"
   },
+  "reports": {
+    "salesReport": "Satış raporu",
+    "salesTitle": "Satış raporu",
+    "salesSubtitle": "Ne satıldı, kim aldı ve seçtiğiniz dönemde ne kadar kazandınız.",
+    "netSales": "Net satış",
+    "invoiceCount": "Fatura sayısı",
+    "avgInvoiceValue": "Ort. fatura değeri",
+    "returnsTotal": "İadeler",
+    "salesTrend": "Zaman içindeki satışlar",
+    "salesByProduct": "Ürüne göre satışlar",
+    "salesByCustomer": "Müşteriye göre satışlar",
+    "cost": "Maliyet",
+    "margin": "Kâr marjı",
+    "marginPercent": "Marj %",
+    "totalPurchased": "Toplam alışveriş",
+    "avgOrderValue": "Ort. sipariş değeri",
+    "showAll": "Tümünü göster",
+    "showTop20": "İlk 20'yi göster",
+    "noProductData": "Bu dönemde satış yok.",
+    "noCustomerData": "Bu dönemde satış yok.",
+    "netProfit": "Net kâr",
+    "thisPeriod": "Bu dönem",
+    "previousPeriod": "Önceki dönem",
+    "previous": "Önceki",
+    "eyebrow": "Raporlar",
+    "profitLossTitle": "Kâr ve zarar",
+    "profitLossSubtitle": "Seçtiğiniz dönemin geliri, maliyeti ve kârı, önceki dönemle karşılaştırmalı.",
+    "newActivity": "Yeni",
+    "invalidRange": "Bitiş tarihi başlangıç tarihinden önce olamaz.",
+    "loadFailed": "Rapor yüklenemedi.",
+    "comparedTo": "Karşılaştırma",
+    "expenseByCategory": "Kategoriye göre giderler",
+    "trendOverTime": "Zaman içindeki eğilim",
+    "noTrendData": "Bu dönemde hareket yok.",
+    "presets": {
+      "last7Days": "Son 7 gün",
+      "thisMonth": "Bu ay",
+      "lastMonth": "Geçen ay",
+      "thisYear": "Bu yıl",
+      "custom": "Özel"
+    }
+  },
   "navigation": {
     "salesQuotations": "Satış Teklifleri",
+    "reports": "Raporlar",
+    "profitLoss": "Kâr ve Zarar",
     "main": "ANA",
     "management": "YÖNETİM",
     "people": "KİŞİLER",
@@ -1309,6 +1354,25 @@
     "QUOTATION_STATUS_SENT": "Gönderildi",
     "QUOTATION_STATUS_ACCEPTED": "Kabul Edildi",
     "QUOTATION_STATUS_REJECTED": "Reddedildi",
-    "QUOTATION_STATUS_EXPIRED": "Süresi Doldu"
+    "QUOTATION_STATUS_EXPIRED": "Süresi Doldu",
+    "PROFIT_LOSS_REPORT": "Kâr ve zarar raporu",
+    "GENERATED_ON": "Oluşturulma tarihi",
+    "EXPENSE_CATEGORY": "Gider kategorisi",
+    "ITEM_COUNT": "Kalem sayısı",
+    "REVENUE": "Gelir",
+    "SALES_RETURNS": "Satış iadeleri",
+    "COST_OF_GOODS_SOLD": "Satılan malın maliyeti",
+    "GROSS_PROFIT": "Brüt kâr",
+    "EXPENSES": "Giderler",
+    "NET_PROFIT": "Net kâr",
+    "SALES_BY_PRODUCT_REPORT": "Ürüne göre satış raporu",
+    "SALES_BY_CUSTOMER_REPORT": "Müşteriye göre satış raporu",
+    "COST": "Maliyet",
+    "MARGIN": "Kâr marjı",
+    "MARGIN_PERCENT": "Marj %",
+    "CUSTOMER": "Müşteri",
+    "INVOICES": "Faturalar",
+    "TOTAL_PURCHASED": "Toplam alışveriş",
+    "AVG_ORDER_VALUE": "Ort. sipariş değeri"
   }
 }

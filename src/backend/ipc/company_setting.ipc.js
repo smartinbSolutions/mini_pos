@@ -8,6 +8,7 @@ import {
 } from "../utils/authCrypto";
 import { seedData } from "../utils/data";
 import { toAppFileUrl } from "../utils/helpers";
+import { getProfitLoss } from "../services/reports.service";
 
 // ---------------------------------------------------------------------------
 // Dashboard stats helpers
@@ -114,85 +115,6 @@ function getModuleStats(
     unpaid: statusBreakdown?.unpaid || 0,
     returns, // null for expense, populated object for sales/purchase
     netTotal: returns ? total - returns.total : total,
-  };
-}
-
-function getProfitLoss(db) {
-  const cogs =
-    db
-      .prepare(
-        `
-        SELECT COALESCE(SUM(quantity * buyingPrice), 0) AS value
-        FROM sales_invoice_items
-        WHERE buyingPrice IS NOT NULL
-      `
-      )
-      .get()?.value || 0;
-
-  const returnedCogs =
-    db
-      .prepare(
-        `
-        SELECT COALESCE(SUM(sri.quantity * si.buyingPrice), 0) AS value
-        FROM sales_return_items sri
-        JOIN sales_invoice_items si ON si.id = sri.sales_invoice_item_id
-        WHERE si.buyingPrice IS NOT NULL
-      `
-      )
-      .get()?.value || 0;
-
-  const salesTotal =
-    db
-      .prepare(
-        `SELECT COALESCE(SUM(net_total), 0) AS value FROM sales_invoices`
-      )
-      .get()?.value || 0;
-
-  const salesReturnTotal =
-    db
-      .prepare(`SELECT COALESCE(SUM(net_total), 0) AS value FROM sales_returns`)
-      .get()?.value || 0;
-
-  const salesCount =
-    db.prepare(`SELECT COUNT(*) AS value FROM sales_invoices`).get()?.value ||
-    0;
-
-  const salesReturnCount =
-    db.prepare(`SELECT COUNT(*) AS value FROM sales_returns`).get()?.value || 0;
-
-  const expenseTotal =
-    db.prepare(`SELECT COALESCE(SUM(net_total), 0) AS value FROM expense`).get()
-      ?.value || 0;
-
-  const expenseCount =
-    db.prepare(`SELECT COUNT(*) AS value FROM expense`).get()?.value || 0;
-
-  const netCogs = cogs - returnedCogs;
-  const netSalesTotal = salesTotal - salesReturnTotal;
-  const grossProfit = netSalesTotal - netCogs;
-  const netProfit = grossProfit - expenseTotal;
-
-  return {
-    // Matches the "Revenue" row the dashboard reads as data.sales.total —
-    // already net of returns so the card doesn't need to know about returns separately.
-    sales: {
-      total: netSalesTotal,
-      gross: salesTotal,
-      returns: salesReturnTotal,
-      count: salesCount,
-      returnCount: salesReturnCount,
-    },
-    expense: {
-      total: expenseTotal,
-      count: expenseCount,
-    },
-    profitLoss: {
-      cogs: netCogs,
-      cogsGross: cogs,
-      cogsReturned: returnedCogs,
-      grossProfit,
-      netProfit,
-    },
   };
 }
 

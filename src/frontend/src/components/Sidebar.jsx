@@ -20,6 +20,7 @@ import {
   LogOut,
   User as UserIcon,
   Coins,
+  ReceiptIcon,
 } from "lucide-react";
 
 import LanguageSwitcher from "./LanguageSwitcher";
@@ -89,6 +90,14 @@ export default function Sidebar() {
       title: "navigation.partners",
       icon: <Handshake size={18} />,
       path: "/partners",
+    },
+    {
+      title: "navigation.reports",
+      icon: <ReceiptIcon size={18} />,
+      children: [
+        { title: "navigation.profitLoss", path: "/reports/profit-loss" },
+        { title: "navigation.salesReport", path: "/reports/sales" },
+      ],
     },
     {
       title: "navigation.settings",
