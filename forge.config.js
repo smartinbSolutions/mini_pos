@@ -7,6 +7,7 @@ const {
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: "build/icons/icon", // Forge appends .ico (win) / .icns (mac) automatically
     ignore: (file) => {
       if (!file) return false;
 
@@ -23,19 +24,35 @@ module.exports = {
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
-      config: {},
+      config: {
+        setupIcon: "build/icons/icon.ico",
+      },
     },
     {
       name: "@electron-forge/maker-zip",
-      platforms: ["darwin", "win32"],
+      platforms: ["win32"],
+    },
+    {
+      name: "@electron-forge/maker-dmg",
+      config: {
+        icon: "build/icons/icon.icns",
+      },
     },
     {
       name: "@electron-forge/maker-deb",
-      config: {},
+      config: {
+        options: {
+          icon: "build/icons/512x512.png",
+        },
+      },
     },
     {
       name: "@electron-forge/maker-rpm",
-      config: {},
+      config: {
+        options: {
+          icon: "build/icons/512x512.png",
+        },
+      },
     },
   ],
   plugins: [

@@ -1,13 +1,23 @@
-name: Build Windows Installer
+name: Build Installers
 
 on:
-  workflow_dispatch: {} # lets you trigger it manually from the Actions tab
+  workflow_dispatch: {}
   push:
-    branches: [main] # also runs automatically on every push to main
+    branches: [main]
 
 jobs:
   build:
-    runs-on: windows-2022
+    strategy:
+      matrix:
+        include:
+          - os: windows-2022
+            artifact_name: windows-installer
+            artifact_path: out/make/squirrel.windows/x64/*
+          - os: macos-14
+            artifact_name: macos-installer
+            artifact_path: out/make/*.dmg
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - name: Checkout code
@@ -34,11 +44,11 @@ jobs:
       - name: Rebuild native modules for Electron
         run: npx electron-rebuild -f -w better-sqlite3
 
-      - name: Make Windows installer
+      - name: Make installer
         run: npm run make
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
-          path: out/make/squirrel.windows/x64/*
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
