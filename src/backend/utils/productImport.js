@@ -47,7 +47,7 @@ export async function generateProductImportTemplate(db) {
   sheet.columns = [
     { header: "name", key: "name", width: 24 },
     { header: "latinName", key: "latinName", width: 24 },
-    { header: "code", key: "code", width: 18 },
+    { header: "code", key: "code", width: 18, style: { numFmt: "@" } },
     { header: "type", key: "type", width: 12 },
     { header: "unit_code", key: "unit_code", width: 14 },
     {
@@ -59,7 +59,7 @@ export async function generateProductImportTemplate(db) {
     { header: "price", key: "price", width: 14, style: { numFmt: "@" } },
     { header: "tax", key: "tax", width: 20 },
     { header: "quantity", key: "quantity", width: 14, style: { numFmt: "@" } },
-    { header: "barcodes", key: "barcodes", width: 32 },
+    { header: "barcodes", key: "barcodes", width: 32, style: { numFmt: "@" } },
     { header: "unit2_name", key: "unit2_name", width: 18 },
     {
       header: "unit2_conversion_factor",
@@ -73,7 +73,12 @@ export async function generateProductImportTemplate(db) {
       width: 14,
       style: { numFmt: "@" },
     },
-    { header: "unit2_barcode", key: "unit2_barcode", width: 20 },
+    {
+      header: "unit2_barcode",
+      key: "unit2_barcode",
+      width: 20,
+      style: { numFmt: "@" },
+    },
   ];
   sheet.getRow(1).font = { bold: true };
 
