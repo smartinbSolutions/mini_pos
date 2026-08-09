@@ -17,49 +17,11 @@ function mapActivationErrorCode(code, t) {
   return key ? t(key) : null;
 }
 
-export default function ActivationPage({ onActivated, reason }) {
+const Shell = ({ children }) => {
   const { t } = useTranslation();
-  const [licenseKey, setLicenseKey] = useState("");
-  const [message, setMessage] = useState("");
-  const [isError, setIsError] = useState(false);
-  const [isActivating, setIsActivating] = useState(false);
-
   const year = new Date().getFullYear();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setMessage("");
-    setIsError(false);
-    setIsActivating(true);
-
-    try {
-      if (!window.license?.activate) {
-        setMessage(t("activation.desktopOnly"));
-        setIsError(true);
-        return;
-      }
-
-      const result = await window.license.activate(licenseKey);
-
-      if (!result?.success) {
-        const translated = mapActivationErrorCode(result?.message, t);
-        setMessage(translated || result?.message || t("activation.failed"));
-        setIsError(true);
-        return;
-      }
-
-      setMessage(t("activation.success"));
-      setIsError(false);
-      onActivated?.(result.payload);
-    } catch (error) {
-      setMessage(error.message || t("activation.failed"));
-      setIsError(true);
-    } finally {
-      setIsActivating(false);
-    }
-  };
-
-  const Shell = ({ children }) => (
+  return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f4f6fb] px-4">
       <div
         className="pointer-events-none absolute inset-0"
@@ -144,6 +106,48 @@ export default function ActivationPage({ onActivated, reason }) {
       </div>
     </main>
   );
+};
+export default function ActivationPage({ onActivated, reason }) {
+  const { t } = useTranslation();
+  const [licenseKey, setLicenseKey] = useState("");
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
+
+  const year = new Date().getFullYear();
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    setIsError(false);
+    setIsActivating(true);
+
+    try {
+      if (!window.license?.activate) {
+        setMessage(t("activation.desktopOnly"));
+        setIsError(true);
+        return;
+      }
+
+      const result = await window.license.activate(licenseKey);
+
+      if (!result?.success) {
+        const translated = mapActivationErrorCode(result?.message, t);
+        setMessage(translated || result?.message || t("activation.failed"));
+        setIsError(true);
+        return;
+      }
+
+      setMessage(t("activation.success"));
+      setIsError(false);
+      onActivated?.(result.payload);
+    } catch (error) {
+      setMessage(error.message || t("activation.failed"));
+      setIsError(true);
+    } finally {
+      setIsActivating(false);
+    }
+  };
 
   // Clock tampering isn't fixable by entering a license key — show a
   // dedicated message instead of the form.
