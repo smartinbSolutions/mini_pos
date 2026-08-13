@@ -1,6 +1,11 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
+import "@fontsource/almarai/300.css";
+import "@fontsource/almarai/400.css";
+import "@fontsource/almarai/700.css";
+import "@fontsource/almarai/800.css";
+
 import "./i18n";
 import CustomerDisplayApp from "./pages/CustomerDisplayApp";
 
@@ -62,5 +67,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <RootErrorBoundary>
       <CustomerDisplayApp />
     </RootErrorBoundary>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

@@ -127,6 +127,7 @@
     "electron-squirrel-startup": "^1.0.1",
     "exceljs": "^4.4.0",
     "node-machine-id": "^1.1.12",
+    "qrcode": "^1.5.4",
     "react-router-dom": "^7.14.2",
     "serialport": "^13.0.0"
   }

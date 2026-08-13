@@ -1058,8 +1058,11 @@
     },
 
     "customerDisplay": {
-      "welcome": "Hoşgeldiniz",
-      "thanks": "Bizimle alışveriş yaptığınız için teşekkür ederiz"
+      "welcome": "Hoş geldiniz",
+      "thanks": "Bizimle alışveriş yaptığınız için teşekkürler",
+      "adTitle": "NoonPos'u keşfetmek için taratın",
+      "adSubtitle": "Mağazalar, restoranlar ve perakendeciler için akıllı POS yazılımı",
+      "adContact": "Satış"
     }
   },
   "languages": {

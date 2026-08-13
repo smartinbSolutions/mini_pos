@@ -129,7 +129,7 @@ export default function AddSalesQuotation() {
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
 
   const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
-    () => new Set()
+    () => new Set(),
   );
   const [revealedItemNotes, setRevealedItemNotes] = useState(() => new Set());
   const [quotationDiscountRevealed, setQuotationDiscountRevealed] =
@@ -140,7 +140,7 @@ export default function AddSalesQuotation() {
   const { money } = usePrimaryCurrency();
 
   const hasUsableItems = items.some(
-    (i) => i.product_id || i.product_name?.trim()
+    (i) => i.product_id || i.product_name?.trim(),
   );
   const canSave = hasUsableItems && !saving;
 
@@ -336,7 +336,7 @@ export default function AddSalesQuotation() {
                       (item.total || 0) - (item.discount || 0);
                     const lineTotal = afterDiscount + (item.taxValue || 0);
                     const hasProduct = Boolean(
-                      item.product_id || item.product_name?.trim()
+                      item.product_id || item.product_name?.trim(),
                     );
                     const hasTax = hasProduct && item.tax_capable;
                     const isNonBaseUnit =
@@ -365,13 +365,11 @@ export default function AddSalesQuotation() {
                               onInputChange={async (value) => {
                                 updateItem(index, "product_name", value);
 
-                                if (!value.trim()) return;
-
                                 try {
                                   const res = await api.getProducts({
                                     page: 1,
                                     limit: 50,
-                                    search: value,
+                                    search: value.trim() || undefined,
                                   });
 
                                   setProducts(res?.data || []);
@@ -552,12 +550,12 @@ export default function AddSalesQuotation() {
                                     ? Number(e.target.value)
                                     : null;
                                   const selectedTax = taxes?.find(
-                                    (tx) => tx.id === newTaxId
+                                    (tx) => tx.id === newTaxId,
                                   );
                                   updateItemTax(
                                     index,
                                     newTaxId,
-                                    selectedTax?.rate || 0
+                                    selectedTax?.rate || 0,
                                   );
                                 }}
                               >
@@ -568,7 +566,7 @@ export default function AddSalesQuotation() {
                                   ?.filter(
                                     (tax) =>
                                       tax.category === "product" ||
-                                      tax.category === "both"
+                                      tax.category === "both",
                                   )
                                   .map((tax) => (
                                     <option key={tax.id} value={tax.id}>
@@ -628,7 +626,7 @@ export default function AddSalesQuotation() {
                                 updateItemDescription(index, e.target.value)
                               }
                               placeholder={t(
-                                "screens.invoices.notePlaceholder"
+                                "screens.invoices.notePlaceholder",
                               )}
                             />
                             <button
@@ -792,7 +790,7 @@ export default function AddSalesQuotation() {
                         value=""
                         onChange={(e) => {
                           const selected = taxes.find(
-                            (tax) => tax.id === Number(e.target.value)
+                            (tax) => tax.id === Number(e.target.value),
                           );
                           if (selected) addQuotationTax(selected);
                         }}
@@ -800,7 +798,7 @@ export default function AddSalesQuotation() {
                         <option value="">
                           {t(
                             "screens.invoices.addAnotherTax",
-                            "Add another tax"
+                            "Add another tax",
                           )}
                         </option>
                         {taxes
@@ -809,8 +807,8 @@ export default function AddSalesQuotation() {
                               (tax.category === "invoice" ||
                                 tax.category === "both") &&
                               !(quotation.taxes || []).some(
-                                (applied) => applied.id === tax.id
-                              )
+                                (applied) => applied.id === tax.id,
+                              ),
                           )
                           .map((tax) => (
                             <option key={tax.id} value={tax.id}>

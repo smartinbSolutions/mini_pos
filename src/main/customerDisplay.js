@@ -5,7 +5,7 @@ import { app } from "electron";
 
 const BOUNDS_FILE = path.join(
   app.getPath("userData"),
-  "customer-display-bounds.json"
+  "customer-display-bounds.json",
 );
 
 let customerWindow = null;
@@ -38,7 +38,7 @@ export function openCustomerDisplay() {
   // just offset from the primary window so it isn't stacked exactly on top
   const displays = screen.getAllDisplays();
   const secondDisplay = displays.find(
-    (d) => d.id !== screen.getPrimaryDisplay().id
+    (d) => d.id !== screen.getPrimaryDisplay().id,
   );
   const fallback = secondDisplay
     ? {
@@ -65,8 +65,11 @@ export function openCustomerDisplay() {
     typeof CUSTOMER_WINDOW_VITE_DEV_SERVER_URL !== "undefined";
 
   if (isDev) {
+    customerWindow.webContents.openDevTools({ mode: "detach" });
+  }
+  if (isDev) {
     customerWindow.loadURL(
-      `${CUSTOMER_WINDOW_VITE_DEV_SERVER_URL}/customer_window.html`
+      `${CUSTOMER_WINDOW_VITE_DEV_SERVER_URL}/customer_window.html`,
     );
   } else {
     const rendererName =
@@ -74,7 +77,7 @@ export function openCustomerDisplay() {
         ? CUSTOMER_WINDOW_VITE_NAME
         : "customer_window";
     customerWindow.loadFile(
-      path.join(__dirname, `../renderer/${rendererName}/customer_window.html`)
+      path.join(__dirname, `../renderer/${rendererName}/customer_window.html`),
     );
   }
 
@@ -98,7 +101,7 @@ export function pushCartToCustomerDisplay(cartPayload) {
   if (customerWindow && !customerWindow.isDestroyed()) {
     customerWindow.webContents.send(
       "customer-display:cart-update",
-      cartPayload
+      cartPayload,
     );
   }
 }

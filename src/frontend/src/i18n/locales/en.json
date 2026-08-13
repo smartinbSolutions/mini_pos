@@ -1078,7 +1078,10 @@
 
     "customerDisplay": {
       "welcome": "Welcome",
-      "thanks": "Thank you for shopping with us"
+      "thanks": "Thanks for shopping with us",
+      "adTitle": "Scan to discover NoonPos",
+      "adSubtitle": "Smart point-of-sale software for shops, restaurants, and retailers",
+      "adContact": "Sales"
     }
   },
   "languages": {
