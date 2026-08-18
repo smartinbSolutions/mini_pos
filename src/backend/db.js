@@ -20,7 +20,7 @@ db.prepare(
   full_name TEXT,
   is_active INTEGER NOT NULL DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
-);`
+);`,
 ).run();
 
 db.prepare(
@@ -28,7 +28,21 @@ db.prepare(
     id INTEGER PRIMARY KEY CHECK (id = 1),
     recovery_key_hash TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );`
+  );`,
+).run();
+db.prepare(
+  `
+  CREATE TABLE IF NOT EXISTS printer_settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    device_name TEXT NOT NULL UNIQUE,
+    label TEXT,
+    paper_size TEXT NOT NULL DEFAULT '80mm' CHECK(paper_size IN ('58mm', '80mm', 'a4')),
+    backend TEXT NOT NULL DEFAULT 'electron' CHECK(backend IN ('electron', 'raw_escpos')),
+    has_cutter INTEGER NOT NULL DEFAULT 1,
+    is_default INTEGER NOT NULL DEFAULT 0,
+    createdAt TEXT DEFAULT (datetime('now')),
+    updatedAt TEXT DEFAULT (datetime('now'))
+  )`,
 ).run();
 
 db.prepare(
@@ -41,7 +55,7 @@ db.prepare(
     reset_type TEXT NOT NULL CHECK(reset_type IN ('admin_reset','recovery_key')),
     FOREIGN KEY (administrator_id) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
-  );`
+  );`,
 ).run();
 
 db.prepare(
@@ -52,7 +66,7 @@ CREATE TABLE IF NOT EXISTS unit (
   latinName TEXT,
   code TEXT UNIQUE
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -73,7 +87,7 @@ CREATE TABLE IF NOT EXISTS products (
   FOREIGN KEY (unit_id) REFERENCES unit(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -89,7 +103,7 @@ CREATE TABLE IF NOT EXISTS product_units (
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (product_id) REFERENCES products(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -121,7 +135,7 @@ CREATE TABLE IF NOT EXISTS product_movements (
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (product_id) REFERENCES products(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -132,7 +146,7 @@ db.prepare(
   barcode TEXT UNIQUE,
   FOREIGN KEY (product_id) REFERENCES products(id)
 )
-  `
+  `,
 ).run();
 
 db.prepare(
@@ -149,7 +163,7 @@ CREATE TABLE IF NOT EXISTS product_imports (
   report_path TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -166,7 +180,7 @@ CREATE TABLE IF NOT EXISTS product_import_items (
   FOREIGN KEY (import_id) REFERENCES product_imports(id),
    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -179,7 +193,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -192,7 +206,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
 
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -204,7 +218,7 @@ CREATE TABLE IF NOT EXISTS partners (
   address TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -220,7 +234,7 @@ CREATE TABLE IF NOT EXISTS currencies (
   symbol TEXT,
   isPrimary INTEGER DEFAULT 0
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -232,7 +246,7 @@ CREATE TABLE IF NOT EXISTS funds (
   createdAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (currency_id) REFERENCES currencies(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -243,7 +257,7 @@ CREATE TABLE IF NOT EXISTS taxes (
   rate REAL DEFAULT 0,
   category TEXT NOT NULL DEFAULT 'product' CHECK (category IN ('product', 'invoice', 'both'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -268,7 +282,7 @@ CREATE TABLE IF NOT EXISTS sales_invoices (
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -284,7 +298,7 @@ CREATE TABLE IF NOT EXISTS sales_invoice_taxes (
   FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -312,7 +326,7 @@ CREATE TABLE IF NOT EXISTS sales_invoice_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT,
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -343,7 +357,7 @@ CREATE TABLE IF NOT EXISTS sales_returns (
     ON UPDATE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -359,7 +373,7 @@ CREATE TABLE IF NOT EXISTS sales_return_taxes (
   FOREIGN KEY (return_id) REFERENCES sales_returns(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -394,7 +408,7 @@ CREATE TABLE IF NOT EXISTS sales_return_items (
   FOREIGN KEY (tax_id)
     REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -419,7 +433,7 @@ CREATE TABLE IF NOT EXISTS sales_quotations (
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -435,7 +449,7 @@ CREATE TABLE IF NOT EXISTS sales_quotation_taxes (
   FOREIGN KEY (quotation_id) REFERENCES sales_quotations(id) ON DELETE CASCADE,
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -462,7 +476,7 @@ CREATE TABLE IF NOT EXISTS sales_quotation_items (
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -489,7 +503,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoices (
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -505,7 +519,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoice_taxes (
   FOREIGN KEY (invoice_id) REFERENCES purchase_invoices(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -539,7 +553,7 @@ CREATE TABLE IF NOT EXISTS purchase_invoice_items (
   FOREIGN KEY (tax_id)
     REFERENCES taxes(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -569,7 +583,7 @@ CREATE TABLE IF NOT EXISTS purchase_returns (
     ON UPDATE CASCADE,
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -585,7 +599,7 @@ CREATE TABLE IF NOT EXISTS purchase_return_taxes (
   FOREIGN KEY (return_id) REFERENCES purchase_returns(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -620,7 +634,7 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
   FOREIGN KEY (tax_id)
     REFERENCES taxes(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -631,7 +645,7 @@ CREATE TABLE IF NOT EXISTS expence_category (
   latinName TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -654,7 +668,7 @@ CREATE TABLE IF NOT EXISTS expense (
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
   FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -675,7 +689,7 @@ CREATE TABLE IF NOT EXISTS expense_items (
   FOREIGN KEY (expense_id) REFERENCES expense(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -691,7 +705,7 @@ CREATE TABLE IF NOT EXISTS expense_taxes (
   FOREIGN KEY (expense_id) REFERENCES expense(id),
   FOREIGN KEY (tax_id) REFERENCES taxes(id)
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -715,7 +729,7 @@ CREATE TABLE IF NOT EXISTS payments (
   FOREIGN KEY (fund_id) REFERENCES funds(id),
   FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -728,7 +742,7 @@ CREATE TABLE IF NOT EXISTS payment_allocations (
     amount REAL NOT NULL,
     FOREIGN KEY (payment_id) REFERENCES payments(id)
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -741,7 +755,7 @@ CREATE TABLE IF NOT EXISTS deleted_payments (
   deletedAt TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (deleted_by) REFERENCES users(id) ON DELETE SET NULL
 )
-`
+`,
 ).run();
 
 db.prepare(
@@ -761,7 +775,7 @@ CREATE TABLE IF NOT EXISTS party_history (
   createdAt TEXT DEFAULT (datetime('now'))
   
 )
-`
+`,
 ).run();
 db.prepare(
   `
@@ -778,7 +792,7 @@ db.prepare(
     createdAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
-`
+`,
 ).run();
 
 db.prepare(
@@ -798,7 +812,7 @@ db.prepare(
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 
   );
-  `
+  `,
 ).run();
 
 db.prepare(
@@ -821,7 +835,7 @@ db.prepare(
     createdAt TEXT DEFAULT (datetime('now')),
     updatedAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (base_currency_id) REFERENCES currencies(id)
-  )`
+  )`,
 ).run();
 
 db.prepare(
@@ -831,14 +845,14 @@ db.prepare(
     tax_id INTEGER NOT NULL,
     createdAt TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (tax_id) REFERENCES taxes(id)
-  )`
+  )`,
 ).run();
 
 db.prepare(
-  `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`
+  `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`,
 ).run();
 db.prepare(
-  `CREATE INDEX IF NOT EXISTS idx_purchase_invoice ON purchase_invoice_items(invoice_id)`
+  `CREATE INDEX IF NOT EXISTS idx_purchase_invoice ON purchase_invoice_items(invoice_id)`,
 ).run();
 
 export default db;

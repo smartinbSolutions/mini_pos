@@ -22,6 +22,8 @@ import registerSalesReturnsIpc from "./ipc/sales_returns.ipc";
 import registerPrintDocsIPC from "./ipc/printDocs.ipc";
 import registerSalesQuotationsIPC from "./ipc/sales_quotations.ipc";
 import registerReportsIPC from "./ipc/reportsIpc";
+import registerPrinterSettingsIPC from "./ipc/printer_settings.ipc";
+import registerTestPrintIPC from "./ipc/test_print.ipc";
 
 export default function registerAllIPC() {
   registerAuthHandlersIPC();
@@ -48,4 +50,6 @@ export default function registerAllIPC() {
   registerSalesReturnsIpc();
   registerPrintDocsIPC();
   registerReportsIPC();
+  registerPrinterSettingsIPC();
+  registerTestPrintIPC();
 }

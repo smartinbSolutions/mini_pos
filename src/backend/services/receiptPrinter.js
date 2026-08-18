@@ -234,13 +234,27 @@ export async function printReceiptHtml(html, printerName) {
 
   await win.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
 
+  // Measure actual rendered content height instead of assuming a fixed
+  // page length — a 3-item receipt and a 30-item receipt need very
+  // different amounts of paper, and forcing both onto a fixed 200mm page
+  // wastes paper on short receipts and would clip long ones.
+  const contentHeightPx = await win.webContents.executeJavaScript(
+    "document.documentElement.scrollHeight",
+  );
+
+  // Convert CSS px (96dpi assumption, standard for Chromium rendering) to
+  // microns, which is what Electron's custom pageSize expects.
+  // px -> mm: px / 96 * 25.4, then mm -> microns: * 1000.
+  // Small fixed buffer added so the last line isn't flush against the cut.
+  const heightMicrons = Math.ceil((contentHeightPx / 96) * 25.4 * 1000) + 5000;
+
   const printers = await win.webContents.getPrintersAsync();
   const printerNames = printers.map((p) => p.name);
 
   let deviceName = printerName;
   if (!deviceName || !printerNames.includes(deviceName)) {
     console.warn(
-      `Requested printer "${deviceName}" not found, falling back to default.`
+      `Requested printer "${deviceName}" not found, falling back to default.`,
     );
     deviceName = undefined;
   }
@@ -251,14 +265,14 @@ export async function printReceiptHtml(html, printerName) {
         silent: true,
         printBackground: true,
         margins: { marginType: "none" },
-        pageSize: { width: 70000, height: 200000 },
+        pageSize: { width: 70000, height: heightMicrons },
         deviceName,
       },
       (success, errorType) => {
         if (!success) console.error("Print failed:", errorType);
         win.close();
         resolve(success);
-      }
+      },
     );
   });
 }

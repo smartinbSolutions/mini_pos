@@ -241,6 +241,12 @@ contextBridge.exposeInMainWorld("api", {
   isCustomerDisplayOpen: () => ipcRenderer.invoke("customer-display:is-open"),
   pushCartToCustomerDisplay: (cartPayload) =>
     ipcRenderer.send("customer-display:push-cart", cartPayload),
+  /* ================= PRINTER SETTINGS ================= */
+  listPrinters: () => ipcRenderer.invoke("list-printers"),
+  getPrinterSettings: () => ipcRenderer.invoke("get-printer-settings"),
+  savePrinterSettings: (data) =>
+    ipcRenderer.invoke("save-printer-settings", data),
+  testPrint: (deviceName) => ipcRenderer.invoke("test-print", { deviceName }),
   /* ================= REPORTS ================= */
   getProfitLossReport: (params) =>
     ipcRenderer.invoke("get-profit-loss-report", params),
