@@ -24,27 +24,30 @@ export function getPaperWidthDots(paperSize) {
 // the old ~96dpi CSS-px-to-paper mapping (correct for the 'electron'
 // backend's driver-based print, which still uses that template as-is).
 //
-// Rather than zoom the page before capture (tried first — Chromium's zoom
-// didn't reliably grow the viewport to match the zoomed content, causing
-// content past a certain point to be silently clipped instead of
-// captured), we render at a SMALLER width using the template's original
-// font sizes unmodified, then upscale the final bitmap to the real target
-// width. This reuses the same resize() call already needed for the Retina
-// fix below, instead of introducing a second, less predictable mechanism.
-// 203/96 ≈ 2.1 — same ratio as before, now used as a width divisor
-// instead of a zoom multiplier. Adjust this one constant if real receipts
-// still look too small/large.
-const RAW_PRINT_RENDER_SCALE = 2.1;
+// Two earlier approaches were tried and rejected:
+// 1. webContents.setZoomFactor() (Electron's JS zoom API) — this is an
+//    async, cross-process browser-zoom feature that didn't reliably sync
+//    with our height measurement, clipping content past a certain point.
+// 2. Render at a smaller width, then resize()-upscale the final bitmap —
+//    this avoided the clipping bug, but resampling a smaller raster up to
+//    the target size blurs/roughens character edges (visible as fuzzy,
+//    dotted-looking text on real printouts).
+//
+// This version uses plain CSS `zoom` (injected via insertCSS), which is
+// a normal, SYNCHRONOUS style property processed through the page's
+// regular layout pipeline — unlike the JS zoom API, scrollHeight measured
+// right after applying it correctly reflects the zoomed size, no race
+// condition. And because we render directly at the true target width
+// (no smaller intermediate render), Chromium's own font rasterizer draws
+// glyphs at full resolution — no post-hoc resampling, no blur.
+// 203/96 ≈ 2.1 — adjust this one constant if real receipts still look
+// too small/large.
+const RAW_PRINT_ZOOM = 2.1;
 
 export async function captureHtmlAsBitmap(html, widthDots) {
-  const renderWidthDots = Math.max(
-    1,
-    Math.round(widthDots / RAW_PRINT_RENDER_SCALE),
-  );
-
   const win = new BrowserWindow({
     show: false,
-    width: renderWidthDots,
+    width: widthDots,
     height: 50, // placeholder, resized below once real content height is known
     webPreferences: { nodeIntegration: true, contextIsolation: false },
   });
@@ -54,15 +57,15 @@ export async function captureHtmlAsBitmap(html, widthDots) {
       "data:text/html;charset=utf-8," + encodeURIComponent(html),
     );
 
-    // Force scrollbars off entirely. Without this, if the actual rendered
-    // content is even 1px taller than our scrollHeight measurement below
-    // (a common rounding/timing edge case), Chromium shows a scrollbar
-    // instead of clipping — and that scrollbar gets captured as part of
-    // the image. Its darker "thumb" then thresholds to solid black in the
-    // monochrome conversion, producing a black bar down one edge of the
-    // printed receipt.
+    // Single insertCSS call: forces scrollbars off (same reasoning as
+    // before — an uncaught scrollbar gets captured as a black bar), AND
+    // applies the zoom that makes text legible at true dot resolution.
+    // insertCSS resolves once the style is actually applied, so the
+    // scrollHeight measurement right after this reflects the final,
+    // zoomed layout — no separate timing workaround needed.
     await win.webContents.insertCSS(
-      "html, body { overflow: hidden !important; }",
+      `html, body { overflow: hidden !important; }
+       body { zoom: ${RAW_PRINT_ZOOM} !important; }`,
     );
 
     const contentHeight = await win.webContents.executeJavaScript(
@@ -70,41 +73,23 @@ export async function captureHtmlAsBitmap(html, widthDots) {
     );
 
     // Small buffer on top of the measured height, belt-and-suspenders
-    // alongside the overflow:hidden above — keeps us clear of the exact
+    // alongside overflow:hidden above — keeps us clear of the exact
     // borderline case that triggers a scrollbar in the first place.
     const heightWithBuffer = Math.max(1, Math.ceil(contentHeight) + 4);
 
-    win.setContentSize(renderWidthDots, heightWithBuffer);
+    win.setContentSize(widthDots, heightWithBuffer);
     // setContentSize triggers an async relayout — give it a tick before capturing.
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     const rawImage = await win.webContents.capturePage();
 
-    // Single resize() call does two jobs at once:
-    // 1. Corrects for the display's backing scale factor (e.g. 2x on a
-    //    Retina Mac) — capturePage() returns a bitmap at that scale, not
-    //    the CSS pixel size the window was set to.
-    // 2. Upscales from renderWidthDots to the real target widthDots,
-    //    proportionally enlarging the font (and everything else) in dot
-    //    terms — this is what makes the text physically legible on paper.
+    // Corrects for the display's backing scale factor (e.g. 2x on a
+    // Retina Mac) — capturePage() returns a bitmap at that scale, not the
+    // CSS pixel size the window was set to. Since we already rendered at
+    // the true target width (unlike the old approach), this resize is
+    // only ever a 1:1 or minor scale-factor correction, not a real
+    // upscale — so it doesn't introduce the resampling blur seen before.
     const image = rawImage.resize({ width: widthDots });
-
-    // TEMPORARY DEBUG: dump the exact image being sent into the raster
-    // encoder as a real PNG you can open and look at directly — isolates
-    // whether the black bar comes from rendering/capture (would show in
-    // this PNG) or from the raster encoding step after this (wouldn't).
-    // Remove this block once the black-bar issue is resolved.
-    try {
-      const debugPath = path.join(
-        os.tmpdir(),
-        `noonpos-debug-capture-${Date.now()}.png`,
-      );
-      fs.writeFileSync(debugPath, image.toPNG());
-      console.log("DEBUG: capture saved to", debugPath);
-    } catch (debugErr) {
-      console.log("DEBUG PNG save failed:", debugErr.message);
-    }
-
     const { width, height } = image.getSize();
     const bitmap = image.toBitmap();
 
