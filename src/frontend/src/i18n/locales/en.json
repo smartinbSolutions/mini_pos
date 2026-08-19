@@ -225,6 +225,28 @@
         "both": "Both"
       }
     },
+    "printers": {
+      "title": "Receipt printers",
+      "hint": "Detect a printer, run a test print, then set it as the default.",
+      "rowTitle": "Receipt printer",
+      "notSetUp": "Not set up yet",
+      "manage": "Manage",
+      "detect": "Detect printers",
+      "detecting": "Detecting...",
+      "empty": "No printers configured yet.",
+      "default": "Default",
+      "paperSize": "Paper size",
+      "mode": "Mode",
+      "modeStandard": "Standard",
+      "modeCompat": "Compatibility mode",
+      "hasCutter": "This printer has an auto-cutter",
+      "testPrint": "Test print",
+      "testing": "Testing...",
+      "testSuccess": "Test print sent",
+      "testFailed": "Test print failed",
+      "setDefault": "Set as default",
+      "testRequiredHint": "Run a successful test print first"
+    },
     "currency": {
       "minorNamePlaceholder": "Minor unit name",
       "minorLatinPlaceholder": "Minor unit (Latin)",

@@ -238,6 +238,28 @@
       "namePlaceholder": "Para birimi adı",
       "addButton": "Para Birimi Ekle"
     },
+    "printers": {
+      "title": "Fiş yazıcıları",
+      "hint": "Bir yazıcı bulun, test yazdırma yapın, ardından varsayılan olarak ayarlayın.",
+      "rowTitle": "Fiş yazıcısı",
+      "notSetUp": "Henüz ayarlanmadı",
+      "manage": "Yönet",
+      "detect": "Yazıcıları bul",
+      "detecting": "Bulunuyor...",
+      "empty": "Henüz yapılandırılmış yazıcı yok.",
+      "default": "Varsayılan",
+      "paperSize": "Kağıt boyutu",
+      "mode": "Mod",
+      "modeStandard": "Standart",
+      "modeCompat": "Uyumluluk modu",
+      "hasCutter": "Bu yazıcıda otomatik kesici var",
+      "testPrint": "Test yazdır",
+      "testing": "Test ediliyor...",
+      "testSuccess": "Test yazdırma gönderildi",
+      "testFailed": "Test yazdırma başarısız oldu",
+      "setDefault": "Varsayılan yap",
+      "testRequiredHint": "Önce başarılı bir test yazdırma çalıştırın"
+    },
     "funds": {
       "transactionType": {
         "payment": "Ödeme",

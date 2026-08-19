@@ -6,22 +6,45 @@ const path = require("path");
 import { rgbaToEscposReceipt } from "../utils/escposRaster";
 import { getRawPrintScriptPath } from "../utils/getRawPrintScriptPath";
 
-// Empirically confirmed against the PT80KM/POS80 hardware — NOT the generic
-// 203dpi spec number (576), which was never actually verified. Revisit if a
-// future printer's output comes out cropped or with a large blank margin.
+// 80mm: confirmed via a full-width stripe test against real PT80KM
+// hardware — fills the paper with a small margin to spare, no clipping.
+// 58mm: still the original unverified estimate — revisit with the same
+// stripe-test method if a 58mm printer is ever added.
 const PAPER_WIDTH_DOTS = {
   "58mm": 280,
-  "80mm": 384,
+  "80mm": 576,
 };
 
 export function getPaperWidthDots(paperSize) {
   return PAPER_WIDTH_DOTS[paperSize] || PAPER_WIDTH_DOTS["80mm"];
 }
 
+// Our raw capture maps CSS px directly to printer dots at ~203dpi. The
+// shared receipt HTML template's font-size values were written assuming
+// the old ~96dpi CSS-px-to-paper mapping (correct for the 'electron'
+// backend's driver-based print, which still uses that template as-is).
+//
+// Rather than zoom the page before capture (tried first — Chromium's zoom
+// didn't reliably grow the viewport to match the zoomed content, causing
+// content past a certain point to be silently clipped instead of
+// captured), we render at a SMALLER width using the template's original
+// font sizes unmodified, then upscale the final bitmap to the real target
+// width. This reuses the same resize() call already needed for the Retina
+// fix below, instead of introducing a second, less predictable mechanism.
+// 203/96 ≈ 2.1 — same ratio as before, now used as a width divisor
+// instead of a zoom multiplier. Adjust this one constant if real receipts
+// still look too small/large.
+const RAW_PRINT_RENDER_SCALE = 2.1;
+
 export async function captureHtmlAsBitmap(html, widthDots) {
+  const renderWidthDots = Math.max(
+    1,
+    Math.round(widthDots / RAW_PRINT_RENDER_SCALE),
+  );
+
   const win = new BrowserWindow({
     show: false,
-    width: widthDots,
+    width: renderWidthDots,
     height: 50, // placeholder, resized below once real content height is known
     webPreferences: { nodeIntegration: true, contextIsolation: false },
   });
@@ -31,15 +54,57 @@ export async function captureHtmlAsBitmap(html, widthDots) {
       "data:text/html;charset=utf-8," + encodeURIComponent(html),
     );
 
+    // Force scrollbars off entirely. Without this, if the actual rendered
+    // content is even 1px taller than our scrollHeight measurement below
+    // (a common rounding/timing edge case), Chromium shows a scrollbar
+    // instead of clipping — and that scrollbar gets captured as part of
+    // the image. Its darker "thumb" then thresholds to solid black in the
+    // monochrome conversion, producing a black bar down one edge of the
+    // printed receipt.
+    await win.webContents.insertCSS(
+      "html, body { overflow: hidden !important; }",
+    );
+
     const contentHeight = await win.webContents.executeJavaScript(
       "document.documentElement.scrollHeight",
     );
 
-    win.setContentSize(widthDots, Math.max(1, Math.ceil(contentHeight)));
+    // Small buffer on top of the measured height, belt-and-suspenders
+    // alongside the overflow:hidden above — keeps us clear of the exact
+    // borderline case that triggers a scrollbar in the first place.
+    const heightWithBuffer = Math.max(1, Math.ceil(contentHeight) + 4);
+
+    win.setContentSize(renderWidthDots, heightWithBuffer);
     // setContentSize triggers an async relayout — give it a tick before capturing.
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    const image = await win.webContents.capturePage();
+    const rawImage = await win.webContents.capturePage();
+
+    // Single resize() call does two jobs at once:
+    // 1. Corrects for the display's backing scale factor (e.g. 2x on a
+    //    Retina Mac) — capturePage() returns a bitmap at that scale, not
+    //    the CSS pixel size the window was set to.
+    // 2. Upscales from renderWidthDots to the real target widthDots,
+    //    proportionally enlarging the font (and everything else) in dot
+    //    terms — this is what makes the text physically legible on paper.
+    const image = rawImage.resize({ width: widthDots });
+
+    // TEMPORARY DEBUG: dump the exact image being sent into the raster
+    // encoder as a real PNG you can open and look at directly — isolates
+    // whether the black bar comes from rendering/capture (would show in
+    // this PNG) or from the raster encoding step after this (wouldn't).
+    // Remove this block once the black-bar issue is resolved.
+    try {
+      const debugPath = path.join(
+        os.tmpdir(),
+        `noonpos-debug-capture-${Date.now()}.png`,
+      );
+      fs.writeFileSync(debugPath, image.toPNG());
+      console.log("DEBUG: capture saved to", debugPath);
+    } catch (debugErr) {
+      console.log("DEBUG PNG save failed:", debugErr.message);
+    }
+
     const { width, height } = image.getSize();
     const bitmap = image.toBitmap();
 

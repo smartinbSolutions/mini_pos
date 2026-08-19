@@ -246,6 +246,8 @@ contextBridge.exposeInMainWorld("api", {
   getPrinterSettings: () => ipcRenderer.invoke("get-printer-settings"),
   savePrinterSettings: (data) =>
     ipcRenderer.invoke("save-printer-settings", data),
+  deletePrinterSettings: (id) =>
+    ipcRenderer.invoke("delete-printer-settings", id),
   testPrint: (deviceName) => ipcRenderer.invoke("test-print", { deviceName }),
   /* ================= REPORTS ================= */
   getProfitLossReport: (params) =>

@@ -98,4 +98,14 @@ export default function registerPrinterSettingsIPC() {
       return { success: false, error: err.message };
     }
   });
+
+  // DELETE ONE PRINTER'S SETTINGS
+  ipcMain.handle("delete-printer-settings", (event, id) => {
+    try {
+      db.prepare(`DELETE FROM printer_settings WHERE id = ?`).run(id);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
 }
