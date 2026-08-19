@@ -9,12 +9,12 @@
   that reject Electron's silent print pipeline (e.g. PT80KM/POS80 clones).
 
   This script has NO dependency on Node, Electron, or any native npm
-  module — it only needs PowerShell and the Windows printer driver
+  module -- it only needs PowerShell and the Windows printer driver
   already installed and working (confirmed by your Windows Test Page).
 
 .PARAMETER PrinterName
   Exact Windows printer 'deviceName' as returned by getPrintersAsync()
-  or Get-Printer. Must match exactly — this is looked up by name, not by
+  or Get-Printer. Must match exactly -- this is looked up by name, not by
   port or driver.
 
 .PARAMETER FilePath
@@ -25,7 +25,7 @@
   powershell -ExecutionPolicy Bypass -File send-raw-print.ps1 -PrinterName "POS80" -FilePath "C:\temp\receipt.bin"
 
 .OUTPUTS
-  Exit code 0 on success. Non-zero + message on stderr on failure —
+  Exit code 0 on success. Non-zero + message on stderr on failure --
   intended to be captured by the caller (Node child_process) for
   requirement #7 (real test-print error reporting).
 #>
@@ -165,7 +165,7 @@ catch {
 }
 
 if ($bytes.Length -eq 0) {
-    Write-Error "File '$FilePath' is empty — nothing to print."
+    Write-Error "File '$FilePath' is empty -- nothing to print."
     exit 1
 }
 
