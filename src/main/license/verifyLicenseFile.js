@@ -15,7 +15,7 @@ function verifySignature(license) {
         key: publicKey,
         padding: crypto.constants.RSA_PKCS1_PADDING,
       },
-      Buffer.from(license.signature, "base64")
+      Buffer.from(license.signature, "base64"),
     );
   } catch {
     return false;
@@ -45,11 +45,14 @@ export default async function verifyLicenseFile() {
     return { valid: false, reason: "clock_tampered" };
   }
 
-  if (
-    license.payload.expiresAt &&
-    new Date(license.payload.expiresAt).getTime() <= Date.now()
-  ) {
-    return { valid: false, reason: "expired" };
+  if (!license.payload.perpetual) {
+    if (!license.payload.expiresAt) {
+      // A non-perpetual license with no expiry is malformed, not valid forever.
+      return { valid: false, reason: "invalid_license" };
+    }
+    if (new Date(license.payload.expiresAt).getTime() <= Date.now()) {
+      return { valid: false, reason: "expired" };
+    }
   }
 
   return {
