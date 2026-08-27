@@ -67,7 +67,7 @@
     "cost": "Cost",
     "costPrice": "Cost Price",
     "salePrice": "Sale Price",
-    "retailValue": "Retail Value",
+    "retailValue": "Inventory value",
     "unit": "Unit",
     "units": "Units",
     "noUnit": "No unit",
@@ -224,6 +224,46 @@
         "invoice": "Invoice",
         "both": "Both"
       }
+    },
+    "tags": {
+      "subtitle": "Group products, invoices, and more so you can filter by them later.",
+      "totalTags": "Tags",
+      "noResults": "No tags match your filters.",
+      "emptyHint": "Create your first tag to start grouping items.",
+      "title": "Tags",
+      "addTag": "Add Tag",
+      "editTag": "Edit Tag",
+      "empty": "No tags yet. Create your first tag to start grouping items.",
+      "scopes": {
+        "global": "Global (all sections)",
+        "product": "Products",
+        "customer": "Customers",
+        "supplier": "Suppliers",
+        "partner": "Partners",
+        "sales_invoice": "Sales Invoices",
+        "sales_return": "Sales Returns",
+        "sales_quotation": "Sales Quotations",
+        "purchase_invoice": "Purchase Invoices",
+        "purchase_return": "Purchase Returns",
+        "expense": "Expenses",
+        "payment": "Payments"
+      },
+      "selectTags": "Select tags",
+      "searchTags": "Search tags...",
+      "noTagsFound": "No tags found",
+      "fields": {
+        "name": "Name",
+        "latinName": "Latin Name",
+        "scope": "Scope",
+        "color": "Color"
+      },
+      "errors": {
+        "nameRequired": "Tag name is required."
+      },
+      "confirmDeleteTitle": "Delete this tag?",
+      "confirmDeleteBody": "This tag is attached to {{count}} item(s). Deleting it will remove it from all of them.",
+      "confirmScopeTitle": "Change tag scope?",
+      "confirmScopeBody": "This tag is already attached to items outside the new scope. It will be hidden from their picker, but stays attached to them."
     },
     "printers": {
       "title": "Receipt printers",
@@ -398,6 +438,7 @@
       "conversionMustExceedOne": "Conversion factor must be greater than 1 — it can't be smaller than or equal to the base unit.",
       "selectBaseUnitFirst": "Select a base unit first",
       "baseUnitBadge": "Base",
+      "hasTaxOption": "Has tax",
       "noTaxOption": "No tax",
       "baseUnitHint": "This becomes the product's default selling unit.",
       "baseSalePrice": "Base Sale Price",
@@ -1185,7 +1226,8 @@
     "importReports": "Import reports",
     "purchaseReturn": "Purchase return",
     "salesReturn": "Sales return",
-    "cash": "Cash"
+    "cash": "Cash",
+    "tags": "Tags"
   },
   "dashboard": {
     "inventoryBelowThreshold": "Below your {{threshold}} threshold",
@@ -1324,7 +1366,20 @@
     "barcodeAlreadyUsed": "This barcode is already used by another product",
     "invalidConversionFactor": "Conversion factor must be greater than 1",
     "invalidUnitPrice": "Invalid unit price value",
-    "unitBarcodeAlreadyUsed": "This barcode is already used by another unit"
+    "unitBarcodeAlreadyUsed": "This barcode is already used by another unit",
+    "TAG_NAME_REQUIRED": "Tag name is required.",
+    "TAG_NAME_ALREADY_EXISTS": "A tag with this name already exists in this scope.",
+    "INVALID_TAG_SCOPE": "Invalid tag scope.",
+    "TAG_NOT_FOUND": "Tag not found.",
+    "TAG_CREATE_FAILED": "Failed to create tag.",
+    "TAG_UPDATE_FAILED": "Failed to update tag.",
+    "TAG_DELETE_FAILED": "Failed to delete tag.",
+    "TAG_LIST_FAILED": "Failed to load tags.",
+    "TAG_IN_USE_NEEDS_CONFIRMATION": "This tag is in use.",
+    "TAG_SCOPE_MISMATCH_NEEDS_CONFIRMATION": "This tag is used outside the new scope.",
+    "TAG_SCOPE_NOT_ALLOWED": "One or more selected tags are not allowed for this section.",
+    "SET_ENTITY_TAGS_FAILED": "Failed to save tags.",
+    "ENTITY_TAGS_LIST_FAILED": "Failed to load tags for this item."
   },
   "success": {
     "created": "{{field}} created successfully",

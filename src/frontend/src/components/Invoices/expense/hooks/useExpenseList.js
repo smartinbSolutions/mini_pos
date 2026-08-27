@@ -65,7 +65,7 @@ const useExpenseList = () => {
       api
         .getExpensesCategory()
         .then((res) =>
-          setCategories(Array.isArray(res) ? res : res?.data || [])
+          setCategories(Array.isArray(res) ? res : res?.data || []),
         )
         .catch(() => setCategories([]));
     }
@@ -133,7 +133,7 @@ const useExpenseList = () => {
           return null;
       }
     },
-    [t]
+    [t],
   );
 
   const handleDelete = async (id) => {
@@ -145,7 +145,7 @@ const useExpenseList = () => {
         throw new Error(
           mapErrorCode(res?.error) ||
             res?.error ||
-            t("screens.expenses.deleteFailed")
+            t("screens.expenses.deleteFailed"),
         );
       }
 

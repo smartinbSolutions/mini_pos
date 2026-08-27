@@ -68,7 +68,7 @@
     "cost": "Maliyet",
     "costPrice": "Maliyet Fiyatı",
     "salePrice": "Satış Fiyatı",
-    "retailValue": "Perakende Değeri",
+    "retailValue": "Envanter değeri",
     "unit": "Birim",
     "units": "Birimler",
     "noUnit": "Birim yok",
@@ -238,6 +238,46 @@
       "namePlaceholder": "Para birimi adı",
       "addButton": "Para Birimi Ekle"
     },
+    "tags": {
+      "subtitle": "Ürünleri, faturaları ve daha fazlasını gruplandırın, sonra bunlara göre filtreleyin.",
+      "totalTags": "Etiketler",
+      "noResults": "Filtrelerinize uyan etiket yok.",
+      "emptyHint": "Öğeleri gruplamak için ilk etiketinizi oluşturun.",
+      "title": "Etiketler",
+      "addTag": "Etiket Ekle",
+      "editTag": "Etiketi Düzenle",
+      "empty": "Henüz etiket yok. Öğeleri gruplamak için ilk etiketi oluşturun.",
+      "scopes": {
+        "global": "Genel (tüm bölümler)",
+        "product": "Ürünler",
+        "customer": "Müşteriler",
+        "supplier": "Tedarikçiler",
+        "partner": "Ortaklar",
+        "sales_invoice": "Satış Faturaları",
+        "sales_return": "Satış İadeleri",
+        "sales_quotation": "Satış Teklifleri",
+        "purchase_invoice": "Alış Faturaları",
+        "purchase_return": "Alış İadeleri",
+        "expense": "Giderler",
+        "payment": "Ödemeler"
+      },
+      "selectTags": "Etiket seç",
+      "searchTags": "Etiket ara...",
+      "noTagsFound": "Etiket bulunamadı",
+      "fields": {
+        "name": "Ad",
+        "latinName": "Latin Adı",
+        "scope": "Kapsam",
+        "color": "Renk"
+      },
+      "errors": {
+        "nameRequired": "Etiket adı gereklidir."
+      },
+      "confirmDeleteTitle": "Bu etiket silinsin mi?",
+      "confirmDeleteBody": "Bu etiket {{count}} öğeye eklenmiş. Silmek, tümünden kaldıracaktır.",
+      "confirmScopeTitle": "Etiket kapsamı değiştirilsin mi?",
+      "confirmScopeBody": "Bu etiket zaten yeni kapsamın dışındaki öğelere eklenmiş. Onların seçicisinden gizlenecek, ancak onlara bağlı kalacaktır."
+    },
     "printers": {
       "title": "Fiş yazıcıları",
       "hint": "Bir yazıcı bulun, test yazdırma yapın, ardından varsayılan olarak ayarlayın.",
@@ -397,6 +437,7 @@
       "unitsHint": "Temel birim en küçük biriminizdir. Herhangi bir satış birimi daha büyük bir miktarı temsil etmelidir — dönüşüm faktörü 1'den büyük olmalıdır (örneğin 12'lik bir kutunun dönüşüm faktörü 12'dir).",
       "conversionMustExceedOne": "Dönüşüm faktörü 1'den büyük olmalıdır — temel birimden küçük veya ona eşit olamaz.",
       "baseUnitBadge": "Temel",
+      "hasTaxOption": "Vergili",
       "noTaxOption": "Vergisiz",
       "baseUnitHint": "Bu, ürünün varsayılan satış birimi olacaktır.",
       "baseSalePrice": "Temel Satış Fiyatı",
@@ -1166,7 +1207,8 @@
     "importReports": "İçe aktarma raporları",
     "purchaseReturn": "Satın alma iadeleri",
     "salesReturn": "Satış iadeleri",
-    "cash": "Nakit"
+    "cash": "Nakit",
+    "tags": "Etiketler"
   },
   "dashboard": {
     "inventoryBelowThreshold": "{{threshold}} eşiğinizin altında",
@@ -1325,7 +1367,20 @@
     "barcodeAlreadyUsed": "Bu barkod başka bir ürün tarafından zaten kullanılıyor",
     "invalidConversionFactor": "Dönüşüm faktörü 1'den büyük olmalıdır",
     "invalidUnitPrice": "Geçersiz birim fiyatı değeri",
-    "unitBarcodeAlreadyUsed": "Bu barkod başka bir birim tarafından zaten kullanılıyor"
+    "unitBarcodeAlreadyUsed": "Bu barkod başka bir birim tarafından zaten kullanılıyor",
+    "TAG_NAME_REQUIRED": "Etiket adı gereklidir.",
+    "TAG_NAME_ALREADY_EXISTS": "Bu kapsamda aynı adla bir etiket zaten var.",
+    "INVALID_TAG_SCOPE": "Geçersiz etiket kapsamı.",
+    "TAG_NOT_FOUND": "Etiket bulunamadı.",
+    "TAG_CREATE_FAILED": "Etiket oluşturulamadı.",
+    "TAG_UPDATE_FAILED": "Etiket güncellenemedi.",
+    "TAG_DELETE_FAILED": "Etiket silinemedi.",
+    "TAG_LIST_FAILED": "Etiketler yüklenemedi.",
+    "TAG_IN_USE_NEEDS_CONFIRMATION": "Bu etiket kullanımda.",
+    "TAG_SCOPE_MISMATCH_NEEDS_CONFIRMATION": "Bu etiket yeni kapsamın dışında kullanılıyor.",
+    "TAG_SCOPE_NOT_ALLOWED": "Seçilen etiketlerden biri veya birkaçı bu bölüm için izin verilmiyor.",
+    "SET_ENTITY_TAGS_FAILED": "Etiketler kaydedilemedi.",
+    "ENTITY_TAGS_LIST_FAILED": "Bu öğenin etiketleri yüklenemedi."
   },
   "success": {
     "created": "{{field}} başarıyla oluşturuldu",

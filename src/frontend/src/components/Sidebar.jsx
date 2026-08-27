@@ -106,6 +106,7 @@ export default function Sidebar() {
         { title: "navigation.units", path: "/unit" },
         { title: "navigation.currency", path: "/currency" },
         { title: "navigation.taxes", path: "/tax" },
+        { title: "navigation.tags", path: "/tags" },
         ...(user?.role === "admin"
           ? [{ title: "navigation.users", path: "/users" }]
           : []),
@@ -122,7 +123,7 @@ export default function Sidebar() {
       if (!item.children) return;
 
       const match = item.children.some((c) =>
-        location.pathname.startsWith(c.path)
+        location.pathname.startsWith(c.path),
       );
 
       if (match) newOpen[index] = true;
@@ -285,7 +286,7 @@ export default function Sidebar() {
           }
 
           const isActiveGroup = item.children.some((c) =>
-            location.pathname.startsWith(c.path)
+            location.pathname.startsWith(c.path),
           );
 
           return (

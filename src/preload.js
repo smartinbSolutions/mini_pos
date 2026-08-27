@@ -249,6 +249,17 @@ contextBridge.exposeInMainWorld("api", {
   deletePrinterSettings: (id) =>
     ipcRenderer.invoke("delete-printer-settings", id),
   testPrint: (deviceName) => ipcRenderer.invoke("test-print", { deviceName }),
+  /* ================= TAGS ================= */
+  createTag: (data) => ipcRenderer.invoke("create-tag", data),
+  listTags: (scope) => ipcRenderer.invoke("list-tags", { scope }),
+  updateTag: (data) => ipcRenderer.invoke("update-tag", data),
+  deleteTag: (id, force) => ipcRenderer.invoke("delete-tag", { id, force }),
+  getEntityTags: (entityType, entityId) =>
+    ipcRenderer.invoke("get-entity-tags", { entityType, entityId }),
+  setEntityTags: (entityType, entityId, tagIds) =>
+    ipcRenderer.invoke("set-entity-tags", { entityType, entityId, tagIds }),
+  getEntitiesTags: (entityType, entityIds) =>
+    ipcRenderer.invoke("get-entities-tags", { entityType, entityIds }),
   /* ================= REPORTS ================= */
   getProfitLossReport: (params) =>
     ipcRenderer.invoke("get-profit-loss-report", params),

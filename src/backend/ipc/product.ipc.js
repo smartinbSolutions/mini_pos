@@ -40,7 +40,7 @@ export default function registerProductIPC() {
           `
         INSERT INTO products (name, latinName, code, description, costPrice, quantity, unit_id, tax_id, logo, type)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
+      `,
         )
         .run(
           data.name,
@@ -52,7 +52,7 @@ export default function registerProductIPC() {
           data.unit_id,
           data.tax_id || null,
           data.logo,
-          data.type || "normal"
+          data.type || "normal",
         );
       const productId = result.lastInsertRowid;
 
@@ -71,14 +71,14 @@ export default function registerProductIPC() {
         `
         INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price)
         VALUES (?, ?, 1, 1, ?)
-      `
+      `,
       ).run(productId, baseUnitName, data.salePrice ?? 0);
 
       const insertUnit = db.prepare(
         `
         INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
         VALUES (?, ?, ?, 0, ?, ?)
-      `
+      `,
       );
 
       for (const unit of data.productUnits || []) {
@@ -88,7 +88,7 @@ export default function registerProductIPC() {
           unit.unit_name,
           unit.conversion_factor,
           unit.sale_price ?? 0,
-          unit.barcode || null
+          unit.barcode || null,
         );
       }
 
@@ -148,7 +148,7 @@ export default function registerProductIPC() {
         UPDATE products
         SET name=?, latinName=?, code=?, description=?, costPrice=?, quantity=?, unit_id=?, tax_id=?, logo=?
         WHERE id=?
-      `
+      `,
       ).run(
         data.name,
         data.latinName,
@@ -159,12 +159,12 @@ export default function registerProductIPC() {
         data.unit_id,
         data.tax_id || null,
         data.logo,
-        data.id
+        data.id,
       );
 
       const baseUnit = db
         .prepare(
-          `SELECT unit_name FROM product_units WHERE product_id = ? AND is_base = 1`
+          `SELECT unit_name FROM product_units WHERE product_id = ? AND is_base = 1`,
         )
         .get(data.id);
       const baseUnitName = baseUnit?.unit_name || "Unit";
@@ -194,18 +194,18 @@ export default function registerProductIPC() {
         UPDATE product_units
         SET sale_price = ?
         WHERE product_id = ? AND is_base = 1
-      `
+      `,
       ).run(data.salePrice ?? 0, data.id);
 
       const existingUnits = db
         .prepare(
-          `SELECT id FROM product_units WHERE product_id = ? AND is_base = 0`
+          `SELECT id FROM product_units WHERE product_id = ? AND is_base = 0`,
         )
         .all(data.id);
 
       const incomingUnits = data.productUnits || [];
       const incomingIds = new Set(
-        incomingUnits.filter((u) => u.id).map((u) => u.id)
+        incomingUnits.filter((u) => u.id).map((u) => u.id),
       );
 
       const deleteUnit = db.prepare(`DELETE FROM product_units WHERE id = ?`);
@@ -220,13 +220,13 @@ export default function registerProductIPC() {
         UPDATE product_units
         SET unit_name = ?, conversion_factor = ?, sale_price = ?, barcode = ?
         WHERE id = ?
-      `
+      `,
       );
       const insertUnit = db.prepare(
         `
         INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
         VALUES (?, ?, ?, 0, ?, ?)
-      `
+      `,
       );
 
       for (const unit of incomingUnits) {
@@ -238,7 +238,7 @@ export default function registerProductIPC() {
             unit.conversion_factor,
             unit.sale_price ?? 0,
             unit.barcode || null,
-            unit.id
+            unit.id,
           );
         } else {
           insertUnit.run(
@@ -246,7 +246,7 @@ export default function registerProductIPC() {
             unit.unit_name,
             unit.conversion_factor,
             unit.sale_price ?? 0,
-            unit.barcode || null
+            unit.barcode || null,
           );
         }
       }
@@ -292,7 +292,7 @@ export default function registerProductIPC() {
           UPDATE products
           SET tax_id = ?
           WHERE id = ?
-        `
+        `,
         )
         .run(taxId, data.product_id);
 
@@ -312,6 +312,9 @@ export default function registerProductIPC() {
     const offset = (page - 1) * limit;
 
     const search = (params.search || "").trim();
+    const tagIds = Array.isArray(params.tagIds)
+      ? params.tagIds.map(Number).filter(Boolean)
+      : [];
 
     const whereConditions = [];
     const queryParams = [];
@@ -326,6 +329,25 @@ export default function registerProductIPC() {
       queryParams.push(params.type);
     }
 
+    if (params.unit_id) {
+      whereConditions.push(`products.unit_id = ?`);
+      queryParams.push(Number(params.unit_id));
+    }
+
+    if (params.hasTax === "yes") {
+      whereConditions.push(`products.tax_id IS NOT NULL`);
+    } else if (params.hasTax === "no") {
+      whereConditions.push(`products.tax_id IS NULL`);
+    }
+
+    const tagJoin = tagIds.length
+      ? `JOIN taggables tg ON tg.entity_type = 'product' AND tg.entity_id = products.id AND tg.tag_id IN (${tagIds.map(() => "?").join(",")})`
+      : "";
+    const tagJoinParams = tagIds;
+    const groupHaving = tagIds.length
+      ? `GROUP BY products.id HAVING COUNT(DISTINCT tg.tag_id) = ${tagIds.length}`
+      : "";
+
     const whereClause = whereConditions.length
       ? `WHERE ${whereConditions.join(" AND ")}`
       : "";
@@ -333,54 +355,58 @@ export default function registerProductIPC() {
     const data = db
       .prepare(
         `
-      SELECT
-        products.*,
-        products.type AS type,
-        unit.name AS unit_name,
-        unit.code AS unit_code,
-        taxes.name AS tax_name,
-        taxes.rate AS tax_rate,
-        (
-          SELECT sale_price FROM product_units
-          WHERE product_units.product_id = products.id AND product_units.is_base = 1
-          LIMIT 1
-        ) AS salePrice,
-        (
-          SELECT COUNT(*) FROM product_units
-          WHERE product_units.product_id = products.id AND product_units.is_base = 0
-        ) AS unitCount,
-        (
-          SELECT json_group_array(
-            json_object(
-              'id', pu.id,
-              'unit_name', pu.unit_name,
-              'conversion_factor', pu.conversion_factor,
-              'is_base', pu.is_base,
-              'sale_price', pu.sale_price,
-              'barcode', pu.barcode
-            )
+    SELECT
+      products.*,
+      products.type AS type,
+      unit.name AS unit_name,
+      unit.code AS unit_code,
+      taxes.name AS tax_name,
+      taxes.rate AS tax_rate,
+      (
+        SELECT sale_price FROM product_units
+        WHERE product_units.product_id = products.id AND product_units.is_base = 1
+        LIMIT 1
+      ) AS salePrice,
+      (
+        SELECT COUNT(*) FROM product_units
+        WHERE product_units.product_id = products.id AND product_units.is_base = 0
+      ) AS unitCount,
+      (
+        SELECT json_group_array(
+          json_object(
+            'id', pu.id,
+            'unit_name', pu.unit_name,
+            'conversion_factor', pu.conversion_factor,
+            'is_base', pu.is_base,
+            'sale_price', pu.sale_price,
+            'barcode', pu.barcode
           )
-          FROM product_units pu
-          WHERE pu.product_id = products.id
-          ORDER BY pu.is_base DESC, pu.id ASC
-        ) AS productUnitsJson
-  
-      FROM products
-  
-      LEFT JOIN unit
-        ON unit.id = products.unit_id
-  
-      LEFT JOIN taxes
-        ON taxes.id = products.tax_id
-  
-      ${whereClause}
-  
-      ORDER BY products.id DESC
-  
-      LIMIT ? OFFSET ?
-      `
+        )
+        FROM product_units pu
+        WHERE pu.product_id = products.id
+        ORDER BY pu.is_base DESC, pu.id ASC
+      ) AS productUnitsJson
+
+    FROM products
+
+    LEFT JOIN unit
+      ON unit.id = products.unit_id
+
+    LEFT JOIN taxes
+      ON taxes.id = products.tax_id
+
+    ${tagJoin}
+
+    ${whereClause}
+
+    ${groupHaving}
+
+    ORDER BY products.id DESC
+
+    LIMIT ? OFFSET ?
+    `,
       )
-      .all(...queryParams, limit, offset)
+      .all(...tagJoinParams, ...queryParams, limit, offset)
       .map((row) => ({
         ...row,
         productUnits: row.productUnitsJson
@@ -390,14 +416,18 @@ export default function registerProductIPC() {
       }));
 
     const countQuery = db.prepare(`
-      SELECT COUNT(*) AS total
+    SELECT COUNT(*) AS total FROM (
+      SELECT products.id
       FROM products
       LEFT JOIN unit
         ON unit.id = products.unit_id
+      ${tagJoin}
       ${whereClause}
+      ${groupHaving}
+    )
   `);
 
-    const { total } = countQuery.get(...queryParams);
+    const { total } = countQuery.get(...tagJoinParams, ...queryParams);
 
     return {
       data,
@@ -423,7 +453,7 @@ export default function registerProductIPC() {
         LEFT JOIN unit ON unit.id = products.unit_id
         LEFT JOIN taxes ON taxes.id = products.tax_id
         WHERE products.id = ?
-      `
+      `,
       )
       .get(id);
 
@@ -436,7 +466,7 @@ export default function registerProductIPC() {
         FROM product_units
         WHERE product_id = ?
         ORDER BY is_base DESC, id ASC
-      `
+      `,
       )
       .all(id);
 
@@ -454,7 +484,7 @@ export default function registerProductIPC() {
         FROM product_barcodes
         WHERE product_id = ?
         ORDER BY id ASC
-      `
+      `,
       )
       .all(id);
 
@@ -497,7 +527,7 @@ export default function registerProductIPC() {
           ON taxes.id = products.tax_id
           AND taxes.category IN ('product', 'both')
         WHERE pu.barcode = ?
-        `
+        `,
         )
         .get(search);
 
@@ -528,7 +558,7 @@ export default function registerProductIPC() {
               ON taxes.id = products.tax_id
               AND taxes.category IN ('product', 'both')
             WHERE pb.barcode = ?
-            `
+            `,
             )
             .get(search);
           return baseMatch;
@@ -610,7 +640,7 @@ export default function registerProductIPC() {
       ${whereClause}
       ORDER BY products.id DESC
       LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(...queryParams, limit, offset);
 
@@ -642,7 +672,7 @@ export default function registerProductIPC() {
       FROM product_units
       WHERE product_id IN (${placeholders})
       ORDER BY product_id ASC, is_base DESC, id ASC
-      `
+      `,
       )
       .all(...productIds);
 
@@ -666,7 +696,7 @@ export default function registerProductIPC() {
       FROM product_barcodes
       WHERE product_id IN (${placeholders})
       ORDER BY product_id ASC, id ASC
-      `
+      `,
       )
       .all(...productIds);
 
@@ -743,12 +773,12 @@ export default function registerProductIPC() {
       const transaction = db.transaction(() => {
         const usedInPurchase = db
           .prepare(
-            `SELECT COUNT(*) as count FROM purchase_invoice_items WHERE product_id = ?`
+            `SELECT COUNT(*) as count FROM purchase_invoice_items WHERE product_id = ?`,
           )
           .get(id);
         const usedInSales = db
           .prepare(
-            `SELECT COUNT(*) as count FROM sales_invoice_items WHERE product_id = ?`
+            `SELECT COUNT(*) as count FROM sales_invoice_items WHERE product_id = ?`,
           )
           .get(id);
 
@@ -759,7 +789,7 @@ export default function registerProductIPC() {
         db.prepare(`DELETE FROM product_units WHERE product_id = ?`).run(id);
         db.prepare(`DELETE FROM product_barcodes WHERE product_id = ?`).run(id);
         db.prepare(`DELETE FROM product_movements WHERE product_id = ?`).run(
-          id
+          id,
         );
         db.prepare(`DELETE FROM products WHERE id = ?`).run(id);
       });
@@ -796,7 +826,7 @@ export default function registerProductIPC() {
         ON taxes.id = p.tax_id
         AND taxes.category IN ('product', 'both')
       WHERE pu.barcode = ?
-    `
+    `,
       )
       .get(barcode);
 
@@ -815,7 +845,7 @@ export default function registerProductIPC() {
         ? null
         : db
             .prepare(
-              `SELECT unit_name FROM product_units WHERE product_id = ? AND is_base = 1`
+              `SELECT unit_name FROM product_units WHERE product_id = ? AND is_base = 1`,
             )
             .get(unitMatch.id);
 
@@ -850,7 +880,7 @@ export default function registerProductIPC() {
         ON taxes.id = p.tax_id
         AND taxes.category IN ('product', 'both')
       WHERE pb.barcode = ?
-    `
+    `,
       )
       .get(barcode);
 
@@ -865,7 +895,7 @@ export default function registerProductIPC() {
       FROM product_units
       WHERE product_id = ? AND is_base = 1
       LIMIT 1
-    `
+    `,
       )
       .get(row.id);
 
@@ -914,7 +944,7 @@ export default function registerProductIPC() {
         ${whereClause}
         ORDER BY product_movements.createdAt DESC, product_movements.id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
       )
       .all(...queryParams, limit, offset);
 
@@ -924,7 +954,7 @@ export default function registerProductIPC() {
         SELECT COUNT(*) AS total
         FROM product_movements
         ${whereClause}
-        `
+        `,
       )
       .get(...queryParams);
 
@@ -988,7 +1018,7 @@ export default function registerProductIPC() {
             COALESCE(SUM(skipped_barcodes_count), 0) AS total_skipped_barcodes,
             COALESCE(SUM(skipped_units_count), 0) AS total_skipped_units
           FROM product_imports
-        `
+        `,
         )
         .get();
 
@@ -1016,7 +1046,7 @@ export default function registerProductIPC() {
     try {
       return db
         .prepare(
-          `SELECT * FROM product_import_items WHERE import_id = ? ORDER BY row_number ASC`
+          `SELECT * FROM product_import_items WHERE import_id = ? ORDER BY row_number ASC`,
         )
         .all(importId);
     } catch (err) {
@@ -1055,7 +1085,7 @@ export default function registerProductIPC() {
       const summary = await parseProductUpdateImport(
         db,
         filePaths[0],
-        fileName
+        fileName,
       );
 
       return { success: true, ...summary };

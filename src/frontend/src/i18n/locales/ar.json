@@ -67,7 +67,7 @@
     "cost": "التكلفة",
     "costPrice": "سعر التكلفة",
     "salePrice": "سعر البيع",
-    "retailValue": "قيمة البيع",
+    "retailValue": "قيمة المخزون",
     "unit": "الوحدة",
     "units": "الوحدات",
     "noUnit": "لا توجد وحدة",
@@ -225,6 +225,46 @@
         "invoice": "فاتورة",
         "both": "كلاهما"
       }
+    },
+    "tags": {
+      "subtitle": "جمّع المنتجات والفواتير وغيرها لتتمكن من الفلترة بحسبها لاحقًا.",
+      "totalTags": "الوسوم",
+      "noResults": "لا توجد وسوم مطابقة لعوامل التصفية.",
+      "emptyHint": "أنشئ أول وسم لبدء تجميع العناصر.",
+      "title": "الوسوم",
+      "addTag": "إضافة وسم",
+      "editTag": "تعديل الوسم",
+      "empty": "لا توجد وسوم بعد. أنشئ أول وسم لبدء تجميع العناصر.",
+      "scopes": {
+        "global": "عام (كل الأقسام)",
+        "product": "المنتجات",
+        "customer": "العملاء",
+        "supplier": "الموردون",
+        "partner": "الشركاء",
+        "sales_invoice": "فواتير المبيعات",
+        "sales_return": "مرتجعات المبيعات",
+        "sales_quotation": "عروض الأسعار",
+        "purchase_invoice": "فواتير المشتريات",
+        "purchase_return": "مرتجعات المشتريات",
+        "expense": "المصاريف",
+        "payment": "الدفعات"
+      },
+      "selectTags": "اختر الوسوم",
+      "searchTags": "ابحث عن وسم...",
+      "noTagsFound": "لا توجد وسوم",
+      "fields": {
+        "name": "الاسم",
+        "latinName": "الاسم اللاتيني",
+        "scope": "النطاق",
+        "color": "اللون"
+      },
+      "errors": {
+        "nameRequired": "اسم الوسم مطلوب."
+      },
+      "confirmDeleteTitle": "حذف هذا الوسم؟",
+      "confirmDeleteBody": "هذا الوسم مرتبط بـ {{count}} عنصر. حذفه سيزيله من كل هذه العناصر.",
+      "confirmScopeTitle": "تغيير نطاق الوسم؟",
+      "confirmScopeBody": "هذا الوسم مرتبط بالفعل بعناصر خارج النطاق الجديد. سيتم إخفاؤه من قائمة الاختيار الخاصة بها، لكنه يبقى مرتبطًا بها."
     },
     "printers": {
       "title": "طابعات الفواتير",
@@ -398,6 +438,7 @@
       "unitsHint": "الوحدة الأساسية هي أصغر وحدة لديك. يجب أن تمثل أي وحدة بيع كمية أكبر — يجب أن يكون معامل التحويل أكبر من 1 (مثال: صندوق يحتوي على 12 قطعة معامل تحويله 12).",
       "conversionMustExceedOne": "يجب أن يكون معامل التحويل أكبر من 1 — لا يمكن أن يكون أصغر من أو يساوي الوحدة الأساسية.",
       "baseUnitBadge": "أساسي",
+      "hasTaxOption": "يحتوي على ضريبة",
       "noTaxOption": "بدون ضريبة",
       "baseUnitHint": "ستكون هذه هي وحدة البيع الافتراضية للمنتج.",
       "baseSalePrice": "سعر البيع الأساسي",
@@ -1172,7 +1213,8 @@
     "importReports": "تقارير الاستيراد",
     "purchaseReturn": "مرتجع المشتريات",
     "salesReturn": "مرتجع المبيعات",
-    "cash": "النقدية"
+    "cash": "النقدية",
+    "tags": "الوسوم"
   },
   "dashboard": {
     "inventoryBelowThreshold": "أقل من الحد الأدنى المحدد {{threshold}}",
@@ -1329,7 +1371,20 @@
     "barcodeAlreadyUsed": "هذا الباركود مستخدم بالفعل من قبل منتج آخر",
     "invalidConversionFactor": "يجب أن يكون معامل التحويل أكبر من 1",
     "invalidUnitPrice": "قيمة سعر الوحدة غير صالحة",
-    "unitBarcodeAlreadyUsed": "هذا الباركود مستخدم بالفعل من قبل وحدة أخرى"
+    "unitBarcodeAlreadyUsed": "هذا الباركود مستخدم بالفعل من قبل وحدة أخرى",
+    "TAG_NAME_REQUIRED": "اسم الوسم مطلوب.",
+    "TAG_NAME_ALREADY_EXISTS": "يوجد وسم بنفس الاسم في هذا النطاق.",
+    "INVALID_TAG_SCOPE": "نطاق الوسم غير صالح.",
+    "TAG_NOT_FOUND": "الوسم غير موجود.",
+    "TAG_CREATE_FAILED": "فشل إنشاء الوسم.",
+    "TAG_UPDATE_FAILED": "فشل تعديل الوسم.",
+    "TAG_DELETE_FAILED": "فشل حذف الوسم.",
+    "TAG_LIST_FAILED": "فشل تحميل الوسوم.",
+    "TAG_IN_USE_NEEDS_CONFIRMATION": "هذا الوسم مستخدم حاليًا.",
+    "TAG_SCOPE_MISMATCH_NEEDS_CONFIRMATION": "هذا الوسم مستخدم خارج النطاق الجديد.",
+    "TAG_SCOPE_NOT_ALLOWED": "وسم واحد أو أكثر من الوسوم المختارة غير مسموح به في هذا القسم.",
+    "SET_ENTITY_TAGS_FAILED": "فشل حفظ الوسوم.",
+    "ENTITY_TAGS_LIST_FAILED": "فشل تحميل وسوم هذا العنصر."
   },
   "success": {
     "created": "تم إنشاء {{field}} بنجاح",

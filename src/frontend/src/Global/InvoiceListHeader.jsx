@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { RefreshCw, Search, Filter, X, SlidersHorizontal } from "lucide-react";
 import NumberInput from "./NumberInput";
+import { useTranslation } from "react-i18next";
 
 const VARIANTS = {
   blue: {
@@ -54,8 +55,9 @@ export default function InvoiceListHeader({
   onFilterChange,
   onClearFilters,
   filterFields = [],
-  clearLabel = "Clear",
+  clearLabel,
 }) {
+  const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(false);
 
   const gridColsClass =
@@ -74,7 +76,7 @@ export default function InvoiceListHeader({
 
       if (field.type === "select") {
         const match = field.options.find(
-          (opt) => String(opt.value) === String(rawValue)
+          (opt) => String(opt.value) === String(rawValue),
         );
         displayValue = match?.label ?? rawValue;
       }
@@ -82,7 +84,7 @@ export default function InvoiceListHeader({
       if (field.type === "multiselect") {
         const selectedLabels = (rawValue || []).map((v) => {
           const match = field.options.find(
-            (opt) => String(opt.value) === String(v)
+            (opt) => String(opt.value) === String(v),
           );
           return match?.label ?? v;
         });
@@ -241,7 +243,7 @@ export default function InvoiceListHeader({
               className="ms-1 inline-flex items-center gap-1 text-[11px] font-bold text-red-500 transition hover:text-red-600"
             >
               <X size={11} />
-              {clearLabel}
+              {clearLabel || t("common.clear")}
             </button>
           )}
         </div>
@@ -297,14 +299,14 @@ export default function InvoiceListHeader({
 
               const selectedOptions = selectedValues
                 .map((v) =>
-                  field.options.find((opt) => String(opt.value) === String(v))
+                  field.options.find((opt) => String(opt.value) === String(v)),
                 )
                 .filter(Boolean);
 
               const addOption = (optionValue) => {
                 if (!optionValue) return;
                 const exists = selectedValues.some(
-                  (v) => String(v) === String(optionValue)
+                  (v) => String(v) === String(optionValue),
                 );
                 if (exists) return;
                 onFilterChange(field.name, [...selectedValues, optionValue]);
@@ -314,8 +316,8 @@ export default function InvoiceListHeader({
                 onFilterChange(
                   field.name,
                   selectedValues.filter(
-                    (v) => String(v) !== String(optionValue)
-                  )
+                    (v) => String(v) !== String(optionValue),
+                  ),
                 );
               };
 
@@ -359,8 +361,8 @@ export default function InvoiceListHeader({
                         .filter(
                           (opt) =>
                             !selectedValues.some(
-                              (v) => String(v) === String(opt.value)
-                            )
+                              (v) => String(v) === String(opt.value),
+                            ),
                         )
                         .map((opt) => (
                           <option key={opt.value} value={opt.value}>

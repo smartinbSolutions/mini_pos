@@ -98,6 +98,7 @@ import SalesReport from "./components/Reports/components/SalesReport";
 import PrintProfitLossReport from "./components/Reports/components/PrintProfitLossReport";
 import PrintSalesByProduct from "./components/Reports/components/PrintSalesByProduct";
 import PrintSalesByCustomer from "./components/Reports/components/PrintSalesByCustomer";
+import TagsScreen from "./components/Tags/components/TagsScreen";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -304,6 +305,7 @@ export default function App() {
               {/* ================= SETTINGS ================= */}
               <Route path="unit" element={<UnitList />} />
               <Route path="tax" element={<TaxList />} />
+              <Route path="tags" element={<TagsScreen />} />
               <Route path="company-info" element={<CompanyGeneralInfo />} />
               <Route
                 path="company-settings"

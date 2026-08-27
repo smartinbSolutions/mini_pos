@@ -855,4 +855,49 @@ db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_purchase_invoice ON purchase_invoice_items(invoice_id)`,
 ).run();
 
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS tags (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  latinName TEXT,
+  color TEXT,
+  scope TEXT CHECK(scope IN (
+    'product','customer','supplier','partner',
+    'sales_invoice','sales_return','sales_quotation',
+    'purchase_invoice','purchase_return',
+    'expense','payment'
+  ) OR scope IS NULL),
+  createdAt TEXT DEFAULT (datetime('now')),
+  UNIQUE(name, scope)
+)
+`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS taggables (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tag_id INTEGER NOT NULL,
+  entity_type TEXT NOT NULL CHECK(entity_type IN (
+    'product','customer','supplier','partner',
+    'sales_invoice','sales_return','sales_quotation',
+    'purchase_invoice','purchase_return',
+    'expense','payment'
+  )),
+  entity_id INTEGER NOT NULL,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
+  UNIQUE(tag_id, entity_type, entity_id)
+)
+`,
+).run();
+
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_taggables_entity ON taggables(entity_type, entity_id)`,
+).run();
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_taggables_tag ON taggables(tag_id)`,
+).run();
+
 export default db;
