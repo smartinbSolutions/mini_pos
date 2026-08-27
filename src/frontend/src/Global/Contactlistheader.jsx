@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { normalizeDigits } from "./FormatNumber";
 import NumberInput from "./NumberInput";
+import TagPickerField from "../components/Tags/components/TagPickerField";
 
 const defaultOpeningDate = () => `${new Date().getFullYear()}-01-01`;
 
@@ -136,6 +137,16 @@ const ContactListHeader = ({
             className={`w-full ${inputClass}`}
             placeholder={t("ui.address")}
           />
+
+          <div className="space-y-1.5">
+            <TagPickerField
+              scope={type}
+              entityType={type}
+              entityId={null}
+              selectedIds={draft.tagIds || []}
+              onChange={(ids) => setDraft({ ...draft, tagIds: ids })}
+            />
+          </div>
 
           {/* Opening balance card */}
           <div className="rounded-2xl border border-dashed border-[#dbe4ff] bg-[#f8faff] p-4 space-y-3">

@@ -24,6 +24,7 @@ const usePartnersList = () => {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [tagsByPartner, setTagsByPartner] = useState({});
 
   const api = window.api;
 
@@ -61,7 +62,7 @@ const usePartnersList = () => {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.partner") })
+        err?.message || t("errors.createFailed", { field: t("ui.partner") }),
       );
     } finally {
       setLoading(false);
@@ -72,6 +73,17 @@ const usePartnersList = () => {
     refetch();
   }, [refetch]);
 
+  useEffect(() => {
+    if (partners.length === 0) {
+      setTagsByPartner({});
+      return;
+    }
+    const ids = partners.map((p) => p.id);
+    window.api.getEntitiesTags("partner", ids).then((res) => {
+      if (res.success) setTagsByPartner(res.data);
+    });
+  }, [partners]);
+
   const createPartner = async (cust) => {
     const validationError = validatePartner(cust);
     if (validationError) {
@@ -80,8 +92,9 @@ const usePartnersList = () => {
 
     setSaving(true);
     try {
-      await api.createPartner(normalizePartner(cust));
+      const result = await api.createPartner(normalizePartner(cust));
       await refetch();
+      return result;
     } finally {
       setSaving(false);
     }
@@ -117,7 +130,10 @@ const usePartnersList = () => {
 
   const handleCreatePartner = async (part) => {
     try {
-      await createPartner(part);
+      const result = await createPartner(part);
+      if (result?.id && part.tagIds !== undefined) {
+        await api.setEntityTags("partner", result.id, part.tagIds);
+      }
       setActionError("");
       toast.success(t("success.created", { field: t("ui.partner") }));
       return true;
@@ -134,6 +150,9 @@ const usePartnersList = () => {
   const handleUpdatePartner = async (cust) => {
     try {
       await updatePartner(cust);
+      if (cust.tagIds !== undefined) {
+        await api.setEntityTags("partner", cust.id, cust.tagIds);
+      }
       setActionError("");
       toast.success(t("success.updated", { field: t("ui.partner") }));
       return true;
@@ -221,6 +240,7 @@ const usePartnersList = () => {
     refetch,
     openPaymentModel,
     setOpenPaymentModel,
+    tagsByPartner,
 
     // pagination
     page,
