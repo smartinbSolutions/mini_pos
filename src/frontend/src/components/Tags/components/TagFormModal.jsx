@@ -16,17 +16,30 @@ const ENTITY_TYPES = [
   "purchase_invoice",
   "purchase_return",
   "expense",
-  "payment",
+  // "payment",
 ];
 
 const DEFAULT_COLORS = [
-  "#4663ff",
-  "#9C7B45",
-  "#22c55e",
-  "#ef4444",
-  "#f59e0b",
-  "#0ea5e9",
-  "#a855f7",
+  "#4663ff", // brand blue
+  "#9C7B45", // gold
+  "#22c55e", // green
+  "#ef4444", // red
+  "#f59e0b", // amber
+  "#0ea5e9", // sky
+  "#a855f7", // purple
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#f97316", // orange
+  "#6366f1", // indigo
+  "#84cc16", // lime
+  "#06b6d4", // cyan
+  "#d946ef", // fuchsia
+  "#eab308", // yellow
+  "#10b981", // emerald
+  "#8b5cf6", // violet
+  "#f43f5e", // rose
+  "#64748b", // slate
+  "#78716c", // stone
 ];
 
 export default function TagFormModal({ tag, onClose, onSave }) {

@@ -18,6 +18,9 @@ const useExpenseList = () => {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const [allTags, setAllTags] = useState([]);
+  const [tagsByExpense, setTagsByExpense] = useState({});
+
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
 
@@ -30,6 +33,7 @@ const useExpenseList = () => {
     maxTotal: null,
     category_id: null,
     taxIds: null,
+    tagIds: null,
   });
 
   const setFilters = (patch) => {
@@ -47,6 +51,7 @@ const useExpenseList = () => {
       maxTotal: null,
       category_id: null,
       taxIds: null,
+      tagIds: null,
     });
     setPage(1);
   };
@@ -80,6 +85,15 @@ const useExpenseList = () => {
     }
   }, [api]);
 
+  useEffect(() => {
+    if (api?.listTags) {
+      api
+        .listTags("expense")
+        .then((res) => setAllTags(res.success ? res.data : []))
+        .catch(() => setAllTags([]));
+    }
+  }, [api]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiNotAvailable"));
@@ -105,6 +119,7 @@ const useExpenseList = () => {
             : undefined,
         category_id: filters.category_id || undefined,
         taxIds: filters.taxIds || undefined,
+        tagIds: filters.tagIds || undefined,
       });
 
       setExpenses(res?.data || []);
@@ -122,6 +137,19 @@ const useExpenseList = () => {
   useEffect(() => {
     refetch();
   }, [refetch]);
+
+  useEffect(() => {
+    if (!api?.getEntitiesTags) return;
+
+    if (expenses.length === 0) {
+      setTagsByExpense({});
+      return;
+    }
+    const ids = expenses.map((e) => e.id);
+    api.getEntitiesTags("expense", ids).then((res) => {
+      if (res.success) setTagsByExpense(res.data);
+    });
+  }, [expenses, api]);
 
   // Maps known backend error codes to a translated, user-facing message.
   const mapErrorCode = useCallback(
@@ -183,6 +211,9 @@ const useExpenseList = () => {
     filters,
     setFilters,
     clearFilters,
+
+    allTags,
+    tagsByExpense,
   };
 };
 
