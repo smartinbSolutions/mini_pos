@@ -14,6 +14,7 @@ import GoTo from "../../../../Global/GoTo";
 import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import BackButton from "../../../../Global/BackButton";
+import TagList from "../../../Tags/components/TagList";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-emerald-50", text: "text-emerald-600" },
@@ -34,6 +35,7 @@ export default function SalesReturnView() {
 
   const [returnInvoice, setReturnInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tags, setTags] = useState([]);
   const { money } = usePrimaryCurrency();
 
   const [isPrinting, setIsPrinting] = useState(false);
@@ -49,6 +51,16 @@ export default function SalesReturnView() {
 
         if (!cancelled) {
           setReturnInvoice(data);
+        }
+
+        if (data && !cancelled) {
+          const tagsRes = await window.api.getEntityTags(
+            "sales_return",
+            Number(id),
+          );
+          if (tagsRes.success && !cancelled) {
+            setTags(tagsRes.data);
+          }
         }
       } catch (error) {
         console.error("Failed to load sales return:", error);
@@ -83,11 +95,11 @@ export default function SalesReturnView() {
 
   const itemTaxTotal = items.reduce(
     (sum, item) => sum + Number(item.taxValue || 0),
-    0
+    0,
   );
   const itemDiscountTotal = items.reduce(
     (sum, item) => sum + Number(item.discount || 0),
-    0
+    0,
   );
   const invoiceDiscount = Number(returnInvoice?.discount || 0);
 
@@ -109,7 +121,7 @@ export default function SalesReturnView() {
       setIsSavingPdf(true);
       const res = await window.api.saveDocumentPdf(
         `/print-sales-return/${id}`,
-        `sales-return-${id}.pdf`
+        `sales-return-${id}.pdf`,
       );
       if (!res.success && res.error !== "CANCELED") console.error(res.error);
     } catch (err) {
@@ -220,6 +232,13 @@ export default function SalesReturnView() {
                   </span>
                   {returnInvoice.description}
                 </div>
+              </div>
+            )}
+
+            {tags.length > 0 && (
+              <div className="flex items-center gap-2 rounded-xl border border-[#e9edfb] bg-white px-3.5 py-2.5 print:hidden">
+                <Tag size={14} className="shrink-0 text-slate-400" />
+                <TagList tags={tags} limit={6} />
               </div>
             )}
 

@@ -30,6 +30,7 @@ import SupplierFormModal from "./SupplierFormModal";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
 import NumberInput from "../../../../Global/NumberInput";
+import TagPickerField from "../../../Tags/components/TagPickerField";
 
 // ---- Shared, module-level so re-renders never remount them (avoids the
 // focus-loss bug we hit earlier with in-body component definitions) ----
@@ -117,6 +118,8 @@ export default function AddPurchase() {
     items,
     suppliers,
     taxes,
+    tagIds,
+    setTagIds,
     addItem,
     removeItem,
     updateItem,
@@ -353,7 +356,28 @@ export default function AddPurchase() {
                 </div>
               </div>
             </section>
+            {/* Tags */}
+            <section className={panelClass}>
+              <AccentRule colorClass="bg-pink-500" />
+              <div className={panelBodyClass}>
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                    <Tag size={15} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
+                    {t("screens.tags.title")}
+                  </h3>
+                </div>
 
+                <TagPickerField
+                  scope="purchase_invoice"
+                  entityType="purchase_invoice"
+                  entityId={null}
+                  selectedIds={tagIds}
+                  onChange={setTagIds}
+                />
+              </div>
+            </section>
             {/* Items */}
             <section className={panelClass}>
               <AccentRule colorClass="bg-violet-500" />

@@ -37,7 +37,7 @@ export default function registerPurchaseInvoicesIPC() {
         const invoiceTaxes = requestedTaxIds.map((taxId) => {
           const taxRow = db
             .prepare(
-              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`,
             )
             .get(taxId);
           if (!taxRow) {
@@ -52,7 +52,7 @@ export default function registerPurchaseInvoicesIPC() {
 
         const invoiceDiscountRate = Math.min(
           100,
-          Math.max(0, Number(data.discount_rate || 0))
+          Math.max(0, Number(data.discount_rate || 0)),
         );
 
         // ---- Per-item cascade, recomputed from raw inputs only ----
@@ -76,7 +76,7 @@ export default function registerPurchaseInvoicesIPC() {
 
           const discountRate = Math.min(
             100,
-            Math.max(0, Number(item.discount_rate || 0))
+            Math.max(0, Number(item.discount_rate || 0)),
           );
           const discount = Number(((total * discountRate) / 100).toFixed(2));
           const afterDiscount = total - discount;
@@ -87,7 +87,7 @@ export default function registerPurchaseInvoicesIPC() {
           if (item.tax_id) {
             const taxRow = db
               .prepare(
-                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`,
               )
               .get(item.tax_id);
             if (!taxRow) {
@@ -132,7 +132,7 @@ export default function registerPurchaseInvoicesIPC() {
         const afterItemDiscounts = subtotal - itemDiscountTotal;
 
         const invoiceDiscount = Number(
-          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2),
         );
         const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
@@ -141,7 +141,7 @@ export default function registerPurchaseInvoicesIPC() {
         let invoiceTaxValueTotal = 0;
         const preparedInvoiceTaxes = invoiceTaxes.map((tax) => {
           const value = Number(
-            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2),
           );
           invoiceTaxValueTotal += value;
           return { ...tax, tax_value: value };
@@ -149,14 +149,14 @@ export default function registerPurchaseInvoicesIPC() {
         invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
 
         const invoiceTaxRateSum = Number(
-          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
+          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2),
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
-          ).toFixed(2)
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal,
+          ).toFixed(2),
         );
 
         // ---- Payment validation (unchanged) ----
@@ -200,7 +200,7 @@ export default function registerPurchaseInvoicesIPC() {
               created_by
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `
+            `,
           )
           .run(
             data.supplier_id,
@@ -213,7 +213,7 @@ export default function registerPurchaseInvoicesIPC() {
             invoiceTaxRateSum,
             invoiceTaxValueTotal,
             netTotal,
-            data.created_by
+            data.created_by,
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -222,7 +222,7 @@ export default function registerPurchaseInvoicesIPC() {
         if (!invoiceName) {
           invoiceName = buildDefaultInvoiceName(db, "purchase", invoiceId);
           db.prepare(
-            `UPDATE purchase_invoices SET invoice_name = ? WHERE id = ?`
+            `UPDATE purchase_invoices SET invoice_name = ? WHERE id = ?`,
           ).run(invoiceName, invoiceId);
         }
 
@@ -239,7 +239,7 @@ export default function registerPurchaseInvoicesIPC() {
             tax.tax_id,
             tax.tax_name,
             tax.tax_rate,
-            tax.tax_value
+            tax.tax_value,
           );
         }
 
@@ -286,7 +286,7 @@ export default function registerPurchaseInvoicesIPC() {
             item.taxValue,
             item.discount,
             item.discount_rate,
-            item.description
+            item.description,
           );
 
           // Also pulls the current base unit's name here — needed for the
@@ -300,7 +300,7 @@ export default function registerPurchaseInvoicesIPC() {
               LEFT JOIN product_units pu
                 ON pu.product_id = p.id AND pu.is_base = 1
               WHERE p.id = ?
-              `
+              `,
             )
             .get(item.product_id);
 
@@ -312,7 +312,7 @@ export default function registerPurchaseInvoicesIPC() {
             updateStockAndCost.run(
               item.baseQuantity,
               item.basePrice,
-              item.product_id
+              item.product_id,
             );
           }
 
@@ -458,6 +458,22 @@ export default function registerPurchaseInvoicesIPC() {
       whereParams.push(...params.taxIds);
     }
 
+    // Tag filter — must match ALL selected tags. Subquery against
+    // taggables (not a JOIN) to avoid multiplying rows against the
+    // item/tax/return aggregates already computed in the main query.
+    if (Array.isArray(params.tagIds) && params.tagIds.length) {
+      const tagPlaceholders = params.tagIds.map(() => "?").join(",");
+      whereConditions.push(`
+        p.id IN (
+          SELECT entity_id FROM taggables
+          WHERE entity_type = 'purchase_invoice' AND tag_id IN (${tagPlaceholders})
+          GROUP BY entity_id
+          HAVING COUNT(DISTINCT tag_id) = ?
+        )
+      `);
+      whereParams.push(...params.tagIds, params.tagIds.length);
+    }
+
     if (params.status) {
       havingConditions.push(`
       CASE
@@ -572,7 +588,7 @@ export default function registerPurchaseInvoicesIPC() {
     ORDER BY p.id DESC
 
     LIMIT ? OFFSET ?
-    `
+    `,
       )
       .all(...whereParams, ...havingParams, limit, offset);
 
@@ -601,7 +617,7 @@ export default function registerPurchaseInvoicesIPC() {
         GROUP BY p.id
         ${havingClause}
       ) t
-      `
+      `,
       )
       .get(...whereParams, ...havingParams);
 
@@ -618,7 +634,6 @@ export default function registerPurchaseInvoicesIPC() {
       totalPages: Math.ceil(total / limit),
     };
   });
-
   // GET ONE
   ipcMain.handle("get-purchase-invoice", (event, id) => {
     const invoice = db
@@ -655,7 +670,7 @@ export default function registerPurchaseInvoicesIPC() {
       GROUP BY invoice_id
     ) pa_sum ON pa_sum.invoice_id = pi.id
     WHERE pi.id = ?
-  `
+  `,
       )
       .get(id);
 
@@ -695,7 +710,7 @@ export default function registerPurchaseInvoicesIPC() {
     ON r.purchase_invoice_item_id = pii.id
 
   WHERE pii.invoice_id = ?
-  `
+  `,
       )
       .all(id);
 
@@ -707,7 +722,7 @@ export default function registerPurchaseInvoicesIPC() {
         FROM purchase_invoice_taxes
         WHERE invoice_id = ?
         ORDER BY id ASC
-        `
+        `,
       )
       .all(id);
 
@@ -735,7 +750,7 @@ export default function registerPurchaseInvoicesIPC() {
     WHERE pa.invoice_id = ?
       AND pa.invoice_type = 'purchase'
     ORDER BY pa.id ASC
-  `
+  `,
       )
       .all(id);
 
@@ -774,7 +789,7 @@ export default function registerPurchaseInvoicesIPC() {
       JOIN purchase_invoice_items pii ON pii.id = pri.purchase_invoice_item_id
       WHERE pii.invoice_id = ?
       LIMIT 1
-    `
+    `,
       )
       .get(data.id);
 
@@ -799,7 +814,7 @@ export default function registerPurchaseInvoicesIPC() {
         const invoiceTaxes = requestedTaxIds.map((taxId) => {
           const taxRow = db
             .prepare(
-              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`,
             )
             .get(taxId);
           if (!taxRow) {
@@ -814,7 +829,7 @@ export default function registerPurchaseInvoicesIPC() {
 
         const invoiceDiscountRate = Math.min(
           100,
-          Math.max(0, Number(data.discount_rate || 0))
+          Math.max(0, Number(data.discount_rate || 0)),
         );
 
         // ---- Per-item cascade, recomputed from raw inputs only ----
@@ -840,7 +855,7 @@ export default function registerPurchaseInvoicesIPC() {
 
           const discountRate = Math.min(
             100,
-            Math.max(0, Number(item.discount_rate || 0))
+            Math.max(0, Number(item.discount_rate || 0)),
           );
           const discount = Number(((total * discountRate) / 100).toFixed(2));
           const afterDiscount = total - discount;
@@ -851,7 +866,7 @@ export default function registerPurchaseInvoicesIPC() {
           if (item.tax_id) {
             const taxRow = db
               .prepare(
-                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`,
               )
               .get(item.tax_id);
             if (!taxRow) {
@@ -896,7 +911,7 @@ export default function registerPurchaseInvoicesIPC() {
         const afterItemDiscounts = subtotal - itemDiscountTotal;
 
         const invoiceDiscount = Number(
-          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2),
         );
         const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
@@ -904,7 +919,7 @@ export default function registerPurchaseInvoicesIPC() {
         let invoiceTaxValueTotal = 0;
         const preparedInvoiceTaxes = invoiceTaxes.map((tax) => {
           const value = Number(
-            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2),
           );
           invoiceTaxValueTotal += value;
           return { ...tax, tax_value: value };
@@ -912,14 +927,14 @@ export default function registerPurchaseInvoicesIPC() {
         invoiceTaxValueTotal = Number(invoiceTaxValueTotal.toFixed(2));
 
         const invoiceTaxRateSum = Number(
-          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
+          invoiceTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2),
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
-          ).toFixed(2)
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal,
+          ).toFixed(2),
         );
 
         // ---- Aggregate old vs new BASE quantities per product, for stock diff ----
@@ -972,7 +987,7 @@ export default function registerPurchaseInvoicesIPC() {
               LEFT JOIN product_units pu
                 ON pu.product_id = p.id AND pu.is_base = 1
               WHERE p.id IN (${placeholders})
-              `
+              `,
             )
             .all(...involvedProductIds);
           for (const row of rows) {
@@ -981,7 +996,7 @@ export default function registerPurchaseInvoicesIPC() {
         }
 
         const adjustStock = db.prepare(
-          `UPDATE products SET quantity = quantity + ? WHERE id = ?`
+          `UPDATE products SET quantity = quantity + ? WHERE id = ?`,
         );
 
         const updateMovement = db.prepare(`
@@ -1023,7 +1038,7 @@ export default function registerPurchaseInvoicesIPC() {
 
           db.prepare(`UPDATE products SET costPrice = ? WHERE id = ?`).run(
             next.price,
-            productId
+            productId,
           );
 
           if (old) {
@@ -1035,7 +1050,7 @@ export default function registerPurchaseInvoicesIPC() {
               next.unit_name,
               next.conversion_factor,
               data.id,
-              productId
+              productId,
             );
           } else {
             createProductMovement(db, {
@@ -1056,7 +1071,7 @@ export default function registerPurchaseInvoicesIPC() {
 
         // ---- Delete + reinsert invoice-level tax rows, same pattern as items ----
         db.prepare(
-          `DELETE FROM purchase_invoice_taxes WHERE invoice_id = ?`
+          `DELETE FROM purchase_invoice_taxes WHERE invoice_id = ?`,
         ).run(data.id);
 
         const insertInvoiceTax = db.prepare(`
@@ -1071,13 +1086,13 @@ export default function registerPurchaseInvoicesIPC() {
             tax.tax_id,
             tax.tax_name,
             tax.tax_rate,
-            tax.tax_value
+            tax.tax_value,
           );
         }
 
         // ---- Replace items ----
         db.prepare(
-          `DELETE FROM purchase_invoice_items WHERE invoice_id = ?`
+          `DELETE FROM purchase_invoice_items WHERE invoice_id = ?`,
         ).run(data.id);
 
         const insertItem = db.prepare(`
@@ -1107,7 +1122,7 @@ export default function registerPurchaseInvoicesIPC() {
             item.taxValue,
             item.discount,
             item.discount_rate,
-            item.description
+            item.description,
           );
         }
 
@@ -1122,7 +1137,7 @@ export default function registerPurchaseInvoicesIPC() {
             subtotal = ?, discount = ?, discount_rate = ?,
             taxRate = ?, taxValue = ?, net_total = ?, updated_by = ?
         WHERE id = ?
-      `
+      `,
         ).run(
           newSupplierId,
           invoiceName,
@@ -1135,7 +1150,7 @@ export default function registerPurchaseInvoicesIPC() {
           invoiceTaxValueTotal,
           netTotal,
           data.updated_by,
-          data.id
+          data.id,
         );
 
         // ---- Party history ----
@@ -1145,7 +1160,7 @@ export default function registerPurchaseInvoicesIPC() {
           UPDATE party_history
           SET amount = ?, date = ?, note = ?
           WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
-        `
+        `,
           ).run(netTotal, fullDateTime, invoiceName, data.id);
         } else {
           if (oldSupplierId) {
@@ -1153,7 +1168,7 @@ export default function registerPurchaseInvoicesIPC() {
               `
             DELETE FROM party_history
             WHERE invoice_id = ? AND invoice_type = 'purchase' AND record_type = 'invoice'
-          `
+          `,
             ).run(data.id);
           }
 
@@ -1198,7 +1213,7 @@ export default function registerPurchaseInvoicesIPC() {
         JOIN purchase_invoice_items pii ON pii.id = pri.purchase_invoice_item_id
         WHERE pii.invoice_id = ?
         LIMIT 1
-      `
+      `,
       )
       .get(id);
 
@@ -1212,7 +1227,7 @@ export default function registerPurchaseInvoicesIPC() {
         SELECT 1 FROM payment_allocations
         WHERE invoice_id = ? AND invoice_type = 'purchase'
         LIMIT 1
-      `
+      `,
       )
       .get(id);
 
@@ -1261,13 +1276,13 @@ export default function registerPurchaseInvoicesIPC() {
       }
 
       db.prepare(`DELETE FROM purchase_invoice_items WHERE invoice_id = ?`).run(
-        id
+        id,
       );
       db.prepare(
         `
         DELETE FROM party_history
         WHERE invoice_id = ? AND invoice_type = 'purchase'
-      `
+      `,
       ).run(id);
       db.prepare(`DELETE FROM purchase_invoices WHERE id = ?`).run(id);
     });

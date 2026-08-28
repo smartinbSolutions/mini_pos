@@ -27,7 +27,7 @@ export default function registerSalesQuotationsIPC() {
         const quotationTaxes = requestedTaxIds.map((taxId) => {
           const taxRow = db
             .prepare(
-              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`,
             )
             .get(taxId);
           if (!taxRow) {
@@ -42,7 +42,7 @@ export default function registerSalesQuotationsIPC() {
 
         const quotationDiscountRate = Math.min(
           100,
-          Math.max(0, Number(data.discount_rate || 0))
+          Math.max(0, Number(data.discount_rate || 0)),
         );
 
         // ---- Per-item cascade — no product lookup: nothing to snapshot
@@ -68,7 +68,7 @@ export default function registerSalesQuotationsIPC() {
 
           const discountRate = Math.min(
             100,
-            Math.max(0, Number(item.discount_rate || 0))
+            Math.max(0, Number(item.discount_rate || 0)),
           );
           const discount = Number(((total * discountRate) / 100).toFixed(2));
           const afterDiscount = total - discount;
@@ -79,7 +79,7 @@ export default function registerSalesQuotationsIPC() {
           if (item.tax_id) {
             const taxRow = db
               .prepare(
-                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`,
               )
               .get(item.tax_id);
             if (!taxRow) {
@@ -125,14 +125,14 @@ export default function registerSalesQuotationsIPC() {
         const afterItemDiscounts = subtotal - itemDiscountTotal;
 
         const quotationDiscount = Number(
-          ((afterItemDiscounts * quotationDiscountRate) / 100).toFixed(2)
+          ((afterItemDiscounts * quotationDiscountRate) / 100).toFixed(2),
         );
         const afterQuotationDiscount = afterItemDiscounts - quotationDiscount;
 
         let quotationTaxValueTotal = 0;
         const preparedQuotationTaxes = quotationTaxes.map((tax) => {
           const value = Number(
-            ((afterQuotationDiscount * tax.tax_rate) / 100).toFixed(2)
+            ((afterQuotationDiscount * tax.tax_rate) / 100).toFixed(2),
           );
           quotationTaxValueTotal += value;
           return { ...tax, tax_value: value };
@@ -140,14 +140,14 @@ export default function registerSalesQuotationsIPC() {
         quotationTaxValueTotal = Number(quotationTaxValueTotal.toFixed(2));
 
         const quotationTaxRateSum = Number(
-          quotationTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
+          quotationTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2),
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterQuotationDiscount + itemTaxTotal + quotationTaxValueTotal
-          ).toFixed(2)
+            afterQuotationDiscount + itemTaxTotal + quotationTaxValueTotal,
+          ).toFixed(2),
         );
 
         // ---- Insert quotation header — no channel, no payment ----
@@ -160,7 +160,7 @@ export default function registerSalesQuotationsIPC() {
              taxRate, taxValue,
              created_by, updated_by, net_total)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
+          `,
           )
           .run(
             data.customer_id || null,
@@ -175,7 +175,7 @@ export default function registerSalesQuotationsIPC() {
             quotationTaxValueTotal,
             data.created_by || null,
             null,
-            netTotal
+            netTotal,
           );
 
         const quotationId = quotationResult.lastInsertRowid;
@@ -185,10 +185,10 @@ export default function registerSalesQuotationsIPC() {
           quotationName = buildDefaultInvoiceName(
             db,
             "sales_quotation",
-            quotationId
+            quotationId,
           );
           db.prepare(
-            `UPDATE sales_quotations SET quotation_name = ? WHERE id = ?`
+            `UPDATE sales_quotations SET quotation_name = ? WHERE id = ?`,
           ).run(quotationName, quotationId);
         }
 
@@ -205,7 +205,7 @@ export default function registerSalesQuotationsIPC() {
             tax.tax_id,
             tax.tax_name,
             tax.tax_rate,
-            tax.tax_value
+            tax.tax_value,
           );
         }
 
@@ -237,7 +237,7 @@ export default function registerSalesQuotationsIPC() {
             item.taxValue,
             item.discount,
             item.discount_rate,
-            item.description
+            item.description,
           );
         }
 
@@ -286,7 +286,7 @@ export default function registerSalesQuotationsIPC() {
         const quotationTaxes = requestedTaxIds.map((taxId) => {
           const taxRow = db
             .prepare(
-              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`
+              `SELECT id, name, rate FROM taxes WHERE id = ? AND category IN ('invoice', 'both')`,
             )
             .get(taxId);
           if (!taxRow) {
@@ -301,7 +301,7 @@ export default function registerSalesQuotationsIPC() {
 
         const quotationDiscountRate = Math.min(
           100,
-          Math.max(0, Number(data.discount_rate || 0))
+          Math.max(0, Number(data.discount_rate || 0)),
         );
 
         // ---- Per-item cascade, recomputed from raw inputs only ----
@@ -325,7 +325,7 @@ export default function registerSalesQuotationsIPC() {
 
           const discountRate = Math.min(
             100,
-            Math.max(0, Number(item.discount_rate || 0))
+            Math.max(0, Number(item.discount_rate || 0)),
           );
           const discount = Number(((total * discountRate) / 100).toFixed(2));
           const afterDiscount = total - discount;
@@ -336,7 +336,7 @@ export default function registerSalesQuotationsIPC() {
           if (item.tax_id) {
             const taxRow = db
               .prepare(
-                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`
+                `SELECT rate FROM taxes WHERE id = ? AND category IN ('product', 'both')`,
               )
               .get(item.tax_id);
             if (!taxRow) {
@@ -381,14 +381,14 @@ export default function registerSalesQuotationsIPC() {
         const afterItemDiscounts = subtotal - itemDiscountTotal;
 
         const quotationDiscount = Number(
-          ((afterItemDiscounts * quotationDiscountRate) / 100).toFixed(2)
+          ((afterItemDiscounts * quotationDiscountRate) / 100).toFixed(2),
         );
         const afterQuotationDiscount = afterItemDiscounts - quotationDiscount;
 
         let quotationTaxValueTotal = 0;
         const preparedQuotationTaxes = quotationTaxes.map((tax) => {
           const value = Number(
-            ((afterQuotationDiscount * tax.tax_rate) / 100).toFixed(2)
+            ((afterQuotationDiscount * tax.tax_rate) / 100).toFixed(2),
           );
           quotationTaxValueTotal += value;
           return { ...tax, tax_value: value };
@@ -396,23 +396,23 @@ export default function registerSalesQuotationsIPC() {
         quotationTaxValueTotal = Number(quotationTaxValueTotal.toFixed(2));
 
         const quotationTaxRateSum = Number(
-          quotationTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2)
+          quotationTaxes.reduce((sum, t) => sum + t.tax_rate, 0).toFixed(2),
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterQuotationDiscount + itemTaxTotal + quotationTaxValueTotal
-          ).toFixed(2)
+            afterQuotationDiscount + itemTaxTotal + quotationTaxValueTotal,
+          ).toFixed(2),
         );
 
         // ---- Delete + reinsert items — no stock reversal, no movements ----
         db.prepare(
-          `DELETE FROM sales_quotation_items WHERE quotation_id = ?`
+          `DELETE FROM sales_quotation_items WHERE quotation_id = ?`,
         ).run(data.id);
 
         db.prepare(
-          `DELETE FROM sales_quotation_taxes WHERE quotation_id = ?`
+          `DELETE FROM sales_quotation_taxes WHERE quotation_id = ?`,
         ).run(data.id);
 
         const insertQuotationTax = db.prepare(`
@@ -427,7 +427,7 @@ export default function registerSalesQuotationsIPC() {
             tax.tax_id,
             tax.tax_name,
             tax.tax_rate,
-            tax.tax_value
+            tax.tax_value,
           );
         }
 
@@ -458,7 +458,7 @@ export default function registerSalesQuotationsIPC() {
             item.taxValue,
             item.discount,
             item.discount_rate,
-            item.description
+            item.description,
           );
         }
 
@@ -482,7 +482,7 @@ export default function registerSalesQuotationsIPC() {
               net_total = ?,
               updated_by = ?
           WHERE id = ?
-          `
+          `,
         ).run(
           data.customer_id || null,
           quotationName,
@@ -496,7 +496,7 @@ export default function registerSalesQuotationsIPC() {
           quotationTaxValueTotal,
           netTotal,
           data.updated_by,
-          data.id
+          data.id,
         );
       });
 
@@ -613,7 +613,7 @@ export default function registerSalesQuotationsIPC() {
       ${whereClause}
       ORDER BY q.id DESC
       LIMIT ? OFFSET ?
-      `
+      `,
       )
       .all(...whereParams, limit, offset);
 
@@ -623,7 +623,7 @@ export default function registerSalesQuotationsIPC() {
         SELECT COUNT(*) AS total
         FROM sales_quotations q
         ${whereClause}
-        `
+        `,
       )
       .get(...whereParams);
 
@@ -657,7 +657,7 @@ export default function registerSalesQuotationsIPC() {
       LEFT JOIN users creator ON creator.id = q.created_by
       LEFT JOIN users updater ON updater.id = q.updated_by
       WHERE q.id = ?
-      `
+      `,
       )
       .get(id);
 
@@ -677,7 +677,7 @@ export default function registerSalesQuotationsIPC() {
       LEFT JOIN products p ON p.id = qi.product_id
       LEFT JOIN taxes t ON t.id = qi.tax_id
       WHERE qi.quotation_id = ?
-      `
+      `,
       )
       .all(id);
 
@@ -688,7 +688,7 @@ export default function registerSalesQuotationsIPC() {
         FROM sales_quotation_taxes
         WHERE quotation_id = ?
         ORDER BY id ASC
-        `
+        `,
       )
       .all(id);
 
@@ -717,10 +717,10 @@ export default function registerSalesQuotationsIPC() {
         // No stock, no movements, no party_history, no payments — a quotation
         // never touched any of them, so deletion is just removing the rows.
         db.prepare(
-          `DELETE FROM sales_quotation_items WHERE quotation_id = ?`
+          `DELETE FROM sales_quotation_items WHERE quotation_id = ?`,
         ).run(id);
         db.prepare(
-          `DELETE FROM sales_quotation_taxes WHERE quotation_id = ?`
+          `DELETE FROM sales_quotation_taxes WHERE quotation_id = ?`,
         ).run(id);
         db.prepare(`DELETE FROM sales_quotations WHERE id = ?`).run(id);
       });

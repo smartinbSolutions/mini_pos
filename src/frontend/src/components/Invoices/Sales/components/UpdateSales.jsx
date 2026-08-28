@@ -28,6 +28,7 @@ import CustomerFormModal from "./CustomerFormModal";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
 import NumberInput from "../../../../Global/NumberInput";
+import TagPickerField from "../../../Tags/components/TagPickerField";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -98,6 +99,8 @@ export default function UpdateSales() {
     products,
     customers,
     taxes,
+    tagIds,
+    setTagIds,
     addItem,
     removeItem,
     updateItem,
@@ -406,6 +409,29 @@ export default function UpdateSales() {
               </div>
             </section>
 
+            {/* Tags */}
+            <section className={panelClass}>
+              <AccentRule colorClass="bg-pink-500" />
+              <div className={panelBodyClass}>
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                    <Tag size={15} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
+                    {t("screens.tags.title")}
+                  </h3>
+                </div>
+
+                <TagPickerField
+                  scope="sales_invoice"
+                  entityType="sales_invoice"
+                  entityId={invoice?.id}
+                  selectedIds={tagIds}
+                  onChange={setTagIds}
+                  disabled={isLocked}
+                />
+              </div>
+            </section>
             <section className={panelClass}>
               <AccentRule colorClass="bg-violet-500" />
               <div className="flex items-center justify-between gap-3 border-b border-[#eef1ff] px-4 py-3">

@@ -33,7 +33,7 @@ export default function registerSalesReturnsIpc() {
         // source of truth. ----
         const originalInvoice = db
           .prepare(
-            `SELECT discount_rate, channel FROM sales_invoices WHERE id = ?`
+            `SELECT discount_rate, channel FROM sales_invoices WHERE id = ?`,
           )
           .get(data.sales_invoice_id);
 
@@ -43,7 +43,7 @@ export default function registerSalesReturnsIpc() {
 
         const originalInvoiceTaxes = db
           .prepare(
-            `SELECT tax_id, tax_name, tax_rate FROM sales_invoice_taxes WHERE invoice_id = ?`
+            `SELECT tax_id, tax_name, tax_rate FROM sales_invoice_taxes WHERE invoice_id = ?`,
           )
           .all(data.sales_invoice_id);
 
@@ -82,12 +82,12 @@ export default function registerSalesReturnsIpc() {
 
           if (!originalItem) {
             throw new Error(
-              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`
+              `PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE: ${item.product_id}`,
             );
           }
 
           const returnedRow = getAlreadyReturnedQty.get(
-            item.sales_invoice_item_id
+            item.sales_invoice_item_id,
           );
           const alreadyReturnedQty = Number(returnedRow?.total_returned || 0);
           const maxAllowedToReturn =
@@ -100,19 +100,19 @@ export default function registerSalesReturnsIpc() {
           const originalQuantity = Number(originalItem.quantity);
           const price = Number(originalItem.price || 0);
           const returnedTotal = Number(
-            (quantityToReturnNow * price).toFixed(2)
+            (quantityToReturnNow * price).toFixed(2),
           );
 
           const discountRate = Number(originalItem.discount_rate || 0);
           const returnedDiscount = Number(
-            (returnedTotal * (discountRate / 100)).toFixed(2)
+            (returnedTotal * (discountRate / 100)).toFixed(2),
           );
           const returnedAfterDiscount = returnedTotal - returnedDiscount;
 
           const taxId = originalItem.tax_id || null;
           const taxRate = Number(originalItem.tax_rate || 0);
           const returnedTaxValue = Number(
-            (returnedAfterDiscount * (taxRate / 100)).toFixed(2)
+            (returnedAfterDiscount * (taxRate / 100)).toFixed(2),
           );
 
           subtotal += returnedTotal;
@@ -129,7 +129,7 @@ export default function registerSalesReturnsIpc() {
             product_code: originalItem.product_code || null,
             unit_name: originalItem.unit_name || null,
             unit_conversion_factor: Number(
-              originalItem.unit_conversion_factor || 1
+              originalItem.unit_conversion_factor || 1,
             ),
             tax_id: taxId,
             tax_rate: taxRate,
@@ -151,7 +151,7 @@ export default function registerSalesReturnsIpc() {
         const afterItemDiscounts = subtotal - itemDiscountTotal;
 
         const invoiceDiscount = Number(
-          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2)
+          ((afterItemDiscounts * invoiceDiscountRate) / 100).toFixed(2),
         );
         const afterInvoiceDiscount = afterItemDiscounts - invoiceDiscount;
 
@@ -161,7 +161,7 @@ export default function registerSalesReturnsIpc() {
         let invoiceTaxValueTotal = 0;
         const preparedReturnTaxes = originalInvoiceTaxes.map((tax) => {
           const value = Number(
-            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2)
+            ((afterInvoiceDiscount * tax.tax_rate) / 100).toFixed(2),
           );
           invoiceTaxValueTotal += value;
           return {
@@ -176,14 +176,14 @@ export default function registerSalesReturnsIpc() {
         const invoiceTaxRateSum = Number(
           originalInvoiceTaxes
             .reduce((sum, t) => sum + Number(t.tax_rate || 0), 0)
-            .toFixed(2)
+            .toFixed(2),
         );
 
         const netTotal = Number(
           Math.max(
             0,
-            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal
-          ).toFixed(2)
+            afterInvoiceDiscount + itemTaxTotal + invoiceTaxValueTotal,
+          ).toFixed(2),
         );
 
         // ---- Refund validation — sales keeps the multi-fund array, unlike
@@ -222,7 +222,7 @@ export default function registerSalesReturnsIpc() {
               created_by
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `
+            `,
           )
           .run(
             data.sales_invoice_id,
@@ -237,7 +237,7 @@ export default function registerSalesReturnsIpc() {
             invoiceTaxRateSum,
             invoiceTaxValueTotal,
             netTotal,
-            data.created_by
+            data.created_by,
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -255,7 +255,7 @@ export default function registerSalesReturnsIpc() {
             tax.tax_id,
             tax.tax_name,
             tax.tax_rate,
-            tax.tax_value
+            tax.tax_value,
           );
         }
 
@@ -292,7 +292,7 @@ export default function registerSalesReturnsIpc() {
             item.taxValue,
             item.discount,
             item.discount_rate,
-            item.description
+            item.description,
           );
 
           // Needed both to skip the stock restore for services (their
@@ -307,7 +307,7 @@ export default function registerSalesReturnsIpc() {
               LEFT JOIN product_units pu
                 ON pu.product_id = p.id AND pu.is_base = 1
               WHERE p.id = ?
-              `
+              `,
             )
             .get(item.product_id);
 
@@ -346,7 +346,7 @@ export default function registerSalesReturnsIpc() {
             db,
             "sales_return",
             returnId,
-            data.sales_invoice_id
+            data.sales_invoice_id,
           ),
         });
 
@@ -455,6 +455,22 @@ export default function registerSalesReturnsIpc() {
         whereValues.push(...params.taxIds);
       }
 
+      // Tag filter — must match ALL selected tags. Subquery against
+      // taggables (not a JOIN) to avoid multiplying rows against the
+      // item/tax aggregates already computed in the main query.
+      if (Array.isArray(params.tagIds) && params.tagIds.length) {
+        const tagPlaceholders = params.tagIds.map(() => "?").join(",");
+        whereConditions.push(`
+          sr.id IN (
+            SELECT entity_id FROM taggables
+            WHERE entity_type = 'sales_return' AND tag_id IN (${tagPlaceholders})
+            GROUP BY entity_id
+            HAVING COUNT(DISTINCT tag_id) = ?
+          )
+        `);
+        whereValues.push(...params.tagIds, params.tagIds.length);
+      }
+
       const whereClause = whereConditions.length
         ? `WHERE ${whereConditions.join(" AND ")}`
         : "";
@@ -521,7 +537,7 @@ export default function registerSalesReturnsIpc() {
   
         ORDER BY sr.id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
         )
         .all(...whereValues, ...havingValues, limit, offset);
 
@@ -544,7 +560,7 @@ export default function registerSalesReturnsIpc() {
           GROUP BY sr.id
           ${havingClause}
         )
-        `
+        `,
         )
         .get(...whereValues, ...havingValues).total;
 
@@ -564,7 +580,6 @@ export default function registerSalesReturnsIpc() {
       return { data: [], total: 0, totalPages: 1, error: err.message };
     }
   });
-
   // GET ONE
   ipcMain.handle("get-sales-return-by-id", (event, id) => {
     const returnInvoice = db
@@ -597,7 +612,7 @@ export default function registerSalesReturnsIpc() {
       GROUP BY invoice_id
     ) pa_sum ON pa_sum.invoice_id = sr.id
     WHERE sr.id = ?
-    `
+    `,
       )
       .get(id);
 
@@ -614,7 +629,7 @@ export default function registerSalesReturnsIpc() {
     LEFT JOIN products p ON p.id = sri.product_id
     LEFT JOIN taxes t ON t.id = sri.tax_id
     WHERE sri.return_id = ?
-    `
+    `,
       )
       .all(id);
 
@@ -626,7 +641,7 @@ export default function registerSalesReturnsIpc() {
       FROM sales_return_taxes
       WHERE return_id = ?
       ORDER BY id ASC
-      `
+      `,
       )
       .all(id);
 
@@ -662,7 +677,7 @@ export default function registerSalesReturnsIpc() {
     WHERE pa.invoice_id = ?
       AND pa.invoice_type = 'sales_return'
     ORDER BY pa.id ASC
-    `
+    `,
       )
       .all(id);
 

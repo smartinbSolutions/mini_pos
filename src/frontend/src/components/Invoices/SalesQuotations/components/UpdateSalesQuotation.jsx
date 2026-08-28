@@ -27,6 +27,7 @@ import useCustomerList from "../../../Customer/hooks/useCustomerList";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import NumberInput from "../../../../Global/NumberInput";
 import CustomerFormModal from "../../Sales/components/CustomerFormModal";
+import TagPickerField from "../../../Tags/components/TagPickerField";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -97,6 +98,8 @@ export default function UpdateSalesQuotation() {
     products,
     customers,
     taxes,
+    tagIds,
+    setTagIds,
     addItem,
     removeItem,
     updateItem,
@@ -318,6 +321,30 @@ export default function UpdateSalesQuotation() {
                     ))}
                   </select>
                 </div>
+              </div>
+            </section>
+
+            {/* Tags */}
+            <section className={panelClass}>
+              <AccentRule colorClass="bg-pink-500" />
+              <div className={panelBodyClass}>
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                    <Tag size={15} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
+                    {t("screens.tags.title")}
+                  </h3>
+                </div>
+
+                <TagPickerField
+                  scope="sales_quotation"
+                  entityType="sales_quotation"
+                  entityId={quotation?.id}
+                  selectedIds={tagIds}
+                  onChange={setTagIds}
+                  skipInitialFetch
+                />
               </div>
             </section>
 

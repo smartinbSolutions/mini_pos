@@ -27,6 +27,7 @@ import useCustomerList from "../../../Customer/hooks/useCustomerList";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import NumberInput from "../../../../Global/NumberInput";
 import CustomerFormModal from "../../Sales/components/CustomerFormModal";
+import TagPickerField from "../../../Tags/components/TagPickerField";
 
 // ---- Shared, module-level so re-renders never remount them ----
 
@@ -97,6 +98,8 @@ export default function AddSalesQuotation() {
     items,
     customers,
     taxes,
+    tagIds,
+    setTagIds,
     addItem,
     removeItem,
     updateItem,
@@ -274,6 +277,29 @@ export default function AddSalesQuotation() {
                     ))}
                   </select>
                 </div>
+              </div>
+            </section>
+
+            {/* Tags */}
+            <section className={panelClass}>
+              <AccentRule colorClass="bg-pink-500" />
+              <div className={panelBodyClass}>
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                    <Tag size={15} />
+                  </span>
+                  <h3 className="text-[13px] font-black text-slate-950">
+                    {t("screens.tags.title")}
+                  </h3>
+                </div>
+
+                <TagPickerField
+                  scope="sales_quotation"
+                  entityType="sales_quotation"
+                  entityId={null}
+                  selectedIds={tagIds}
+                  onChange={setTagIds}
+                />
               </div>
             </section>
 

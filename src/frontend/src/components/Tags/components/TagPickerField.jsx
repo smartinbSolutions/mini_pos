@@ -14,6 +14,8 @@ export default function TagPickerField({
   entityId,
   selectedIds,
   onChange,
+  skipInitialFetch = false,
+  disabled = false,
 }) {
   const { t } = useTranslation();
   const [availableTags, setAvailableTags] = useState([]);
@@ -30,20 +32,26 @@ export default function TagPickerField({
     const listRes = await window.api.listTags(scope);
     if (listRes.success) setAvailableTags(listRes.data);
 
-    if (entityId) {
+    // Only re-fetch and overwrite the current selection when the caller
+    // hasn't already loaded it themselves. Callers that pre-load tags
+    // (e.g. a hook that fetches entity tags as part of its own load())
+    // pass skipInitialFetch to avoid this component silently clobbering
+    // selectedIds with a redundant, possibly-racy fetch of its own.
+    if (entityId && !skipInitialFetch) {
       const entityRes = await window.api.getEntityTags(entityType, entityId);
       if (entityRes.success) onChange(entityRes.data.map((t) => t.id));
     }
 
     setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scope, entityType, entityId]);
+  }, [scope, entityType, entityId, skipInitialFetch]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   function openMenu() {
+    if (disabled) return;
     const rect = triggerRef.current?.getBoundingClientRect();
     if (rect) {
       setMenuRect({ top: rect.bottom + 6, left: rect.left, width: rect.width });
@@ -87,6 +95,7 @@ export default function TagPickerField({
   }, [open]);
 
   function toggle(tagId) {
+    if (disabled) return;
     onChange(
       selectedIds.includes(tagId)
         ? selectedIds.filter((id) => id !== tagId)
@@ -95,6 +104,7 @@ export default function TagPickerField({
   }
 
   function remove(tagId, event) {
+    if (disabled) return;
     event.stopPropagation();
     onChange(selectedIds.filter((id) => id !== tagId));
   }
@@ -110,7 +120,12 @@ export default function TagPickerField({
         type="button"
         ref={triggerRef}
         onClick={() => (open ? setOpen(false) : openMenu())}
-        className={`${inputClass} flex h-auto min-h-9 cursor-pointer items-center justify-between gap-2 py-2 text-left`}
+        disabled={disabled}
+        className={`${inputClass} flex h-auto min-h-9 items-center justify-between gap-2 py-2 text-left ${
+          disabled
+            ? "cursor-not-allowed bg-slate-50 text-slate-400"
+            : "cursor-pointer"
+        }`}
       >
         <div className="flex flex-1 flex-wrap gap-1.5">
           {loading ? (
@@ -127,20 +142,25 @@ export default function TagPickerField({
                 style={{ backgroundColor: tag.color || "#4663ff" }}
               >
                 {tag.name}
-                <X
-                  size={11}
-                  onClick={(e) => remove(tag.id, e)}
-                  className="cursor-pointer opacity-80 hover:opacity-100"
-                />
+                {!disabled && (
+                  <X
+                    size={11}
+                    onClick={(e) => remove(tag.id, e)}
+                    className="cursor-pointer opacity-80 hover:opacity-100"
+                  />
+                )}
               </span>
             ))
           )}
         </div>
-        <ChevronDown size={15} className="shrink-0 text-slate-400" />
+        {!disabled && (
+          <ChevronDown size={15} className="shrink-0 text-slate-400" />
+        )}
       </button>
 
       {open &&
         menuRect &&
+        !disabled &&
         createPortal(
           <div
             ref={menuRef}

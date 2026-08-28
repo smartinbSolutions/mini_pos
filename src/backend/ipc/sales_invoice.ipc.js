@@ -456,35 +456,53 @@ export default function registerSalesInvoiceIPC() {
 
     if (params.status) {
       havingConditions.push(`
-        CASE
-          WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
-          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
-          ELSE 'unpaid'
-        END = ?
-      `);
+      CASE
+        WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
+        WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+        ELSE 'unpaid'
+      END = ?
+    `);
       havingParams.push(params.status);
     }
 
     if (params.returnStatus) {
       havingConditions.push(`
-        CASE
-          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
-          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
-          ELSE 'partial'
-        END = ?
-      `);
+      CASE
+        WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+        WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+        ELSE 'partial'
+      END = ?
+    `);
       havingParams.push(params.returnStatus);
     }
 
     if (Array.isArray(params.taxIds) && params.taxIds.length) {
       const taxPlaceholders = params.taxIds.map(() => "?").join(",");
       whereConditions.push(`
-        EXISTS (
-          SELECT 1 FROM sales_invoice_taxes sit
-          WHERE sit.invoice_id = s.id AND sit.tax_id IN (${taxPlaceholders})
-        )
-      `);
+      EXISTS (
+        SELECT 1 FROM sales_invoice_taxes sit
+        WHERE sit.invoice_id = s.id AND sit.tax_id IN (${taxPlaceholders})
+      )
+    `);
       whereParams.push(...params.taxIds);
+    }
+
+    // Tag filter — must match ALL selected tags (extra tags beyond the
+    // selection don't disqualify an invoice). Computed as a standalone
+    // subquery against taggables rather than a JOIN in the main query,
+    // since a direct join here would multiply rows and corrupt the
+    // SUM(pa.amount)/item aggregates already being computed above.
+    if (Array.isArray(params.tagIds) && params.tagIds.length) {
+      const tagPlaceholders = params.tagIds.map(() => "?").join(",");
+      whereConditions.push(`
+      s.id IN (
+        SELECT entity_id FROM taggables
+        WHERE entity_type = 'sales_invoice' AND tag_id IN (${tagPlaceholders})
+        GROUP BY entity_id
+        HAVING COUNT(DISTINCT tag_id) = ?
+      )
+    `);
+      whereParams.push(...params.tagIds, params.tagIds.length);
     }
 
     const whereClause = whereConditions.length
@@ -497,119 +515,119 @@ export default function registerSalesInvoiceIPC() {
     const invoices = db
       .prepare(
         `
+    SELECT
+      s.*,
+      c.name AS customer_name,
+      c.phone AS customer_phone,
+      creator.full_name AS created_by_name,
+      updater.full_name AS updated_by_name,
+      invoiceTaxAgg.taxes_json,
+      COALESCE(SUM(pa.amount), 0) AS paid_amount,
+
+      COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
+      COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
+      (s.taxValue + COALESCE(itemAgg.item_tax_total, 0)) AS total_tax_value,
+      (s.discount + COALESCE(itemAgg.item_discount_total, 0)) AS total_discount_value,
+
+      s.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
+
+      CASE
+        WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
+        WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
+        ELSE 'unpaid'
+      END AS status,
+
+      CASE
+        WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
+        WHEN ret.total_returned >= ret.total_quantity THEN 'full'
+        ELSE 'partial'
+      END AS return_status
+
+    FROM sales_invoices s
+
+    LEFT JOIN customers c
+      ON c.id = s.customer_id
+
+    LEFT JOIN payment_allocations pa
+      ON pa.invoice_id = s.id
+     AND pa.invoice_type = 'sales'
+
+    LEFT JOIN users creator
+      ON creator.id = s.created_by
+
+    LEFT JOIN users updater
+      ON updater.id = s.updated_by
+
+    LEFT JOIN (
       SELECT
-        s.*,
-        c.name AS customer_name,
-        c.phone AS customer_phone,
-        creator.full_name AS created_by_name,
-        updater.full_name AS updated_by_name,
-        invoiceTaxAgg.taxes_json,
-        COALESCE(SUM(pa.amount), 0) AS paid_amount,
-  
-        COALESCE(itemAgg.item_tax_total, 0) AS item_tax_total,
-        COALESCE(itemAgg.item_discount_total, 0) AS item_discount_total,
-        (s.taxValue + COALESCE(itemAgg.item_tax_total, 0)) AS total_tax_value,
-        (s.discount + COALESCE(itemAgg.item_discount_total, 0)) AS total_discount_value,
-  
-        s.net_total - COALESCE(SUM(pa.amount), 0) AS remaining_amount,
-  
-        CASE
-          WHEN COALESCE(SUM(pa.amount), 0) >= s.net_total THEN 'paid'
-          WHEN COALESCE(SUM(pa.amount), 0) > 0 THEN 'partial'
-          ELSE 'unpaid'
-        END AS status,
-  
-        CASE
-          WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
-          WHEN ret.total_returned >= ret.total_quantity THEN 'full'
-          ELSE 'partial'
-        END AS return_status
-  
-      FROM sales_invoices s
-  
-      LEFT JOIN customers c
-        ON c.id = s.customer_id
-  
-      LEFT JOIN payment_allocations pa
-        ON pa.invoice_id = s.id
-       AND pa.invoice_type = 'sales'
-  
-      LEFT JOIN users creator
-        ON creator.id = s.created_by
-  
-      LEFT JOIN users updater
-        ON updater.id = s.updated_by
-  
+        invoice_id,
+        SUM(taxValue) AS item_tax_total,
+        SUM(discount) AS item_discount_total
+      FROM sales_invoice_items
+      GROUP BY invoice_id
+    ) itemAgg ON itemAgg.invoice_id = s.id
+
+    LEFT JOIN (
+      SELECT
+        invoice_id,
+        json_group_array(
+          json_object('tax_id', tax_id, 'name', tax_name, 'rate', tax_rate, 'value', tax_value)
+        ) AS taxes_json
+      FROM sales_invoice_taxes
+      GROUP BY invoice_id
+    ) invoiceTaxAgg ON invoiceTaxAgg.invoice_id = s.id
+
+    LEFT JOIN (
+      SELECT
+        si.invoice_id,
+        SUM(si.quantity) AS total_quantity,
+        SUM(COALESCE(sri.returned_qty, 0)) AS total_returned
+      FROM sales_invoice_items si
       LEFT JOIN (
-        SELECT
-          invoice_id,
-          SUM(taxValue) AS item_tax_total,
-          SUM(discount) AS item_discount_total
-        FROM sales_invoice_items
-        GROUP BY invoice_id
-      ) itemAgg ON itemAgg.invoice_id = s.id
-  
-      LEFT JOIN (
-        SELECT
-          invoice_id,
-          json_group_array(
-            json_object('tax_id', tax_id, 'name', tax_name, 'rate', tax_rate, 'value', tax_value)
-          ) AS taxes_json
-        FROM sales_invoice_taxes
-        GROUP BY invoice_id
-      ) invoiceTaxAgg ON invoiceTaxAgg.invoice_id = s.id
-  
-      LEFT JOIN (
-        SELECT
-          si.invoice_id,
-          SUM(si.quantity) AS total_quantity,
-          SUM(COALESCE(sri.returned_qty, 0)) AS total_returned
-        FROM sales_invoice_items si
-        LEFT JOIN (
-          SELECT sales_invoice_item_id, SUM(quantity) AS returned_qty
-          FROM sales_return_items
-          GROUP BY sales_invoice_item_id
-        ) sri ON sri.sales_invoice_item_id = si.id
-        GROUP BY si.invoice_id
-      ) ret ON ret.invoice_id = s.id
-  
-         ${whereClause}
-      GROUP BY s.id
-         ${havingClause}
-  
-      ORDER BY s.id DESC
-  
-      LIMIT ? OFFSET ?
-      `,
+        SELECT sales_invoice_item_id, SUM(quantity) AS returned_qty
+        FROM sales_return_items
+        GROUP BY sales_invoice_item_id
+      ) sri ON sri.sales_invoice_item_id = si.id
+      GROUP BY si.invoice_id
+    ) ret ON ret.invoice_id = s.id
+
+       ${whereClause}
+    GROUP BY s.id
+       ${havingClause}
+
+    ORDER BY s.id DESC
+
+    LIMIT ? OFFSET ?
+    `,
       )
       .all(...whereParams, ...havingParams, limit, offset);
 
     const { total } = db
       .prepare(
         `
-        SELECT COUNT(*) AS total FROM (
-          SELECT s.id
-          FROM sales_invoices s
-          LEFT JOIN payment_allocations pa
-            ON pa.invoice_id = s.id AND pa.invoice_type = 'sales'
+      SELECT COUNT(*) AS total FROM (
+        SELECT s.id
+        FROM sales_invoices s
+        LEFT JOIN payment_allocations pa
+          ON pa.invoice_id = s.id AND pa.invoice_type = 'sales'
+        LEFT JOIN (
+          SELECT
+            si.invoice_id,
+            SUM(si.quantity) AS total_quantity,
+            SUM(COALESCE(sri.returned_qty, 0)) AS total_returned
+          FROM sales_invoice_items si
           LEFT JOIN (
-            SELECT
-              si.invoice_id,
-              SUM(si.quantity) AS total_quantity,
-              SUM(COALESCE(sri.returned_qty, 0)) AS total_returned
-            FROM sales_invoice_items si
-            LEFT JOIN (
-              SELECT sales_invoice_item_id, SUM(quantity) AS returned_qty
-              FROM sales_return_items
-              GROUP BY sales_invoice_item_id
-            ) sri ON sri.sales_invoice_item_id = si.id
-            GROUP BY si.invoice_id
-          ) ret ON ret.invoice_id = s.id
-          ${whereClause}
-          GROUP BY s.id
-          ${havingClause}
-        ) t
-        `,
+            SELECT sales_invoice_item_id, SUM(quantity) AS returned_qty
+            FROM sales_return_items
+            GROUP BY sales_invoice_item_id
+          ) sri ON sri.sales_invoice_item_id = si.id
+          GROUP BY si.invoice_id
+        ) ret ON ret.invoice_id = s.id
+        ${whereClause}
+        GROUP BY s.id
+        ${havingClause}
+      ) t
+      `,
       )
       .get(...whereParams, ...havingParams);
 
