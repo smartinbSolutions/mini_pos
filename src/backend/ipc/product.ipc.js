@@ -503,7 +503,7 @@ export default function registerProductIPC() {
 
     const search = (params.search || "").trim();
 
-    // ---- Barcode short-circuit ---- (unchanged)
+    // ---- Barcode short-circuit ---- (unchanged, no tag filtering applied here)
     if (search) {
       const unitMatch = db
         .prepare(
@@ -618,6 +618,23 @@ export default function registerProductIPC() {
       queryParams.push(params.type);
     }
 
+    // Tag filter — must match ALL selected tags. Applied at the base
+    // products query, before the per-unit fan-out below, since matching
+    // against the exploded (product, unit) rows would need de-duplication
+    // and produce the wrong total count.
+    if (Array.isArray(params.tagIds) && params.tagIds.length) {
+      const tagPlaceholders = params.tagIds.map(() => "?").join(",");
+      whereConditions.push(`
+        products.id IN (
+          SELECT entity_id FROM taggables
+          WHERE entity_type = 'product' AND tag_id IN (${tagPlaceholders})
+          GROUP BY entity_id
+          HAVING COUNT(DISTINCT tag_id) = ?
+        )
+      `);
+      queryParams.push(...params.tagIds, params.tagIds.length);
+    }
+
     const whereClause = whereConditions.length
       ? `WHERE ${whereConditions.join(" AND ")}`
       : "";
@@ -684,11 +701,6 @@ export default function registerProductIPC() {
       unitsByProduct.get(unit.product_id).push(unit);
     }
 
-    // Product-level barcodes — used as a fallback ONLY for the base unit's
-    // tile, matching the same fallback logic as the barcode short-circuit
-    // above (a base unit's real-world barcode usually lives here, not on
-    // product_units.barcode). Batched in one query rather than per-product,
-    // same pattern as `units` above.
     const productBarcodeRows = db
       .prepare(
         `
@@ -725,9 +737,6 @@ export default function registerProductIPC() {
           ? rawUnitQuantity
           : Math.floor(rawUnitQuantity);
 
-        // Base unit: its own product_units.barcode wins if set, otherwise
-        // fall back to the product's first product_barcodes entry. Non-base
-        // units always use their own barcode column only.
         const resolvedBarcode = unit.is_base
           ? unit.barcode || productLevelBarcodes[0] || null
           : unit.barcode || null;

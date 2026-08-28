@@ -419,10 +419,12 @@
         "description": "Açıklama",
         "quantity": "Miktar",
         "barcodes": "Barkodlar",
-        "units": "Satış Birimleri"
+        "units": "Satış Birimleri",
+        "tags": "Etiketler"
       },
       "quickAddProduct": "Hızlı Ürün Ekle",
       "skippedUnits": "Atlanan Birimler",
+      "skippedTags": "Atlanan Etiketler",
       "productType": "Ürün Türü",
       "typeNormal": "Normal",
       "typeService": "Hizmet",
@@ -1372,6 +1374,7 @@
     "TAG_NAME_ALREADY_EXISTS": "Bu kapsamda aynı adla bir etiket zaten var.",
     "INVALID_TAG_SCOPE": "Geçersiz etiket kapsamı.",
     "TAG_NOT_FOUND": "Etiket bulunamadı.",
+    "tagNotFound": "Etiket bulunamadı.",
     "TAG_CREATE_FAILED": "Etiket oluşturulamadı.",
     "TAG_UPDATE_FAILED": "Etiket güncellenemedi.",
     "TAG_DELETE_FAILED": "Etiket silinemedi.",

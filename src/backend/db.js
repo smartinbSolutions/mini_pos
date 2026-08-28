@@ -11,6 +11,17 @@ const db = new Database(dbPath);
 
 db.pragma("foreign_keys = ON");
 
+function ensureColumn(table, column, definition) {
+  const columns = db
+    .prepare(`PRAGMA table_info(${table})`)
+    .all()
+    .map((col) => col.name);
+
+  if (!columns.includes(column)) {
+    db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+  }
+}
+
 db.prepare(
   `CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -160,11 +171,14 @@ CREATE TABLE IF NOT EXISTS product_imports (
   skipped_barcodes_count INTEGER DEFAULT 0,
   skipped_invalid_count INTEGER DEFAULT 0,
   skipped_units_count INTEGER DEFAULT 0,
+  skipped_tags_count INTEGER DEFAULT 0,
   report_path TEXT,
   createdAt TEXT DEFAULT (datetime('now'))
 );
 `,
 ).run();
+
+ensureColumn("product_imports", "skipped_tags_count", "INTEGER DEFAULT 0");
 
 db.prepare(
   `
@@ -172,7 +186,7 @@ CREATE TABLE IF NOT EXISTS product_import_items (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   import_id INTEGER NOT NULL,
   row_number INTEGER,
-  status TEXT NOT NULL,       -- 'created' | 'skipped_product' | 'skipped_barcode' | 'skipped_invalid' | 'skipped_unit'
+  status TEXT NOT NULL,       -- 'created' | 'skipped_product' | 'skipped_barcode' | 'skipped_invalid' | 'skipped_unit' | 'skipped_tag'
   product_id INTEGER,
   product_name TEXT,
   barcode TEXT,

@@ -11,7 +11,7 @@ export async function generateProductImportTemplate(db) {
     .prepare(
       `SELECT name, rate FROM taxes
        WHERE category IN ('product', 'both') AND name IS NOT NULL
-       ORDER BY name`
+       ORDER BY name`,
     )
     .all();
   const taxLabels = taxRows.map((t) => `${t.name} (${t.rate}%)`);
@@ -60,6 +60,7 @@ export async function generateProductImportTemplate(db) {
     { header: "tax", key: "tax", width: 20 },
     { header: "quantity", key: "quantity", width: 14, style: { numFmt: "@" } },
     { header: "barcodes", key: "barcodes", width: 32, style: { numFmt: "@" } },
+    { header: "tags", key: "tags", width: 28, style: { numFmt: "@" } },
     { header: "unit2_name", key: "unit2_name", width: 18 },
     {
       header: "unit2_conversion_factor",
@@ -82,11 +83,22 @@ export async function generateProductImportTemplate(db) {
   ];
   sheet.getRow(1).font = { bold: true };
 
+  // Explains the comma-separated tag convention, and the skip-and-report
+  // behavior when a typed tag name doesn't match an existing tag (no
+  // auto-create — see parseProductImport's resolveTagId).
+  sheet.getCell("K1").note = {
+    texts: [
+      {
+        text: 'Optional. Comma-separated tag names (e.g. "wholesale, imported"). A tag name that doesn\'t already exist will be skipped and reported — create the tag first from the Tags screen if needed.',
+      },
+    ],
+  };
+
   // One optional additional-selling-unit slot is pre-built here
   // (unit2_*). More can be added by copying that same 4-column group
   // rightward as unit3_*, unit4_*, etc. — the importer discovers any
   // "unitN_name" header dynamically rather than expecting a fixed count.
-  sheet.getCell("K1").note = {
+  sheet.getCell("L1").note = {
     texts: [
       {
         text: "Optional. To add another selling unit beyond this one, copy these 4 columns (name/conversion_factor/price/barcode) and rename them unit3_*, unit4_*, and so on.",
@@ -155,24 +167,24 @@ export async function parseProductImport(db, filePath, fileName) {
   const taxByName = new Map(
     db
       .prepare(
-        `SELECT id, name FROM taxes WHERE category IN ('product', 'both')`
+        `SELECT id, name FROM taxes WHERE category IN ('product', 'both')`,
       )
       .all()
-      .map((t) => [t.name, t.id])
+      .map((t) => [t.name, t.id]),
   );
 
   const existingBarcodes = new Set(
     db
       .prepare(`SELECT barcode FROM product_barcodes`)
       .all()
-      .map((b) => b.barcode)
+      .map((b) => b.barcode),
   );
 
   const existingUnitBarcodes = new Set(
     db
       .prepare(`SELECT barcode FROM product_units WHERE barcode IS NOT NULL`)
       .all()
-      .map((u) => u.barcode)
+      .map((u) => u.barcode),
   );
 
   const insertProduct = db.prepare(`
@@ -192,11 +204,30 @@ export async function parseProductImport(db, filePath, fileName) {
       `);
   const getProductByName = db.prepare(`SELECT id FROM products WHERE name = ?`);
 
+  const findTagStmt = db.prepare(
+    `SELECT id FROM tags WHERE name = ? COLLATE NOCASE AND (scope = 'product' OR scope IS NULL) LIMIT 1`,
+  );
+  const insertTaggableStmt = db.prepare(
+    `INSERT OR IGNORE INTO taggables (tag_id, entity_type, entity_id) VALUES (?, 'product', ?)`,
+  );
+
+  const tagIdByName = new Map();
+  function resolveTagId(tagName) {
+    const key = tagName.toLowerCase();
+    if (tagIdByName.has(key)) return tagIdByName.get(key);
+
+    const existing = findTagStmt.get(tagName);
+    const tagId = existing ? existing.id : null;
+
+    tagIdByName.set(key, tagId);
+    return tagId;
+  }
+
   const existingCodes = new Set(
     db
       .prepare(`SELECT code FROM products WHERE code IS NOT NULL`)
       .all()
-      .map((p) => p.code)
+      .map((p) => p.code),
   );
 
   const insertImport = db.prepare(`
@@ -209,7 +240,7 @@ export async function parseProductImport(db, filePath, fileName) {
       `);
   const updateImportCounts = db.prepare(`
         UPDATE product_imports
-        SET total_rows = ?, created_count = ?, skipped_products_count = ?, skipped_barcodes_count = ?, skipped_units_count = ?
+        SET total_rows = ?, created_count = ?, skipped_products_count = ?, skipped_barcodes_count = ?, skipped_units_count = ?, skipped_tags_count = ?
         WHERE id = ?
       `);
 
@@ -217,6 +248,7 @@ export async function parseProductImport(db, filePath, fileName) {
   const skippedProducts = [];
   const skippedBarcodes = [];
   const skippedUnits = [];
+  const skippedTags = [];
   let totalRows = 0;
 
   const stripTaxLabel = (raw) =>
@@ -288,6 +320,7 @@ export async function parseProductImport(db, filePath, fileName) {
       const unitCode = String(cellByHeader(row, "unit_code") || "").trim();
       const taxName = stripTaxLabel(cellByHeader(row, "tax"));
       const barcodesRaw = String(cellByHeader(row, "barcodes") || "");
+      const tagsRaw = String(cellByHeader(row, "tags") || "");
 
       const rawType = String(cellByHeader(row, "type") || "")
         .trim()
@@ -305,7 +338,7 @@ export async function parseProductImport(db, filePath, fileName) {
             null,
             name,
             null,
-            reason
+            reason,
           );
           return;
         }
@@ -332,7 +365,7 @@ export async function parseProductImport(db, filePath, fileName) {
           null,
           name,
           null,
-          reason
+          reason,
         );
         return;
       }
@@ -351,7 +384,7 @@ export async function parseProductImport(db, filePath, fileName) {
           null,
           name,
           null,
-          reason
+          reason,
         );
         return;
       }
@@ -366,7 +399,7 @@ export async function parseProductImport(db, filePath, fileName) {
           null,
           name,
           null,
-          reason
+          reason,
         );
         return;
       }
@@ -382,7 +415,7 @@ export async function parseProductImport(db, filePath, fileName) {
           null,
           name,
           null,
-          reason
+          reason,
         );
         return;
       }
@@ -400,7 +433,7 @@ export async function parseProductImport(db, filePath, fileName) {
         quantity,
         unitId,
         taxId,
-        type
+        type,
       );
       const productId = result.lastInsertRowid;
 
@@ -427,7 +460,7 @@ export async function parseProductImport(db, filePath, fileName) {
             productId,
             name,
             barcode,
-            reason
+            reason,
           );
           continue;
         }
@@ -435,20 +468,46 @@ export async function parseProductImport(db, filePath, fileName) {
         existingBarcodes.add(barcode);
       }
 
+      const tagNames = tagsRaw
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+
+      for (const tagName of tagNames) {
+        const tagId = resolveTagId(tagName);
+
+        if (tagId === null) {
+          const reason = "tagNotFound";
+          skippedTags.push({ row: rowNumber, name, tag: tagName, reason });
+          insertImportItem.run(
+            importId,
+            rowNumber,
+            "skipped_tag",
+            productId,
+            name,
+            null,
+            reason,
+          );
+          continue;
+        }
+
+        insertTaggableStmt.run(tagId, productId);
+      }
+
       for (const group of additionalUnitGroups) {
         const unitName = String(
-          cellByHeader(row, group.nameHeader) || ""
+          cellByHeader(row, group.nameHeader) || "",
         ).trim();
         if (!unitName) continue;
 
         const factorCell = parseNumberCell(
-          cellByHeader(row, group.factorHeader)
+          cellByHeader(row, group.factorHeader),
         );
         const unitPriceCell = parseNumberCell(
-          cellByHeader(row, group.priceHeader)
+          cellByHeader(row, group.priceHeader),
         );
         const unitBarcode = String(
-          cellByHeader(row, group.barcodeHeader) || ""
+          cellByHeader(row, group.barcodeHeader) || "",
         ).trim();
 
         if (seenUnitNames.has(unitName.toLowerCase())) {
@@ -461,7 +520,7 @@ export async function parseProductImport(db, filePath, fileName) {
             productId,
             name,
             null,
-            reason
+            reason,
           );
           continue;
         }
@@ -476,7 +535,7 @@ export async function parseProductImport(db, filePath, fileName) {
             productId,
             name,
             null,
-            reason
+            reason,
           );
           continue;
         }
@@ -491,7 +550,7 @@ export async function parseProductImport(db, filePath, fileName) {
             productId,
             name,
             null,
-            reason
+            reason,
           );
           continue;
         }
@@ -506,7 +565,7 @@ export async function parseProductImport(db, filePath, fileName) {
             productId,
             name,
             unitBarcode,
-            reason
+            reason,
           );
           continue;
         }
@@ -516,7 +575,7 @@ export async function parseProductImport(db, filePath, fileName) {
           unitName,
           factorCell.value,
           unitPriceCell.value,
-          unitBarcode || null
+          unitBarcode || null,
         );
 
         seenUnitNames.add(unitName.toLowerCase());
@@ -548,7 +607,8 @@ export async function parseProductImport(db, filePath, fileName) {
       skippedProducts.length,
       skippedBarcodes.length,
       skippedUnits.length,
-      importId
+      skippedTags.length,
+      importId,
     );
 
     return importId;
@@ -556,5 +616,12 @@ export async function parseProductImport(db, filePath, fileName) {
 
   const importId = transaction();
 
-  return { importId, created, skippedProducts, skippedBarcodes, skippedUnits };
+  return {
+    importId,
+    created,
+    skippedProducts,
+    skippedBarcodes,
+    skippedUnits,
+    skippedTags,
+  };
 }
