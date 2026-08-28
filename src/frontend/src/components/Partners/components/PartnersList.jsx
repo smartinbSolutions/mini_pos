@@ -64,6 +64,7 @@ const PartnersList = () => {
     refetch,
     openPaymentModel,
     setOpenPaymentModel,
+    remainingPercentage,
 
     // pagination
     page,
@@ -114,6 +115,7 @@ const PartnersList = () => {
             submitLabel={t("screens.contacts.addPartner")}
             t={t}
             type="partner"
+            remainingPercentage={remainingPercentage}
           />
 
           {filteredpartners.length === 0 ? (
@@ -129,6 +131,9 @@ const PartnersList = () => {
                     <th className="px-5 py-4 text-center">{t("ui.phone")}</th>
                     <th className="px-5 py-4 text-center">{t("ui.address")}</th>
                     <th className="px-5 py-4 text-center">{t("ui.balance")}</th>
+                    <th className="px-5 py-4 text-center">
+                      {t("ui.percentage")}
+                    </th>
                     <th className="px-5 py-4 text-center">
                       {t("screens.tags.title") || "Tags"}
                     </th>
@@ -205,6 +210,31 @@ const PartnersList = () => {
                                   />
                                 </div>
                               </div>
+                              <div className="space-y-1">
+                                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                                  {t("ui.percentage")}
+                                </label>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={editing.percentage}
+                                  onChange={(e) =>
+                                    setEditing({
+                                      ...editing,
+                                      percentage: e.target.value,
+                                    })
+                                  }
+                                  className={`${inputClass} w-full`}
+                                  placeholder="0"
+                                />
+                                <span className="text-[10px] text-slate-400">
+                                  {t("screens.contacts.maxPercentageAllowed", {
+                                    value:
+                                      remainingPercentage +
+                                      (editing.percentage || 0),
+                                  })}
+                                </span>
+                              </div>
 
                               <div className="space-y-1">
                                 <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
@@ -268,6 +298,9 @@ const PartnersList = () => {
                             money={money}
                             t={t}
                           />
+                        </td>
+                        <td className="px-5 py-3 text-center font-bold text-slate-700">
+                          {partner.percentage ?? 0}%
                         </td>
                         <td className="px-5 py-3 text-center">
                           <TagList

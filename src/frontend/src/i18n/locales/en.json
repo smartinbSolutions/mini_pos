@@ -40,6 +40,9 @@
     "all": "All"
   },
   "ui": {
+    "selectCustomerOptional": "Select customer (optional)",
+    "productNameOrSelect": "Product name or select",
+    "percentage": "Percentage",
     "country": "Country",
     "walk-in": "walk In Customer",
     "settled": "Settled",
@@ -346,6 +349,7 @@
     },
     "contacts": {
       "createCustomerDescription": "Add a new customer to your contacts",
+      "maxPercentageAllowed": "Max allowed: {{value}}%",
       "balanceLockedWhileEditing": "Balance unchanged",
       "customersSubtitle": "Manage your customers easily",
       "suppliersSubtitle": "Manage your suppliers easily",
@@ -1115,7 +1119,10 @@
       "discount": "Discount",
       "tax": "Tax",
       "returnTotal": "Return total",
-      "confirmReturn": "Confirm return"
+      "confirmReturn": "Confirm return",
+      "refundHistory": "Refunded cash amounts log",
+      "noCashRefunded": "No cash refunds were issued; the funds were credited to the customer's account.",
+      "returnDate": "Return date"
     },
     "purchaseReturn": {
       "saveWithoutRefund": "Save Without Refund",
@@ -1317,6 +1324,7 @@
     "paymentTitle": "Are you sure you want to delete this financial voucher? This action cannot be undone."
   },
   "errors": {
+    "percentageExceedsRemaining": "You can't add more than {{remaining}}%",
     "rendererTitle": "Renderer error",
     "rendererMessage": "The frontend crashed while loading.",
     "apiUnavailable": "Electron preload API is not available.",

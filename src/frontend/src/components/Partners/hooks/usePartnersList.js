@@ -5,7 +5,13 @@ import { toast } from "react-toastify";
 
 const usePartnersList = () => {
   const { t } = useTranslation();
-  const emptyPartner = { name: "", phone: "", address: "", opening_balance: 0 };
+  const emptyPartner = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+    percentage: 0,
+  };
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [partners, setPartners] = useState([]);
@@ -18,6 +24,7 @@ const usePartnersList = () => {
   const [editing, setEditing] = useState(emptyPartner);
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selectePartner, setSelectePartner] = useState(null);
+  const [remainingPercentage, setRemainingPercentage] = useState(100);
 
   // pagination — mirrors useSuppliersList
   const [page, setPage] = useState(1);
@@ -34,6 +41,7 @@ const usePartnersList = () => {
     phone: String(cust.phone || "").trim(),
     address: String(cust.address || "").trim(),
     balance_type: cust.balance_type || "increase",
+    percentage: Number(cust.percentage) || 0,
   });
 
   const validatePartner = (cust) => {
@@ -58,6 +66,7 @@ const usePartnersList = () => {
       setPartners(result?.data || []);
       setTotal(result?.total || 0);
       setTotalPages(result?.totalPages || 1);
+      setRemainingPercentage(result?.remainingPercentage ?? 100);
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
@@ -86,13 +95,21 @@ const usePartnersList = () => {
 
   const createPartner = async (cust) => {
     const validationError = validatePartner(cust);
-    if (validationError) {
-      throw new Error(validationError);
-    }
+    if (validationError) throw new Error(validationError);
 
     setSaving(true);
     try {
       const result = await api.createPartner(normalizePartner(cust));
+      if (result && result.success === false) {
+        if (result.error === "PARTNER_PERCENTAGE_EXCEEDS_REMAINING") {
+          throw new Error(
+            t("errors.percentageExceedsRemaining", {
+              remaining: result.remaining,
+            }),
+          );
+        }
+        throw new Error(result.error);
+      }
       await refetch();
       return result;
     } finally {
@@ -108,7 +125,17 @@ const usePartnersList = () => {
 
     setSaving(true);
     try {
-      await api.updatePartner(normalizePartner(cust));
+      const result = await api.updatePartner(normalizePartner(cust));
+      if (result && result.success === false) {
+        if (result.error === "PARTNER_PERCENTAGE_EXCEEDS_REMAINING") {
+          throw new Error(
+            t("errors.percentageExceedsRemaining", {
+              remaining: result.remaining,
+            }),
+          );
+        }
+        throw new Error(result.error);
+      }
       await refetch();
     } finally {
       setSaving(false);
@@ -203,6 +230,7 @@ const usePartnersList = () => {
       name: cust.name || "",
       phone: cust.phone || "",
       address: cust.address || "",
+      percentage: cust.percentage || 0,
     });
   };
 
@@ -241,6 +269,7 @@ const usePartnersList = () => {
     openPaymentModel,
     setOpenPaymentModel,
     tagsByPartner,
+    remainingPercentage,
 
     // pagination
     page,

@@ -41,7 +41,10 @@
     "all": "الكل"
   },
   "ui": {
+    "selectCustomerOptional": "اختر العميل (اختياري)",
+    "productNameOrSelect": "اسم المنتج أو اختر",
     "walk-in": "عميل مباشر",
+    "percentage": "النسبة المئوية",
     "settled": "تمت التسوية",
     "owing": "مستحق",
     "unknown": "غير معروف",
@@ -347,6 +350,7 @@
     },
     "contacts": {
       "createCustomerDescription": "أضف عميلاً جديداً إلى جهات الاتصال",
+      "maxPercentageAllowed": "الحد الأقصى المسموح: {{value}}%",
       "balanceLockedWhileEditing": "الرصيد لم يتغير",
       "customersSubtitle": "إدارة العملاء بسهولة",
       "suppliersSubtitle": "إدارة الموردين بسهولة",
@@ -1102,7 +1106,10 @@
       "discount": "الخصم",
       "tax": "الضريبة",
       "returnTotal": "إجمالي المرتجع",
-      "confirmReturn": "تأكيد المرتجع"
+      "confirmReturn": "تأكيد المرتجع",
+      "refundHistory": "سجل المبالغ النقدية المسترجعة",
+      "noCashRefunded": "لم يتم استرجاع أي مبلغ نقدي؛ تم إضافة المبلغ إلى حساب العميل.",
+      "returnDate": "تاريخ المرتجع"
     },
     "purchaseReturn": {
       "saveWithoutRefund": "حفظ بدون استرجاع",
@@ -1304,6 +1311,7 @@
     "paymentTitle": "هل أنت متأكد من رغبتك في حذف هذا السند المالي؟ لا يمكن التراجع عن هذه العملية."
   },
   "errors": {
+    "percentageExceedsRemaining": "لا يمكنك إضافة أكثر من {{remaining}}%",
     "rendererTitle": "خطأ في واجهة العرض",
     "rendererMessage": "تعطلت الواجهة أثناء التحميل.",
     "apiUnavailable": "واجهة Electron preload غير متاحة.",

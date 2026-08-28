@@ -234,6 +234,7 @@ CREATE TABLE IF NOT EXISTS partners (
 )
 `,
 ).run();
+ensureColumn("partners", "percentage", "REAL DEFAULT 0");
 
 db.prepare(
   `

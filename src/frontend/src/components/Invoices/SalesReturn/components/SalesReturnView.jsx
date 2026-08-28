@@ -189,7 +189,7 @@ export default function SalesReturnView() {
                 </h1>
                 <div className="mt-0.5 space-y-0.5 text-xs text-slate-500">
                   <p>
-                    {t("ui.returnDate")}:{" "}
+                    {t("screens.salesReturn.returnDate")}:{" "}
                     <FormattedDate value={returnInvoice.date} />
                   </p>
                   <p>
@@ -399,12 +399,12 @@ export default function SalesReturnView() {
                 <div className="p-4">
                   <h3 className="mb-3 flex items-center gap-1.5 text-[13px] font-black text-slate-900">
                     <HandCoins size={14} className="text-[#4663ff]" />
-                    {t("ui.refundHistory")}
+                    {t("screens.salesReturn.refundHistory")}
                   </h3>
 
                   {allocations.length === 0 ? (
                     <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs font-semibold text-slate-400">
-                      {t("ui.noCashRefundedSales")}
+                      {t("screens.salesReturn.noCashRefunded")}
                     </div>
                   ) : (
                     <div className="space-y-2">

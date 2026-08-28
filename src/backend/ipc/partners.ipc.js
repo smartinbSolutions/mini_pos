@@ -2,21 +2,44 @@ const { ipcMain } = require("electron");
 import db from "../db";
 import createPartyHistory from "../utils/createPaymentHistory";
 import { buildOpeningBalanceNote } from "../utils/helpers";
+
+function getPartnersPercentageSum(excludeId = null) {
+  const row = excludeId
+    ? db
+        .prepare(
+          `SELECT COALESCE(SUM(percentage), 0) AS total FROM partners WHERE id != ?`,
+        )
+        .get(excludeId)
+    : db
+        .prepare(`SELECT COALESCE(SUM(percentage), 0) AS total FROM partners`)
+        .get();
+  return row.total;
+}
+
 export default function registerPartnersIPC() {
   // CREATE
   ipcMain.handle("create-partner", (event, data) => {
     if (!data.name) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
+    const percentage = Number(data.percentage) || 0;
+    const remaining = 100 - getPartnersPercentageSum();
+    if (percentage > remaining) {
+      return {
+        success: false,
+        error: "PARTNER_PERCENTAGE_EXCEEDS_REMAINING",
+        remaining,
+      };
+    }
     try {
       const result = db
         .prepare(
           `
-        INSERT INTO partners (name, phone, address)
-        VALUES (?,?,?)
-      `
+      INSERT INTO partners (name, phone, address, percentage)
+      VALUES (?,?,?,?)
+    `,
         )
-        .run(data.name, data.phone, data.address);
+        .run(data.name, data.phone, data.address, percentage);
 
       const openingBalance = Number(data.opening_balance || 0);
       if (openingBalance !== 0) {
@@ -54,46 +77,25 @@ export default function registerPartnersIPC() {
     const partners = db
       .prepare(
         `
-      SELECT
-        p.*,
-  
-        COALESCE(
-          SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
-          0
-        ) AS total_deposit,
-  
-        COALESCE(
-          SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END),
-          0
-        ) AS total_withdrawal,
-  
-        COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'increase' THEN ph.amount
-              WHEN ph.movement_type = 'decrease' THEN -ph.amount
-              ELSE 0
-            END
-          ),
-          0
-        ) AS balance
-  
-      FROM partners p
-      LEFT JOIN party_history ph
-        ON ph.party_type = 'partner'
-       AND ph.party_id = p.id
-  
-      GROUP BY p.id
-      ORDER BY p.name
-  
-      LIMIT ? OFFSET ?
-      `
+    SELECT
+      p.*,
+      COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0) AS total_deposit,
+      COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS total_withdrawal,
+      COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount WHEN ph.movement_type = 'decrease' THEN -ph.amount ELSE 0 END), 0) AS balance
+    FROM partners p
+    LEFT JOIN party_history ph
+      ON ph.party_type = 'partner' AND ph.party_id = p.id
+    GROUP BY p.id
+    ORDER BY p.name
+    LIMIT ? OFFSET ?
+    `,
       )
       .all(limit, offset);
 
     const { total } = db
       .prepare(`SELECT COUNT(*) AS total FROM partners`)
       .get();
+    const totalAllocated = getPartnersPercentageSum();
 
     return {
       data: partners,
@@ -101,67 +103,60 @@ export default function registerPartnersIPC() {
       limit,
       total,
       totalPages: Math.ceil(total / limit),
+      totalAllocatedPercentage: totalAllocated,
+      remainingPercentage: 100 - totalAllocated,
     };
   });
 
-  // FIXED: movement_type values corrected from 'deposit'/'withdrawal'
-  // (never actually stored — schema only allows 'increase'/'decrease')
-  // to match get-partners and the real CHECK constraint.
   ipcMain.handle("get-partner", (event, id) => {
     const partner = db
       .prepare(
         `
-      SELECT
-        p.*,
-
-        COALESCE(
-          SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
-          0
-        ) AS total_deposit,
-
-        COALESCE(
-          SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END),
-          0
-        ) AS total_withdrawal,
-
-        COALESCE(
-          SUM(
-            CASE
-              WHEN ph.movement_type = 'increase' THEN ph.amount
-              WHEN ph.movement_type = 'decrease' THEN -ph.amount
-              ELSE 0
-            END
-          ),
-          0
-        ) AS balance
-
-      FROM partners p
-      LEFT JOIN party_history ph
-        ON ph.party_type = 'partner'
-       AND ph.party_id = p.id
-
-      WHERE p.id = ?
-
-      GROUP BY p.id
-      `
+    SELECT
+      p.*,
+      COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0) AS total_deposit,
+      COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS total_withdrawal,
+      COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount WHEN ph.movement_type = 'decrease' THEN -ph.amount ELSE 0 END), 0) AS balance
+    FROM partners p
+    LEFT JOIN party_history ph
+      ON ph.party_type = 'partner' AND ph.party_id = p.id
+    WHERE p.id = ?
+    GROUP BY p.id
+    `,
       )
       .get(id);
 
-    return partner || null;
+    if (!partner) return null;
+
+    const remainingExcludingSelf = 100 - getPartnersPercentageSum(id);
+
+    return {
+      ...partner,
+      remainingPercentage: remainingExcludingSelf,
+    };
   });
 
   ipcMain.handle("update-partner", (event, data) => {
     if (!data.name) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
+    const percentage = Number(data.percentage) || 0;
+    const remaining = 100 - getPartnersPercentageSum(data.id);
+    if (percentage > remaining) {
+      return {
+        success: false,
+        error: "PARTNER_PERCENTAGE_EXCEEDS_REMAINING",
+        remaining,
+      };
+    }
     try {
       db.prepare(
         `
-        UPDATE partners
-        SET name = ?, phone = ?, address = ?
-        WHERE id = ?
-      `
-      ).run(data.name, data.phone, data.address, data.id);
+      UPDATE partners
+      SET name = ?, phone = ?, address = ?, percentage = ?
+      WHERE id = ?
+    `,
+      ).run(data.name, data.phone, data.address, percentage, data.id);
 
       return { success: true };
     } catch (err) {
@@ -177,7 +172,7 @@ export default function registerPartnersIPC() {
           `
         SELECT COUNT(*) AS count FROM party_history
         WHERE party_type = 'partner' AND party_id = ?
-      `
+      `,
         )
         .get(id);
 
@@ -188,7 +183,7 @@ export default function registerPartnersIPC() {
       db.prepare(
         `
         DELETE FROM partners WHERE id = ?
-      `
+      `,
       ).run(id);
 
       return { success: true };

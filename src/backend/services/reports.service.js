@@ -40,7 +40,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           JOIN sales_invoices si ON si.id = sii.invoice_id
           WHERE sii.buyingPrice IS NOT NULL
           ${invoiceDate.clause}
-        `
+        `,
       )
       .get(...invoiceDate.params)?.value || 0;
 
@@ -54,7 +54,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           JOIN sales_returns sr ON sr.id = sri.return_id
           WHERE sii.buyingPrice IS NOT NULL
           ${returnDate.clause}
-        `
+        `,
       )
       .get(...returnDate.params)?.value || 0;
 
@@ -65,7 +65,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           SELECT COALESCE(SUM(net_total), 0) AS value
           FROM sales_invoices si
           WHERE 1=1 ${invoiceDate.clause}
-        `
+        `,
       )
       .get(...invoiceDate.params)?.value || 0;
 
@@ -76,7 +76,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           SELECT COALESCE(SUM(net_total), 0) AS value
           FROM sales_returns sr
           WHERE 1=1 ${returnDate.clause}
-        `
+        `,
       )
       .get(...returnDate.params)?.value || 0;
 
@@ -87,7 +87,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           SELECT COUNT(*) AS value
           FROM sales_invoices si
           WHERE 1=1 ${invoiceDate.clause}
-        `
+        `,
       )
       .get(...invoiceDate.params)?.value || 0;
 
@@ -98,7 +98,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           SELECT COUNT(*) AS value
           FROM sales_returns sr
           WHERE 1=1 ${returnDate.clause}
-        `
+        `,
       )
       .get(...returnDate.params)?.value || 0;
 
@@ -109,7 +109,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           SELECT COALESCE(SUM(net_total), 0) AS value
           FROM expense
           WHERE 1=1 ${expenseDate.clause}
-        `
+        `,
       )
       .get(...expenseDate.params)?.value || 0;
 
@@ -120,7 +120,7 @@ export function getProfitLoss(db, { startDate, endDate } = {}) {
           SELECT COUNT(*) AS value
           FROM expense
           WHERE 1=1 ${expenseDate.clause}
-        `
+        `,
       )
       .get(...expenseDate.params)?.value || 0;
 
@@ -199,7 +199,7 @@ export function getProfitLossTrend(db, { startDate, endDate } = {}) {
   const { cte, params, matchExpr } = buildBucketCTE(
     groupBy,
     effectiveStart,
-    effectiveEnd
+    effectiveEnd,
   );
 
   const salesRows = db
@@ -213,7 +213,7 @@ export function getProfitLossTrend(db, { startDate, endDate } = {}) {
           LEFT JOIN sales_invoices si ON ${matchExpr("si.date")} = buckets.bucket
           GROUP BY buckets.bucket
           ORDER BY buckets.bucket
-        `
+        `,
     )
     .all(...params);
 
@@ -228,7 +228,7 @@ export function getProfitLossTrend(db, { startDate, endDate } = {}) {
           LEFT JOIN sales_returns sr ON ${matchExpr("sr.date")} = buckets.bucket
           GROUP BY buckets.bucket
           ORDER BY buckets.bucket
-        `
+        `,
     )
     .all(...params);
 
@@ -243,7 +243,7 @@ export function getProfitLossTrend(db, { startDate, endDate } = {}) {
           LEFT JOIN expense e ON ${matchExpr("e.date")} = buckets.bucket
           GROUP BY buckets.bucket
           ORDER BY buckets.bucket
-        `
+        `,
     )
     .all(...params);
 
@@ -260,7 +260,7 @@ export function getProfitLossTrend(db, { startDate, endDate } = {}) {
             ON sii.invoice_id = si.id AND sii.buyingPrice IS NOT NULL
           GROUP BY buckets.bucket
           ORDER BY buckets.bucket
-        `
+        `,
     )
     .all(...params);
 
@@ -268,7 +268,7 @@ export function getProfitLossTrend(db, { startDate, endDate } = {}) {
   // so merging by index-aligned bucket key is safe.
   const returnsByBucket = new Map(returnRows.map((r) => [r.bucket, r.returns]));
   const expenseByBucket = new Map(
-    expenseRows.map((r) => [r.bucket, r.expense])
+    expenseRows.map((r) => [r.bucket, r.expense]),
   );
   const cogsByBucket = new Map(cogsRows.map((r) => [r.bucket, r.cogs]));
 
@@ -315,7 +315,7 @@ export function getExpenseCategoryBreakdown(db, { startDate, endDate } = {}) {
           WHERE 1=1 ${expenseDate.clause}
           GROUP BY ei.category_id
           ORDER BY total_spent DESC
-        `
+        `,
     )
     .all(...expenseDate.params);
 }
@@ -337,7 +337,7 @@ export function getSalesSummary(db, { startDate, endDate } = {}) {
             SELECT COALESCE(SUM(net_total), 0) AS value
             FROM sales_invoices
             WHERE 1=1 ${invoiceDate.clause}
-          `
+          `,
       )
       .get(...invoiceDate.params)?.value || 0;
 
@@ -348,7 +348,7 @@ export function getSalesSummary(db, { startDate, endDate } = {}) {
             SELECT COUNT(*) AS value
             FROM sales_invoices
             WHERE 1=1 ${invoiceDate.clause}
-          `
+          `,
       )
       .get(...invoiceDate.params)?.value || 0;
 
@@ -359,7 +359,7 @@ export function getSalesSummary(db, { startDate, endDate } = {}) {
             SELECT COALESCE(SUM(net_total), 0) AS value
             FROM sales_returns
             WHERE 1=1 ${returnDate.clause}
-          `
+          `,
       )
       .get(...returnDate.params)?.value || 0;
 
@@ -370,7 +370,7 @@ export function getSalesSummary(db, { startDate, endDate } = {}) {
             SELECT COUNT(*) AS value
             FROM sales_returns
             WHERE 1=1 ${returnDate.clause}
-          `
+          `,
       )
       .get(...returnDate.params)?.value || 0;
 
@@ -420,7 +420,7 @@ export function getSalesByProduct(db, { startDate, endDate, limit = 20 } = {}) {
           GROUP BY sii.product_id
           ORDER BY revenue DESC
           LIMIT ?
-        `
+        `,
       )
       .all(...invoiceDate.params, effectiveLimit)
       // marginPercent computed in JS rather than SQL — avoids a division-by-zero
@@ -439,7 +439,7 @@ export function getSalesByProduct(db, { startDate, endDate, limit = 20 } = {}) {
 // ---------------------------------------------------------------------------
 export function getSalesByCustomer(
   db,
-  { startDate, endDate, limit = 20 } = {}
+  { startDate, endDate, limit = 20 } = {},
 ) {
   const invoiceDate = buildDateRangeFilter("date", startDate, endDate);
   const effectiveLimit = limit === null || limit === undefined ? -1 : limit;
@@ -447,19 +447,19 @@ export function getSalesByCustomer(
   return db
     .prepare(
       `
-          SELECT
-            si.customer_id,
-            COALESCE(c.name, 'Unknown') AS name,
-            COUNT(*) AS invoiceCount,
-            COALESCE(SUM(si.net_total), 0) AS totalPurchased,
-            COALESCE(SUM(si.net_total), 0) / COUNT(*) AS averageOrderValue
-          FROM sales_invoices si
-          LEFT JOIN customers c ON c.id = si.customer_id
-          WHERE 1=1 ${invoiceDate.clause}
-          GROUP BY si.customer_id
-          ORDER BY totalPurchased DESC
-          LIMIT ?
-        `
+        SELECT
+          si.customer_id,
+          c.name AS name,
+          COUNT(*) AS invoiceCount,
+          COALESCE(SUM(si.net_total), 0) AS totalPurchased,
+          COALESCE(SUM(si.net_total), 0) / COUNT(*) AS averageOrderValue
+        FROM sales_invoices si
+        LEFT JOIN customers c ON c.id = si.customer_id
+        WHERE 1=1 ${invoiceDate.clause}
+        GROUP BY si.customer_id
+        ORDER BY totalPurchased DESC
+        LIMIT ?
+      `,
     )
     .all(...invoiceDate.params, effectiveLimit);
 }
@@ -486,7 +486,7 @@ export function getSalesTrend(db, { startDate, endDate } = {}) {
   const { cte, params, matchExpr } = buildBucketCTE(
     groupBy,
     effectiveStart,
-    effectiveEnd
+    effectiveEnd,
   );
 
   const rows = db
@@ -500,7 +500,7 @@ export function getSalesTrend(db, { startDate, endDate } = {}) {
           LEFT JOIN sales_invoices si ON ${matchExpr("si.date")} = buckets.bucket
           GROUP BY buckets.bucket
           ORDER BY buckets.bucket
-        `
+        `,
     )
     .all(...params);
 

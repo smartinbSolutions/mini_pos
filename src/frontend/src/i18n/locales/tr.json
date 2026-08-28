@@ -40,6 +40,9 @@
     "all": "Tümü"
   },
   "ui": {
+    "selectCustomerOptional": "Müşteri seçin (isteğe bağlı)",
+    "productNameOrSelect": "Ürün adı veya seçin",
+    "percentage": "Yüzde",
     "country": "Ülke",
     "walk-in": "Perakende müşteri",
     "settled": "Ödendi",
@@ -346,6 +349,7 @@
     },
     "contacts": {
       "createCustomerDescription": "Kişi listenize yeni bir müşteri ekleyin",
+      "maxPercentageAllowed": "İzin verilen maksimum: {{value}}%",
       "balanceLockedWhileEditing": "Bakiye değişmedi",
       "customersSubtitle": "Müşterilerinizi kolayca yönetin",
       "suppliersSubtitle": "Tedarikçilerinizi kolayca yönetin",
@@ -1096,7 +1100,10 @@
       "discount": "İndirim",
       "tax": "Vergi",
       "returnTotal": "İade toplamı",
-      "confirmReturn": "İadeyi onayla"
+      "confirmReturn": "İadeyi onayla",
+      "refundHistory": "İade edilen nakit tutar kaydı",
+      "noCashRefunded": "Nakit iade yapılmadı; tutar müşteri hesabına aktarıldı.",
+      "returnDate": "İade tarihi"
     },
     "purchaseReturn": {
       "saveWithoutRefund": "İade Yapmadan Kaydet",
@@ -1301,6 +1308,7 @@
   },
   "errors": {
     "customer_required": "Müşteri gerekli",
+    "percentageExceedsRemaining": "%{{remaining}}'den fazla ekleyemezsiniz",
     "rendererTitle": "Renderer hatası",
     "rendererMessage": "Ön yüz yüklenirken çöktü.",
     "apiUnavailable": "Electron preload API kullanılamıyor.",

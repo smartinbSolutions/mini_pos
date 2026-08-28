@@ -33,6 +33,7 @@ const ContactListHeader = ({
   submitLabel,
   type,
   t,
+  remainingPercentage,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -137,6 +138,32 @@ const ContactListHeader = ({
             className={`w-full ${inputClass}`}
             placeholder={t("ui.address")}
           />
+
+          {type === "partner" && (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-slate-500">
+                {t("ui.percentage")}
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={draft.percentage || ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    percentage: normalizeDigits(e.target.value),
+                  })
+                }
+                className={`w-full ${inputClass}`}
+                placeholder="0"
+              />
+              <p className="text-[11px] text-slate-400">
+                {t("screens.contacts.maxPercentageAllowed", {
+                  value: remainingPercentage,
+                }) || `Max allowed: ${remainingPercentage}%`}
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <TagPickerField
