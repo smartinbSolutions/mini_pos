@@ -6,6 +6,7 @@ const VALID_REFERENCE_TYPES = [
   "initial",
   "import",
   "adjustment",
+  "manufacturing",
 ];
 
 const VALID_TYPES = ["in", "out"];
@@ -33,13 +34,13 @@ export default function createProductMovement(db, data) {
   if (!VALID_REFERENCE_TYPES.includes(data.reference_type)) {
     throw new Error(
       `createProductMovement: invalid reference_type "${data.reference_type}". ` +
-        `Must be one of: ${VALID_REFERENCE_TYPES.join(", ")}`
+        `Must be one of: ${VALID_REFERENCE_TYPES.join(", ")}`,
     );
   }
 
   if (!VALID_TYPES.includes(data.type)) {
     throw new Error(
-      `createProductMovement: invalid type "${data.type}". Must be one of: ${VALID_TYPES.join(", ")}`
+      `createProductMovement: invalid type "${data.type}". Must be one of: ${VALID_TYPES.join(", ")}`,
     );
   }
 

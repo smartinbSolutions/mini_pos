@@ -87,6 +87,17 @@ export default function Sidebar() {
       ],
     },
     {
+      title: "navigation.manufacturing",
+      icon: <Factory size={18} />,
+      children: [
+        { title: "navigation.boms", path: "/boms" },
+        {
+          title: "navigation.manufacturingOrders",
+          path: "/manufacturing-orders",
+        },
+      ],
+    },
+    {
       title: "navigation.partners",
       icon: <Handshake size={18} />,
       path: "/partners",

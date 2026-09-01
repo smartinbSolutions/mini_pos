@@ -114,6 +114,25 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("export-products-for-update", data),
   importProductsUpdate: () => ipcRenderer.invoke("import-products-update"),
 
+  /* ================= BOM ================= */
+  createBom: (data) => ipcRenderer.invoke("create-bom", data),
+  getBoms: (params) => ipcRenderer.invoke("get-boms", params),
+  getBom: (id) => ipcRenderer.invoke("get-bom", id),
+  updateBom: (data) => ipcRenderer.invoke("update-bom", data),
+  deleteBom: (id) => ipcRenderer.invoke("delete-bom", id),
+
+  /* ================= MANUFACTURING ORDERS ================= */
+  createManufacturingOrder: (data) =>
+    ipcRenderer.invoke("create-manufacturing-order", data),
+  getManufacturingOrders: (params) =>
+    ipcRenderer.invoke("get-manufacturing-orders", params),
+  getManufacturingOrder: (id) =>
+    ipcRenderer.invoke("get-manufacturing-order", id),
+  updateManufacturingOrder: (data) =>
+    ipcRenderer.invoke("update-manufacturing-order", data),
+  deleteManufacturingOrder: (id) =>
+    ipcRenderer.invoke("delete-manufacturing-order", id),
+
   /* ================= PURCHASE INVOICE ================= */
   getPurchaseInvoices: (params) =>
     ipcRenderer.invoke("get-purchase-invoices", params),

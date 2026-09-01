@@ -99,6 +99,12 @@ import PrintProfitLossReport from "./components/Reports/components/PrintProfitLo
 import PrintSalesByProduct from "./components/Reports/components/PrintSalesByProduct";
 import PrintSalesByCustomer from "./components/Reports/components/PrintSalesByCustomer";
 import TagsScreen from "./components/Tags/components/TagsScreen";
+import BomList from "./components/Manufactoring/components/BomList";
+import BomFormPage from "./components/Manufactoring/components/BomFormPage";
+import BomDetailPage from "./components/Manufactoring/components/BomDetailPage";
+import ManufacturingOrderList from "./components/Manufactoring/components/ManufacturingOrderList";
+import ManufacturingOrderFormPage from "./components/Manufactoring/components/ManufacturingOrderFormPage";
+import ManufacturingOrderDetailPage from "./components/Manufactoring/components/ManufacturingOrderDetailPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -292,6 +298,30 @@ export default function App() {
               <Route path="products/:id/edit" element={<ProductFormPage />} />
               <Route path="products/:id" element={<ProductDetailPage />} />
               <Route path="import-reports" element={<ImportSummary />} />
+
+              {/* ================= BOMS ================= */}
+              <Route path="boms" element={<BomList />} />
+              <Route path="boms/new" element={<BomFormPage />} />
+              <Route path="boms/:id/edit" element={<BomFormPage />} />
+              <Route path="boms/:id" element={<BomDetailPage />} />
+
+              {/* ================= MANUFACTURING ORDERS ================= */}
+              <Route
+                path="manufacturing-orders"
+                element={<ManufacturingOrderList />}
+              />
+              <Route
+                path="manufacturing-orders/new"
+                element={<ManufacturingOrderFormPage />}
+              />
+              <Route
+                path="manufacturing-orders/:id/edit"
+                element={<ManufacturingOrderFormPage />}
+              />
+              <Route
+                path="manufacturing-orders/:id"
+                element={<ManufacturingOrderDetailPage />}
+              />
 
               {/* ================= PARTNERS ================= */}
               <Route path="partners" element={<PartnersList />} />

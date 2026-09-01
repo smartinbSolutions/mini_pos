@@ -11,6 +11,10 @@ const db = new Database(dbPath);
 
 db.pragma("foreign_keys = ON");
 
+/* ============================================================
+   MIGRATION HELPERS
+   ============================================================ */
+
 function ensureColumn(table, column, definition) {
   const columns = db
     .prepare(`PRAGMA table_info(${table})`)
@@ -21,6 +25,85 @@ function ensureColumn(table, column, definition) {
     db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
   }
 }
+
+// --- Migration: add 'manufacturing' to reference_type for existing installs ---
+// (fresh installs already get it from the CREATE TABLE below; this only
+// matters for databases created before this update shipped)
+function needsManufacturingMigration() {
+  const tableInfo = db
+    .prepare(
+      `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'product_movements'`,
+    )
+    .get();
+
+  if (!tableInfo) return false;
+  return !tableInfo.sql.includes("'manufacturing'");
+}
+
+function ensureProductMovementsManufacturingType() {
+  if (!needsManufacturingMigration()) return;
+
+  const migrate = db.transaction(() => {
+    db.prepare(
+      `ALTER TABLE product_movements RENAME TO product_movements_old`,
+    ).run();
+
+    db.prepare(
+      `
+      CREATE TABLE product_movements (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id INTEGER NOT NULL,
+        reference_id INTEGER,
+        reference_type TEXT NOT NULL CHECK (
+          reference_type IN (
+            'purchase',
+            'purchase_return',
+            'sale',
+            'sale_return',
+            'initial',
+            'import',
+            'adjustment',
+            'manufacturing'
+          )
+        ),
+        type TEXT NOT NULL CHECK (type IN ('in', 'out')),
+        action TEXT NOT NULL,
+        enterPrice REAL DEFAULT 0,
+        outPrice REAL DEFAULT 0,
+        quantity REAL NOT NULL DEFAULT 0,
+        base_unit_name TEXT,
+        unit_name TEXT,
+        conversion_factor REAL DEFAULT 1,
+        date TEXT DEFAULT (datetime('now')),
+        createdAt TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      )
+      `,
+    ).run();
+
+    db.prepare(
+      `
+      INSERT INTO product_movements
+        (id, product_id, reference_id, reference_type, type, action,
+         enterPrice, outPrice, quantity, base_unit_name, unit_name,
+         conversion_factor, date, createdAt)
+      SELECT
+        id, product_id, reference_id, reference_type, type, action,
+        enterPrice, outPrice, quantity, base_unit_name, unit_name,
+        conversion_factor, date, createdAt
+      FROM product_movements_old
+      `,
+    ).run();
+
+    db.prepare(`DROP TABLE product_movements_old`).run();
+  });
+
+  migrate();
+}
+
+/* ============================================================
+   AUTH & USERS
+   ============================================================ */
 
 db.prepare(
   `CREATE TABLE IF NOT EXISTS users (
@@ -41,6 +124,24 @@ db.prepare(
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );`,
 ).run();
+
+db.prepare(
+  `CREATE TABLE IF NOT EXISTS pin_reset_audit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    performed_at TEXT NOT NULL DEFAULT (datetime('now')),
+    administrator_id INTEGER,
+    target_user_id INTEGER,
+    device TEXT,
+    reset_type TEXT NOT NULL CHECK(reset_type IN ('admin_reset','recovery_key')),
+    FOREIGN KEY (administrator_id) REFERENCES users(id) ON DELETE SET NULL,
+    FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
+  );`,
+).run();
+
+/* ============================================================
+   HARDWARE / PRINTING
+   ============================================================ */
+
 db.prepare(
   `
   CREATE TABLE IF NOT EXISTS printer_settings (
@@ -56,18 +157,9 @@ db.prepare(
   )`,
 ).run();
 
-db.prepare(
-  `CREATE TABLE IF NOT EXISTS pin_reset_audit (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    performed_at TEXT NOT NULL DEFAULT (datetime('now')),
-    administrator_id INTEGER,
-    target_user_id INTEGER,
-    device TEXT,
-    reset_type TEXT NOT NULL CHECK(reset_type IN ('admin_reset','recovery_key')),
-    FOREIGN KEY (administrator_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
-  );`,
-).run();
+/* ============================================================
+   UNITS
+   ============================================================ */
 
 db.prepare(
   `
@@ -79,6 +171,10 @@ CREATE TABLE IF NOT EXISTS unit (
 )
 `,
 ).run();
+
+/* ============================================================
+   PRODUCTS & INVENTORY
+   ============================================================ */
 
 db.prepare(
   `
@@ -131,7 +227,8 @@ CREATE TABLE IF NOT EXISTS product_movements (
       'sale_return',
       'initial',
       'import',
-      'adjustment'
+      'adjustment',
+      'manufacturing'
     )
   ),
   type TEXT NOT NULL CHECK (type IN ('in', 'out')),
@@ -148,6 +245,8 @@ CREATE TABLE IF NOT EXISTS product_movements (
 )
 `,
 ).run();
+
+ensureProductMovementsManufacturingType();
 
 db.prepare(
   `
@@ -197,6 +296,109 @@ CREATE TABLE IF NOT EXISTS product_import_items (
 `,
 ).run();
 
+/* ============================================================
+   MANUFACTURING (BOM + MANUFACTURING ORDERS)
+   ============================================================ */
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS boms (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  product_id INTEGER NOT NULL,
+  name TEXT NOT NULL DEFAULT 'Standard',
+  is_default INTEGER NOT NULL DEFAULT 0,
+  notes TEXT,
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+)
+`,
+).run();
+
+db.prepare(
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_boms_one_default_per_product
+   ON boms(product_id) WHERE is_default = 1`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS bom_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  bom_id INTEGER NOT NULL,
+  raw_material_product_id INTEGER NOT NULL,
+  unit_id INTEGER,
+  unit_name TEXT,
+  unit_conversion_factor REAL DEFAULT 1,
+  quantity REAL NOT NULL,
+  createdAt TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (bom_id) REFERENCES boms(id) ON DELETE CASCADE,
+  FOREIGN KEY (raw_material_product_id) REFERENCES products(id) ON DELETE RESTRICT,
+  FOREIGN KEY (unit_id) REFERENCES product_units(id) ON DELETE SET NULL,
+  UNIQUE(bom_id, raw_material_product_id)
+)
+`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS manufacturing_orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_name TEXT,
+  bom_id INTEGER,
+  output_product_id INTEGER NOT NULL,
+
+  output_quantity REAL NOT NULL,
+  output_unit_name TEXT,
+  output_unit_conversion_factor REAL DEFAULT 1,
+
+  labor_cost REAL NOT NULL DEFAULT 0,
+  overhead_cost REAL NOT NULL DEFAULT 0,
+  raw_material_cost REAL NOT NULL DEFAULT 0,
+  total_cost REAL NOT NULL DEFAULT 0,
+  unit_cost REAL NOT NULL DEFAULT 0,
+
+  date TEXT,
+  description TEXT,
+  created_by INTEGER,
+  updated_by INTEGER,
+  createdAt TEXT DEFAULT (datetime('now')),
+  updatedAt TEXT DEFAULT (datetime('now')),
+
+  FOREIGN KEY (bom_id) REFERENCES boms(id) ON DELETE SET NULL,
+  FOREIGN KEY (output_product_id) REFERENCES products(id) ON DELETE RESTRICT,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
+);
+`,
+).run();
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS manufacturing_order_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  manufacturing_order_id INTEGER NOT NULL,
+  raw_material_product_id INTEGER NOT NULL,
+
+  quantity REAL NOT NULL,
+  unit_name TEXT,
+  unit_conversion_factor REAL DEFAULT 1,
+
+  unit_cost_snapshot REAL NOT NULL DEFAULT 0,
+  line_cost REAL NOT NULL DEFAULT 0,
+
+  createdAt TEXT DEFAULT (datetime('now')),
+
+  FOREIGN KEY (manufacturing_order_id) REFERENCES manufacturing_orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (raw_material_product_id) REFERENCES products(id) ON DELETE RESTRICT,
+  UNIQUE(manufacturing_order_id, raw_material_product_id)
+);
+`,
+).run();
+
+/* ============================================================
+   CONTACTS (CUSTOMERS / SUPPLIERS / PARTNERS)
+   ============================================================ */
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS customers (
@@ -236,6 +438,10 @@ CREATE TABLE IF NOT EXISTS partners (
 ).run();
 ensureColumn("partners", "percentage", "REAL DEFAULT 0");
 
+/* ============================================================
+   CURRENCY & FUNDS
+   ============================================================ */
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS currencies (
@@ -264,6 +470,10 @@ CREATE TABLE IF NOT EXISTS funds (
 `,
 ).run();
 
+/* ============================================================
+   TAXES
+   ============================================================ */
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS taxes (
@@ -274,6 +484,10 @@ CREATE TABLE IF NOT EXISTS taxes (
 )
 `,
 ).run();
+
+/* ============================================================
+   SALES (INVOICES / RETURNS / QUOTATIONS)
+   ============================================================ */
 
 db.prepare(
   `
@@ -494,6 +708,10 @@ CREATE TABLE IF NOT EXISTS sales_quotation_items (
 `,
 ).run();
 
+/* ============================================================
+   PURCHASES (INVOICES / RETURNS)
+   ============================================================ */
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS purchase_invoices (
@@ -652,6 +870,10 @@ CREATE TABLE IF NOT EXISTS purchase_return_items (
 `,
 ).run();
 
+/* ============================================================
+   EXPENSES
+   ============================================================ */
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS expence_category (
@@ -723,6 +945,10 @@ CREATE TABLE IF NOT EXISTS expense_taxes (
 `,
 ).run();
 
+/* ============================================================
+   PAYMENTS & FINANCIAL LEDGERS
+   ============================================================ */
+
 db.prepare(
   `
 CREATE TABLE IF NOT EXISTS payments (
@@ -792,6 +1018,7 @@ CREATE TABLE IF NOT EXISTS party_history (
 )
 `,
 ).run();
+
 db.prepare(
   `
   CREATE TABLE IF NOT EXISTS fund_history (
@@ -830,6 +1057,10 @@ db.prepare(
   `,
 ).run();
 
+/* ============================================================
+   COMPANY SETTINGS
+   ============================================================ */
+
 db.prepare(
   `
   CREATE TABLE IF NOT EXISTS company_settings (
@@ -863,12 +1094,9 @@ db.prepare(
   )`,
 ).run();
 
-db.prepare(
-  `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`,
-).run();
-db.prepare(
-  `CREATE INDEX IF NOT EXISTS idx_purchase_invoice ON purchase_invoice_items(invoice_id)`,
-).run();
+/* ============================================================
+   TAGS (POLYMORPHIC)
+   ============================================================ */
 
 db.prepare(
   `
@@ -908,6 +1136,16 @@ CREATE TABLE IF NOT EXISTS taggables (
 `,
 ).run();
 
+/* ============================================================
+   INDEXES
+   ============================================================ */
+
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales_invoice_items(invoice_id)`,
+).run();
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_purchase_invoice ON purchase_invoice_items(invoice_id)`,
+).run();
 db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_taggables_entity ON taggables(entity_type, entity_id)`,
 ).run();

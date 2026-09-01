@@ -22,6 +22,11 @@ const INVOICE_LABELS = {
     ar: "عرض سعر مبيعات",
     tr: "Satış Teklifi",
   },
+  manufacturing: {
+    en: "Manufacturing Order",
+    ar: "أمر تصنيع",
+    tr: "Üretim Emri",
+  },
 };
 
 const PAYMENT_LABELS = {
