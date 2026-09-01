@@ -9,6 +9,7 @@ import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { formatNumber } from "../../../Global/FormatNumber";
 import Pagination from "../../../Global/Pagination";
 import InvoiceListHeader from "../../../Global/InvoiceListHeader";
+import SearchableSelect from "../../../Global/SearchableSelect";
 
 export default function ManufacturingOrderList() {
   const { t } = useTranslation();
@@ -20,20 +21,28 @@ export default function ManufacturingOrderList() {
     loading,
     error,
     refetch,
+    actionError,
+    units,
     search,
     setSearch,
-    actionError,
-    handleDeleteOrder,
-    openDeleteModel,
-    setOpenDeleteModel,
-    selectDeleteOrder,
-    setSelectDeleteOrder,
     page,
     setPage,
     limit,
     setLimit,
     total,
     totalPages,
+    filters,
+    setFilters,
+    clearFilters,
+    outputProductOptions,
+    outputProductLabel,
+    setOutputProductLabel,
+    searchOutputProducts,
+    handleDeleteOrder,
+    openDeleteModel,
+    setOpenDeleteModel,
+    selectDeleteOrder,
+    setSelectDeleteOrder,
   } = useManufacturingOrders();
 
   const totalCost = orders.reduce(
@@ -77,6 +86,41 @@ export default function ManufacturingOrderList() {
           addLabel={t("screens.manufacturingOrders.add", "New Order")}
           addIcon={Factory}
           onAdd={() => navigate("/manufacturing-orders/new")}
+          filters={filters}
+          onFilterChange={(name, value) =>
+            setFilters({ [name]: value || null })
+          }
+          onClearFilters={clearFilters}
+          filterFields={[
+            {
+              type: "search",
+              name: "output_product_id",
+              label: t("screens.boms.outputProduct", "Output Product"),
+              placeholder: t("ui.selectProduct"),
+              options: outputProductOptions,
+              selectedLabel: outputProductLabel,
+              onInputChange: searchOutputProducts,
+              onSelect: (option) => setOutputProductLabel(option.name),
+              onClear: () => setOutputProductLabel(""),
+            },
+            {
+              type: "select",
+              name: "unit_id",
+              label: t("ui.unit"),
+              allLabel: t("common.all"),
+              options: units.map((u) => ({ value: u.id, label: u.name })),
+            },
+            {
+              type: "date",
+              name: "dateFrom",
+              label: t("filters.dateFrom"),
+            },
+            {
+              type: "date",
+              name: "dateTo",
+              label: t("filters.dateTo"),
+            },
+          ]}
         />
 
         {(error || actionError) && (

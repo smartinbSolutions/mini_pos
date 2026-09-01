@@ -8,6 +8,8 @@ export default function useManufacturingOrders() {
   const [error, setError] = useState(null);
   const [actionError, setActionError] = useState(null);
 
+  const [units, setUnits] = useState([]);
+
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -16,9 +18,13 @@ export default function useManufacturingOrders() {
 
   const [filters, setFiltersState] = useState({
     output_product_id: null,
+    unit_id: null,
     dateFrom: null,
     dateTo: null,
   });
+
+  const [outputProductOptions, setOutputProductOptions] = useState([]);
+  const [outputProductLabel, setOutputProductLabel] = useState("");
 
   const setFilters = (patch) => {
     setFiltersState((prev) => ({ ...prev, ...patch }));
@@ -26,12 +32,47 @@ export default function useManufacturingOrders() {
   };
 
   const clearFilters = () => {
-    setFiltersState({ output_product_id: null, dateFrom: null, dateTo: null });
+    setFiltersState({
+      output_product_id: null,
+      unit_id: null,
+      dateFrom: null,
+      dateTo: null,
+    });
+    setOutputProductLabel("");
     setPage(1);
+  };
+
+  const searchOutputProducts = async (value) => {
+    try {
+      const res = await window.api.getProducts({
+        page: 1,
+        limit: 50,
+        type: "normal",
+        search: value.trim() || undefined,
+      });
+      setOutputProductOptions(res?.data || []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [selectDeleteOrder, setSelectDeleteOrder] = useState(null);
+
+  useEffect(() => {
+    window.api.getUnits?.({ limit: 100 }).then((res) => {
+      setUnits(res?.data || res || []);
+    });
+  }, []);
+
+  useEffect(() => {
+    window.api.getUnits?.({ limit: 100 }).then((res) => {
+      setUnits(res?.data || res || []);
+    });
+
+    // Initial batch so the dropdown isn't empty before the user types anything
+    searchOutputProducts("");
+  }, []);
 
   const fetchOrders = useCallback(() => {
     setLoading(true);
@@ -42,6 +83,7 @@ export default function useManufacturingOrders() {
         limit,
         search: search || undefined,
         output_product_id: filters.output_product_id || undefined,
+        unit_id: filters.unit_id || undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
       })
@@ -80,6 +122,7 @@ export default function useManufacturingOrders() {
     error,
     refetch: fetchOrders,
     actionError,
+    units,
     search,
     setSearch,
     page,
@@ -91,6 +134,10 @@ export default function useManufacturingOrders() {
     filters,
     setFilters,
     clearFilters,
+    outputProductOptions,
+    outputProductLabel,
+    setOutputProductLabel,
+    searchOutputProducts,
     handleDeleteOrder,
     openDeleteModel,
     setOpenDeleteModel,

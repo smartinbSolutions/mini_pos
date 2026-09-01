@@ -268,6 +268,10 @@ export default function registerManufacturingOrdersIPC() {
       whereConditions.push(`mo.output_product_id = ?`);
       whereParams.push(params.output_product_id);
     }
+    if (params.unit_id) {
+      whereConditions.push(`p.unit_id = ?`);
+      whereParams.push(params.unit_id);
+    }
     if (params.dateFrom) {
       whereConditions.push(`DATE(mo.date) >= ?`);
       whereParams.push(params.dateFrom);
@@ -284,7 +288,10 @@ export default function registerManufacturingOrdersIPC() {
     try {
       const { total } = db
         .prepare(
-          `SELECT COUNT(*) AS total FROM manufacturing_orders mo ${whereClause}`,
+          `SELECT COUNT(*) AS total
+         FROM manufacturing_orders mo
+         JOIN products p ON p.id = mo.output_product_id
+         ${whereClause}`,
         )
         .get(...whereParams);
 
