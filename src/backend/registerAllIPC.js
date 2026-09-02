@@ -27,6 +27,7 @@ import registerTestPrintIPC from "./ipc/test_print.ipc";
 import registerTagsIPC from "./ipc/tags.ipc";
 import registerBomsIPC from "./ipc/bom.ipc";
 import registerManufacturingOrdersIPC from "./ipc/manufacturing.ipc";
+import registerBackupIPC from "./ipc/Backup.ipc";
 
 export default function registerAllIPC() {
   registerAuthHandlersIPC();
@@ -58,4 +59,5 @@ export default function registerAllIPC() {
   registerTagsIPC();
   registerBomsIPC();
   registerManufacturingOrdersIPC();
+  registerBackupIPC();
 }

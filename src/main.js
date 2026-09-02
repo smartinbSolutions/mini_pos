@@ -8,6 +8,7 @@ import { pathToFileURL } from "node:url";
 import registerAllIPC from "./backend/registerAllIPC";
 import activateLicense from "./main/license/activateLicense";
 import verifyLicenseFile from "./main/license/verifyLicenseFile";
+import { startBackupScheduler } from "./backend/services/backup/backupScheduler.service";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -74,7 +75,7 @@ export function loadRendererRoute(window, routePath) {
 
   window.loadFile(
     path.join(__dirname, `../renderer/${rendererName}/index.html`),
-    { hash: routePath }
+    { hash: routePath },
   );
 }
 
@@ -121,6 +122,7 @@ app.whenReady().then(async () => {
   } catch (error) {
     console.error("Failed to register application IPC handlers", error);
   }
+  startBackupScheduler();
   session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
     return permission === "serial";
   });
@@ -140,7 +142,7 @@ app.whenReady().then(async () => {
         return;
       }
       callback(portList[0].portId);
-    }
+    },
   );
 
   const licenseStatus = await verifyLicenseFile();

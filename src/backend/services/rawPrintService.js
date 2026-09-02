@@ -19,29 +19,6 @@ export function getPaperWidthDots(paperSize) {
   return PAPER_WIDTH_DOTS[paperSize] || PAPER_WIDTH_DOTS["80mm"];
 }
 
-// Our raw capture maps CSS px directly to printer dots at ~203dpi. The
-// shared receipt HTML template's font-size values were written assuming
-// the old ~96dpi CSS-px-to-paper mapping (correct for the 'electron'
-// backend's driver-based print, which still uses that template as-is).
-//
-// Two earlier approaches were tried and rejected:
-// 1. webContents.setZoomFactor() (Electron's JS zoom API) — this is an
-//    async, cross-process browser-zoom feature that didn't reliably sync
-//    with our height measurement, clipping content past a certain point.
-// 2. Render at a smaller width, then resize()-upscale the final bitmap —
-//    this avoided the clipping bug, but resampling a smaller raster up to
-//    the target size blurs/roughens character edges (visible as fuzzy,
-//    dotted-looking text on real printouts).
-//
-// This version uses plain CSS `zoom` (injected via insertCSS), which is
-// a normal, SYNCHRONOUS style property processed through the page's
-// regular layout pipeline — unlike the JS zoom API, scrollHeight measured
-// right after applying it correctly reflects the zoomed size, no race
-// condition. And because we render directly at the true target width
-// (no smaller intermediate render), Chromium's own font rasterizer draws
-// glyphs at full resolution — no post-hoc resampling, no blur.
-// 203/96 ≈ 2.1 — adjust this one constant if real receipts still look
-// too small/large.
 const RAW_PRINT_ZOOM = 2.1;
 
 export async function captureHtmlAsBitmap(html, widthDots) {

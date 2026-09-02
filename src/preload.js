@@ -268,6 +268,17 @@ contextBridge.exposeInMainWorld("api", {
   deletePrinterSettings: (id) =>
     ipcRenderer.invoke("delete-printer-settings", id),
   testPrint: (deviceName) => ipcRenderer.invoke("test-print", { deviceName }),
+
+  /* ================= BACKUP ================= */
+  getBackupSettings: () => ipcRenderer.invoke("backup-get-settings"),
+  listBackups: () => ipcRenderer.invoke("backup-list"),
+  chooseRestoreFile: () => ipcRenderer.invoke("backup-choose-restore-file"),
+  updateBackupSettings: (data) =>
+    ipcRenderer.invoke("backup-update-settings", data),
+  chooseBackupFolder: () => ipcRenderer.invoke("backup-choose-folder"),
+  createBackup: (targetFolder) =>
+    ipcRenderer.invoke("backup-create", { targetFolder }),
+  restoreBackup: (data) => ipcRenderer.invoke("backup-restore", data),
   /* ================= TAGS ================= */
   createTag: (data) => ipcRenderer.invoke("create-tag", data),
   listTags: (scope) => ipcRenderer.invoke("list-tags", { scope }),
