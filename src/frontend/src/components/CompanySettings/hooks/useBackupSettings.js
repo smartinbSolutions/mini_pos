@@ -41,7 +41,7 @@ export default function useBackupSettings({ enabled = true } = {}) {
         // time settings are opened (nothing configured yet) — only toast
         // when it's a real failure, not the empty-state case.
         if (res?.error && res.error !== "NO_BACKUP_FOLDER_CONFIGURED") {
-          toast.error(res.error);
+          toast.error(t(`errors.${res.error}`, res.error));
         }
       }
     } catch (err) {
@@ -50,7 +50,7 @@ export default function useBackupSettings({ enabled = true } = {}) {
     } finally {
       setLoadingBackups(false);
     }
-  }, [api]);
+  }, [api, t]);
 
   // Same enabled-gate as usePrinterSettings — lets a caller mount this
   // hook without firing IPC calls before the backup screen is actually open.
@@ -71,7 +71,11 @@ export default function useBackupSettings({ enabled = true } = {}) {
       if (res?.success) {
         await refetchSettings();
       } else {
-        toast.error(res?.error || t("errors.saveError"));
+        toast.error(
+          res?.error
+            ? t(`errors.${res.error}`, res.error)
+            : t("errors.saveError"),
+        );
       }
       return res;
     } catch (err) {
@@ -111,7 +115,9 @@ export default function useBackupSettings({ enabled = true } = {}) {
         await refetchBackups();
       } else {
         toast.error(
-          res?.error || t("screens.backup.createFailed", "Backup failed"),
+          res?.error
+            ? t(`errors.${res.error}`, res.error)
+            : t("screens.backup.createFailed", "Backup failed"),
         );
       }
       return res;
@@ -149,7 +155,9 @@ export default function useBackupSettings({ enabled = true } = {}) {
       });
       if (!res?.success) {
         toast.error(
-          res?.error || t("screens.backup.restoreFailed", "Restore failed"),
+          res?.error
+            ? t(`errors.${res.error}`, res.error)
+            : t("screens.backup.restoreFailed", "Restore failed"),
         );
       }
       // On success the main process relaunches the app almost immediately —
