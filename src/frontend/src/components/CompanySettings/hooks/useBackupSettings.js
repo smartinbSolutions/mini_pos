@@ -14,6 +14,11 @@ export default function useBackupSettings({ enabled = true } = {}) {
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState(false);
 
+  const [uploadingCloud, setUploadingCloud] = useState(false);
+  const [cloudBackups, setCloudBackups] = useState([]);
+  const [loadingCloudBackups, setLoadingCloudBackups] = useState(false);
+  const [downloadingCloudId, setDownloadingCloudId] = useState(null);
+
   const refetchSettings = useCallback(async () => {
     if (!api) return;
     try {
@@ -37,9 +42,6 @@ export default function useBackupSettings({ enabled = true } = {}) {
         setBackups(res.data);
       } else {
         setBackups([]);
-        // A missing/unreachable folder isn't really an "error" the first
-        // time settings are opened (nothing configured yet) — only toast
-        // when it's a real failure, not the empty-state case.
         if (res?.error && res.error !== "NO_BACKUP_FOLDER_CONFIGURED") {
           toast.error(t(`errors.${res.error}`, res.error));
         }
@@ -52,22 +54,40 @@ export default function useBackupSettings({ enabled = true } = {}) {
     }
   }, [api, t]);
 
-  // Same enabled-gate as usePrinterSettings — lets a caller mount this
-  // hook without firing IPC calls before the backup screen is actually open.
+  const refetchCloudBackups = useCallback(async () => {
+    if (!api?.listCloudBackups) return;
+    try {
+      setLoadingCloudBackups(true);
+      const res = await api.listCloudBackups();
+      if (res?.success) {
+        setCloudBackups(res.data);
+      } else {
+        setCloudBackups([]);
+        if (res?.error && res.error !== "LICENSE_INVALID") {
+          toast.error(t(`errors.${res.error}`, res.error));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to list cloud backups:", err);
+      setCloudBackups([]);
+    } finally {
+      setLoadingCloudBackups(false);
+    }
+  }, [api, t]);
+
   useEffect(() => {
     if (enabled) {
       refetchSettings();
       refetchBackups();
+      refetchCloudBackups();
     }
-  }, [enabled, refetchSettings, refetchBackups]);
+  }, [enabled, refetchSettings, refetchBackups, refetchCloudBackups]);
 
   const updateSettings = async (data) => {
     if (!api) return;
     try {
       setSavingSettings(true);
-      console.log("Updating backup settings with data:", data);
       const res = await api.updateBackupSettings(data);
-      console.log("Update backup settings response:", res);
       if (res?.success) {
         await refetchSettings();
       } else {
@@ -87,9 +107,6 @@ export default function useBackupSettings({ enabled = true } = {}) {
     }
   };
 
-  // Opens the native folder picker, then immediately persists the choice —
-  // no separate "save" step, matching how addDetectedPrinter saves right
-  // after the picker resolves rather than staging it in local state.
   const chooseAndSaveFolder = async () => {
     if (!api) return;
     const picked = await api.chooseBackupFolder();
@@ -132,10 +149,6 @@ export default function useBackupSettings({ enabled = true } = {}) {
     }
   };
 
-  // Takes the full auth payload directly rather than reading it off hook
-  // state — the PIN/recovery-key inputs live in the confirmation modal's
-  // own local state, not here, since they should never linger in memory
-  // longer than the single call that needs them.
   const restoreBackup = async ({
     filePath,
     administratorId,
@@ -160,9 +173,6 @@ export default function useBackupSettings({ enabled = true } = {}) {
             : t("screens.backup.restoreFailed", "Restore failed"),
         );
       }
-      // On success the main process relaunches the app almost immediately —
-      // there's usually no next render to show a success toast to, so we
-      // deliberately don't try.
       return res;
     } catch (err) {
       console.error("Restore failed:", err);
@@ -175,20 +185,93 @@ export default function useBackupSettings({ enabled = true } = {}) {
     }
   };
 
+  const uploadToCloudNow = async () => {
+    if (!api) return;
+    try {
+      setUploadingCloud(true);
+      const res = await api.uploadCloudBackup();
+
+      if (res?.success) {
+        toast.success(
+          t("screens.backup.cloudUploadSuccess", "Uploaded to cloud"),
+        );
+        await refetchCloudBackups();
+      } else if (res?.error === "already_uploaded_today") {
+        toast.info(
+          t(
+            "screens.backup.cloudAlreadyUploadedToday",
+            "Already backed up to the cloud today",
+          ),
+        );
+      } else {
+        toast.error(
+          res?.error
+            ? t(`errors.${res.error}`, res.error)
+            : t("screens.backup.cloudUploadFailed", "Cloud upload failed"),
+        );
+      }
+      return res;
+    } catch (err) {
+      console.error("Cloud upload failed:", err);
+      toast.error(
+        err?.message ||
+          t("screens.backup.cloudUploadFailed", "Cloud upload failed"),
+      );
+      return { success: false, error: err?.message };
+    } finally {
+      setUploadingCloud(false);
+    }
+  };
+
+  const downloadCloudBackupForRestore = async (backupId, fileName) => {
+    if (!api?.downloadCloudBackup) return null;
+    try {
+      setDownloadingCloudId(backupId);
+      const res = await api.downloadCloudBackup(backupId);
+      if (!res?.success) {
+        toast.error(
+          res?.error
+            ? t(`errors.${res.error}`, res.error)
+            : t("screens.backup.cloudDownloadFailed", "Download failed"),
+        );
+        return null;
+      }
+      return { filePath: res.filePath, fileName };
+    } catch (err) {
+      console.error("Cloud backup download failed:", err);
+      toast.error(
+        err?.message ||
+          t("screens.backup.cloudDownloadFailed", "Download failed"),
+      );
+      return null;
+    } finally {
+      setDownloadingCloudId(null);
+    }
+  };
+
   return {
     settings,
-    backups,
     loading,
-    loadingBackups,
     savingSettings,
-    creating,
-    restoring,
     updateSettings,
     chooseAndSaveFolder,
     chooseRestoreFile,
+    refetchSettings,
+
+    backups,
+    loadingBackups,
+    creating,
+    restoring,
     createBackupNow,
     restoreBackup,
-    refetchSettings,
     refetchBackups,
+
+    uploadingCloud,
+    cloudBackups,
+    loadingCloudBackups,
+    downloadingCloudId,
+    uploadToCloudNow,
+    refetchCloudBackups,
+    downloadCloudBackupForRestore,
   };
 }

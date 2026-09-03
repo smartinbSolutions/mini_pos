@@ -11,6 +11,11 @@ import {
   writeRestoreAudit,
   runBackupNow,
 } from "../services/backup/backupMeta.service";
+import {
+  downloadCloudBackup,
+  listCloudBackups,
+  uploadCloudBackup,
+} from "../services/backup/cloudBackup.service";
 
 /* ============================================================
    INTERNAL HELPERS
@@ -202,5 +207,20 @@ export default function registerBackupIPC() {
     } catch (err) {
       return fail(err.message || String(err));
     }
+  });
+
+  // UPLOAD A FRESH SNAPSHOT TO CLOUD BACKUP — entitlement, device
+  // activation, and the one-per-day cap are all enforced server-side;
+  // this handler just calls the service and passes the result through.
+  ipcMain.handle("backup-cloud-upload", () => {
+    return uploadCloudBackup(db);
+  });
+  // LIST CLOUD BACKUPS FOR THIS DEVICE
+  ipcMain.handle("backup-cloud-list", () => {
+    return listCloudBackups();
+  });
+
+  ipcMain.handle("backup-cloud-download", (event, backupId) => {
+    return downloadCloudBackup(backupId);
   });
 }

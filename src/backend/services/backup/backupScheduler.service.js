@@ -1,5 +1,6 @@
 import db from "../../db";
 import { getBackupSettings, runBackupNow } from "./backupMeta.service";
+import { uploadCloudBackup } from "./cloudBackup.service";
 
 const CHECK_INTERVAL_MS = 60 * 1000; // check once a minute — cheap, and
 // keeps the "already ran today" logic simple (see below) without needing
@@ -40,7 +41,7 @@ function isScheduledNow(settings) {
   return true;
 }
 
-function checkAndRun() {
+async function checkAndRun() {
   const settingsResult = getBackupSettings();
 
   if (!settingsResult.success || !settingsResult.data) return;
@@ -51,6 +52,25 @@ function checkAndRun() {
   if (!isScheduledNow(settings)) return;
 
   runBackupNow(db, {});
+
+  // Cloud upload rides the same schedule as local backup — no separate
+  // cloud-specific schedule config. uploadCloudBackup() already checks
+  // license validity and the cloud_backup feature internally, so on an
+  // unentitled license this just resolves to a quiet no-op result; only
+  // genuine failures (network, server errors) are worth logging here,
+  // since a background scheduler has no UI to surface anything to.
+  try {
+    const cloudResult = await uploadCloudBackup(db);
+    if (
+      !cloudResult.success &&
+      cloudResult.error !== "CLOUD_BACKUP_NOT_INCLUDED" &&
+      cloudResult.error !== "already_uploaded_today"
+    ) {
+      console.error("Scheduled cloud backup upload failed:", cloudResult);
+    }
+  } catch (err) {
+    console.error("Scheduled cloud backup upload threw:", err);
+  }
 }
 
 export function startBackupScheduler() {

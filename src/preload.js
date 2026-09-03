@@ -279,6 +279,10 @@ contextBridge.exposeInMainWorld("api", {
   createBackup: (targetFolder) =>
     ipcRenderer.invoke("backup-create", { targetFolder }),
   restoreBackup: (data) => ipcRenderer.invoke("backup-restore", data),
+  uploadCloudBackup: () => ipcRenderer.invoke("backup-cloud-upload"),
+  listCloudBackups: () => ipcRenderer.invoke("backup-cloud-list"),
+  downloadCloudBackup: (backupId) =>
+    ipcRenderer.invoke("backup-cloud-download", backupId),
   /* ================= TAGS ================= */
   createTag: (data) => ipcRenderer.invoke("create-tag", data),
   listTags: (scope) => ipcRenderer.invoke("list-tags", { scope }),

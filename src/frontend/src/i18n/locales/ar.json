@@ -295,6 +295,10 @@
       "testRequiredHint": "شغّل طباعة تجريبية ناجحة أولاً"
     },
     "backup": {
+      "tabLocal": "محلي",
+      "tabCloud": "سحابي",
+      "cloudIncludedBadge": "مفعّل",
+      "cloudUpsellHint": "قم بترقية باقتك للنسخ الاحتياطي التلقائي لبياناتك خارج الموقع.",
       "title": "النسخ الاحتياطي لقاعدة البيانات",
       "hint": "نسخ احتياطية محلية، تُحفظ تلقائيًا حسب الجدول الذي تحدده.",
       "rowTitle": "النسخ الاحتياطي لقاعدة البيانات",
@@ -327,7 +331,17 @@
       "fillBothFields": "أدخل رمز PIN ومفتاح الاسترداد.",
       "restoreAuthFailed": "رمز PIN أو مفتاح الاسترداد غير صحيح.",
       "backupFileNotFound": "ملف النسخة الاحتياطية غير موجود.",
-      "invalidBackupFile": "هذا الملف ليس نسخة احتياطية صالحة لـ NoonPos."
+      "invalidBackupFile": "هذا الملف ليس نسخة احتياطية صالحة لـ NoonPos.",
+      "cloudIncluded": "مشمول في باقتك.",
+      "cloudUploadNow": "نسخ احتياطي إلى السحابة الآن",
+      "cloudUploading": "جارٍ الرفع...",
+      "cloudUploadSuccess": "تم الرفع إلى السحابة",
+      "cloudAlreadyUploadedToday": "تم النسخ الاحتياطي إلى السحابة اليوم بالفعل",
+      "cloudUploadFailed": "فشل الرفع إلى السحابة",
+      "cloudDownloadFailed": "فشل التنزيل",
+      "downloading": "جارٍ التنزيل...",
+      "cloudAvailable": "النسخ الاحتياطية السحابية",
+      "cloudEmpty": "لا توجد نسخ احتياطية سحابية بعد."
     },
     "currency": {
       "minorNamePlaceholder": "اسم الوحدة الفرعية",
@@ -1527,7 +1541,19 @@
     "BACKUP_FILE_NOT_FOUND": "تعذر العثور على ملف النسخة الاحتياطية.",
     "INVALID_BACKUP_FILE": "هذا الملف ليس نسخة احتياطية صالحة لـ NoonPos.",
     "INVALID_SCHEDULE_FREQUENCY": "تكرار جدول النسخ الاحتياطي غير صالح.",
-    "INVALID_SCHEDULE_DAY": "اليوم المحدد لجدول النسخ الاحتياطي الأسبوعي غير صالح."
+    "INVALID_SCHEDULE_DAY": "اليوم المحدد لجدول النسخ الاحتياطي الأسبوعي غير صالح.",
+    "LICENSE_INVALID": "تعذر التحقق من الترخيص الخاص بك.",
+    "CLOUD_BACKUP_NOT_INCLUDED": "النسخ الاحتياطي السحابي غير مشمول في باقتك.",
+    "NETWORK_ERROR": "تعذر الوصول إلى الخادم. تحقق من اتصالك بالإنترنت.",
+    "UPLOAD_FAILED": "فشل الرفع.",
+    "DOWNLOAD_FAILED": "فشل التنزيل.",
+    "LIST_FAILED": "تعذر تحميل النسخ الاحتياطية السحابية.",
+    "already_uploaded_today": "تم النسخ الاحتياطي إلى السحابة اليوم بالفعل.",
+    "device_not_activated": "هذا الجهاز غير مفعّل على هذا الترخيص.",
+    "cloud_backup_not_included": "النسخ الاحتياطي السحابي غير مشمول في هذا الترخيص.",
+    "backup_not_found": "تعذر العثور على هذه النسخة الاحتياطية.",
+    "backup_file_missing": "ملف هذه النسخة الاحتياطية مفقود على الخادم.",
+    "missing_fields": "بعض المعلومات المطلوبة مفقودة."
   },
   "success": {
     "created": "تم إنشاء {{field}} بنجاح",

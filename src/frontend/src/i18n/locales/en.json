@@ -294,6 +294,10 @@
       "testRequiredHint": "Run a successful test print first"
     },
     "backup": {
+      "tabLocal": "Local",
+      "tabCloud": "Cloud",
+      "cloudIncludedBadge": "Active",
+      "cloudUpsellHint": "Upgrade your plan to back up your data off-site automatically.",
       "title": "Database backups",
       "hint": "Local backups, saved automatically on your schedule.",
       "rowTitle": "Database backups",
@@ -326,7 +330,17 @@
       "fillBothFields": "Enter both the PIN and the recovery key.",
       "restoreAuthFailed": "Incorrect PIN or recovery key.",
       "backupFileNotFound": "Backup file not found.",
-      "invalidBackupFile": "This file is not a valid NoonPos backup."
+      "invalidBackupFile": "This file is not a valid NoonPos backup.",
+      "cloudIncluded": "Included in your plan.",
+      "cloudUploadNow": "Back up to cloud now",
+      "cloudUploading": "Uploading...",
+      "cloudUploadSuccess": "Uploaded to cloud",
+      "cloudAlreadyUploadedToday": "Already backed up to the cloud today",
+      "cloudUploadFailed": "Cloud upload failed",
+      "cloudDownloadFailed": "Download failed",
+      "downloading": "Downloading...",
+      "cloudAvailable": "Cloud backups",
+      "cloudEmpty": "No cloud backups yet."
     },
     "currency": {
       "minorNamePlaceholder": "Minor unit name",
@@ -1522,7 +1536,19 @@
     "BACKUP_FILE_NOT_FOUND": "This backup file could not be found.",
     "INVALID_BACKUP_FILE": "This file is not a valid NoonPos backup.",
     "INVALID_SCHEDULE_FREQUENCY": "Invalid backup schedule frequency.",
-    "INVALID_SCHEDULE_DAY": "Invalid day selected for the weekly backup schedule."
+    "INVALID_SCHEDULE_DAY": "Invalid day selected for the weekly backup schedule.",
+    "LICENSE_INVALID": "Your license could not be verified.",
+    "CLOUD_BACKUP_NOT_INCLUDED": "Cloud backup isn't included in your plan.",
+    "NETWORK_ERROR": "Couldn't reach the server. Check your internet connection.",
+    "UPLOAD_FAILED": "Upload failed.",
+    "DOWNLOAD_FAILED": "Download failed.",
+    "LIST_FAILED": "Couldn't load cloud backups.",
+    "already_uploaded_today": "Already backed up to the cloud today.",
+    "device_not_activated": "This device isn't activated on this license.",
+    "cloud_backup_not_included": "Cloud backup isn't included in this license.",
+    "backup_not_found": "This backup could not be found.",
+    "backup_file_missing": "This backup's file is missing on the server.",
+    "missing_fields": "Required information is missing."
   },
   "success": {
     "created": "{{field}} created successfully",

@@ -55,7 +55,7 @@ const Shell = ({ children }) => {
             <p className="mt-3 max-w-xs text-[15px] leading-relaxed text-slate-500">
               {t(
                 "activation.brandSubtitle",
-                "One-time activation ties this installation to your device."
+                "One-time activation ties this installation to your device.",
               )}
             </p>
           </div>
@@ -140,7 +140,7 @@ export default function ActivationPage({ onActivated, reason }) {
 
       setMessage(t("activation.success"));
       setIsError(false);
-      onActivated?.(result.payload);
+      onActivated?.({ valid: true, payload: result.payload });
     } catch (error) {
       setMessage(error.message || t("activation.failed"));
       setIsError(true);

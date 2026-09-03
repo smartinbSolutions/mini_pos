@@ -307,6 +307,10 @@
       "testRequiredHint": "Önce başarılı bir test yazdırma çalıştırın"
     },
     "backup": {
+      "tabLocal": "Yerel",
+      "tabCloud": "Bulut",
+      "cloudIncludedBadge": "Aktif",
+      "cloudUpsellHint": "Verilerinizi otomatik olarak site dışında yedeklemek için planınızı yükseltin.",
       "title": "Veritabanı yedekleri",
       "hint": "Yerel yedekler, belirlediğiniz programa göre otomatik olarak kaydedilir.",
       "rowTitle": "Veritabanı yedekleri",
@@ -339,7 +343,17 @@
       "fillBothFields": "Hem PIN'i hem de kurtarma anahtarını girin.",
       "restoreAuthFailed": "PIN veya kurtarma anahtarı hatalı.",
       "backupFileNotFound": "Yedek dosyası bulunamadı.",
-      "invalidBackupFile": "Bu dosya geçerli bir NoonPos yedeği değil."
+      "invalidBackupFile": "Bu dosya geçerli bir NoonPos yedeği değil.",
+      "cloudIncluded": "Planınıza dahil.",
+      "cloudUploadNow": "Şimdi buluta yedekle",
+      "cloudUploading": "Yükleniyor...",
+      "cloudUploadSuccess": "Buluta yüklendi",
+      "cloudAlreadyUploadedToday": "Bugün zaten buluta yedeklendi",
+      "cloudUploadFailed": "Bulut yüklemesi başarısız",
+      "cloudDownloadFailed": "İndirme başarısız",
+      "downloading": "İndiriliyor...",
+      "cloudAvailable": "Bulut yedekleri",
+      "cloudEmpty": "Henüz bulut yedeği yok."
     },
     "funds": {
       "transactionType": {
@@ -1523,7 +1537,19 @@
     "BACKUP_FILE_NOT_FOUND": "Bu yedek dosyası bulunamadı.",
     "INVALID_BACKUP_FILE": "Bu dosya geçerli bir NoonPos yedeği değil.",
     "INVALID_SCHEDULE_FREQUENCY": "Geçersiz yedekleme programı sıklığı.",
-    "INVALID_SCHEDULE_DAY": "Haftalık yedekleme programı için geçersiz gün seçildi."
+    "INVALID_SCHEDULE_DAY": "Haftalık yedekleme programı için geçersiz gün seçildi.",
+    "LICENSE_INVALID": "Lisansınız doğrulanamadı.",
+    "CLOUD_BACKUP_NOT_INCLUDED": "Bulut yedekleme planınıza dahil değil.",
+    "NETWORK_ERROR": "Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edin.",
+    "UPLOAD_FAILED": "Yükleme başarısız.",
+    "DOWNLOAD_FAILED": "İndirme başarısız.",
+    "LIST_FAILED": "Bulut yedekleri yüklenemedi.",
+    "already_uploaded_today": "Bugün zaten buluta yedeklendi.",
+    "device_not_activated": "Bu cihaz bu lisansta etkinleştirilmedi.",
+    "cloud_backup_not_included": "Bulut yedekleme bu lisansa dahil değil.",
+    "backup_not_found": "Bu yedek bulunamadı.",
+    "backup_file_missing": "Bu yedeğin dosyası sunucuda eksik.",
+    "missing_fields": "Gerekli bilgiler eksik."
   },
   "success": {
     "created": "{{field}} başarıyla oluşturuldu",
