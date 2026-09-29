@@ -883,6 +883,16 @@
       "fundRateShort": "Fund rate"
     },
     "payments": {
+      "amountReceived": "Amount received",
+      "amountPaid": "Amount paid",
+      "exchangeRate": "Exchange rate",
+      "resetRate": "Use fund rate",
+      "amountDue": "Amount due",
+      "linkedRateHint": "Change the amount or the rate — the other updates to match the amount due.",
+      "rateDeviationWarning": "This rate is more than 10% away from the fund rate. Check it before saving.",
+      "recordedAs": "Recorded in the account as",
+      "selectFundToEnterAmount": "Select a fund first — the amount is entered in that fund's currency.",
+      "invalidRate": "Enter a valid exchange rate.",
       "fullyPaid": "Fully paid",
       "partiallyPaid": "Partially paid",
       "purchasePayment": "Purchase Payment",

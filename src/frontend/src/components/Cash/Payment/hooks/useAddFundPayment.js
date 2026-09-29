@@ -2,6 +2,37 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
+import { formatMoney } from "../../../../Global/FormatNumber";
+
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+// Warn (never block) when the typed rate drifts this far from the fund's
+// reference rate — catches typos like 3.45 instead of 34.5.
+const RATE_WARNING_THRESHOLD = 0.1;
+
+const emptyForm = (fundId = "") => ({
+  fund_id: fundId,
+  party_id: "",
+  party_name: "",
+  fund_exchangeRate: 1, // reference rate snapshot: 1 base = X fund
+  rate: "", // rate actually used — editable, defaults to reference
+  collected_amount: "", // amount in FUND currency — the primary input
+  currency_code: "",
+  currency_symbol: "",
+  note: "",
+});
+
+// Fund-derived fields, applied on select and on locked-fund load.
+const fundFields = (fund) => {
+  const ref = Number(fund?.currency_exchangeRate || 1);
+  return {
+    fund_id: fund ? fund.id : "",
+    fund_exchangeRate: ref,
+    rate: String(ref),
+    currency_code: fund?.currency_code || "",
+    currency_symbol: fund?.currency_symbol || "",
+  };
+};
 
 const useAddFundPayment = ({
   isOpen,
@@ -15,6 +46,7 @@ const useAddFundPayment = ({
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState("error"); // error | success
   const [funds, setFunds] = useState([]);
   const [partiesList, setPartiesList] = useState([]);
   const { money } = usePrimaryCurrency();
@@ -29,17 +61,7 @@ const useAddFundPayment = ({
   );
   const { user } = useAuth();
 
-  const [form, setForm] = useState({
-    fund_id: "",
-    party_id: "",
-    party_name: "",
-    fund_exchangeRate: 1,
-    amount_in_base: 0,
-    collected_amount: 0,
-    currency_code: "",
-    currency_symbol: "",
-    note: "",
-  });
+  const [form, setForm] = useState(emptyForm());
 
   // Tracks whether the person has manually typed their own note — once they
   // have, auto-generation stops overwriting it on every field change.
@@ -48,6 +70,11 @@ const useAddFundPayment = ({
   const handleChange = (key, value) => {
     if (key === "note") setNoteEdited(true);
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const showError = (text) => {
+    setMessageTone("error");
+    setMessage(text);
   };
 
   const selectedFund = useMemo(
@@ -65,6 +92,39 @@ const useAddFundPayment = ({
         : undefined),
     [partiesList, form.party_id, form.party_name],
   );
+
+  // ---- Amounts: fund amount + rate are inputs, base is always derived ----
+
+  // Reference rate of 1 is reserved for the primary currency, so any other
+  // rate means the fund holds a foreign currency.
+  const isForeign =
+    Boolean(selectedFund) && Number(form.fund_exchangeRate) !== 1;
+
+  const referenceRate = Number(form.fund_exchangeRate) || 1;
+  const effectiveRate = isForeign ? Number(form.rate) || 0 : 1;
+  const fundAmount = Number(form.collected_amount) || 0;
+  const baseAmount = effectiveRate > 0 ? round2(fundAmount / effectiveRate) : 0;
+
+  const rateChanged =
+    isForeign && effectiveRate > 0 && effectiveRate !== referenceRate;
+  const rateWarning =
+    isForeign &&
+    effectiveRate > 0 &&
+    Math.abs(effectiveRate - referenceRate) / referenceRate >
+      RATE_WARNING_THRESHOLD;
+
+  const handleAmountChange = (val) => {
+    // raw string — keeps "5." intact while typing
+    setForm((prev) => ({ ...prev, collected_amount: val }));
+  };
+
+  const handleRateChange = (val) => {
+    setForm((prev) => ({ ...prev, rate: val }));
+  };
+
+  const resetRate = () => {
+    setForm((prev) => ({ ...prev, rate: String(prev.fund_exchangeRate) }));
+  };
 
   const fetchFunds = useCallback(async () => {
     if (!api) return;
@@ -120,17 +180,7 @@ const useAddFundPayment = ({
   useEffect(() => {
     if (isOpen) {
       fetchFunds();
-      setForm({
-        fund_id: initialFundId || "",
-        party_id: "",
-        party_name: "",
-        fund_exchangeRate: 1,
-        amount_in_base: "",
-        collected_amount: "",
-        currency_code: "",
-        currency_symbol: "",
-        note: "",
-      });
+      setForm(emptyForm(initialFundId || ""));
       setPartyType(mode === "out" ? "supplier" : "customer");
       setNoteEdited(false);
       setMessage("");
@@ -148,62 +198,36 @@ const useAddFundPayment = ({
     if (isOpen && initialFundId && funds.length > 0) {
       const fund = funds.find((f) => f.id === Number(initialFundId));
       if (fund) {
-        const rate = fund.currency_exchangeRate || 1;
-        setForm((prev) => ({
-          ...prev,
-          fund_id: Number(initialFundId),
-          fund_exchangeRate: rate,
-          currency_code: fund.currency_code || "",
-          currency_symbol: fund.currency_symbol || "",
-        }));
+        setForm((prev) => ({ ...prev, ...fundFields(fund) }));
       }
     }
   }, [isOpen, initialFundId, funds]);
 
+  // Switching to a fund in a different currency clears the amount — the
+  // number typed meant something in the old currency, not the new one.
   const handleFundChange = (e) => {
-    const fundId = Number(e.target.value);
-    const fund = funds.find((f) => f.id === fundId);
-    const rate = fund?.currency_exchangeRate || 1;
-    const currentBase = Number(form.amount_in_base || 0);
-
-    setForm((prev) => ({
-      ...prev,
-      fund_id: fundId,
-      fund_exchangeRate: rate,
-      collected_amount: rate === 1 ? currentBase : currentBase * rate,
-      currency_code: fund?.currency_code || "",
-      currency_symbol: fund?.currency_symbol || "",
-    }));
+    const fund = funds.find((f) => f.id === Number(e.target.value));
+    setForm((prev) => {
+      const next = fundFields(fund);
+      return {
+        ...prev,
+        ...next,
+        collected_amount:
+          next.currency_code === prev.currency_code
+            ? prev.collected_amount
+            : "",
+      };
+    });
   };
 
-  const handleBaseAmountChange = (val) => {
-    const parsed = val === "" ? null : Number(val);
-    const isValid = parsed !== null && !isNaN(parsed);
-
-    setForm((prev) => ({
-      ...prev,
-      amount_in_base: val, // raw string — keeps "5." intact while typing
-      collected_amount: !isValid
-        ? ""
-        : prev.fund_exchangeRate === 1
-          ? parsed
-          : parsed * prev.fund_exchangeRate,
-    }));
-  };
-  const effectiveRate = useMemo(() => {
-    if (!form.amount_in_base) return form.fund_exchangeRate;
-    return Number(form.collected_amount || 0) / Number(form.amount_in_base);
-  }, [form.collected_amount, form.amount_in_base, form.fund_exchangeRate]);
-
-  // Auto-generated note: "[Income/Expense] of [amount] [currency] [from/to]
-  // [party name] via [fund name]" — regenerates whenever the underlying facts
-  // change, unless the person has taken over the field themselves.
+  // Auto-generated note — regenerates whenever the underlying facts change,
+  // unless the person has taken over the field themselves.
   const autoNote = useMemo(() => {
-    if (!form.amount_in_base || !selectedFund) return "";
+    if (!fundAmount || !selectedFund) return "";
 
-    const amountLabel = money
-      ? money(Number(form.amount_in_base))
-      : `${form.amount_in_base} ${form.currency_symbol || form.currency_code || ""}`.trim();
+    const amountLabel = isForeign
+      ? `${formatMoney(fundAmount, selectedFund)} (${money(baseAmount)})`
+      : money(baseAmount);
 
     const partyLabel = selectedParty?.name || t(`ui.${partyType}`);
     const fundLabel = selectedFund?.name || "";
@@ -222,9 +246,9 @@ const useAddFundPayment = ({
           defaultValue: `Paid ${amountLabel} to ${partyLabel} from ${fundLabel}`,
         });
   }, [
-    form.amount_in_base,
-    form.currency_symbol,
-    form.currency_code,
+    fundAmount,
+    baseAmount,
+    isForeign,
     selectedFund,
     selectedParty,
     partyType,
@@ -241,15 +265,21 @@ const useAddFundPayment = ({
 
   const submit = async () => {
     if (!form.fund_id) {
-      setMessage(t("screens.payments.please_select_fund_first"));
+      showError(t("screens.payments.please_select_fund_first"));
       return;
     }
     if (!form.party_id) {
-      setMessage(t("screens.payments.please_select_linked_account"));
+      showError(t("screens.payments.please_select_linked_account"));
       return;
     }
-    if (!form.amount_in_base || Number(form.amount_in_base) <= 0) {
-      setMessage(t("screens.payments.please_enter_valid_amount"));
+    if (isForeign && !(effectiveRate > 0)) {
+      showError(
+        t("screens.payments.invalidRate", "Enter a valid exchange rate."),
+      );
+      return;
+    }
+    if (fundAmount <= 0 || baseAmount <= 0) {
+      showError(t("screens.payments.please_enter_valid_amount"));
       return;
     }
 
@@ -258,10 +288,10 @@ const useAddFundPayment = ({
       party_type: partyType,
       party_id: Number(form.party_id),
       fund_id: Number(form.fund_id),
-      amount: Number(form.amount_in_base),
-      exchange_rate: form.fund_exchangeRate,
-      collected_amount: Number(form.collected_amount || 0),
-      effective_rate: effectiveRate,
+      amount: baseAmount, // derived: fund amount ÷ rate used
+      collected_amount: fundAmount, // exactly what moved in the fund
+      exchange_rate: referenceRate, // system rate snapshot
+      effective_rate: effectiveRate, // rate actually used
       currency_code: form.currency_code,
       currency_symbol: form.currency_symbol,
       note: form.note || autoNote,
@@ -280,6 +310,7 @@ const useAddFundPayment = ({
 
       if (!res.success) throw new Error(res.message);
 
+      setMessageTone("success");
       setMessage(t("screens.payments.receipt_saved_successfully"));
 
       if (refetchList) {
@@ -288,7 +319,7 @@ const useAddFundPayment = ({
 
       setTimeout(() => onClose(), 800);
     } catch (err) {
-      setMessage(err.message || t("screens.payments.unexpected_error_posting"));
+      showError(err.message || t("screens.payments.unexpected_error_posting"));
     } finally {
       setLoading(false);
     }
@@ -304,13 +335,24 @@ const useAddFundPayment = ({
     setPartyType,
     loading,
     message,
-    effectiveRate,
+    messageTone,
     isFundLocked,
     selectedFund,
     selectedParty,
+
+    isForeign,
+    fundAmount,
+    baseAmount,
+    referenceRate,
+    effectiveRate,
+    rateChanged,
+    rateWarning,
+
     handleChange,
     handleFundChange,
-    handleBaseAmountChange,
+    handleAmountChange,
+    handleRateChange,
+    resetRate,
     submit,
     money,
     t,

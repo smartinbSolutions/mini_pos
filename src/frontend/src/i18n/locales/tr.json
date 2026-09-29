@@ -863,6 +863,16 @@
       "fundRateShort": "Fon kuru"
     },
     "payments": {
+      "amountReceived": "Alınan tutar",
+      "amountPaid": "Ödenen tutar",
+      "exchangeRate": "Döviz kuru",
+      "resetRate": "Kasa kurunu kullan",
+      "rateDeviationWarning": "Bu kur, kasa kurundan %10'dan fazla farklı. Kaydetmeden önce kontrol edin.",
+      "recordedAs": "Hesaba kaydedilecek tutar",
+      "selectFundToEnterAmount": "Önce bir kasa seçin — tutar o kasanın para biriminde girilir.",
+      "invalidRate": "Geçerli bir döviz kuru girin.",
+      "amountDue": "Ödenecek tutar",
+      "linkedRateHint": "Tutarı veya kuru değiştirin — diğeri ödenecek tutara göre güncellenir.",
       "fullyPaid": "Tam Ödendi",
       "partiallyPaid": "Kısmen Ödendi",
       "purchasePayment": "Satın Alma Ödemesi",

@@ -37,7 +37,7 @@ export default function PrintPurchaseInvoice() {
 
   const itemDiscountTotal = items.reduce(
     (sum, item) => sum + Number(item.discount || 0),
-    0
+    0,
   );
 
   const itemTaxGroups = Object.values(
@@ -54,7 +54,7 @@ export default function PrintPurchaseInvoice() {
       }
       groups[key].tax_value += Number(item.taxValue || 0);
       return groups;
-    }, {})
+    }, {}),
   );
 
   const itemTaxTotal = itemTaxGroups.reduce((sum, g) => sum + g.tax_value, 0);

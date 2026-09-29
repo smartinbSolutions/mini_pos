@@ -4,6 +4,12 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
+const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
+const round6 = (n) => Math.round((n + Number.EPSILON) * 1e6) / 1e6;
+
+// Warn (never block) when the typed rate drifts this far from the fund's
+// reference rate — catches typos like 3.45 instead of 34.5.
+const RATE_WARNING_THRESHOLD = 0.1;
 
 const useAddPayment = ({
   isOpen,
@@ -22,6 +28,7 @@ const useAddPayment = ({
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState("error"); // error | success
   const [funds, setFunds] = useState([]);
   const { money } = usePrimaryCurrency();
   const { user } = useAuth();
@@ -35,6 +42,12 @@ const useAddPayment = ({
   const isCustomer = mode === "customer";
   const isSupplier = mode === "supplier";
   const isCollectorMode = !invoice;
+
+  // Invoice-type modes settle a fixed base amount (the invoice's remaining
+  // or the new invoice's total) — no partial payments from this modal.
+  // Party modes (customer/supplier/partner) take any amount.
+  const isInvoiceMode =
+    isPurchase || isSales || isExpense || isPurchaseReturn || isSalesReturn;
 
   // Embedded in an invoice-creation form: payment date follows the invoice's
   // own date once it's created, so no picker is shown here at all.
@@ -54,11 +67,14 @@ const useAddPayment = ({
     ? Number(invoice.remaining_amount || 0)
     : Number(totalAmount || 0);
 
+  const lockedBase = round2(initialBaseAmount);
+
   const [form, setForm] = useState({
     fund_id: "",
-    fund_exchangeRate: 1,
-    amount_in_base: 0,
-    collected_amount: 0,
+    fund_exchangeRate: 1, // reference rate snapshot: 1 base = X fund
+    rate: "", // rate actually used — editable, defaults to reference
+    collected_amount: "", // amount in FUND currency
+    amount_in_base: 0, // only typed directly when paying from credit
     currency_code: "",
     currency_symbol: "",
     note: "",
@@ -74,6 +90,11 @@ const useAddPayment = ({
 
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const showError = (text) => {
+    setMessageTone("error");
+    setMessage(text);
   };
 
   const refetch = useCallback(async () => {
@@ -140,8 +161,9 @@ const useAddPayment = ({
       setForm({
         fund_id: "",
         fund_exchangeRate: 1,
+        rate: "",
+        collected_amount: "",
         amount_in_base: initialBaseAmount,
-        collected_amount: initialBaseAmount,
         currency_code: "",
         currency_symbol: "",
         note: "",
@@ -168,36 +190,105 @@ const useAddPayment = ({
     }
   }, [minDate]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const selectedFund = useMemo(
+    () => funds.find((f) => f.id === Number(form.fund_id)),
+    [funds, form.fund_id],
+  );
+
+  // ---- Amounts ----
+  // Invoice modes: base is locked, so fund amount and rate are linked —
+  //   typing one derives the other (only one degree of freedom).
+  // Party modes: fund amount + rate are independent inputs, base derived.
+  // Credit: base typed directly, no fund, no conversion.
+
+  // Reference rate of 1 is reserved for the primary currency, so any other
+  // rate means the fund holds a foreign currency.
+  const referenceRate = Number(form.fund_exchangeRate) || 1;
+  const isForeign = !useCredit && Boolean(form.fund_id) && referenceRate !== 1;
+  const rateValue = Number(form.rate) || 0;
+  const effectiveRate = isForeign ? rateValue : 1;
+  const fundAmount = Number(form.collected_amount) || 0;
+
+  const baseAmount = useCredit
+    ? Number(form.amount_in_base) || 0
+    : isInvoiceMode
+      ? lockedBase
+      : isForeign
+        ? rateValue > 0
+          ? round2(fundAmount / rateValue)
+          : 0
+        : fundAmount;
+
+  // What actually moves in the fund — equals base when same currency.
+  const collectedAmount = isForeign ? fundAmount : baseAmount;
+
+  const rateChanged = isForeign && rateValue > 0 && rateValue !== referenceRate;
+  const rateWarning =
+    isForeign &&
+    rateValue > 0 &&
+    Math.abs(rateValue - referenceRate) / referenceRate >
+      RATE_WARNING_THRESHOLD;
+
   const handleFundChange = (e) => {
-    const fundId = Number(e.target.value);
-    const fund = funds.find((f) => f.id === fundId);
-    const rate = fund?.currency_exchangeRate || 1;
-    const currentBase = form.amount_in_base || initialBaseAmount;
+    const fund = funds.find((f) => f.id === Number(e.target.value));
+    const ref = Number(fund?.currency_exchangeRate || 1);
+    const code = fund?.currency_code || "";
 
     setForm((prev) => ({
       ...prev,
-      fund_id: fundId,
-      fund_exchangeRate: rate,
-      amount_in_base: currentBase,
-      collected_amount: rate === 1 ? currentBase : currentBase * rate,
-      currency_code: fund?.currency_code || "",
+      fund_id: fund ? fund.id : "",
+      fund_exchangeRate: ref,
+      rate: String(ref),
+      currency_code: code,
       currency_symbol: fund?.currency_symbol || "",
+      // Invoice modes pre-fill the fund amount at the reference rate.
+      // Party modes keep the typed amount only if the currency didn't change.
+      collected_amount: isInvoiceMode
+        ? String(round2(lockedBase * ref))
+        : code === prev.currency_code
+          ? prev.collected_amount
+          : "",
     }));
   };
 
-  const handleBaseAmountChange = (val) => {
-    const parsed = val === "" ? null : Number(val);
-    const isValid = parsed !== null && !isNaN(parsed);
+  const handleFundAmountChange = (val) => {
+    setForm((prev) => {
+      const next = { ...prev, collected_amount: val };
+      const foreign = prev.fund_id && Number(prev.fund_exchangeRate) !== 1;
+      const n = Number(val);
+      if (isInvoiceMode && foreign && n > 0 && lockedBase > 0) {
+        next.rate = String(round6(n / lockedBase));
+      }
+      return next;
+    });
+  };
 
-    setForm((prev) => ({
-      ...prev,
-      amount_in_base: val, // raw string — preserves "5." and empty state
-      collected_amount: !isValid
-        ? ""
-        : prev.fund_exchangeRate === 1
-          ? parsed
-          : parsed * prev.fund_exchangeRate,
-    }));
+  const handleRateChange = (val) => {
+    setForm((prev) => {
+      const next = { ...prev, rate: val };
+      const r = Number(val);
+      if (isInvoiceMode && r > 0) {
+        next.collected_amount = String(round2(lockedBase * r));
+      }
+      return next;
+    });
+  };
+
+  const resetRate = () => {
+    setForm((prev) => {
+      const ref = Number(prev.fund_exchangeRate) || 1;
+      return {
+        ...prev,
+        rate: String(ref),
+        ...(isInvoiceMode
+          ? { collected_amount: String(round2(lockedBase * ref)) }
+          : {}),
+      };
+    });
+  };
+
+  const handleCreditAmountChange = (val) => {
+    setForm((prev) => ({ ...prev, amount_in_base: val }));
   };
 
   const toggleUseCredit = () => {
@@ -206,44 +297,49 @@ const useAddPayment = ({
       if (next) {
         const capped = Math.min(
           availableCredit,
-          initialBaseAmount || availableCredit
+          initialBaseAmount || availableCredit,
         );
         setForm((f) => ({
           ...f,
           fund_id: "",
+          fund_exchangeRate: 1,
+          rate: "",
+          collected_amount: "",
+          currency_code: "",
+          currency_symbol: "",
           amount_in_base: capped,
-          collected_amount: capped,
         }));
       }
       return next;
     });
   };
 
-  const effectiveRate = useMemo(() => {
-    if (!form.amount_in_base) return form.fund_exchangeRate;
-    return Number(form.collected_amount || 0) / Number(form.amount_in_base);
-  }, [form.collected_amount, form.amount_in_base, form.fund_exchangeRate]);
-
   const submit = async () => {
     if (!useCredit && !form.fund_id) {
-      setMessage(t("ui.selectFundRequired"));
+      showError(t("ui.selectFundRequired"));
       return;
     }
-    if (Number(form.amount_in_base) <= 0) {
-      setMessage(t("errors.validAmount"));
+    if (isForeign && !(rateValue > 0)) {
+      showError(
+        t("screens.payments.invalidRate", "Enter a valid exchange rate."),
+      );
       return;
     }
-    if (useCredit && Number(form.amount_in_base) > availableCredit) {
-      setMessage(t("errors.creditExceeded"));
+    if (baseAmount <= 0 || (isForeign && fundAmount <= 0)) {
+      showError(t("errors.validAmount"));
+      return;
+    }
+    if (useCredit && baseAmount > availableCredit) {
+      showError(t("errors.creditExceeded"));
       return;
     }
     if (showDatePicker) {
       if (!form.date) {
-        setMessage(t("errors.dateRequired"));
+        showError(t("errors.dateRequired"));
         return;
       }
       if (minDate && form.date < minDate) {
-        setMessage(t("errors.dateBeforeMin", { date: minDate }));
+        showError(t("errors.dateBeforeMin", { date: minDate }));
         return;
       }
     }
@@ -260,10 +356,10 @@ const useAddPayment = ({
       party_type: partyType,
       party_id: party,
       fund_id: useCredit ? null : form.fund_id,
-      amount: Number(form.amount_in_base),
-      exchange_rate: form.fund_exchangeRate,
-      collected_amount: Number(form.collected_amount || 0),
-      effective_rate: effectiveRate,
+      amount: baseAmount, // settles the invoice / party account
+      collected_amount: collectedAmount, // exactly what moved in the fund
+      exchange_rate: useCredit ? 1 : referenceRate, // system rate snapshot
+      effective_rate: effectiveRate, // rate actually used
       currency_code: form.currency_code,
       currency_symbol: form.currency_symbol,
       note: form.note,
@@ -289,7 +385,7 @@ const useAddPayment = ({
           partyType,
           invoiceId: invoice?.id,
           invoiceType: mode,
-          amount: Number(form.amount_in_base),
+          amount: baseAmount,
           created_by: user.id,
         });
         if (!res.success) throw new Error(res.error);
@@ -301,6 +397,7 @@ const useAddPayment = ({
         if (!res.success) throw new Error(res.message);
       }
 
+      setMessageTone("success");
       setMessage(t("screens.payments.saved"));
 
       if (refetchList) {
@@ -309,7 +406,7 @@ const useAddPayment = ({
 
       setTimeout(() => onClose(), 700);
     } catch (err) {
-      setMessage(err.message);
+      showError(err.message);
     } finally {
       setLoading(false);
     }
@@ -320,10 +417,13 @@ const useAddPayment = ({
     funds,
     loading,
     message,
-    effectiveRate,
+    messageTone,
     handleChange,
     handleFundChange,
-    handleBaseAmountChange,
+    handleFundAmountChange,
+    handleRateChange,
+    resetRate,
+    handleCreditAmountChange,
     submit,
     isPartner,
     isPurchase,
@@ -332,6 +432,7 @@ const useAddPayment = ({
     isCustomer,
     isSupplier,
     isCollectorMode,
+    isInvoiceMode,
     initialBaseAmount,
     t,
     isPurchaseReturn,
@@ -342,6 +443,15 @@ const useAddPayment = ({
     toggleUseCredit,
     showDatePicker,
     minDate,
+
+    selectedFund,
+    isForeign,
+    baseAmount,
+    fundAmount,
+    referenceRate,
+    effectiveRate,
+    rateChanged,
+    rateWarning,
   };
 };
 

@@ -1,15 +1,17 @@
 import React from "react";
 import {
-  Wallet,
   Save,
   X,
   ArrowRight,
-  DollarSign,
   User,
   Building2,
   Users,
+  RotateCcw,
+  AlertTriangle,
+  CheckCircle2,
+  Wallet,
 } from "lucide-react";
-import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
+import { formatMoney } from "../../../../Global/FormatNumber";
 import useAddFundPayment from "../hooks/useAddFundPayment";
 import NumberInput from "../../../../Global/NumberInput";
 import SearchableSelect from "../../../../Global/SearchableSelect";
@@ -35,13 +37,21 @@ export default function AddFundPayment({
     setPartyType,
     loading,
     message,
-    effectiveRate,
+    messageTone,
     isFundLocked,
     selectedFund,
-    selectedParty,
+
+    isForeign,
+    baseAmount,
+    referenceRate,
+    rateChanged,
+    rateWarning,
+
     handleChange,
     handleFundChange,
-    handleBaseAmountChange,
+    handleAmountChange,
+    handleRateChange,
+    resetRate,
     submit,
     money,
     t,
@@ -61,11 +71,13 @@ export default function AddFundPayment({
         chip: "bg-green-100 text-green-600",
         btn: "bg-green-600 hover:bg-green-700",
         arrow: "bg-green-100 text-green-600",
+        ring: "focus-within:border-green-500 focus-within:ring-green-100",
       }
     : {
         chip: "bg-red-100 text-red-600",
         btn: "bg-red-600 hover:bg-red-700",
         arrow: "bg-red-100 text-red-600",
+        ring: "focus-within:border-red-500 focus-within:ring-red-100",
       };
 
   const partyIcon =
@@ -77,16 +89,16 @@ export default function AddFundPayment({
       <Users size={16} />
     );
 
+  const fundCurrency = form.currency_code || form.currency_symbol || "";
+
   const partyCard = (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-      <div className="text-[10px] uppercase  text-gray-400 font-semibold">
-        {isCashIn
-          ? t("screens.payments.linked_account_type")
-          : t("screens.payments.linked_account_type")}
+      <div className="text-xs text-gray-500 font-semibold">
+        {t("screens.payments.linked_account_type")}
       </div>
 
       <div className="grid grid-cols-3 gap-1.5 p-1 bg-white rounded-xl text-xs font-semibold border">
-        {mode === "in" ? (
+        {isCashIn ? (
           <button
             type="button"
             onClick={() => setPartyType("customer")}
@@ -116,7 +128,7 @@ export default function AddFundPayment({
       </div>
 
       <SearchableSelect
-        placeholder={`-- ${t("screens.payments.select_name_from_list")} --`}
+        placeholder={t("screens.payments.select_name_from_list")}
         options={partiesList}
         selectedValue={form.party_id}
         selectedLabel={form.party_name}
@@ -127,9 +139,11 @@ export default function AddFundPayment({
     </div>
   );
 
+  // Fund card only picks the fund now — the amount has its own section
+  // below, since its meaning depends on which fund (currency) was picked.
   const fundCard = (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-      <div className="text-[10px] uppercase  text-gray-400 font-semibold">
+      <div className="text-xs text-gray-500 font-semibold">
         {t("screens.payments.target_fund")}
       </div>
 
@@ -153,25 +167,108 @@ export default function AddFundPayment({
           ))}
         </select>
       )}
+    </div>
+  );
 
+  const amountSection = !form.fund_id ? (
+    <div className="flex items-center gap-2 rounded-2xl border border-dashed border-gray-300 px-4 py-5 text-sm text-gray-500">
+      <Wallet size={16} className="shrink-0 text-gray-400" />
+      {t(
+        "screens.payments.selectFundToEnterAmount",
+        "Select a fund first — the amount is entered in that fund's currency.",
+      )}
+    </div>
+  ) : (
+    <div className="rounded-2xl border border-gray-200 p-4 space-y-4">
+      {/* Primary input: the money that actually moved, in the fund's currency */}
       <div>
-        <label className="text-xs font-medium text-gray-600">
-          {t("screens.payments.amount_base_currency")}
+        <label className="text-sm font-semibold text-gray-700">
+          {isCashIn
+            ? t("screens.payments.amountReceived", "Amount received")
+            : t("screens.payments.amountPaid", "Amount paid")}
         </label>
-        <div className="relative mt-1">
+        <div
+          className={`mt-1.5 flex items-center rounded-xl border bg-white ring-4 ring-transparent transition ${theme.ring}`}
+        >
           <NumberInput
-            value={form.amount_in_base || ""}
-            onChange={handleBaseAmountChange}
-            className="w-full h-10 rounded-xl border px-3 pr-9 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm disabled:bg-gray-100"
+            value={form.collected_amount}
+            onChange={handleAmountChange}
+            className="h-14 w-full min-w-0 flex-1 rounded-xl bg-transparent px-4 text-2xl font-black tabular-nums text-slate-900 outline-none"
             placeholder="0.00"
-            disabled={!form.fund_id}
           />
-          <DollarSign
-            className="absolute right-2.5 top-2.5 text-gray-400"
-            size={16}
-          />
+          <span className="shrink-0 px-4 text-sm font-bold text-gray-500">
+            {fundCurrency}
+          </span>
         </div>
       </div>
+
+      {/* Conversion — only when the fund isn't in the primary currency */}
+      {isForeign && (
+        <div className="rounded-xl bg-slate-50 p-3 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-500">
+                {t("screens.payments.exchangeRate", "Exchange rate")}
+              </span>
+              <span
+                dir="ltr"
+                className="flex items-center gap-1.5 text-sm font-bold text-gray-700"
+              >
+                <span className="tabular-nums">{money(1)}</span>
+                <span className="text-gray-400">=</span>
+                <NumberInput
+                  value={form.rate}
+                  onChange={handleRateChange}
+                  className={`h-9 w-28 rounded-lg border bg-white px-2 text-center text-sm font-bold tabular-nums outline-none focus:ring-2 ${
+                    rateWarning
+                      ? "border-amber-400 focus:ring-amber-100"
+                      : "border-gray-200 focus:border-blue-500 focus:ring-blue-100"
+                  }`}
+                />
+                <span>{fundCurrency}</span>
+              </span>
+            </div>
+
+            {rateChanged && (
+              <button
+                type="button"
+                onClick={resetRate}
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-blue-600 transition hover:bg-blue-50"
+              >
+                <RotateCcw size={12} />
+                {t("screens.payments.resetRate", "Use fund rate")} (
+                <span dir="ltr" className="tabular-nums">
+                  {referenceRate}
+                </span>
+                )
+              </button>
+            )}
+          </div>
+
+          {rateWarning && (
+            <p className="flex items-start gap-1.5 text-xs font-semibold text-amber-700">
+              <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+              {t(
+                "screens.payments.rateDeviationWarning",
+                "This rate is more than 10% away from the fund rate. Check it before saving.",
+              )}
+            </p>
+          )}
+
+          {/* The result — derived, never typed */}
+          <div className="flex items-baseline justify-between gap-3 border-t border-slate-200 pt-3">
+            <span className="text-xs text-gray-500">
+              {t("screens.payments.recordedAs", "Recorded in the account as")}
+            </span>
+            <span
+              dir="ltr"
+              className="text-xl font-black tabular-nums text-slate-900"
+            >
+              {money(baseAmount)}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -193,6 +290,7 @@ export default function AddFundPayment({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 rounded-xl hover:bg-gray-200"
           >
@@ -209,47 +307,14 @@ export default function AddFundPayment({
 
             <div className="flex h-full items-center justify-center pt-8">
               <div className={`rounded-full p-2 ${theme.arrow}`}>
-                <ArrowRight size={18} />
+                <ArrowRight size={18} className="rtl:rotate-180" />
               </div>
             </div>
 
             {isCashIn ? fundCard : partyCard}
           </div>
 
-          {form.fund_exchangeRate !== 1 && (
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                {t("screens.payments.actual_amount_fund_currency")}
-              </label>
-              <div className="relative mt-1">
-                <NumberInput
-                  value={form.collected_amount || ""}
-                  onChange={(val) => handleChange("collected_amount", val)}
-                  className="w-full h-11 rounded-xl border px-3 pr-10 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm"
-                  disabled={!form.fund_id}
-                />
-                <Wallet
-                  className="absolute right-3 top-3 text-gray-400"
-                  size={18}
-                />
-              </div>
-
-              {form.fund_id && (
-                <div className="mt-1 flex justify-between text-xs text-gray-500 bg-slate-50 p-2 rounded-lg border border-dashed">
-                  <span>
-                    {t("screens.payments.fund_exchange_rate")}:{" "}
-                    <strong>{form.fund_exchangeRate}</strong>
-                  </span>
-                  <span>
-                    {t("screens.payments.effective")}:{" "}
-                    <strong className="text-blue-600">
-                      {(effectiveRate || 0).toFixed(4)}
-                    </strong>
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+          {amountSection}
 
           <div>
             <label className="text-sm font-medium text-gray-600">
@@ -265,7 +330,18 @@ export default function AddFundPayment({
           </div>
 
           {message && (
-            <div className="text-center text-sm font-medium bg-amber-50 text-amber-700 p-2.5 rounded-xl border border-amber-200">
+            <div
+              className={`flex items-center justify-center gap-1.5 text-sm font-medium p-2.5 rounded-xl border ${
+                messageTone === "success"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}
+            >
+              {messageTone === "success" ? (
+                <CheckCircle2 size={15} />
+              ) : (
+                <AlertTriangle size={15} />
+              )}
               {message}
             </div>
           )}
@@ -273,6 +349,7 @@ export default function AddFundPayment({
 
         <div className="p-5 border-t bg-gray-50">
           <button
+            type="button"
             onClick={submit}
             disabled={loading}
             className={`w-full h-11 rounded-xl text-white flex items-center justify-center gap-2 font-medium transition-all ${theme.btn} shadow-md disabled:opacity-50`}

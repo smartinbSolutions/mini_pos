@@ -869,6 +869,16 @@
       "fundRateShort": "سعر الصندوق"
     },
     "payments": {
+      "amountReceived": "المبلغ المقبوض",
+      "amountPaid": "المبلغ المدفوع",
+      "exchangeRate": "سعر الصرف",
+      "resetRate": "استخدام سعر الصندوق",
+      "rateDeviationWarning": "هذا السعر يختلف عن سعر الصندوق بأكثر من 10%. تحقق منه قبل الحفظ.",
+      "recordedAs": "يُسجَّل في الحساب بقيمة",
+      "selectFundToEnterAmount": "اختر الصندوق أولاً — يُدخل المبلغ بعملة ذلك الصندوق.",
+      "invalidRate": "أدخل سعر صرف صحيحاً.",
+      "amountDue": "المبلغ المستحق",
+      "linkedRateHint": "غيّر المبلغ أو سعر الصرف — ويتحدّث الآخر ليطابق المبلغ المستحق.",
       "fullyPaid": "مدفوع بالكامل",
       "partiallyPaid": "مدفوع جزئياً",
       "purchasePayment": "دفعة شراء",

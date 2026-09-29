@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Wallet,
   Save,
   X,
   Building2,
@@ -11,7 +10,10 @@ import {
   Calendar,
   Sparkles,
   Landmark,
-  ArrowRight,
+  RotateCcw,
+  AlertTriangle,
+  CheckCircle2,
+  Wallet,
 } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import useAddPayment from "../hooks/useAddPayment";
@@ -34,10 +36,13 @@ export default function AddPayment({
     funds,
     loading,
     message,
-    effectiveRate,
+    messageTone,
     handleChange,
     handleFundChange,
-    handleBaseAmountChange,
+    handleFundAmountChange,
+    handleRateChange,
+    resetRate,
+    handleCreditAmountChange,
     submit,
     isPartner,
     isPurchase,
@@ -46,6 +51,7 @@ export default function AddPayment({
     isCustomer,
     isSupplier,
     isCollectorMode,
+    isInvoiceMode,
     t,
     money,
     availableCredit,
@@ -55,6 +61,14 @@ export default function AddPayment({
     isSalesReturn,
     showDatePicker,
     minDate,
+
+    selectedFund,
+    isForeign,
+    baseAmount,
+    fundAmount,
+    referenceRate,
+    rateChanged,
+    rateWarning,
   } = useAddPayment({
     isOpen,
     onClose,
@@ -129,7 +143,176 @@ export default function AddPayment({
     return t("screens.payments.partner");
   })();
 
-  const selectedFund = funds?.find((f) => f.id === Number(form.fund_id));
+  const fundCurrency = form.currency_code || form.currency_symbol || "";
+  const amountLabel = isOutflow
+    ? t("screens.payments.amountPaid", "Amount paid")
+    : t("screens.payments.amountReceived", "Amount received");
+
+  // ---- Amount block, by case ----
+
+  const fundAmountInput = (
+    <div>
+      <label className="text-sm font-bold text-[#1c2340]">{amountLabel}</label>
+      <div
+        className={`mt-1.5 flex items-center rounded-2xl border-2 bg-white transition focus-within:ring-4 focus-within:ring-[#4663ff]/10 ${finalRing}`}
+      >
+        <NumberInput
+          value={form.collected_amount}
+          onChange={handleFundAmountChange}
+          className="h-14 w-full min-w-0 flex-1 rounded-2xl bg-transparent px-4 text-2xl font-black tabular-nums text-[#1c2340] outline-none"
+          placeholder="0.00"
+        />
+        <span className="shrink-0 px-4 text-sm font-bold text-slate-500">
+          {fundCurrency}
+        </span>
+      </div>
+    </div>
+  );
+
+  const rateRow = (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold text-slate-500">
+            {t("screens.payments.exchangeRate", "Exchange rate")}
+          </span>
+          <span
+            dir="ltr"
+            className="flex items-center gap-1.5 text-sm font-bold text-[#1c2340]"
+          >
+            <span className="tabular-nums">{money(1)}</span>
+            <span className="text-slate-400">=</span>
+            <NumberInput
+              value={form.rate}
+              onChange={handleRateChange}
+              className={`h-9 w-28 rounded-lg border bg-white px-2 text-center text-sm font-bold tabular-nums outline-none focus:ring-4 ${
+                rateWarning
+                  ? "border-amber-400 focus:ring-amber-100"
+                  : "border-[#e9edfb] focus:border-[#4663ff] focus:ring-[#4663ff]/10"
+              }`}
+            />
+            <span>{fundCurrency}</span>
+          </span>
+        </div>
+
+        {rateChanged && (
+          <button
+            type="button"
+            onClick={resetRate}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+          >
+            <RotateCcw size={12} />
+            {t("screens.payments.resetRate", "Use fund rate")} (
+            <span dir="ltr" className="tabular-nums">
+              {referenceRate}
+            </span>
+            )
+          </button>
+        )}
+      </div>
+
+      {rateWarning && (
+        <p className="flex items-start gap-1.5 text-xs font-semibold text-amber-700">
+          <AlertTriangle size={13} className="mt-0.5 shrink-0" />
+          {t(
+            "screens.payments.rateDeviationWarning",
+            "This rate is more than 10% away from the fund rate. Check it before saving.",
+          )}
+        </p>
+      )}
+    </div>
+  );
+
+  const amountBlock = (() => {
+    // Credit: base typed directly, capped at available credit
+    if (useCredit) {
+      return (
+        <div>
+          <label className="text-sm font-bold text-[#1c2340]">
+            {t("screens.payments.amountFromCredit")}
+          </label>
+          <NumberInput
+            value={form.amount_in_base}
+            onChange={handleCreditAmountChange}
+            className={`mt-1.5 h-14 w-full rounded-2xl border-2 bg-white px-4 text-2xl font-black tabular-nums outline-none transition focus:ring-4 focus:ring-[#4663ff]/10 ${finalRing}`}
+            placeholder="0.00"
+            max={availableCredit}
+          />
+          <p className="mt-1.5 text-xs font-semibold text-emerald-600">
+            {t("screens.payments.creditCap")}: {money(availableCredit)}
+          </p>
+        </div>
+      );
+    }
+
+    if (!form.fund_id) {
+      return (
+        <div className="flex items-center gap-2 rounded-2xl border border-dashed border-[#dbe4ff] bg-white px-4 py-4 text-sm text-slate-500">
+          <Wallet size={16} className="shrink-0 text-slate-400" />
+          {t(
+            "screens.payments.selectFundToEnterAmount",
+            "Select a fund first — the amount is entered in that fund's currency.",
+          )}
+        </div>
+      );
+    }
+
+    // Invoice modes: the amount due is fixed. Same currency → nothing to
+    // type. Foreign → fund amount and rate are linked; edit either one.
+    if (isInvoiceMode) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-sm font-bold text-[#1c2340]">
+              {t("screens.payments.amountDue", "Amount due")}
+            </span>
+            <span
+              dir="ltr"
+              className={`text-2xl font-black tabular-nums ${finalText}`}
+            >
+              {money(baseAmount)}
+            </span>
+          </div>
+
+          {isForeign && (
+            <div className="space-y-3 border-t border-[#e9edfb] pt-4">
+              {fundAmountInput}
+              {rateRow}
+              <p className="text-xs text-slate-400">
+                {t(
+                  "screens.payments.linkedRateHint",
+                  "Change the amount or the rate — the other updates to match the amount due.",
+                )}
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Party modes: any amount. Fund amount + rate in, base derived.
+    return (
+      <div className="space-y-3">
+        {fundAmountInput}
+        {isForeign && (
+          <div className="space-y-3 rounded-xl bg-white p-3">
+            {rateRow}
+            <div className="flex items-baseline justify-between gap-3 border-t border-[#eef1ff] pt-3">
+              <span className="text-xs text-slate-500">
+                {t("screens.payments.recordedAs", "Recorded in the account as")}
+              </span>
+              <span
+                dir="ltr"
+                className="text-xl font-black tabular-nums text-[#1c2340]"
+              >
+                {money(baseAmount)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  })();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c2340]/60 backdrop-blur-sm p-4">
@@ -156,6 +339,7 @@ export default function AddPayment({
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="rounded-xl p-2 text-slate-400 transition hover:bg-white hover:text-slate-700"
           >
@@ -164,7 +348,7 @@ export default function AddPayment({
         </div>
 
         <div className="max-h-[70vh] space-y-5 overflow-y-auto px-6 py-5">
-          {/* Top row — party info + live amount summary, side by side */}
+          {/* Top row — party info + invoice total */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div
               className={`flex items-center gap-3 rounded-2xl border border-[#e9edfb] ${finalBg} p-4`}
@@ -175,9 +359,7 @@ export default function AddPayment({
                 {partyIcon}
               </span>
               <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                  {partyLabel}
-                </p>
+                <p className="text-xs font-bold text-slate-500">{partyLabel}</p>
                 <h3 className="truncate font-black text-[#1c2340]">
                   {partyName}
                 </h3>
@@ -201,7 +383,7 @@ export default function AddPayment({
                     : t("screens.payments.summaryReceiving")}
                 </span>
                 <span className={`text-lg font-black ${finalText}`}>
-                  {money(form.amount_in_base || 0)}
+                  {money(baseAmount)}
                 </span>
               </div>
             )}
@@ -241,10 +423,9 @@ export default function AddPayment({
             </div>
           )}
 
-          {/* Funding source — side by side when both options exist, so the
-              choice reads as "pick one of these two", not a stacked list */}
+          {/* Funding source */}
           <div>
-            <p className="mb-2 text-[11px] font-black uppercase tracking-wide text-[#4663ff]">
+            <p className="mb-2 text-xs font-black text-[#4663ff]">
               {t("screens.payments.paymentSource")}
             </p>
 
@@ -255,7 +436,7 @@ export default function AddPayment({
               <button
                 type="button"
                 onClick={() => useCredit && toggleUseCredit()}
-                className={`rounded-2xl border-2 p-3.5 text-left transition ${
+                className={`rounded-2xl border-2 p-3.5 text-start transition ${
                   !useCredit
                     ? "border-[#4663ff] bg-[#eef3ff]"
                     : "border-[#e9edfb] bg-white hover:border-[#b9c6ff]"
@@ -299,7 +480,7 @@ export default function AddPayment({
                 <button
                   type="button"
                   onClick={() => !useCredit && toggleUseCredit()}
-                  className={`rounded-2xl border-2 p-3.5 text-left transition ${
+                  className={`rounded-2xl border-2 p-3.5 text-start transition ${
                     useCredit
                       ? "border-emerald-400 bg-emerald-50"
                       : "border-dashed border-emerald-200 bg-emerald-50/40 hover:border-emerald-300"
@@ -337,88 +518,9 @@ export default function AddPayment({
             </div>
           </div>
 
-          {/* Amount block — the numbers get the most visual weight and room */}
+          {/* Amount */}
           <div className="rounded-2xl border border-[#e9edfb] bg-[#f8faff] p-4">
-            <label className="text-[11px] font-black uppercase tracking-wide text-slate-500">
-              {t(
-                useCredit
-                  ? "screens.payments.amountFromCredit"
-                  : "screens.payments.amountToReceive"
-              )}
-            </label>
-            <NumberInput
-              value={form.amount_in_base}
-              onChange={handleBaseAmountChange}
-              className={`mt-1.5 h-14 w-full rounded-2xl border-2 bg-white px-4 text-2xl font-black tabular-nums outline-none transition focus:ring-4 focus:ring-[#4663ff]/10 ${finalRing}`}
-              placeholder="0.00"
-              disabled={
-                !useCredit &&
-                (!form.fund_id ||
-                  isPurchase ||
-                  isSales ||
-                  isExpense ||
-                  isPurchaseReturn ||
-                  isSalesReturn)
-              }
-              max={useCredit ? availableCredit : null}
-            />
-            {useCredit && (
-              <p className="mt-1.5 text-xs font-semibold text-emerald-600">
-                {t("screens.payments.creditCap")}: {money(availableCredit)}
-              </p>
-            )}
-
-            {/* Currency conversion — horizontal, base -> collected side by
-                side with the rate breakdown underneath, so the two amounts
-                being compared sit on the same visual line */}
-            {!useCredit && form.fund_exchangeRate !== 1 && (
-              <div className="mt-4 rounded-2xl border border-dashed border-[#dbe4ff] bg-white p-3.5">
-                <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                  <div className="text-center">
-                    <p className="text-[10px] font-bold uppercase text-slate-400">
-                      {t("ui.total") /* base currency label context */}
-                    </p>
-                    <p className="mt-0.5 font-mono text-sm font-bold tabular-nums text-[#1c2340]">
-                      {money(form.amount_in_base)}
-                    </p>
-                  </div>
-                  <ArrowRight size={16} className="text-slate-300" />
-                  <div className="text-center">
-                    <label className="text-[10px] font-bold uppercase text-slate-400">
-                      {t("screens.payments.collected_paid_amount")}
-                    </label>
-                    <div className="relative mt-0.5">
-                      <NumberInput
-                        value={form.collected_amount}
-                        onChange={(val) =>
-                          handleChange("collected_amount", val)
-                        }
-                        className="h-9 w-full rounded-lg border border-[#e9edfb] bg-white px-2 pr-8 text-center font-mono text-sm font-bold tabular-nums outline-none focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10 disabled:bg-slate-100"
-                        disabled={!form.fund_id}
-                      />
-                      <Wallet
-                        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-350"
-                        size={14}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-3 flex justify-between border-t border-[#eef1ff] pt-2 text-xs text-slate-500">
-                  <span>
-                    {t("screens.ledger.fundRate")}:{" "}
-                    <strong className="text-[#1c2340]">
-                      {form.fund_exchangeRate}
-                    </strong>
-                  </span>
-                  <span>
-                    {t("screens.ledger.effectiveRate")}:{" "}
-                    <strong className="text-[#4663ff]">
-                      {effectiveRate.toFixed(4)}
-                    </strong>
-                  </span>
-                </div>
-              </div>
-            )}
+            {amountBlock}
           </div>
 
           {/* Date + note side by side on wider screens */}
@@ -461,7 +563,18 @@ export default function AddPayment({
           </div>
 
           {message && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-center text-sm font-semibold text-amber-700">
+            <div
+              className={`flex items-center justify-center gap-1.5 rounded-2xl border p-3 text-sm font-semibold ${
+                messageTone === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-amber-200 bg-amber-50 text-amber-700"
+              }`}
+            >
+              {messageTone === "success" ? (
+                <CheckCircle2 size={15} />
+              ) : (
+                <AlertTriangle size={15} />
+              )}
               {message}
             </div>
           )}
@@ -475,11 +588,25 @@ export default function AddPayment({
                 ? t("screens.payments.summaryPaying")
                 : t("screens.payments.summaryReceiving")}
             </span>
-            <span className={`text-lg font-black ${finalText}`}>
-              {money(form.amount_in_base || 0)}
+            <span className="text-end">
+              <span
+                dir="ltr"
+                className={`block text-lg font-black tabular-nums ${finalText}`}
+              >
+                {money(baseAmount)}
+              </span>
+              {isForeign && fundAmount > 0 && (
+                <span
+                  dir="ltr"
+                  className="block text-xs font-semibold tabular-nums text-slate-500"
+                >
+                  {formatMoney(fundAmount, selectedFund)}
+                </span>
+              )}
             </span>
           </div>
           <button
+            type="button"
             onClick={submit}
             disabled={loading}
             className={`flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-black text-white shadow-lg transition disabled:cursor-not-allowed disabled:opacity-60 ${finalSolid}`}
