@@ -9,6 +9,8 @@ import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import BackButton from "../../../../Global/BackButton";
 import TagList from "../../../Tags/components/TagList";
+import useLatinMode from "../../../../Global/useLatinMode";
+import { toEnteredLine } from "../../../../Global/printLine";
 
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
@@ -33,6 +35,7 @@ export default function SalesQuotationView() {
   const [loading, setLoading] = useState(true);
   const [tags, setTags] = useState([]);
   const { money } = usePrimaryCurrency();
+  const { pick } = useLatinMode();
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSavingPdf, setIsSavingPdf] = useState(false);
@@ -266,6 +269,7 @@ export default function SalesQuotationView() {
                           Number(item.total || 0) - Number(item.discount || 0);
                         const lineTotal =
                           afterDiscount + Number(item.taxValue || 0);
+                        const line = toEnteredLine(item, pick);
 
                         return (
                           <tr key={item.id} className="align-top">
@@ -277,10 +281,10 @@ export default function SalesQuotationView() {
                                     type={"products"}
                                     variant="light"
                                   >
-                                    {item.product_name || item.name || "-"}
+                                    {line.productName || "-"}
                                   </GoTo>
                                 ) : (
-                                  item.product_name || item.name || "-"
+                                  line.productName || "-"
                                 )}
                                 {item.product_code && (
                                   <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
@@ -291,7 +295,7 @@ export default function SalesQuotationView() {
                               {isNonBaseUnit && (
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
-                                  {item.unit_name}
+                                  {line.unitName}
                                 </div>
                               )}
                               {item.description && (
@@ -305,15 +309,20 @@ export default function SalesQuotationView() {
                               )}
                             </td>
                             <td className="p-3 text-right tabular-nums text-slate-700">
-                              {Number(item.quantity || 0)}
-                              {item.unit_name && (
+                              {line.quantity}
+                              {line.unitName && (
                                 <span className="ml-1 text-[11px] text-slate-400">
-                                  {item.unit_name}
+                                  {line.unitName}
+                                </span>
+                              )}
+                              {isNonBaseUnit && (
+                                <span className="ml-1 text-[11px] text-slate-400">
+                                  ({line.baseQuantity})
                                 </span>
                               )}
                             </td>
                             <td className="p-3 text-right tabular-nums text-slate-700">
-                              {money(item.price)}
+                              {money(line.price)}
                             </td>
                             <td className="p-3 text-right tabular-nums">
                               {Number(item.discount || 0) > 0 ? (
