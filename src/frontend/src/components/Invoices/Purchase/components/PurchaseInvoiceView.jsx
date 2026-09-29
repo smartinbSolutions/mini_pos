@@ -17,6 +17,7 @@ import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import BackButton from "../../../../Global/BackButton";
 import TagList from "../../../Tags/components/TagList";
+import useLatinMode from "../../../../Global/useLatinMode";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-emerald-50", text: "text-emerald-600" },
@@ -40,6 +41,7 @@ export default function PurchaseInvoiceView() {
   const [loading, setLoading] = useState(true);
   const [tags, setTags] = useState([]);
   const { money } = usePrimaryCurrency();
+  const { pick } = useLatinMode();
 
   useEffect(() => {
     let cancelled = false;
@@ -273,6 +275,7 @@ export default function PurchaseInvoiceView() {
                           Number(item.total || 0) - Number(item.discount || 0);
                         const lineTotal =
                           afterDiscount + Number(item.taxValue || 0);
+                        const line = toEnteredLine(item, pick);
 
                         return (
                           <tr key={item.id} className="align-top">
@@ -283,7 +286,7 @@ export default function PurchaseInvoiceView() {
                                   type={"products"}
                                   variant="light"
                                 >
-                                  {item.product_name || item.name || "-"}
+                                  {line.productName || "-"}
                                 </GoTo>
                               </div>
                               {item.product_code && (
@@ -295,11 +298,8 @@ export default function PurchaseInvoiceView() {
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
                                   {t("screens.invoices.unitConversionDetail", {
-                                    enteredQty: (
-                                      Number(item.quantity) /
-                                      Number(item.unit_conversion_factor)
-                                    ).toFixed(2),
-                                    unitName: item.unit_name,
+                                    enteredQty: line.quantity,
+                                    unitName: line.unitName,
                                     factor: item.unit_conversion_factor,
                                     baseQty: item.quantity,
                                   })}
@@ -316,13 +316,10 @@ export default function PurchaseInvoiceView() {
                               )}
                             </td>
                             <td className="p-3 text-center font-semibold tabular-nums text-amber-700">
-                              {isNonBaseUnit
-                                ? Number(item.quantity || 0) /
-                                  Number(item.unit_conversion_factor || 1)
-                                : Number(item.quantity || 0)}
-                              {item.unit_name && (
+                              {line.quantity}
+                              {line.unitName && (
                                 <span className="ml-1 text-[11px] font-normal text-slate-400">
-                                  {item.unit_name}
+                                  {line.unitName}
                                 </span>
                               )}
                               {isNonBaseUnit && (
@@ -332,7 +329,7 @@ export default function PurchaseInvoiceView() {
                               )}
                             </td>
                             <td className="p-3 text-center tabular-nums text-slate-700">
-                              {money(item.price)}
+                              {money(line.price)}
                             </td>
                             <td className="p-3 text-center tabular-nums">
                               {Number(item.discount || 0) > 0 ? (

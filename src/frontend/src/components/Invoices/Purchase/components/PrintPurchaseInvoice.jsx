@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { toEnteredLine } from "../../../../Global/printLine";
+import { pickLatin } from "../../../../Global/useLatinMode";
 
 export default function PrintPurchaseInvoice() {
   const { t, i18n } = useTranslation();
@@ -28,6 +30,11 @@ export default function PrintPurchaseInvoice() {
   }, [id]);
 
   if (!invoice) return null;
+
+  const isLatin =
+    Boolean(company?.language) &&
+    String(i18n.language || "").split("-")[0] !== company.language;
+  const pick = (latin, original) => pickLatin(isLatin, latin, original);
 
   const items = invoice.items || [];
   const hasAnyTax =
@@ -158,11 +165,12 @@ export default function PrintPurchaseInvoice() {
               const afterDiscount =
                 Number(item.total || 0) - Number(item.discount || 0);
               const lineTotal = afterDiscount + Number(item.taxValue || 0);
+              const line = toEnteredLine(item, pick);
 
               return (
                 <tr key={item.id} className="border-b border-[#E5E5E2]">
                   <td className="p-2">
-                    {item.product_name || item.name}
+                    {line.productName}
                     {item.product_code && (
                       <div className="text-[10px] text-[#6B6F76]">
                         #{item.product_code}
@@ -175,10 +183,15 @@ export default function PrintPurchaseInvoice() {
                     )}
                   </td>
                   <td className="p-2 font-mono tabular-nums">
-                    {item.quantity} {item.unit_name}
+                    {line.quantity} {line.unitName}
+                    {line.factor !== 1 && (
+                      <div className="text-[10px] text-[#6B6F76]">
+                        = {line.baseQuantity}
+                      </div>
+                    )}
                   </td>
                   <td className="p-2 font-mono tabular-nums">
-                    {money(item.price)}
+                    {money(line.price)}
                   </td>
                   {hasAnyDiscount && (
                     <td className="p-2 font-mono tabular-nums text-[#9B3B3B]">

@@ -16,6 +16,8 @@ import HoverTooltip from "../../../../Global/HoverTooltip";
 import { useAuth } from "../../../../Global/AuthContext";
 import BackButton from "../../../../Global/BackButton";
 import TagList from "../../../Tags/components/TagList";
+import useLatinMode from "../../../../Global/useLatinMode";
+import { toEnteredLine } from "../../../../Global/printLine";
 
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
@@ -33,6 +35,7 @@ export default function SalesInvoiceView() {
   const [invoice, setInvoice] = useState(null);
   const [loading, setLoading] = useState(true);
   const { money } = usePrimaryCurrency();
+  const { pick } = useLatinMode();
   const [tags, setTags] = useState([]);
   const api = window.api;
 
@@ -276,6 +279,7 @@ export default function SalesInvoiceView() {
                           Number(item.total || 0) - Number(item.discount || 0);
                         const lineTotal =
                           afterDiscount + Number(item.taxValue || 0);
+                        const line = toEnteredLine(item, pick);
 
                         return (
                           <tr key={item.id} className="align-top">
@@ -286,7 +290,7 @@ export default function SalesInvoiceView() {
                                   type={"products"}
                                   variant="light"
                                 >
-                                  {item.product_name || item.name || "-"}
+                                  {line.productName || "-"}
                                 </GoTo>
                                 {item.product_code && (
                                   <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
@@ -297,7 +301,7 @@ export default function SalesInvoiceView() {
                               {isNonBaseUnit && (
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
-                                  {item.unit_name}
+                                  {line.unitName}
                                 </div>
                               )}
                               {item.returned_quantity > 0 && (
@@ -319,15 +323,20 @@ export default function SalesInvoiceView() {
                               )}
                             </td>
                             <td className="p-3 text-right tabular-nums text-slate-700">
-                              {Number(item.quantity || 0)}
-                              {item.unit_name && (
+                              {line.quantity}
+                              {line.unitName && (
                                 <span className="ml-1 text-[11px] text-slate-400">
-                                  {item.unit_name}
+                                  {line.unitName}
+                                </span>
+                              )}
+                              {isNonBaseUnit && (
+                                <span className="ml-1 text-[11px] text-slate-400">
+                                  ({line.baseQuantity})
                                 </span>
                               )}
                             </td>
                             <td className="p-3 text-right tabular-nums text-slate-700">
-                              {money(item.price)}
+                              {money(line.price)}
                             </td>
                             <td className="p-3 text-right tabular-nums">
                               {Number(item.discount || 0) > 0 ? (
@@ -599,7 +608,10 @@ export default function SalesInvoiceView() {
                         className="flex items-center justify-between rounded-lg bg-[#f6f8fd] px-3 py-2 text-sm"
                       >
                         <span className="text-slate-600">
-                          {item.product_name || item.name || "-"}
+                          {pick(
+                            item.product_latin_name,
+                            item.product_name || item.name,
+                          ) || "-"}
                         </span>
                         <div className="text-right">
                           <span

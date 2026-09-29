@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import attachLatinNames from "../utils/attachLatinNames";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -655,9 +656,32 @@ export default function registerPurchaseReturnIPC() {
 
     if (!returnInvoice) return null;
 
-    const items = db
-      .prepare(
-        `
+    // const items = db
+    //   .prepare(
+    //     `
+    // SELECT
+    //   pri.*,
+    //   p.name AS name,
+    //   t.name AS tax_name
+
+    // FROM purchase_return_items pri
+
+    // LEFT JOIN products p
+    //   ON p.id = pri.product_id
+
+    // LEFT JOIN taxes t
+    //   ON t.id = pri.tax_id
+
+    // WHERE pri.return_id = ?
+    // `,
+    //   )
+    //   .all(id);
+
+    const items = attachLatinNames(
+      db,
+      db
+        .prepare(
+          `
     SELECT 
       pri.*,
       p.name AS name,
@@ -673,8 +697,9 @@ export default function registerPurchaseReturnIPC() {
 
     WHERE pri.return_id = ?
     `,
-      )
-      .all(id);
+        )
+        .all(id),
+    );
 
     // ---- Invoice-level taxes reapplied to this return, one row per tax ----
     const taxes = db

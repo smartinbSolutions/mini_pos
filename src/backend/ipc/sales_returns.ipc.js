@@ -8,6 +8,7 @@ import {
   buildDefaultReturnNote,
 } from "../utils/helpers";
 import db from "../db";
+import attachLatinNames from "../utils/attachLatinNames";
 
 export default function registerSalesReturnsIpc() {
   ipcMain.handle("create-sales-return", (event, data) => {
@@ -641,9 +642,26 @@ export default function registerSalesReturnsIpc() {
 
     if (!returnInvoice) return null;
 
-    const items = db
-      .prepare(
-        `
+    // const items = db
+    //   .prepare(
+    //     `
+    // SELECT
+    //   sri.*,
+    //   p.name AS name,
+    //   t.name AS tax_name
+    // FROM sales_return_items sri
+    // LEFT JOIN products p ON p.id = sri.product_id
+    // LEFT JOIN taxes t ON t.id = sri.tax_id
+    // WHERE sri.return_id = ?
+    // `,
+    //   )
+    //   .all(id);
+
+    const items = attachLatinNames(
+      db,
+      db
+        .prepare(
+          `
     SELECT
       sri.*,
       p.name AS name,
@@ -653,8 +671,9 @@ export default function registerSalesReturnsIpc() {
     LEFT JOIN taxes t ON t.id = sri.tax_id
     WHERE sri.return_id = ?
     `,
-      )
-      .all(id);
+        )
+        .all(id),
+    );
 
     // ---- Invoice-level taxes reapplied to this return, one row per tax ----
     const taxes = db

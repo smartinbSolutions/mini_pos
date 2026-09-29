@@ -212,6 +212,7 @@ CREATE TABLE IF NOT EXISTS product_units (
 )
 `,
 ).run();
+ensureColumn("product_units", "latin_name", "TEXT");
 
 db.prepare(
   `

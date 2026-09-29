@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import attachLatinNames from "../utils/attachLatinNames";
 import { buildDefaultInvoiceName } from "../utils/helpers";
 
 export default function registerSalesQuotationsIPC() {
@@ -693,9 +694,26 @@ export default function registerSalesQuotationsIPC() {
     // LEFT JOIN products — product_id may be null, or point to a product
     // that no longer exists; p.name simply comes back null in that case,
     // and product_name (the snapshot) is what the UI should fall back to.
-    const items = db
-      .prepare(
-        `
+    // const items = db
+    //   .prepare(
+    //     `
+    //   SELECT
+    //     qi.*,
+    //     p.name,
+    //     t.name AS tax_name
+    //   FROM sales_quotation_items qi
+    //   LEFT JOIN products p ON p.id = qi.product_id
+    //   LEFT JOIN taxes t ON t.id = qi.tax_id
+    //   WHERE qi.quotation_id = ?
+    //   `,
+    //   )
+    //   .all(id);
+
+    const items = attachLatinNames(
+      db,
+      db
+        .prepare(
+          `
       SELECT
         qi.*,
         p.name,
@@ -705,8 +723,9 @@ export default function registerSalesQuotationsIPC() {
       LEFT JOIN taxes t ON t.id = qi.tax_id
       WHERE qi.quotation_id = ?
       `,
-      )
-      .all(id);
+        )
+        .all(id),
+    );
 
     const taxes = db
       .prepare(

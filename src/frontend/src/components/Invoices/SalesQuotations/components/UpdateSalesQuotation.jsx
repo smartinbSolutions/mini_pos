@@ -1,5 +1,5 @@
 // UpdateSalesQuotation.jsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -28,6 +28,7 @@ import ProductQuickAddModal from "../../../Products/components/ProductQuickAddMo
 import NumberInput from "../../../../Global/NumberInput";
 import CustomerFormModal from "../../Sales/components/CustomerFormModal";
 import TagPickerField from "../../../Tags/components/TagPickerField";
+import useLatinMode from "../../../../Global/useLatinMode";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -143,6 +144,25 @@ export default function UpdateSalesQuotation() {
   const { submitDraft, setDraft, draft, actionError } = useCustomerList();
 
   const { money } = usePrimaryCurrency();
+
+  const { pick } = useLatinMode();
+
+  // Stable reference — SearchableSelect lists getOptionLabel in its effect deps.
+  const productOptionLabel = useCallback(
+    (p) => pick(p.latinName, p.name),
+    [pick],
+  );
+
+  // Base unit → Latin from the unit table; selling unit → its own Latin name.
+  const unitOptionLabel = (item, u) =>
+    pick(u.is_base ? item.base_unit_latin_name : u.latin_name, u.unit_name);
+
+  // The unit currently chosen on a row, for places that show it as text.
+  const selectedUnitLabel = (item) => {
+    const u = item.available_units?.find((x) => x.id === item.unit_id);
+    return u ? unitOptionLabel(item, u) : item.unit_name;
+  };
+
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
   const [revealedItemDiscounts, setRevealedItemDiscounts] = useState(
@@ -405,8 +425,12 @@ export default function UpdateSalesQuotation() {
                           <SearchableSelect
                             placeholder={t("ui.productNameOrSelect")}
                             options={products}
+                            getOptionLabel={productOptionLabel}
                             selectedValue={item.product_id}
-                            selectedLabel={item.product_name}
+                            selectedLabel={pick(
+                              item.latin_name,
+                              item.product_name,
+                            )}
                             onChange={(e) => {
                               updateItem(index, "product_id", e.id);
                             }}
@@ -484,7 +508,7 @@ export default function UpdateSalesQuotation() {
                             >
                               {item.available_units.map((u) => (
                                 <option key={u.id} value={u.id}>
-                                  {u.unit_name}
+                                  {unitOptionLabel(item, u)}
                                 </option>
                               ))}
                             </select>
@@ -563,7 +587,7 @@ export default function UpdateSalesQuotation() {
                           <Tag size={11} className="shrink-0 text-slate-400" />
                           {t("screens.invoices.unitConversionDetail", {
                             enteredQty: item.entered_quantity,
-                            unitName: item.unit_name,
+                            unitName: selectedUnitLabel(item),
                             factor: item.unit_conversion_factor,
                             baseQty: item.quantity,
                           })}

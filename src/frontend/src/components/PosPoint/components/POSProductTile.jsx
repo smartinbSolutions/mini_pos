@@ -1,11 +1,13 @@
 import { Package2, Percent, Tag } from "lucide-react";
 import { getAssetUrl } from "../../../Global/assetUrl";
+import { pickLatin } from "../../../Global/useLatinMode";
 
 export default function POSProductTile({
   product,
   outOfStock,
   onClick,
   money,
+  isLatin,
   formatNumber,
   t,
 }) {
@@ -14,11 +16,28 @@ export default function POSProductTile({
   const priceWithTax = hasTax
     ? Number(product.price || 0) * (1 + taxRate / 100)
     : Number(product.price || 0);
+  const unitName = pickLatin(
+    isLatin,
+    product.unit_latin_name,
+    product.unit_name,
+  );
+  const baseUnitName = pickLatin(
+    isLatin,
+    product.base_unit_latin_name,
+    product.base_unit_name,
+  );
+
+  const displayName =
+    isLatin && product.latin_name
+      ? product.is_base
+        ? product.latin_name
+        : `${product.latin_name} (${unitName})`
+      : product.name;
 
   const unitLabel = !product.is_base
     ? t("screens.pos.unitOfBase", "{{unit}} of {{baseUnit}}", {
-        unit: product.unit_name,
-        baseUnit: product.base_unit_name,
+        unit: unitName,
+        baseUnit: baseUnitName,
       })
     : null;
 
@@ -38,7 +57,7 @@ export default function POSProductTile({
         {product.logo ? (
           <img
             src={getAssetUrl(product.logo)}
-            alt={product.name || t("ui.product")}
+            alt={displayName || t("ui.product")}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -58,8 +77,8 @@ export default function POSProductTile({
                   {
                     unitLabel,
                     factor: formatNumber(product.conversion_factor || 1, 0),
-                    baseUnit: product.base_unit_name,
-                  }
+                    baseUnit: baseUnitName,
+                  },
                 )}
               </p>
             )}
@@ -76,7 +95,7 @@ export default function POSProductTile({
       {/* BODY */}
       <div className="p-3">
         <h3 className="truncate text-sm font-black text-stone-950">
-          {product.name || t("ui.unnamedProduct")}
+          {displayName || t("ui.unnamedProduct")}
         </h3>
 
         {/* PRICE — the only element that needs forced LTR, since it's a

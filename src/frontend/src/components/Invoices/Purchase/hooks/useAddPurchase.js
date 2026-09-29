@@ -6,6 +6,8 @@ import { useAuth } from "../../../../Global/AuthContext";
 const emptyItem = {
   product_id: "",
   name: "",
+  latin_name: "",
+  base_unit_latin_name: "",
   code: "",
   entered_quantity: 1,
   entered_price: 0,
@@ -161,6 +163,8 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
           ...current,
           product_id: fullProduct.id,
           name: fullProduct.name,
+          latin_name: fullProduct.latinName || "",
+          base_unit_latin_name: fullProduct.unit_latin_name || "",
           code: fullProduct.code || "",
           available_units: productUnits,
           unit_id: baseUnit?.id ?? null,

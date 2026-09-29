@@ -217,6 +217,7 @@ export default function ProductFormPage() {
           .map((u) => ({
             id: u.id,
             unit_name: u.unit_name,
+            latin_name: u.latin_name || "",
             conversion_factor: u.conversion_factor,
             sale_price: u.sale_price,
             barcode: u.barcode || "",
@@ -265,7 +266,13 @@ export default function ProductFormPage() {
       ...current,
       productUnits: [
         ...current.productUnits,
-        { unit_name: "", conversion_factor: "", sale_price: "", barcode: "" },
+        {
+          unit_name: "",
+          latin_name: "",
+          conversion_factor: "",
+          sale_price: "",
+          barcode: "",
+        },
       ],
     }));
   };
@@ -355,6 +362,7 @@ export default function ProductFormPage() {
       .map((u) => ({
         ...(u.id ? { id: u.id } : {}),
         unit_name: u.unit_name.trim(),
+        latin_name: String(u.latin_name || "").trim(),
         conversion_factor: Number(u.conversion_factor),
         sale_price: Number(u.sale_price || 0),
         barcode: String(u.barcode || "").trim(),
@@ -770,7 +778,7 @@ export default function ProductFormPage() {
                         key={unit.id ? `id-${unit.id}` : `new-${index}`}
                         className="rounded-xl bg-slate-50/60 p-1.5"
                       >
-                        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-1.5">
+                        <div className="grid  grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-1.5">
                           <input
                             value={unit.unit_name}
                             onChange={(event) =>
@@ -783,6 +791,19 @@ export default function ProductFormPage() {
                             placeholder={t(
                               "screens.products.unitNamePlaceholder",
                             )}
+                            className={inputClass}
+                          />
+
+                          <input
+                            value={unit.latin_name || ""}
+                            onChange={(event) =>
+                              updateProductUnit(
+                                index,
+                                "latin_name",
+                                event.target.value,
+                              )
+                            }
+                            placeholder={t("ui.latinName")}
                             className={inputClass}
                           />
 

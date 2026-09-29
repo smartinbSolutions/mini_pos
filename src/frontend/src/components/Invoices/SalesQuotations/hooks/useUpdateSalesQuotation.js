@@ -48,7 +48,7 @@ function recalcItem(item) {
 // Reconstructs entered_quantity/entered_price from stored base-unit
 // quantity/price + factor — inverse of recalcItem, same as invoices.
 // product_id may be null here (typed-only line), unlike invoices.
-function toEditableItem(raw, availableUnits) {
+function toEditableItem(raw, availableUnits, fullProduct) {
   const factor = Number(raw.unit_conversion_factor || 1);
   const baseQuantity = Number(raw.quantity || 0);
   const basePrice = Number(raw.price || 0);
@@ -68,6 +68,8 @@ function toEditableItem(raw, availableUnits) {
     id: raw.id,
     product_id: raw.product_id,
     product_name: raw.name || raw.product_name || "",
+    latin_name: fullProduct?.latinName || "",
+    base_unit_latin_name: fullProduct?.unit_latin_name || "",
     product_code: raw.product_code || "",
     entered_quantity: enteredQuantity,
     entered_price: enteredPrice,
@@ -162,10 +164,17 @@ export default function useUpdateSalesQuotation() {
       const unitsByProduct = new Map(
         fullProducts.filter(Boolean).map((p) => [p.id, p.productUnits || []]),
       );
+      const productsById = new Map(
+        fullProducts.filter(Boolean).map((p) => [p.id, p]),
+      );
 
       setItems(
         rawItems.map((raw) =>
-          toEditableItem(raw, unitsByProduct.get(raw.product_id)),
+          toEditableItem(
+            raw,
+            unitsByProduct.get(raw.product_id),
+            productsById.get(raw.product_id),
+          ),
         ),
       );
 
@@ -261,6 +270,8 @@ export default function useUpdateSalesQuotation() {
           ...current,
           product_id: fullProduct.id,
           product_name: fullProduct.name,
+          latin_name: fullProduct.latinName || "",
+          base_unit_latin_name: fullProduct.unit_latin_name || "",
           product_code: fullProduct.code || "",
           available_units: productUnits,
           unit_id: baseUnit?.id ?? null,
@@ -288,6 +299,8 @@ export default function useUpdateSalesQuotation() {
         ...copy[index],
         product_id: null,
         product_name: name,
+        latin_name: "",
+        base_unit_latin_name: "",
         product_code: "",
         available_units: [],
         unit_id: null,

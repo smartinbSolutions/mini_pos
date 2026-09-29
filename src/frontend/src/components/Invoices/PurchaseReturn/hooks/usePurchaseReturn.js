@@ -43,7 +43,9 @@ export default function usePurchaseReturn() {
             unit_conversion_factor: factor,
             available_unit_quantity:
               factor > 0
-                ? Number(item.available_quantity || 0) / factor
+                ? Math.round(
+                    (Number(item.available_quantity || 0) / factor) * 1e4,
+                  ) / 1e4
                 : Number(item.available_quantity || 0),
             returnUnitQuantity: 0,
           };

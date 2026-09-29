@@ -7,6 +7,7 @@ import {
   receiptLabels,
   getReceiptLanguage,
 } from "../services/receiptPrinter";
+import attachLatinNames from "../utils/attachLatinNames";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -701,9 +702,74 @@ export default function registerSalesInvoiceIPC() {
 
     if (!invoice) return null;
 
-    const items = db
-      .prepare(
-        `
+    // const items = db
+    //   .prepare(
+    //     `
+    // SELECT
+    //   si.*,
+    //   p.name,
+    //   t.name AS tax_name,
+
+    //   COALESCE(r.returned_quantity, 0) AS returned_quantity,
+
+    //   (
+    //     si.quantity - COALESCE(r.returned_quantity, 0)
+    //   ) AS available_quantity,
+
+    //   (
+    //     (si.quantity - COALESCE(r.returned_quantity, 0))
+    //     * (
+    //         (si.price - (si.discount / NULLIF(si.quantity, 0)))
+    //         - si.buyingPrice
+    //       )
+    //   ) AS item_profit,
+
+    //   (
+    //     (si.price - (si.discount / NULLIF(si.quantity, 0)))
+    //     - si.buyingPrice
+    //   ) AS item_profit_per_unit,
+
+    //   CASE
+    //     WHEN si.price > 0 THEN
+    //       ROUND(
+    //         (
+    //           (
+    //             (si.price - (si.discount / NULLIF(si.quantity, 0)))
+    //             - si.buyingPrice
+    //           ) / si.price
+    //         ) * 100,
+    //         2
+    //       )
+    //     ELSE 0
+    //   END AS item_margin_percent
+
+    // FROM sales_invoice_items si
+
+    // LEFT JOIN products p
+    // ON p.id = si.product_id
+
+    // LEFT JOIN taxes t
+    // ON t.id = si.tax_id
+
+    // LEFT JOIN (
+    // SELECT
+    //   sales_invoice_item_id,
+    //   SUM(quantity) AS returned_quantity
+    // FROM sales_return_items
+    // GROUP BY sales_invoice_item_id
+    // ) r
+    // ON r.sales_invoice_item_id = si.id
+
+    // WHERE si.invoice_id = ?
+    // `,
+    //   )
+    //   .all(id);
+
+    const items = attachLatinNames(
+      db,
+      db
+        .prepare(
+          `
     SELECT
       si.*,
       p.name,
@@ -761,8 +827,9 @@ export default function registerSalesInvoiceIPC() {
   
     WHERE si.invoice_id = ?
     `,
-      )
-      .all(id);
+        )
+        .all(id),
+    );
 
     // ---- Invoice-level taxes, one row per applied tax ----
     const taxes = db

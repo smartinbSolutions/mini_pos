@@ -24,10 +24,13 @@ import { Link } from "react-router-dom";
 import DailySummaryModal from "./DailySummary/DailySummaryModal";
 import POSProductTile from "./POSProductTile";
 import POSCart from "./POSCart";
+import useLatinMode from "../../../Global/useLatinMode";
 
 export default function POSSystem() {
   const { t, i18n } = useTranslation();
   const isRtl = i18n.dir() === "rtl";
+  const { isLatin } = useLatinMode();
+
   const { user, isAdmin, logout } = useAuth();
 
   const [currentWeight, setCurrentWeight] = useState(0);
@@ -437,6 +440,7 @@ export default function POSSystem() {
                       key={product.id}
                       product={product}
                       outOfStock={outOfStock}
+                      isLatin={isLatin}
                       money={money}
                       formatNumber={formatNumber}
                       t={t}

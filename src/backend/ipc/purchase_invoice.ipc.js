@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import attachLatinNames from "../utils/attachLatinNames";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -690,9 +691,49 @@ export default function registerPurchaseInvoicesIPC() {
 
     if (!invoice) return null;
 
-    const items = db
-      .prepare(
-        `
+    //   const items = db
+    //     .prepare(
+    //       `
+    // SELECT
+    //   pii.*,
+    //   p.name AS name,
+    //   t.name AS tax_name,
+
+    //   COALESCE(r.returned_quantity, 0) AS returned_quantity,
+
+    //   (
+    //     pii.quantity - COALESCE(r.returned_quantity, 0)
+    //   ) AS available_quantity
+
+    // FROM purchase_invoice_items pii
+
+    // LEFT JOIN products p
+    //   ON p.id = pii.product_id
+
+    // LEFT JOIN taxes t
+    //   ON t.id = pii.tax_id
+
+    // LEFT JOIN (
+    //   SELECT
+    //     pri.purchase_invoice_item_id,
+    //     SUM(pri.quantity) AS returned_quantity
+    //   FROM purchase_return_items pri
+    //   INNER JOIN purchase_returns pr
+    //     ON pr.id = pri.return_id
+    //   GROUP BY pri.purchase_invoice_item_id
+    // ) r
+    //   ON r.purchase_invoice_item_id = pii.id
+
+    // WHERE pii.invoice_id = ?
+    // `,
+    //     )
+    //     .all(id);
+
+    const items = attachLatinNames(
+      db,
+      db
+        .prepare(
+          `
   SELECT
     pii.*,
     p.name AS name,
@@ -725,8 +766,9 @@ export default function registerPurchaseInvoicesIPC() {
 
   WHERE pii.invoice_id = ?
   `,
-      )
-      .all(id);
+        )
+        .all(id),
+    );
 
     // ---- Invoice-level taxes, one row per applied tax ----
     const taxes = db

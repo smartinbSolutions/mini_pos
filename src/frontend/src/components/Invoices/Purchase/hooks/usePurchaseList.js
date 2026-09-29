@@ -29,7 +29,7 @@ const usePurchaseList = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  v;
+
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 

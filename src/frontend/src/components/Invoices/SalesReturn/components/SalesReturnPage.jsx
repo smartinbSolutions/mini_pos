@@ -171,7 +171,9 @@ export default function SalesReturnPage() {
                   const factor = Number(item.unit_conversion_factor || 1);
                   const soldInUnit =
                     factor > 0
-                      ? Number(item.quantity || 0) / factor
+                      ? Math.round(
+                          (Number(item.quantity || 0) / factor) * 1e4,
+                        ) / 1e4
                       : Number(item.quantity || 0);
                   const lineBaseQty =
                     Number(item.returnUnitQuantity || 0) * factor;
@@ -191,8 +193,9 @@ export default function SalesReturnPage() {
                             </p>
                           )}
                           <p className="text-[11px] font-semibold text-slate-400">
-                            {t("ui.soldQty")}: {soldInUnit} {unitLabel} · ·{" "}
-                            {t("ui.price")}: {money(item.price)}
+                            {t("ui.soldQty")}: {soldInUnit} {unitLabel} ·{" "}
+                            {t("ui.price")}:{" "}
+                            {money(Number(item.price || 0) * factor)}
                             {item.tax_rate > 0 &&
                               ` · ${t("ui.tax")} ${item.tax_rate}%`}
                             {item.discount_rate > 0 &&

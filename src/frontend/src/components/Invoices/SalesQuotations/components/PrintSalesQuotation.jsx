@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import { toEnteredLine } from "../../../../Global/printLine";
+import { pickLatin } from "../../../../Global/useLatinMode";
 
 export default function PrintSalesQuotation() {
   const { t, i18n } = useTranslation();
@@ -30,6 +32,11 @@ export default function PrintSalesQuotation() {
 
   if (!quotation) return null;
 
+  const isLatin =
+    Boolean(company?.language) &&
+    String(i18n.language || "").split("-")[0] !== company.language;
+  const pick = (latin, original) => pickLatin(isLatin, latin, original);
+
   const items = quotation.items || [];
   const hasAnyTax =
     items.some((i) => Number(i.tax_rate) > 0) || Number(quotation.taxValue) > 0;
@@ -38,7 +45,7 @@ export default function PrintSalesQuotation() {
 
   const itemDiscountTotal = items.reduce(
     (sum, item) => sum + Number(item.discount || 0),
-    0
+    0,
   );
   const hasAnyCode = items.some((i) => i.product_code);
   // Group item-level tax by tax_id, same treatment as quotation.taxes[]
@@ -56,7 +63,7 @@ export default function PrintSalesQuotation() {
       }
       groups[key].tax_value += Number(item.taxValue || 0);
       return groups;
-    }, {})
+    }, {}),
   );
 
   const itemTaxTotal = itemTaxGroups.reduce((sum, g) => sum + g.tax_value, 0);
@@ -169,6 +176,7 @@ export default function PrintSalesQuotation() {
                 Number(item.total || 0) - Number(item.discount || 0);
               const lineTotal =
                 afterDiscount + Number(item.tax_value ?? item.taxValue ?? 0);
+              const line = toEnteredLine(item, pick);
 
               return (
                 <tr key={item.id} className="border-b border-[#E5E5E2]">
@@ -178,7 +186,7 @@ export default function PrintSalesQuotation() {
                     </td>
                   )}
                   <td className="p-2">
-                    {item.product_name || item.name}
+                    {line.productName}
                     {item.description && (
                       <div className="text-[10px] text-[#6B6F76] whitespace-pre-wrap mt-0.5">
                         {item.description}
@@ -186,10 +194,15 @@ export default function PrintSalesQuotation() {
                     )}
                   </td>
                   <td className="p-2 font-mono tabular-nums">
-                    {item.quantity} {item.unit_name}
+                    {line.quantity} {line.unitName}
+                    {line.factor !== 1 && (
+                      <div className="text-[10px] text-[#6B6F76]">
+                        = {line.baseQuantity}
+                      </div>
+                    )}
                   </td>
                   <td className="p-2 font-mono tabular-nums">
-                    {money(item.price)}
+                    {money(line.price)}
                   </td>
                   {hasAnyDiscount && (
                     <td className="p-2 font-mono tabular-nums text-[#9B3B3B]">

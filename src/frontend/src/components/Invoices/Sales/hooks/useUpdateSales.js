@@ -45,7 +45,7 @@ function recalcItem(item) {
 
 // Reconstructs entered_quantity/entered_price from stored base-unit
 // quantity/price + factor — inverse of what recalcItem derives forward.
-function toEditableItem(raw, availableUnits) {
+function toEditableItem(raw, availableUnits, fullProduct) {
   const factor = Number(raw.unit_conversion_factor || 1);
   const baseQuantity = Number(raw.quantity || 0);
   const basePrice = Number(raw.price || 0);
@@ -65,6 +65,8 @@ function toEditableItem(raw, availableUnits) {
     id: raw.id,
     product_id: raw.product_id,
     name: raw.name || raw.product_name || "",
+    latin_name: fullProduct?.latinName || "",
+    base_unit_latin_name: fullProduct?.unit_latin_name || "",
     code: raw.product_code || "",
     entered_quantity: enteredQuantity,
     entered_price: enteredPrice,
@@ -158,10 +160,17 @@ export default function useUpdateSales() {
       const unitsByProduct = new Map(
         fullProducts.filter(Boolean).map((p) => [p.id, p.productUnits || []]),
       );
+      const productsById = new Map(
+        fullProducts.filter(Boolean).map((p) => [p.id, p]),
+      );
 
       setItems(
         rawItems.map((raw) =>
-          toEditableItem(raw, unitsByProduct.get(raw.product_id)),
+          toEditableItem(
+            raw,
+            unitsByProduct.get(raw.product_id),
+            productsById.get(raw.product_id),
+          ),
         ),
       );
 
@@ -258,6 +267,8 @@ export default function useUpdateSales() {
           ...current,
           product_id: fullProduct.id,
           name: fullProduct.name,
+          latin_name: fullProduct.latinName || "",
+          base_unit_latin_name: fullProduct.unit_latin_name || "",
           code: fullProduct.code || "",
           available_units: productUnits,
           unit_id: baseUnit?.id ?? null,

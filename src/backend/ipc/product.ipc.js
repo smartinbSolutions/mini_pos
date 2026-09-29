@@ -76,8 +76,8 @@ export default function registerProductIPC() {
 
       const insertUnit = db.prepare(
         `
-        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
-        VALUES (?, ?, ?, 0, ?, ?)
+        INSERT INTO product_units (product_id, unit_name, latin_name, conversion_factor, is_base, sale_price, barcode)
+        VALUES (?, ?, ?, ?, 0, ?, ?)
       `,
       );
 
@@ -86,6 +86,7 @@ export default function registerProductIPC() {
         insertUnit.run(
           productId,
           unit.unit_name,
+          unit.latin_name?.trim() || null,
           unit.conversion_factor,
           unit.sale_price ?? 0,
           unit.barcode || null,
@@ -218,14 +219,14 @@ export default function registerProductIPC() {
       const updateUnit = db.prepare(
         `
         UPDATE product_units
-        SET unit_name = ?, conversion_factor = ?, sale_price = ?, barcode = ?
+        SET unit_name = ?, latin_name = ?, conversion_factor = ?, sale_price = ?, barcode = ?
         WHERE id = ?
       `,
       );
       const insertUnit = db.prepare(
         `
-        INSERT INTO product_units (product_id, unit_name, conversion_factor, is_base, sale_price, barcode)
-        VALUES (?, ?, ?, 0, ?, ?)
+        INSERT INTO product_units (product_id, unit_name, latin_name, conversion_factor, is_base, sale_price, barcode)
+        VALUES (?, ?, ?, ?, 0, ?, ?)
       `,
       );
 
@@ -235,6 +236,7 @@ export default function registerProductIPC() {
         if (unit.id) {
           updateUnit.run(
             unit.unit_name,
+            unit.latin_name?.trim() || null,
             unit.conversion_factor,
             unit.sale_price ?? 0,
             unit.barcode || null,
@@ -244,6 +246,7 @@ export default function registerProductIPC() {
           insertUnit.run(
             data.id,
             unit.unit_name,
+            unit.latin_name?.trim() || null,
             unit.conversion_factor,
             unit.sale_price ?? 0,
             unit.barcode || null,
@@ -388,6 +391,7 @@ export default function registerProductIPC() {
           json_object(
             'id', pu.id,
             'unit_name', pu.unit_name,
+            'latin_name', pu.latin_name,
             'conversion_factor', pu.conversion_factor,
             'is_base', pu.is_base,
             'sale_price', pu.sale_price,
@@ -458,6 +462,7 @@ export default function registerProductIPC() {
           products.*,
           products.type AS type,
           unit.name as unit_name,
+          unit.latinName as unit_latin_name,
           unit.code as unit_code,
           taxes.name as tax_name,
           taxes.rate as tax_rate
@@ -474,7 +479,7 @@ export default function registerProductIPC() {
     const productUnits = db
       .prepare(
         `
-        SELECT id, unit_name, conversion_factor, is_base, sale_price, barcode
+        SELECT id, unit_name, latin_name, conversion_factor, is_base, sale_price, barcode
         FROM product_units
         WHERE product_id = ?
         ORDER BY is_base DESC, id ASC
@@ -523,11 +528,14 @@ export default function registerProductIPC() {
         SELECT
           products.id AS product_id,
           products.name,
+          products.latinName,
           products.logo,
           products.quantity,
           products.type,
           pu.id AS unit_id,
           pu.unit_name,
+          pu.latin_name,
+          unit.latinName AS base_unit_latin_name,
           pu.conversion_factor,
           pu.sale_price,
           pu.is_base,
@@ -535,6 +543,7 @@ export default function registerProductIPC() {
           taxes.rate AS tax_rate
         FROM product_units pu
         JOIN products ON products.id = pu.product_id
+        LEFT JOIN unit ON unit.id = products.unit_id
         LEFT JOIN taxes
           ON taxes.id = products.tax_id
           AND taxes.category IN ('product', 'both')
@@ -552,11 +561,14 @@ export default function registerProductIPC() {
             SELECT
               products.id AS product_id,
               products.name,
+              products.latinName,
               products.logo,
               products.quantity,
               products.type,
               pu.id AS unit_id,
               pu.unit_name,
+              pu.latin_name,
+              unit.latinName AS base_unit_latin_name,
               pu.conversion_factor,
               pu.sale_price,
               1 AS is_base,
@@ -564,6 +576,7 @@ export default function registerProductIPC() {
               taxes.rate AS tax_rate
             FROM product_barcodes pb
             JOIN products ON products.id = pb.product_id
+            LEFT JOIN unit ON unit.id = products.unit_id
             LEFT JOIN product_units pu
               ON pu.product_id = products.id AND pu.is_base = 1
             LEFT JOIN taxes
@@ -594,6 +607,11 @@ export default function registerProductIPC() {
             ? barcodeMatch.name
             : `${barcodeMatch.name} (${barcodeMatch.unit_name})`,
           unit_name: barcodeMatch.unit_name,
+          latin_name: barcodeMatch.latinName || null,
+          unit_latin_name: barcodeMatch.is_base
+            ? barcodeMatch.base_unit_latin_name || null
+            : barcodeMatch.latin_name || null,
+          base_unit_latin_name: barcodeMatch.base_unit_latin_name || null,
           base_unit_name: barcodeMatch.is_base ? barcodeMatch.unit_name : null,
           is_base: Boolean(barcodeMatch.is_base),
           conversion_factor: factor,
@@ -621,8 +639,10 @@ export default function registerProductIPC() {
     const queryParams = [];
 
     if (search) {
-      whereConditions.push(`(products.name LIKE ? OR products.code LIKE ?)`);
-      queryParams.push(`%${search}%`, `%${search}%`);
+      whereConditions.push(
+        `(products.name LIKE ? OR products.latinName LIKE ? OR products.code LIKE ?)`,
+      );
+      queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
     if (params.type) {
@@ -657,12 +677,16 @@ export default function registerProductIPC() {
       SELECT
         products.id,
         products.name,
+        products.latinName,
         products.logo,
         products.quantity,
         products.type,
+        unit.latinName AS base_unit_latin_name,
         taxes.id AS tax_id,
         taxes.rate AS tax_rate
       FROM products
+      LEFT JOIN unit
+        ON unit.id = products.unit_id
       LEFT JOIN taxes
         ON taxes.id = products.tax_id
         AND taxes.category IN ('product', 'both')
@@ -697,7 +721,7 @@ export default function registerProductIPC() {
     const units = db
       .prepare(
         `
-      SELECT id, product_id, unit_name, conversion_factor, is_base, sale_price, barcode
+      SELECT id, product_id, unit_name, latin_name , conversion_factor, is_base, sale_price, barcode
       FROM product_units
       WHERE product_id IN (${placeholders})
       ORDER BY product_id ASC, is_base DESC, id ASC
@@ -761,6 +785,11 @@ export default function registerProductIPC() {
             ? product.name
             : `${product.name} (${unit.unit_name})`,
           unit_name: unit.unit_name,
+          latin_name: product.latinName || null,
+          unit_latin_name: unit.is_base
+            ? product.base_unit_latin_name || null
+            : unit.latin_name || null,
+          base_unit_latin_name: product.base_unit_latin_name || null,
           base_unit_name: baseUnit?.unit_name ?? null,
           is_base: Boolean(unit.is_base),
           conversion_factor: factor,

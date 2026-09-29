@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -18,6 +18,7 @@ import { toast } from "react-toastify";
 import useAddPurchase from "../hooks/useAddPurchase";
 import SearchableSelect from "../../../../Global/SearchableSelect";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
+import useLatinMode from "../../../../Global/useLatinMode";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
@@ -167,6 +168,24 @@ export default function AddPurchase() {
   const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
 
   const { money } = usePrimaryCurrency();
+
+  const { pick } = useLatinMode();
+
+  // Stable reference — SearchableSelect lists getOptionLabel in its effect deps.
+  const productOptionLabel = useCallback(
+    (p) => pick(p.latinName, p.name),
+    [pick],
+  );
+
+  // Base unit → Latin from the unit table; selling unit → its own Latin name.
+  const unitOptionLabel = (item, u) =>
+    pick(u.is_base ? item.base_unit_latin_name : u.latin_name, u.unit_name);
+
+  // The unit currently chosen on a row, for places that show it as text.
+  const selectedUnitLabel = (item) => {
+    const u = item.available_units?.find((x) => x.id === item.unit_id);
+    return u ? unitOptionLabel(item, u) : item.unit_name;
+  };
 
   const supplierName =
     suppliers?.data?.find((s) => s.id === invoice.supplier_id)?.name || "";
@@ -470,8 +489,9 @@ export default function AddPurchase() {
                             <SearchableSelect
                               placeholder={t("ui.selectProduct")}
                               options={products}
+                              getOptionLabel={productOptionLabel}
                               selectedValue={item.product_id}
-                              selectedLabel={item.name}
+                              selectedLabel={pick(item.latin_name, item.name)}
                               onChange={(e) => {
                                 updateItem(index, "product_id", e.id);
                               }}
@@ -552,7 +572,7 @@ export default function AddPurchase() {
                               >
                                 {item.available_units.map((u) => (
                                   <option key={u.id} value={u.id}>
-                                    {u.unit_name}
+                                    {unitOptionLabel(item, u)}
                                   </option>
                                 ))}
                               </select>
@@ -628,7 +648,7 @@ export default function AddPurchase() {
                             />
                             {t("screens.invoices.unitConversionDetail", {
                               enteredQty: item.entered_quantity,
-                              unitName: item.unit_name,
+                              unitName: selectedUnitLabel(item),
                               factor: item.unit_conversion_factor,
                               baseQty: item.quantity,
                             })}

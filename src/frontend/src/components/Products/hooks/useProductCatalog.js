@@ -26,6 +26,7 @@ const normalizeProductUnits = (productUnits = []) =>
     .map((unit) => ({
       ...(unit.id ? { id: unit.id } : {}),
       unit_name: String(unit.unit_name).trim(),
+      latin_name: String(unit.latin_name || "").trim(),
       conversion_factor: Number(unit.conversion_factor),
       sale_price: Number(unit.sale_price || 0),
       barcode: String(unit.barcode || "").trim(),
