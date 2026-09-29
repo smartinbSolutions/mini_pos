@@ -97,6 +97,7 @@ export default function AddSalesQuotation() {
     clearQuotationDiscount,
     items,
     customers,
+    searchCustomers,
     taxes,
     tagIds,
     setTagIds,
@@ -234,10 +235,13 @@ export default function AddSalesQuotation() {
                           placeholder={t("ui.selectCustomerOptional")}
                           options={customers}
                           selectedValue={quotation?.customer_id}
+                          selectedLabel={quotation?.customer_name}
+                          onInputChange={searchCustomers}
                           onChange={(customer) =>
                             setQuotation((p) => ({
                               ...p,
                               customer_id: customer.id,
+                              customer_name: customer.name,
                             }))
                           }
                         />

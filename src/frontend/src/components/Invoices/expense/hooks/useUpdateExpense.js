@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
@@ -134,6 +134,21 @@ const useUpdateExpense = () => {
       setLoading(false);
     }
   }, [api, id, t]);
+
+  const supplierSearchTimer = useRef(null);
+
+  const searchSuppliers = useCallback(
+    (query) => {
+      clearTimeout(supplierSearchTimer.current);
+      supplierSearchTimer.current = setTimeout(async () => {
+        const res = await api.getSuppliers({ search: query, limit: 50 });
+        setSuppliers(res || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(supplierSearchTimer.current), []);
 
   const supplierOptions = useMemo(
     () => [
@@ -460,6 +475,7 @@ const useUpdateExpense = () => {
     setItems,
 
     category,
+    searchSuppliers,
     supplierOptions,
     taxes,
     tagIds,

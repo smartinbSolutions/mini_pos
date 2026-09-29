@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -112,6 +112,21 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
       setLoading(false);
     }
   }, [api]);
+
+  const supplierSearchTimer = useRef(null);
+
+  const searchSuppliers = useCallback(
+    (query) => {
+      clearTimeout(supplierSearchTimer.current);
+      supplierSearchTimer.current = setTimeout(async () => {
+        const res = await api.getSuppliers({ search: query, limit: 50 });
+        setSuppliers(res || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(supplierSearchTimer.current), []);
 
   useEffect(() => {
     refetch();
@@ -682,6 +697,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
     clearInvoiceDiscount,
     items,
     products,
+    searchSuppliers,
     suppliers,
     taxes,
     tagIds,

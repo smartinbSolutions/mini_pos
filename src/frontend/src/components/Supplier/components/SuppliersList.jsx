@@ -124,10 +124,11 @@ export const SuppliersList = () => {
     totalPages,
     balanceFilter,
     setBalanceFilter,
+    search,
+    setSearch,
   } = useSuppliersList();
   const { money } = usePrimaryCurrency();
 
-  const [search, setSearch] = useState("");
   const [deleteSupplier, setDeleteSupplier] = useState(null);
 
   const pageClass =
@@ -139,11 +140,7 @@ export const SuppliersList = () => {
 
   // Search stays client-side (name/phone/address text match on the current page);
   // balance filtering is server-side now, so it isn't duplicated here.
-  const filteredSuppliers = (suppliers || []).filter((s) =>
-    `${s.name} ${s.phone} ${s.address} ${s.total} ${s.total_paid}`
-      .toLowerCase()
-      .includes(search.toLowerCase()),
-  );
+  const filteredSuppliers = suppliers || [];
 
   const filterChipClass = (key) =>
     `rounded-full px-3 py-1.5 text-xs font-bold transition ${

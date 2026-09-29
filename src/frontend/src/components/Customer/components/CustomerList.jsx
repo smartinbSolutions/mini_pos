@@ -122,12 +122,12 @@ export const CustomerList = () => {
     totalPages,
     balanceFilter,
     setBalanceFilter,
+    search,
+    setSearch,
     tagsByCustomer,
   } = useCustomerList();
 
   const { money } = usePrimaryCurrency();
-
-  const [search, setSearch] = useState("");
   const [deleteCustomer, setDeleteCustomer] = useState(null);
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";

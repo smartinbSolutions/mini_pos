@@ -32,6 +32,8 @@ const usePartnersList = () => {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [tagsByPartner, setTagsByPartner] = useState({});
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const api = window.api;
 
@@ -52,6 +54,15 @@ const usePartnersList = () => {
     return "";
   };
 
+  // Search is server-side so it covers every page, not just the loaded one.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiUnavailable"));
@@ -61,7 +72,11 @@ const usePartnersList = () => {
     try {
       setLoading(true);
 
-      const result = await api.getPartners({ page, limit });
+      const result = await api.getPartners({
+        page,
+        limit,
+        search: debouncedSearch,
+      });
 
       setPartners(result?.data || []);
       setTotal(result?.total || 0);
@@ -76,7 +91,7 @@ const usePartnersList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit]);
+  }, [api, page, limit, debouncedSearch]);
 
   useEffect(() => {
     refetch();
@@ -278,6 +293,8 @@ const usePartnersList = () => {
     setLimit,
     total,
     totalPages,
+    search,
+    setSearch,
   };
 };
 

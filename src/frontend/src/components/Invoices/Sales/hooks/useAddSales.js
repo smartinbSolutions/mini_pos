@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -112,6 +112,21 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
       setLoading(false);
     }
   }, [api]);
+
+  const customerSearchTimer = useRef(null);
+
+  const searchCustomers = useCallback(
+    (query) => {
+      clearTimeout(customerSearchTimer.current);
+      customerSearchTimer.current = setTimeout(async () => {
+        const res = await api.getCustomers({ search: query, limit: 50 });
+        setCustomers(res || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(customerSearchTimer.current), []);
 
   useEffect(() => {
     refetch();
@@ -670,6 +685,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
     items,
     products,
     customers,
+    searchCustomers,
     taxes,
     addItem,
     removeItem,

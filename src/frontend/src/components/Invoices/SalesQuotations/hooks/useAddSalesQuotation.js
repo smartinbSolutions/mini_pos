@@ -1,5 +1,5 @@
 // useAddSalesQuotation.js
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -113,6 +113,21 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
       setLoading(false);
     }
   }, [api]);
+
+  const customerSearchTimer = useRef(null);
+
+  const searchCustomers = useCallback(
+    (query) => {
+      clearTimeout(customerSearchTimer.current);
+      customerSearchTimer.current = setTimeout(async () => {
+        const res = await api.getCustomers({ search: query, limit: 50 });
+        setCustomers(res || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(customerSearchTimer.current), []);
 
   useEffect(() => {
     refetch();
@@ -499,6 +514,7 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
     items,
     products,
     customers,
+    searchCustomers,
     taxes,
     tagIds,
     setTagIds,

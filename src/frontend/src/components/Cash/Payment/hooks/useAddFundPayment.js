@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -25,13 +25,14 @@ const useAddFundPayment = ({
   const isFundLocked = Boolean(initialFundId);
 
   const [partyType, setPartyType] = useState(
-    mode === "out" ? "supplier" : "customer"
+    mode === "out" ? "supplier" : "customer",
   );
   const { user } = useAuth();
 
   const [form, setForm] = useState({
     fund_id: "",
     party_id: "",
+    party_name: "",
     fund_exchangeRate: 1,
     amount_in_base: 0,
     collected_amount: 0,
@@ -51,12 +52,18 @@ const useAddFundPayment = ({
 
   const selectedFund = useMemo(
     () => funds.find((f) => f.id === Number(form.fund_id)),
-    [funds, form.fund_id]
+    [funds, form.fund_id],
   );
 
+  // Falls back to the stored name — after a search, the picked party may no
+  // longer be in partiesList, and the auto-note still needs its name.
   const selectedParty = useMemo(
-    () => partiesList.find((p) => p.id === Number(form.party_id)),
-    [partiesList, form.party_id]
+    () =>
+      partiesList.find((p) => p.id === Number(form.party_id)) ||
+      (form.party_id
+        ? { id: Number(form.party_id), name: form.party_name }
+        : undefined),
+    [partiesList, form.party_id, form.party_name],
   );
 
   const fetchFunds = useCallback(async () => {
@@ -69,22 +76,46 @@ const useAddFundPayment = ({
     }
   }, [api]);
 
-  const fetchParties = useCallback(async () => {
-    if (!api) return;
-    try {
-      let res = [];
-      if (partyType === "customer") {
-        res = (await api.getCustomers?.()) || [];
-      } else if (partyType === "supplier") {
-        res = (await api.getSuppliers?.()) || [];
-      } else if (partyType === "partner") {
-        res = (await api.getPartners()) || [];
+  const fetchParties = useCallback(
+    async (search = "") => {
+      if (!api) return;
+      const params = { search, limit: 50 };
+      try {
+        let res = [];
+        if (partyType === "customer") {
+          res = (await api.getCustomers?.(params)) || [];
+        } else if (partyType === "supplier") {
+          res = (await api.getSuppliers?.(params)) || [];
+        } else if (partyType === "partner") {
+          res = (await api.getPartners(params)) || [];
+        }
+        setPartiesList(res?.data || res || []);
+      } catch (err) {
+        console.error("Error fetching parties:", err);
       }
-      setPartiesList(res?.data || res || []);
-    } catch (err) {
-      console.error("Error fetching parties:", err);
-    }
-  }, [api, partyType]);
+    },
+    [api, partyType],
+  );
+
+  const partySearchTimer = useRef(null);
+
+  const searchParties = useCallback(
+    (query) => {
+      clearTimeout(partySearchTimer.current);
+      partySearchTimer.current = setTimeout(() => fetchParties(query), 250);
+    },
+    [fetchParties],
+  );
+
+  useEffect(() => () => clearTimeout(partySearchTimer.current), []);
+
+  const handlePartyChange = (option) => {
+    setForm((prev) => ({
+      ...prev,
+      party_id: option.id,
+      party_name: option.name,
+    }));
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -92,6 +123,7 @@ const useAddFundPayment = ({
       setForm({
         fund_id: initialFundId || "",
         party_id: "",
+        party_name: "",
         fund_exchangeRate: 1,
         amount_in_base: "",
         collected_amount: "",
@@ -108,7 +140,7 @@ const useAddFundPayment = ({
   useEffect(() => {
     if (isOpen) {
       fetchParties();
-      setForm((prev) => ({ ...prev, party_id: "" }));
+      setForm((prev) => ({ ...prev, party_id: "", party_name: "" }));
     }
   }, [partyType, isOpen, fetchParties]);
 
@@ -266,6 +298,8 @@ const useAddFundPayment = ({
     form,
     funds,
     partiesList,
+    searchParties,
+    handlePartyChange,
     partyType,
     setPartyType,
     loading,

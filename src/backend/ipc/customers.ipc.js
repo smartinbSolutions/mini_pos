@@ -20,7 +20,7 @@ export default function registerCustomersIPC() {
           `
         INSERT INTO customers (name, phone, address)
         VALUES (?,?,?)
-      `
+      `,
         )
         .run(name, phone, address);
 
@@ -70,6 +70,11 @@ export default function registerCustomersIPC() {
           ? "HAVING balance <= 0"
           : "";
 
+    // Search is bound as a parameter — never interpolated.
+    const search = String(params.search || "").trim();
+    const whereClause = search ? "WHERE c.name LIKE ? OR c.phone LIKE ?" : "";
+    const whereValues = search ? [`%${search}%`, `%${search}%`] : [];
+
     // Balance must be computed here (not just selected) so HAVING can filter on it.
     const perCustomerCTE = `
       SELECT
@@ -86,6 +91,7 @@ export default function registerCustomersIPC() {
       LEFT JOIN party_history ph
         ON ph.party_type = 'customer'
        AND ph.party_id = c.id
+      ${whereClause}
       GROUP BY c.id
       ${havingClause}
     `;
@@ -97,13 +103,13 @@ export default function registerCustomersIPC() {
         SELECT * FROM (${perCustomerCTE})
         ORDER BY createdAt DESC, id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
         )
-        .all(limit, offset);
+        .all(...whereValues, limit, offset);
 
       const { total } = db
         .prepare(`SELECT COUNT(*) AS total FROM (${perCustomerCTE})`)
-        .get();
+        .get(...whereValues);
 
       // Cross-page aggregates for the currently applied filter — not just this page.
       const stats = db
@@ -115,11 +121,12 @@ export default function registerCustomersIPC() {
           COALESCE(SUM(total_paid), 0) AS totalPaid,
           COALESCE(SUM(CASE WHEN balance > 0 THEN balance ELSE 0 END), 0) AS netOutstanding
         FROM (${perCustomerCTE})
-        `
+        `,
         )
-        .get();
+        .get(...whereValues);
 
       // Counts per filter bucket, independent of which filter is currently applied.
+      // Search still applies here, so counts reflect the searched set.
       const unfilteredCTE = perCustomerCTE.replace(havingClause, "");
       const counts = db
         .prepare(
@@ -129,9 +136,9 @@ export default function registerCustomersIPC() {
           SUM(CASE WHEN balance > 0 THEN 1 ELSE 0 END) AS owing_count,
           SUM(CASE WHEN balance <= 0 THEN 1 ELSE 0 END) AS settled_count
         FROM (${unfilteredCTE})
-        `
+        `,
         )
-        .get();
+        .get(...whereValues);
 
       return {
         success: true,
@@ -190,7 +197,7 @@ export default function registerCustomersIPC() {
       WHERE c.id = ?
 
       GROUP BY c.id;
-      `
+      `,
         )
         .get(id);
 
@@ -215,7 +222,7 @@ export default function registerCustomersIPC() {
         UPDATE customers
         SET name = ?, phone = ?, address = ?
         WHERE id = ?
-      `
+      `,
       ).run(name, phone, address, data.id);
 
       return { success: true };
@@ -234,7 +241,7 @@ export default function registerCustomersIPC() {
         WHERE party_type = 'customer'
           AND party_id = ?
         LIMIT 1
-      `
+      `,
         )
         .get(id);
 
@@ -249,7 +256,7 @@ export default function registerCustomersIPC() {
         `
         DELETE FROM customers
         WHERE id = ?
-      `
+      `,
       ).run(id);
 
       return { success: true };

@@ -74,10 +74,11 @@ const PartnersList = () => {
     total,
     totalPages,
     tagsByPartner,
+    search,
+    setSearch,
   } = usePartnersList();
   const { money } = usePrimaryCurrency();
 
-  const [search, setSearch] = useState("");
   const [deletePartners, setDeletePartners] = useState(null);
   const pageClass =
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
@@ -86,13 +87,7 @@ const PartnersList = () => {
   const inputClass =
     "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
 
-  const filteredpartners = useMemo(() => {
-    return partners.filter((s) =>
-      `${s.name} ${s.phone} ${s.address} ${s.total_deposit} ${s.total_withdrawal}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-    );
-  }, [partners, search]);
+  const filteredpartners = partners || [];
 
   return (
     <div className={pageClass}>

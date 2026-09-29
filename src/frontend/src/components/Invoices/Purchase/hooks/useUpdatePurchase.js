@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -129,6 +129,7 @@ export default function useUpdatePurchase() {
       setInvoiceState({
         id: inv.id,
         supplier_id: inv.supplier_id,
+        supplier_name: inv.supplier_name || "",
         date: inv.date?.slice(0, 10) || emptyInvoice.date,
         discount_rate: Number(inv.discount_rate || 0),
         discount: Number(inv.discount || 0),
@@ -193,6 +194,21 @@ export default function useUpdatePurchase() {
       setError(err.message || t("errors.loadError"));
     }
   }, [api, t]);
+
+  const supplierSearchTimer = useRef(null);
+
+  const searchSuppliers = useCallback(
+    (query) => {
+      clearTimeout(supplierSearchTimer.current);
+      supplierSearchTimer.current = setTimeout(async () => {
+        const res = await api.getSuppliers({ search: query, limit: 50 });
+        setSuppliers(res || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(supplierSearchTimer.current), []);
 
   useEffect(() => {
     load();
@@ -698,6 +714,7 @@ export default function useUpdatePurchase() {
     clearInvoiceDiscount,
     items,
     products,
+    searchSuppliers,
     suppliers,
     taxes,
     tagIds,

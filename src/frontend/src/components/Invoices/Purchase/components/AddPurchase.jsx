@@ -116,6 +116,7 @@ export default function AddPurchase() {
     setInvoiceDiscountAmount,
     clearInvoiceDiscount,
     items,
+    searchSuppliers,
     suppliers,
     taxes,
     tagIds,
@@ -321,8 +322,14 @@ export default function AddPurchase() {
                           placeholder={t("ui.selectSupplier")}
                           options={suppliers}
                           selectedValue={invoice?.supplier_id}
+                          selectedLabel={invoice?.supplier_name}
+                          onInputChange={searchSuppliers}
                           onChange={(e) =>
-                            setInvoice({ ...invoice, supplier_id: e.id })
+                            setInvoice({
+                              ...invoice,
+                              supplier_id: e.id,
+                              supplier_name: e.name,
+                            })
                           }
                         />
                       </div>

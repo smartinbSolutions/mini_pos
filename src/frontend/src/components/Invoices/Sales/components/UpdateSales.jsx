@@ -98,6 +98,7 @@ export default function UpdateSales() {
     items,
     products,
     customers,
+    searchCustomers,
     taxes,
     tagIds,
     setTagIds,
@@ -183,8 +184,7 @@ export default function UpdateSales() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
-  const customerName =
-    customers?.data?.find((c) => c.id === invoice?.customer_id)?.name || "";
+  const customerName = invoice?.customer_name || "";
 
   const hasReturn = items.some((i) => Number(i.returned_quantity || 0) > 0);
   const isPosInvoice = invoice?.channel === "pos";
@@ -376,10 +376,13 @@ export default function UpdateSales() {
                         placeholder={t("ui.selectCustomer")}
                         options={customers}
                         selectedValue={invoice?.customer_id}
+                        selectedLabel={invoice?.customer_name}
+                        onInputChange={searchCustomers}
                         onChange={(customer) =>
                           setInvoice((prev) => ({
                             ...prev,
                             customer_id: customer.id,
+                            customer_name: customer.name,
                           }))
                         }
                         disabled={isLocked}

@@ -91,6 +91,7 @@ export default function UpdateExpense() {
     items,
     category,
     supplierOptions,
+    searchSuppliers,
     taxes,
     tagIds,
     setTagIds,
@@ -284,8 +285,14 @@ export default function UpdateExpense() {
                     placeholder={t("ui.selectSupplier")}
                     options={supplierOptions}
                     selectedValue={invoice.supplier_id}
+                    selectedLabel={invoice.supplier_name}
+                    onInputChange={searchSuppliers}
                     onChange={(e) =>
-                      setInvoice({ ...invoice, supplier_id: e.id })
+                      setInvoice({
+                        ...invoice,
+                        supplier_id: e.id,
+                        supplier_name: e.name,
+                      })
                     }
                     disabled={isLocked}
                   />

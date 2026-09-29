@@ -1,5 +1,5 @@
 // useUpdateSalesQuotation.js
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -128,6 +128,7 @@ export default function useUpdateSalesQuotation() {
       setQuotationState({
         id: q.id,
         customer_id: q.customer_id,
+        customer_name: q.customer_name || "",
         date: q.date?.slice(0, 10) || emptyQuotation.date,
         status: q.status || "draft",
         discount_rate: Number(q.discount_rate || 0),
@@ -196,6 +197,21 @@ export default function useUpdateSalesQuotation() {
       setError(err.message || t("errors.loadError"));
     }
   }, [api, t]);
+
+  const customerSearchTimer = useRef(null);
+
+  const searchCustomers = useCallback(
+    (query) => {
+      clearTimeout(customerSearchTimer.current);
+      customerSearchTimer.current = setTimeout(async () => {
+        const res = await api.getCustomers({ search: query, limit: 50 });
+        setCustomers(res || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(customerSearchTimer.current), []);
 
   useEffect(() => {
     load();
@@ -704,6 +720,7 @@ export default function useUpdateSalesQuotation() {
     items,
     products,
     customers,
+    searchCustomers,
     taxes,
     tagIds,
     setTagIds,

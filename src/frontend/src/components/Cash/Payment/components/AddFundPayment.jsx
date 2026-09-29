@@ -12,6 +12,11 @@ import {
 import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
 import useAddFundPayment from "../hooks/useAddFundPayment";
 import NumberInput from "../../../../Global/NumberInput";
+import SearchableSelect from "../../../../Global/SearchableSelect";
+
+// Defined outside the component so its reference is stable — SearchableSelect
+// lists getOptionLabel in its effect deps.
+const partyLabel = (p) => `${p.name}${p.phone ? ` (${p.phone})` : ""}`;
 
 export default function AddFundPayment({
   isOpen,
@@ -24,6 +29,8 @@ export default function AddFundPayment({
     form,
     funds,
     partiesList,
+    searchParties,
+    handlePartyChange,
     partyType,
     setPartyType,
     loading,
@@ -108,22 +115,15 @@ export default function AddFundPayment({
         </button>
       </div>
 
-      <select
-        value={form.party_id || ""}
-        onChange={(e) => handleChange("party_id", e.target.value)}
-        className="w-full h-10 rounded-xl border px-3 bg-white outline-none focus:border-blue-500 text-sm"
-        required
-      >
-        <option value="">
-          -- {t("screens.payments.select_name_from_list")} --
-        </option>
-        {partiesList.length > 0 &&
-          partiesList.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} {p.phone ? `(${p.phone})` : ""}
-            </option>
-          ))}
-      </select>
+      <SearchableSelect
+        placeholder={`-- ${t("screens.payments.select_name_from_list")} --`}
+        options={partiesList}
+        selectedValue={form.party_id}
+        selectedLabel={form.party_name}
+        getOptionLabel={partyLabel}
+        onInputChange={searchParties}
+        onChange={handlePartyChange}
+      />
     </div>
   );
 

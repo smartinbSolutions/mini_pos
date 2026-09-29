@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -94,6 +94,21 @@ const useAddExpense = ({ supplierModalOpen }) => {
       setLoading(false);
     }
   }, [api, t]);
+
+  const supplierSearchTimer = useRef(null);
+
+  const searchSuppliers = useCallback(
+    (query) => {
+      clearTimeout(supplierSearchTimer.current);
+      supplierSearchTimer.current = setTimeout(async () => {
+        const res = await api.getSuppliers({ search: query, limit: 50 });
+        setSuppliers(res || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(supplierSearchTimer.current), []);
 
   useEffect(() => {
     refetch();
@@ -426,6 +441,7 @@ const useAddExpense = ({ supplierModalOpen }) => {
     setItems,
 
     supplierOptions,
+    searchSuppliers,
     category,
     taxes,
     tagIds,

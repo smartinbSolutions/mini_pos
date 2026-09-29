@@ -20,7 +20,7 @@ export default function registerSuppliersIPC() {
           `
         INSERT INTO suppliers (name, phone, address)
         VALUES (?,?,?)
-      `
+      `,
         )
         .run(name, phone, address);
 
@@ -70,6 +70,11 @@ export default function registerSuppliersIPC() {
           ? "HAVING balance <= 0"
           : "";
 
+    // Search is bound as a parameter — never interpolated.
+    const search = String(params.search || "").trim();
+    const whereClause = search ? "WHERE s.name LIKE ? OR s.phone LIKE ?" : "";
+    const whereValues = search ? [`%${search}%`, `%${search}%`] : [];
+
     // Balance must be computed here (not just selected) so HAVING can filter on it.
     const perSupplierCTE = `
       SELECT
@@ -86,6 +91,7 @@ export default function registerSuppliersIPC() {
       LEFT JOIN party_history ph
         ON ph.party_type = 'supplier'
        AND ph.party_id = s.id
+      ${whereClause}
       GROUP BY s.id
       ${havingClause}
     `;
@@ -97,13 +103,13 @@ export default function registerSuppliersIPC() {
         SELECT * FROM (${perSupplierCTE})
         ORDER BY createdAt DESC, id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
         )
-        .all(limit, offset);
+        .all(...whereValues, limit, offset);
 
       const { total } = db
         .prepare(`SELECT COUNT(*) AS total FROM (${perSupplierCTE})`)
-        .get();
+        .get(...whereValues);
 
       // Cross-page aggregates for the currently applied filter — not just this page.
       const stats = db
@@ -115,12 +121,13 @@ export default function registerSuppliersIPC() {
           COALESCE(SUM(total_paid), 0) AS totalPaid,
           COALESCE(SUM(CASE WHEN balance > 0 THEN balance ELSE 0 END), 0) AS netOutstanding
         FROM (${perSupplierCTE})
-        `
+        `,
         )
-        .get();
+        .get(...whereValues);
 
       // Counts per filter bucket, independent of which filter is currently applied,
       // so the chip labels ("Owing (12)") are always accurate regardless of selection.
+      // Search still applies here, so counts reflect the searched set.
       const unfilteredCTE = perSupplierCTE.replace(havingClause, "");
       const counts = db
         .prepare(
@@ -130,9 +137,9 @@ export default function registerSuppliersIPC() {
           SUM(CASE WHEN balance > 0 THEN 1 ELSE 0 END) AS owing_count,
           SUM(CASE WHEN balance <= 0 THEN 1 ELSE 0 END) AS settled_count
         FROM (${unfilteredCTE})
-        `
+        `,
         )
-        .get();
+        .get(...whereValues);
 
       return {
         success: true,
@@ -191,7 +198,7 @@ export default function registerSuppliersIPC() {
       WHERE s.id = ?
 
       GROUP BY s.id;
-      `
+      `,
         )
         .get(id);
 
@@ -216,7 +223,7 @@ export default function registerSuppliersIPC() {
         UPDATE suppliers
         SET name = ?, phone = ?, address = ?
         WHERE id = ?
-      `
+      `,
       ).run(name, phone, address, data.id);
 
       return { success: true };
@@ -235,7 +242,7 @@ export default function registerSuppliersIPC() {
         WHERE party_type = 'supplier'
           AND party_id = ?
         LIMIT 1
-      `
+      `,
         )
         .get(id);
 
@@ -249,7 +256,7 @@ export default function registerSuppliersIPC() {
       db.prepare(
         `
         DELETE FROM suppliers WHERE id = ?
-      `
+      `,
       ).run(id);
 
       return { success: true };

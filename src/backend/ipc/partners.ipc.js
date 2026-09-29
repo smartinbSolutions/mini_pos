@@ -74,6 +74,11 @@ export default function registerPartnersIPC() {
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
 
+    // Search is bound as a parameter — never interpolated.
+    const search = String(params.search || "").trim();
+    const whereClause = search ? "WHERE p.name LIKE ? OR p.phone LIKE ?" : "";
+    const whereValues = search ? [`%${search}%`, `%${search}%`] : [];
+
     const partners = db
       .prepare(
         `
@@ -85,16 +90,17 @@ export default function registerPartnersIPC() {
     FROM partners p
     LEFT JOIN party_history ph
       ON ph.party_type = 'partner' AND ph.party_id = p.id
+    ${whereClause}
     GROUP BY p.id
     ORDER BY p.name
     LIMIT ? OFFSET ?
     `,
       )
-      .all(limit, offset);
+      .all(...whereValues, limit, offset);
 
     const { total } = db
-      .prepare(`SELECT COUNT(*) AS total FROM partners`)
-      .get();
+      .prepare(`SELECT COUNT(*) AS total FROM partners p ${whereClause}`)
+      .get(...whereValues);
     const totalAllocated = getPartnersPercentageSum();
 
     return {

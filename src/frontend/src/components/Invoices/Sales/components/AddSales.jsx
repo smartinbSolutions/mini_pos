@@ -110,6 +110,7 @@ export default function AddSales() {
     clearInvoiceDiscount,
     items,
     customers,
+    searchCustomers,
     taxes,
     addItem,
     removeItem,
@@ -160,8 +161,7 @@ export default function AddSales() {
 
   const { money } = usePrimaryCurrency();
 
-  const customerName =
-    customers?.data?.find((c) => c.id === invoice.customer_id)?.name || "";
+  const customerName = invoice.customer_name || "";
 
   const hasUsableItems = items.some((i) => i.product_id);
   const canSave = !!invoice.customer_id && hasUsableItems && !saving;
@@ -306,10 +306,13 @@ export default function AddSales() {
                           placeholder={t("ui.selectCustomer")}
                           options={customers}
                           selectedValue={invoice?.customer_id}
+                          selectedLabel={invoice?.customer_name}
+                          onInputChange={searchCustomers}
                           onChange={(customer) =>
                             setInvoice((p) => ({
                               ...p,
                               customer_id: customer.id,
+                              customer_name: customer.name,
                             }))
                           }
                         />
@@ -1113,9 +1116,14 @@ export default function AddSales() {
           draft={draft}
           setDraft={setDraft}
           onSubmit={async (event) => {
+            const name = draft.name;
             const result = await submitDraft(event);
             if (result && result.id) {
-              setInvoice((prev) => ({ ...prev, customer_id: result.id }));
+              setInvoice((prev) => ({
+                ...prev,
+                customer_id: result.id,
+                customer_name: name,
+              }));
               setCustomerModalOpen(false);
             }
           }}

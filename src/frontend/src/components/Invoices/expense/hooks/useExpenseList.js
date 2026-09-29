@@ -59,7 +59,7 @@ const useExpenseList = () => {
   useEffect(() => {
     if (api?.getSuppliers) {
       api
-        .getSuppliers()
+        .getSuppliers({ page: 1, limit: 1000 })
         .then((res) => setSuppliers(res?.data || res || []))
         .catch(() => setSuppliers([]));
     }

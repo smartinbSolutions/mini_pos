@@ -35,7 +35,9 @@ const useCustomerList = () => {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [balanceFilter, setBalanceFilterState] = useState("all"); // all | owing | settled
+  const [balanceFilter, setBalanceFilterState] = useState("all");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [tagsByCustomer, setTagsByCustomer] = useState({});
 
   const api = window.api;
@@ -55,6 +57,14 @@ const useCustomerList = () => {
     return "";
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiUnavailable"));
@@ -67,6 +77,7 @@ const useCustomerList = () => {
       const res = await api.getCustomers({
         page,
         limit,
+        search: debouncedSearch,
         balance_filter: balanceFilter,
       });
 
@@ -91,7 +102,7 @@ const useCustomerList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, balanceFilter, t]);
+  }, [api, page, limit, balanceFilter, debouncedSearch, t]);
 
   useEffect(() => {
     refetch();
@@ -289,6 +300,8 @@ const useCustomerList = () => {
     totalPages,
     balanceFilter,
     setBalanceFilter,
+    search,
+    setSearch,
     tagsByCustomer,
   };
 };

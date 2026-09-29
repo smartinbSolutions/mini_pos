@@ -37,6 +37,8 @@ const useSuppliersList = () => {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [balanceFilter, setBalanceFilterState] = useState("all"); // all | owing | settled
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [tagsBySupplier, setTagsBySupplier] = useState({});
 
   const api = window.api;
@@ -56,6 +58,15 @@ const useSuppliersList = () => {
     return "";
   };
 
+  // Search is server-side so it covers every page, not just the loaded one.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiUnavailable"));
@@ -69,6 +80,7 @@ const useSuppliersList = () => {
         page,
         limit,
         balance_filter: balanceFilter,
+        search: debouncedSearch,
       });
 
       setSuppliers(res?.data || []);
@@ -92,7 +104,7 @@ const useSuppliersList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, balanceFilter, t]);
+  }, [api, page, limit, balanceFilter, debouncedSearch, t]);
 
   useEffect(() => {
     refetch();
@@ -285,6 +297,8 @@ const useSuppliersList = () => {
     totalPages,
     balanceFilter,
     setBalanceFilter,
+    search,
+    setSearch,
   };
 };
 

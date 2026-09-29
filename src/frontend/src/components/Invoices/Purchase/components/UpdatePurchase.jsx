@@ -106,6 +106,7 @@ export default function UpdatePurchase() {
     clearInvoiceDiscount,
     items,
     products,
+    searchSuppliers,
     suppliers,
     taxes,
     tagIds,
@@ -321,8 +322,14 @@ export default function UpdatePurchase() {
                         placeholder={t("ui.selectSupplier")}
                         options={suppliers}
                         selectedValue={invoice?.supplier_id}
+                        selectedLabel={invoice?.supplier_name}
+                        onInputChange={searchSuppliers}
                         onChange={(e) =>
-                          setInvoice((prev) => ({ ...prev, supplier_id: e.id }))
+                          setInvoice({
+                            ...invoice,
+                            supplier_id: e.id,
+                            supplier_name: e.name,
+                          })
                         }
                         disabled={isLocked}
                       />

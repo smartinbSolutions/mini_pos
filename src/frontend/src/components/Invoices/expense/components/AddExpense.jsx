@@ -94,6 +94,7 @@ export default function AddExpense() {
     setItems,
 
     supplierOptions,
+    searchSuppliers,
     category,
     taxes,
     tagIds,
@@ -250,9 +251,15 @@ export default function AddExpense() {
                       <SearchableSelect
                         placeholder={t("ui.selectSupplier")}
                         options={supplierOptions}
-                        selectedValue={invoice.supplier_id}
+                        selectedValue={invoice?.supplier_id}
+                        selectedLabel={invoice?.supplier_name}
+                        onInputChange={searchSuppliers}
                         onChange={(e) =>
-                          setInvoice({ ...invoice, supplier_id: e.id })
+                          setInvoice({
+                            ...invoice,
+                            supplier_id: e.id,
+                            supplier_name: e.name,
+                          })
                         }
                       />
                     </div>
