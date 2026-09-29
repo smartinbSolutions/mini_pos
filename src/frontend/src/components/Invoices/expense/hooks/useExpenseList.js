@@ -36,6 +36,9 @@ const useExpenseList = () => {
     tagIds: null,
   });
 
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const setFilters = (patch) => {
     setFiltersState((prev) => ({ ...prev, ...patch }));
     setPage(1);
@@ -94,6 +97,15 @@ const useExpenseList = () => {
     }
   }, [api]);
 
+  // Search is server-side so it covers every page, not just the loaded one.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiNotAvailable"));
@@ -105,6 +117,7 @@ const useExpenseList = () => {
       const res = await api.getExpenses({
         page,
         limit,
+        search: debouncedSearch || undefined,
         status: filters.status || undefined,
         supplier_id: filters.supplier_id || undefined,
         startDate: filters.startDate || undefined,
@@ -132,7 +145,7 @@ const useExpenseList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters, t]);
+  }, [api, page, limit, filters, debouncedSearch, t]);
 
   useEffect(() => {
     refetch();
@@ -211,6 +224,9 @@ const useExpenseList = () => {
     filters,
     setFilters,
     clearFilters,
+
+    search,
+    setSearch,
 
     allTags,
     tagsByExpense,

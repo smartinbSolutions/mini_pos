@@ -320,8 +320,20 @@ export default function registerProductIPC() {
     const queryParams = [];
 
     if (search) {
-      whereConditions.push(`(products.name LIKE ? OR products.code LIKE ?)`);
-      queryParams.push(`%${search}%`, `%${search}%`);
+      whereConditions.push(`(
+        products.name LIKE ?
+        OR products.latinName LIKE ?
+        OR products.code LIKE ?
+        OR products.id IN (SELECT product_id FROM product_barcodes WHERE barcode = ?)
+        OR products.id IN (SELECT product_id FROM product_units WHERE barcode = ?)
+      )`);
+      queryParams.push(
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+        search,
+        search,
+      );
     }
 
     if (params.type) {
@@ -434,7 +446,7 @@ export default function registerProductIPC() {
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit) || 1,
     };
   });
 

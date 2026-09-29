@@ -93,6 +93,7 @@ export default function useProductCatalog() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCost, setTotalCost] = useState(1);
   const [filters, setFiltersState] = useState(emptyFilters);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const api = window.api;
 
   const canUseUnits = !unavailableHandlers.includes("units");
@@ -133,6 +134,14 @@ export default function useProductCatalog() {
     [t],
   );
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiUnavailable"));
@@ -150,7 +159,7 @@ export default function useProductCatalog() {
           api.getProducts({
             page,
             limit,
-            search,
+            search: debouncedSearch,
             type: filters.type || undefined,
             unit_id: filters.unit_id || undefined,
             hasTax: filters.hasTax || undefined,
@@ -214,15 +223,11 @@ export default function useProductCatalog() {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, search, filters, t]);
+  }, [api, page, limit, debouncedSearch, filters, t]);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
 
   const barcodesByProduct = useMemo(() => {
     return barcodes.reduce((groups, barcode) => {

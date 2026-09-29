@@ -91,6 +91,8 @@ const SalesQuotationList = () => {
     filters,
     handleFilterChange,
     clearFilters,
+    search,
+    setSearch,
     customers,
     taxes,
     allTags,
@@ -98,7 +100,7 @@ const SalesQuotationList = () => {
   } = useSalesQuotationList();
 
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
+
   const [actionError, setActionError] = useState("");
   const [deleteQuotationTarget, setDeleteQuotationTarget] = useState(null);
   const { money } = usePrimaryCurrency();
@@ -194,24 +196,7 @@ const SalesQuotationList = () => {
     },
   ];
 
-  const filtered = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    if (!term) return salesQuotations;
-
-    return salesQuotations.filter((q) => {
-      return [
-        q.id,
-        q.customer_name,
-        q.quotation_name,
-        q.date,
-        q.subtotal,
-        q.net_total,
-        q.status,
-      ]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(term));
-    });
-  }, [salesQuotations, search]);
+  const filtered = salesQuotations;
 
   const handleDelete = async (id) => {
     try {

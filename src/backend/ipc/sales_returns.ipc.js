@@ -405,6 +405,7 @@ export default function registerSalesReturnsIpc() {
       const page = Math.max(1, Number(params.page) || 1);
       const limit = Math.max(1, Number(params.limit) || 20);
       const offset = (page - 1) * limit;
+      const search = String(params.search || "").trim();
 
       const {
         dateFrom,
@@ -442,6 +443,28 @@ export default function registerSalesReturnsIpc() {
       if (maxTotal !== undefined && maxTotal !== "" && maxTotal !== null) {
         whereConditions.push("sr.net_total <= ?");
         whereValues.push(Number(maxTotal));
+      }
+
+      if (search) {
+        whereConditions.push(`
+          (
+            CAST(sr.id AS TEXT) = ?
+            OR CAST(sr.sales_invoice_id AS TEXT) = ?
+            OR sr.sales_invoice_id IN (
+              SELECT id FROM sales_invoices WHERE invoice_name LIKE ?
+            )
+            OR sr.customer_id IN (
+              SELECT id FROM customers WHERE name LIKE ? OR phone LIKE ?
+            )
+          )
+        `);
+        whereValues.push(
+          search,
+          search,
+          `%${search}%`,
+          `%${search}%`,
+          `%${search}%`,
+        );
       }
 
       if (Array.isArray(params.taxIds) && params.taxIds.length) {
@@ -574,7 +597,7 @@ export default function registerSalesReturnsIpc() {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 1,
       };
     } catch (err) {
       return { data: [], total: 0, totalPages: 1, error: err.message };

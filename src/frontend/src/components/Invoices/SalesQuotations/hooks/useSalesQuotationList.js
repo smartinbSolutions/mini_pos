@@ -26,18 +26,34 @@ export default function useSalesQuotationList() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState(emptyFilters);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [customers, setCustomers] = useState([]);
   const [taxes, setTaxes] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const [tagsByQuotation, setTagsByQuotation] = useState({});
 
+  // Search is server-side so it covers every page, not just the loaded one.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const fetchQuotations = useCallback(async () => {
     if (!api) return;
 
     try {
       setLoading(true);
-      const res = await api.getSalesQuotations({ page, limit, ...filters });
+      const res = await api.getSalesQuotations({
+        page,
+        limit,
+        ...filters,
+        search: debouncedSearch || undefined,
+      });
 
       setSalesQuotations(res?.data || []);
       setTotal(res?.total || 0);
@@ -48,14 +64,14 @@ export default function useSalesQuotationList() {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters]);
+  }, [api, page, limit, filters, debouncedSearch]);
 
   const fetchLookups = useCallback(async () => {
     if (!api) return;
 
     try {
       const [custRes, taxRes] = await Promise.all([
-        api.getCustomers(),
+        api.getCustomers({ page: 1, limit: 1000 }),
         api.getTaxes(),
       ]);
       setCustomers(custRes?.data || []);
@@ -151,6 +167,8 @@ export default function useSalesQuotationList() {
     filters,
     handleFilterChange,
     clearFilters,
+    search,
+    setSearch,
     customers,
     taxes,
     allTags,

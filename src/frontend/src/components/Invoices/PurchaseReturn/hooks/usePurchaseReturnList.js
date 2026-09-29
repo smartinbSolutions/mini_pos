@@ -27,6 +27,8 @@ const usePurchaseReturnList = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [suppliers, setSuppliers] = useState([]);
   const [taxes, setTaxes] = useState([]);
 
@@ -46,6 +48,15 @@ const usePurchaseReturnList = () => {
     setPage(1);
   };
 
+  // Search is server-side so it covers every page, not just the loaded one.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiNotAvailable"));
@@ -58,6 +69,7 @@ const usePurchaseReturnList = () => {
       const res = await api.getPurchaseReturns({
         page,
         limit,
+        search: debouncedSearch || undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
         supplierId: filters.supplierId || undefined,
@@ -77,7 +89,7 @@ const usePurchaseReturnList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters, t]);
+  }, [api, page, limit, filters, debouncedSearch, t]);
 
   useEffect(() => {
     refetch();
@@ -164,6 +176,8 @@ const usePurchaseReturnList = () => {
     filters,
     handleFilterChange,
     clearFilters,
+    search,
+    setSearch,
     suppliers,
     taxes,
     allTags,

@@ -312,6 +312,7 @@ export default function registerExpenseIPC() {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
+    const search = String(params.search || "").trim();
 
     const {
       startDate,
@@ -349,6 +350,26 @@ export default function registerExpenseIPC() {
         )
       `);
       whereValues.push(...params.taxIds);
+    }
+
+    if (search) {
+      whereConditions.push(`
+        (
+          e.invoice_name LIKE ?
+          OR e.description LIKE ?
+          OR CAST(e.id AS TEXT) = ?
+          OR e.supplier_id IN (
+            SELECT id FROM suppliers WHERE name LIKE ? OR phone LIKE ?
+          )
+        )
+      `);
+      whereValues.push(
+        `%${search}%`,
+        `%${search}%`,
+        search,
+        `%${search}%`,
+        `%${search}%`,
+      );
     }
 
     // Tag filter — must match ALL selected tags. Subquery against
@@ -513,7 +534,7 @@ export default function registerExpenseIPC() {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit) || 1,
       };
     } catch (err) {
       console.error("Failed to load expenses:", err);

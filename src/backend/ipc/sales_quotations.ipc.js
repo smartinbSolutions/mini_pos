@@ -513,6 +513,7 @@ export default function registerSalesQuotationsIPC() {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
+    const search = String(params.search || "").trim();
 
     const whereConditions = [];
     const whereParams = [];
@@ -549,6 +550,32 @@ export default function registerSalesQuotationsIPC() {
       whereConditions.push("q.net_total <= ?");
       whereParams.push(Number(params.maxTotal));
     }
+    if (search) {
+      whereConditions.push(`
+        (
+          q.quotation_name LIKE ?
+          OR CAST(q.id AS TEXT) = ?
+          OR q.customer_id IN (
+            SELECT id FROM customers WHERE name LIKE ? OR phone LIKE ?
+          )
+        )
+      `);
+      whereParams.push(`%${search}%`, search, `%${search}%`, `%${search}%`);
+    }
+
+    if (Array.isArray(params.tagIds) && params.tagIds.length) {
+      const tagPlaceholders = params.tagIds.map(() => "?").join(",");
+      whereConditions.push(`
+        q.id IN (
+          SELECT entity_id FROM taggables
+          WHERE entity_type = 'sales_quotation' AND tag_id IN (${tagPlaceholders})
+          GROUP BY entity_id
+          HAVING COUNT(DISTINCT tag_id) = ?
+        )
+      `);
+      whereParams.push(...params.tagIds, params.tagIds.length);
+    }
+
     if (Array.isArray(params.taxIds) && params.taxIds.length) {
       const taxPlaceholders = params.taxIds.map(() => "?").join(",");
       whereConditions.push(`
@@ -637,7 +664,7 @@ export default function registerSalesQuotationsIPC() {
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit) || 1,
     };
   });
 

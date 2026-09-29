@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   Receipt,
   HandCoins,
@@ -130,6 +130,8 @@ const SalesList = () => {
 
     filters,
     handleFilterChange,
+    search,
+    setSearch,
     clearFilters,
     customers,
     taxes,
@@ -138,7 +140,6 @@ const SalesList = () => {
   } = useSalesList();
 
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
@@ -208,24 +209,7 @@ const SalesList = () => {
     },
   ];
 
-  const filtered = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    if (!term) return salesInvoices;
-
-    return salesInvoices.filter((inv) => {
-      return [
-        inv.id,
-        inv.customer_name,
-        inv.invoice_name,
-        inv.date,
-        inv.subtotal,
-        inv.net_total,
-        inv.status,
-      ]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(term));
-    });
-  }, [salesInvoices, search]);
+  const filtered = salesInvoices;
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [savingPdfId, setSavingPdfId] = useState(null);

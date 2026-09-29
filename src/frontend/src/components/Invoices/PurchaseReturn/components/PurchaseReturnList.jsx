@@ -120,6 +120,8 @@ const PurchaseReturnList = () => {
     filters,
     handleFilterChange,
     clearFilters,
+    search,
+    setSearch,
     suppliers,
     taxes,
     allTags,
@@ -127,7 +129,6 @@ const PurchaseReturnList = () => {
   } = usePurchaseReturnList();
 
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
@@ -175,25 +176,7 @@ const PurchaseReturnList = () => {
     },
   ];
 
-  const filtered = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    if (!term) return purchaseReturns;
-
-    return purchaseReturns.filter((inv) => {
-      return [
-        inv.id,
-        inv.supplier_name,
-        inv.supplier_id,
-        inv.date,
-        inv.total,
-        inv.net_total,
-        inv.purchase_invoice_name,
-        inv.purchase_invoice_id,
-      ]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(term));
-    });
-  }, [purchaseReturns, search]);
+  const filtered = purchaseReturns;
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [savingPdfId, setSavingPdfId] = useState(null);

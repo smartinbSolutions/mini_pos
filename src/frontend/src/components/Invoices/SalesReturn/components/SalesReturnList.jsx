@@ -87,6 +87,8 @@ const SalesReturnList = () => {
     filters,
     handleFilterChange,
     clearFilters,
+    search,
+    setSearch,
     customers,
     taxes,
     allTags,
@@ -94,7 +96,6 @@ const SalesReturnList = () => {
   } = useSalesReturnList();
 
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
@@ -152,25 +153,7 @@ const SalesReturnList = () => {
     },
   ];
 
-  const filtered = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    if (!term) return salesReturns;
-
-    return salesReturns.filter((inv) => {
-      return [
-        inv.id,
-        inv.customer_name,
-        inv.customer_id,
-        inv.date,
-        inv.total,
-        inv.net_total,
-        inv.original_invoice_name,
-        inv.sales_invoice_id,
-      ]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(term));
-    });
-  }, [salesReturns, search]);
+  const filtered = salesReturns;
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSavingPdf, setIsSavingPdf] = useState(false);

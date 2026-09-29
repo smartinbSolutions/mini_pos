@@ -29,6 +29,10 @@ const usePurchaseList = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  v;
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
   const [taxes, setTaxes] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const [tagsByInvoice, setTagsByInvoice] = useState({});
@@ -47,6 +51,15 @@ const usePurchaseList = () => {
     setPage(1);
   };
 
+  // Search is server-side so it covers every page, not just the loaded one.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const refetch = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiNotAvailable"));
@@ -58,6 +71,7 @@ const usePurchaseList = () => {
       const res = await api.getPurchaseInvoices({
         page,
         limit,
+        search: debouncedSearch || undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
         supplierId: filters.supplierId || undefined,
@@ -78,7 +92,7 @@ const usePurchaseList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters, t]);
+  }, [api, page, limit, filters, debouncedSearch, t]);
 
   useEffect(() => {
     if (!api?.getTaxes) return;
@@ -196,6 +210,8 @@ const usePurchaseList = () => {
 
     filters,
     handleFilterChange,
+    search,
+    setSearch,
     clearFilters,
     suppliers,
     taxes,

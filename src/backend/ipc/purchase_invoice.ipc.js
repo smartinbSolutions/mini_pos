@@ -412,6 +412,7 @@ export default function registerPurchaseInvoicesIPC() {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
+    const search = String(params.search || "").trim();
 
     const whereConditions = [];
     const whereParams = [];
@@ -472,6 +473,19 @@ export default function registerPurchaseInvoicesIPC() {
         )
       `);
       whereParams.push(...params.tagIds, params.tagIds.length);
+    }
+
+    if (search) {
+      whereConditions.push(`
+        (
+          p.invoice_name LIKE ?
+          OR CAST(p.id AS TEXT) = ?
+          OR p.supplier_id IN (
+            SELECT id FROM suppliers WHERE name LIKE ? OR phone LIKE ?
+          )
+        )
+      `);
+      whereParams.push(`%${search}%`, search, `%${search}%`, `%${search}%`);
     }
 
     if (params.status) {
@@ -631,7 +645,7 @@ export default function registerPurchaseInvoicesIPC() {
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit) || 1,
     };
   });
   // GET ONE

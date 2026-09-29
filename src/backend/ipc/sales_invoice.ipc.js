@@ -415,6 +415,7 @@ export default function registerSalesInvoiceIPC() {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
+    const search = String(params.search || "").trim();
 
     const whereConditions = [];
     const whereParams = [];
@@ -485,6 +486,19 @@ export default function registerSalesInvoiceIPC() {
       )
     `);
       whereParams.push(...params.taxIds);
+    }
+
+    if (search) {
+      whereConditions.push(`
+      (
+        s.invoice_name LIKE ?
+        OR CAST(s.id AS TEXT) = ?
+        OR s.customer_id IN (
+          SELECT id FROM customers WHERE name LIKE ? OR phone LIKE ?
+        )
+      )
+    `);
+      whereParams.push(`%${search}%`, search, `%${search}%`, `%${search}%`);
     }
 
     // Tag filter — must match ALL selected tags (extra tags beyond the
@@ -641,7 +655,7 @@ export default function registerSalesInvoiceIPC() {
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit) || 1,
     };
   });
 

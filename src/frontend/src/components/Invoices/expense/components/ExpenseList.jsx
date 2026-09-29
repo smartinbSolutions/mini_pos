@@ -135,13 +135,17 @@ const ExpenseList = () => {
     setFilters,
     clearFilters,
 
+    search,
+    setSearch,
+
     allTags,
     tagsByExpense,
+
+    actionError: deleteError,
   } = useExpenseList();
 
   const { money } = usePrimaryCurrency();
 
-  const [search, setSearch] = useState("");
   const [actionError, setActionError] = useState("");
   const [deleteExpense, setDeleteExpense] = useState(null);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -177,26 +181,7 @@ const ExpenseList = () => {
       setSavingPdfId(null);
     }
   };
-
-  const filtered = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    if (!term) return expenses;
-
-    return expenses.filter((inv) => {
-      return [
-        inv.id,
-        inv.supplier_name,
-        inv.invoice_name,
-        inv.description,
-        inv.date,
-        inv.total,
-        inv.net_total,
-        inv.status,
-      ]
-        .filter(Boolean)
-        .some((v) => String(v).toLowerCase().includes(term));
-    });
-  }, [expenses, search]);
+  const filtered = expenses;
 
   const totalNet = expenses.reduce(
     (sum, inv) => sum + Number(inv?.net_total || 0),
@@ -303,9 +288,9 @@ const ExpenseList = () => {
           ]}
         />
 
-        {(error || actionError) && (
+        {(error || actionError || deleteError) && (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-3 text-red-700">
-            {error || actionError}
+            {error || actionError || deleteError}
           </div>
         )}
 

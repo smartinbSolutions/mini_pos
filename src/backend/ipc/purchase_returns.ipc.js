@@ -403,6 +403,7 @@ export default function registerPurchaseReturnIPC() {
     const page = Math.max(1, Number(params.page) || 1);
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
+    const search = String(params.search || "").trim();
 
     const { dateFrom, dateTo, supplierId, status, minTotal, maxTotal } = params;
 
@@ -428,6 +429,28 @@ export default function registerPurchaseReturnIPC() {
     if (maxTotal !== undefined && maxTotal !== "" && maxTotal !== null) {
       whereConditions.push("pr.net_total <= ?");
       whereValues.push(Number(maxTotal));
+    }
+
+    if (search) {
+      whereConditions.push(`
+        (
+          CAST(pr.id AS TEXT) = ?
+          OR CAST(pr.purchase_invoice_id AS TEXT) = ?
+          OR pr.purchase_invoice_id IN (
+            SELECT id FROM purchase_invoices WHERE invoice_name LIKE ?
+          )
+          OR pr.supplier_id IN (
+            SELECT id FROM suppliers WHERE name LIKE ? OR phone LIKE ?
+          )
+        )
+      `);
+      whereValues.push(
+        search,
+        search,
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+      );
     }
 
     if (Array.isArray(params.taxIds) && params.taxIds.length) {
@@ -583,7 +606,7 @@ export default function registerPurchaseReturnIPC() {
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit) || 1,
     };
   });
   // GET ONE
