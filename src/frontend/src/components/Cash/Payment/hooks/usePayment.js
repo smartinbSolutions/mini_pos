@@ -1,7 +1,19 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { useAuth } from "../../../../Global/AuthContext";
+import useListParams from "../../../../Global/useListParams";
+
+const DEFAULT_FILTERS = {
+  type: null,
+  party_type: null,
+  invoice_type: null,
+  fund_id: null,
+  dateFrom: null,
+  dateTo: null,
+};
+const LIST_DEFAULTS = { page: 1, limit: 20, search: "", ...DEFAULT_FILTERS };
+const FILTER_KEYS = Object.keys(DEFAULT_FILTERS);
 
 const usePayment = () => {
   const { t } = useTranslation();
@@ -15,19 +27,35 @@ const usePayment = () => {
   });
   const [actionError, setActionError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [filters, setFiltersState] = useState({
-    type: null,
-    party_type: null,
-    invoice_type: null,
-    fund_id: null,
-    dateFrom: null,
-    dateTo: null,
-  });
   const api = window.api;
+
+  // List state lives in the URL: Back / refresh / RouteMemory restore it
+  const [params, setParams] = useListParams(LIST_DEFAULTS);
+  const { page, limit } = params;
+  // Input stays local so typing is instant; the URL gets the debounced value
+  const [search, setSearch] = useState(params.search);
+
+  const filtersKey = JSON.stringify(FILTER_KEYS.map((k) => params[k]));
+  const filters = useMemo(
+    () => Object.fromEntries(FILTER_KEYS.map((k) => [k, params[k]])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtersKey],
+  );
+
+  const setPage = (p) => setParams({ page: p });
+  const setLimit = (l) => setParams({ limit: l, page: 1 });
+  const setFilters = (newFilters) => setParams({ ...newFilters, page: 1 });
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = search.trim();
+      // Only reset to page 1 when the search actually changed — not on mount
+      if (next !== params.search) setParams({ search: next, page: 1 });
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [search, params.search, setParams]);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -38,9 +66,14 @@ const usePayment = () => {
     try {
       setLoading(true);
 
-      let res = await api.getPayments({ page, limit, ...filters });
+      const res = await api.getPayments({
+        page,
+        limit,
+        ...filters,
+        search: params.search || undefined,
+      });
 
-      setPayments(res.data || []);
+      setPayments(res?.data || []);
       setTotal(res?.total || 0);
       setTotalPages(res?.totalPages || 1);
       setSummary(
@@ -49,33 +82,26 @@ const usePayment = () => {
           income_total: 0,
           expense_count: 0,
           expense_total: 0,
-        }
+        },
       );
     } catch (err) {
-      console.error("Failed to load product catalog:", err);
+      console.error("Failed to load payments:", err);
       setActionError(
-        err?.message || t("errors.createFailed", { field: t("ui.fund") })
+        err?.message || t("errors.loadFailed", { field: t("ui.payment") }),
       );
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters, t]);
+  }, [api, page, limit, filters, params.search, t]);
 
   useEffect(() => {
     refetch();
   }, [refetch]);
 
-  const setFilters = (newFilters) => {
-    setFiltersState((prev) => ({ ...prev, ...newFilters }));
-    setPage(1);
-  };
-
   const deletePayment = async (payment) => {
-    try {
-      await api.deletePayment(payment.id, user?.id);
-      await refetch();
-    } finally {
-    }
+    const res = await api.deletePayment(payment.id, user?.id);
+    if (!res?.success) throw new Error(res?.error || "DELETE_FAILED");
+    await refetch();
   };
 
   const handleDeletePayment = async (payment) => {
@@ -104,6 +130,8 @@ const usePayment = () => {
     totalPages,
     filters,
     setFilters,
+    search,
+    setSearch,
   };
 };
 

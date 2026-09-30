@@ -234,7 +234,6 @@ const PartnersList = () => {
                 onPageChange={setPage}
                 onLimitChange={(newLimit) => {
                   setLimit(newLimit);
-                  setPage(1);
                 }}
               />
             </div>

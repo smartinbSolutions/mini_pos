@@ -67,7 +67,7 @@ export default function registerPaymentIPC() {
                 ), 0) AS remaining
               FROM ${table}
               WHERE id = ?
-              `
+              `,
             )
             .get(invoiceType, data.invoiceId);
 
@@ -226,6 +226,27 @@ export default function registerPaymentIPC() {
       filterParams.push(params.dateTo);
     }
 
+    // Payment number (exact, "#12" or "12"), party name, fund name, or note.
+    // Self-contained subqueries so the same WHERE works in the list, count
+    // and summary queries (only the list query has the party/fund joins).
+    const search = String(params.search || "")
+      .trim()
+      .replace(/^#/, "");
+    if (search) {
+      const like = `%${search}%`;
+      conditions.push(`(
+        CAST(p.id AS TEXT) = ?
+        OR p.note LIKE ?
+        OR (SELECT name FROM funds WHERE id = p.fund_id) LIKE ?
+        OR (CASE p.party_type
+              WHEN 'customer' THEN (SELECT name FROM customers WHERE id = p.party_id)
+              WHEN 'supplier' THEN (SELECT name FROM suppliers WHERE id = p.party_id)
+              WHEN 'partner'  THEN (SELECT name FROM partners  WHERE id = p.party_id)
+            END) LIKE ?
+      )`);
+      filterParams.push(search, like, like, like);
+    }
+
     const whereClause = conditions.length
       ? `WHERE ${conditions.join(" AND ")}`
       : "";
@@ -253,8 +274,7 @@ export default function registerPaymentIPC() {
         ) AS allocated_amount
       FROM payments p
       LEFT JOIN funds f ON f.id = p.fund_id
-          LEFT JOIN users creator
-    ON creator.id = p.created_by
+      LEFT JOIN users creator ON creator.id = p.created_by
       LEFT JOIN currencies c ON c.id = f.currency_id
       LEFT JOIN customers cust ON cust.id = p.party_id AND p.party_type = 'customer'
       LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
@@ -262,7 +282,7 @@ export default function registerPaymentIPC() {
       ${whereClause}
       ORDER BY p.id DESC
       LIMIT ? OFFSET ?
-    `
+    `,
       )
       .all(...filterParams, limit, offset);
 
@@ -280,7 +300,7 @@ export default function registerPaymentIPC() {
         COALESCE(SUM(CASE WHEN p.type = 'expense' THEN p.amount END), 0) AS expense_total
       FROM payments p
       ${whereClause}
-    `
+    `,
       )
       .get(...filterParams);
 
@@ -319,23 +339,47 @@ export default function registerPaymentIPC() {
 
     if (params.fund_id) {
       conditions.push(
-        `CAST(json_extract(dp.payload, '$.payment.fund_id') AS INTEGER) = ?`
+        `CAST(json_extract(dp.payload, '$.payment.fund_id') AS INTEGER) = ?`,
       );
       filterParams.push(Number(params.fund_id));
     }
 
     if (params.dateFrom) {
       conditions.push(
-        `date(json_extract(dp.payload, '$.payment.date')) >= date(?)`
+        `date(json_extract(dp.payload, '$.payment.date')) >= date(?)`,
       );
       filterParams.push(params.dateFrom);
     }
 
     if (params.dateTo) {
       conditions.push(
-        `date(json_extract(dp.payload, '$.payment.date')) <= date(?)`
+        `date(json_extract(dp.payload, '$.payment.date')) <= date(?)`,
       );
       filterParams.push(params.dateTo);
+    }
+
+    // Original payment number (exact), party name, fund name, or note.
+    // Self-contained subqueries so the same WHERE works in the count query.
+    const search = String(params.search || "")
+      .trim()
+      .replace(/^#/, "");
+    if (search) {
+      const like = `%${search}%`;
+      conditions.push(`(
+        CAST(dp.payment_id AS TEXT) = ?
+        OR json_extract(dp.payload, '$.payment.note') LIKE ?
+        OR (SELECT name FROM funds
+            WHERE id = CAST(json_extract(dp.payload, '$.payment.fund_id') AS INTEGER)) LIKE ?
+        OR (CASE json_extract(dp.payload, '$.payment.party_type')
+              WHEN 'customer' THEN (SELECT name FROM customers
+                WHERE id = CAST(json_extract(dp.payload, '$.payment.party_id') AS INTEGER))
+              WHEN 'supplier' THEN (SELECT name FROM suppliers
+                WHERE id = CAST(json_extract(dp.payload, '$.payment.party_id') AS INTEGER))
+              WHEN 'partner'  THEN (SELECT name FROM partners
+                WHERE id = CAST(json_extract(dp.payload, '$.payment.party_id') AS INTEGER))
+            END) LIKE ?
+      )`);
+      filterParams.push(search, like, like, like);
     }
 
     const whereClause = conditions.length
@@ -390,13 +434,13 @@ export default function registerPaymentIPC() {
       ${whereClause}
       ORDER BY dp.deletedAt DESC
       LIMIT ? OFFSET ?
-    `
+    `,
       )
       .all(...filterParams, limit, offset);
 
     const { total } = db
       .prepare(
-        `SELECT COUNT(*) AS total FROM deleted_payments dp ${whereClause}`
+        `SELECT COUNT(*) AS total FROM deleted_payments dp ${whereClause}`,
       )
       .get(...filterParams);
 
@@ -433,7 +477,7 @@ export default function registerPaymentIPC() {
         LEFT JOIN suppliers supp ON supp.id = p.party_id AND p.party_type = 'supplier'
         LEFT JOIN partners part ON part.id = p.party_id AND p.party_type = 'partner'
         WHERE p.id = ?
-        `
+        `,
       )
       .get(id);
 
@@ -468,7 +512,7 @@ export default function registerPaymentIPC() {
         LEFT JOIN party_history ob ON ob.id = pa.invoice_id AND pa.invoice_type = 'opening_balance'
         WHERE pa.payment_id = ?
         ORDER BY pa.id ASC
-        `
+        `,
       )
       .all(id)
       .map((a) => ({
@@ -515,7 +559,7 @@ export default function registerPaymentIPC() {
         LEFT JOIN party_history ob ON ob.id = pa.invoice_id AND pa.invoice_type = 'opening_balance'
         WHERE pa.payment_id = ?
         ORDER BY pa.id ASC
-      `
+      `,
       )
       .all(paymentId);
 
@@ -565,7 +609,7 @@ export default function registerPaymentIPC() {
       WHERE p.fund_id = ?
 
       ORDER BY p.id DESC
-    `
+    `,
       )
       .all(id);
   });
@@ -607,10 +651,10 @@ export default function registerPaymentIPC() {
 
         ORDER BY id DESC
         LIMIT ? OFFSET ?
-        `
+        `,
         )
         .all(partyId, partyType, limit, offset);
-    }
+    },
   );
 
   ipcMain.handle(
@@ -628,12 +672,12 @@ export default function registerPaymentIPC() {
         FROM payments
         WHERE party_id = ?
           AND party_type = ?
-        `
+        `,
         )
         .get(partyId, partyType);
 
       return row?.balance || 0;
-    }
+    },
   );
 
   ipcMain.handle("update-payment", (event, data) => {
@@ -648,7 +692,7 @@ export default function registerPaymentIPC() {
         amount = ?,
         note = ?
       WHERE id = ?
-    `
+    `,
     ).run(
       data.type,
       data.party_type,
@@ -656,7 +700,7 @@ export default function registerPaymentIPC() {
       data.fund_id,
       data.amount,
       data.note,
-      data.id
+      data.id,
     );
 
     return { success: true };
@@ -670,7 +714,7 @@ export default function registerPaymentIPC() {
         SELECT *
         FROM payments
         WHERE id = ?
-      `
+      `,
         )
         .get(id);
 
@@ -685,7 +729,7 @@ export default function registerPaymentIPC() {
         FROM party_history
         WHERE payment_id = ?
           AND record_type = 'payment'
-      `
+      `,
         )
         .all(id);
 
@@ -699,7 +743,7 @@ export default function registerPaymentIPC() {
         SELECT *
         FROM payment_allocations
         WHERE payment_id = ?
-      `
+      `,
         )
         .all(id);
 
@@ -709,35 +753,35 @@ export default function registerPaymentIPC() {
         `
       INSERT INTO deleted_payments (payment_id, payload, deleted_by)
       VALUES (?, ?, ?)
-    `
+    `,
       ).run(id, JSON.stringify({ payment, allocations }), deletedBy ?? null);
 
       db.prepare(
         `
       DELETE FROM payment_allocations
       WHERE payment_id = ?
-    `
+    `,
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM party_history
       WHERE payment_id = ?
-    `
+    `,
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM fund_history
       WHERE payment_id = ?
-    `
+    `,
       ).run(id);
 
       db.prepare(
         `
       DELETE FROM payments
       WHERE id = ?
-    `
+    `,
       ).run(id);
     });
 

@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useListParams from "../../../../Global/useListParams";
 
 const DEFAULT_FILTERS = {
   dateFrom: "",
@@ -13,6 +14,9 @@ const DEFAULT_FILTERS = {
   tagIds: [],
 };
 
+const LIST_DEFAULTS = { page: 1, limit: 20, search: "", ...DEFAULT_FILTERS };
+const FILTER_KEYS = Object.keys(DEFAULT_FILTERS);
+
 const useSalesReturnList = () => {
   const { t } = useTranslation();
   const api = window.api;
@@ -23,14 +27,22 @@ const useSalesReturnList = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [params, setParams] = useListParams(LIST_DEFAULTS);
+  const { page, limit } = params;
+  const [search, setSearch] = useState(params.search);
+
+  const filtersKey = JSON.stringify(FILTER_KEYS.map((k) => params[k]));
+  const filters = useMemo(
+    () => Object.fromEntries(FILTER_KEYS.map((k) => [k, params[k]])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filtersKey],
+  );
+
+  const setPage = (p) => setParams({ page: p });
+  const setLimit = (l) => setParams({ limit: l, page: 1 });
   const [customers, setCustomers] = useState([]);
   const [taxes, setTaxes] = useState([]);
   const [allTags, setAllTags] = useState([]);
@@ -39,24 +51,18 @@ const useSalesReturnList = () => {
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
-  const handleFilterChange = (name, value) => {
-    setFilters((prev) => ({ ...prev, [name]: value }));
-    setPage(1);
-  };
+  const handleFilterChange = (name, value) =>
+    setParams({ [name]: value, page: 1 });
 
-  const clearFilters = () => {
-    setFilters(DEFAULT_FILTERS);
-    setPage(1);
-  };
-
+  const clearFilters = () => setParams({ ...DEFAULT_FILTERS, page: 1 });
   // Search is server-side so it covers every page, not just the loaded one.
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
+      const next = search.trim();
+      if (next !== params.search) setParams({ search: next, page: 1 });
     }, 250);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, params.search, setParams]);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -70,7 +76,7 @@ const useSalesReturnList = () => {
       const res = await api.getSalesReturns({
         page,
         limit,
-        search: debouncedSearch || undefined,
+        search: params.search || undefined,
         dateFrom: filters.dateFrom || undefined,
         dateTo: filters.dateTo || undefined,
         customerId: filters.customerId || undefined,
@@ -91,7 +97,7 @@ const useSalesReturnList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters, debouncedSearch, t]);
+  }, [api, page, limit, filters, params.search, t]);
 
   useEffect(() => {
     refetch();

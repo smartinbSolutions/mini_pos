@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
+import useListParams from "../../../Global/useListParams";
 
+const LIST_DEFAULTS = { page: 1, limit: 20, balance: "all", search: "" };
 const useCustomerList = () => {
   const { t } = useTranslation();
   const emptyCustomer = {
@@ -33,14 +35,17 @@ const useCustomerList = () => {
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteCustomer, setSelecteCustomer] = useState(null);
 
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [balanceFilter, setBalanceFilterState] = useState("all");
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [tagsByCustomer, setTagsByCustomer] = useState({});
+
+  const [params, setParams] = useListParams(LIST_DEFAULTS);
+  const { page, limit, balance: balanceFilter } = params;
+  const [search, setSearch] = useState(params.search);
+
+  const setPage = (p) => setParams({ page: p });
+  const setLimit = (l) => setParams({ limit: l, page: 1 });
+  const setBalanceFilter = (f) => setParams({ balance: f, page: 1 });
 
   const api = window.api;
 
@@ -61,11 +66,11 @@ const useCustomerList = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
+      const next = search.trim();
+      if (next !== params.search) setParams({ search: next, page: 1 });
     }, 250);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, params.search, setParams]);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -79,7 +84,7 @@ const useCustomerList = () => {
       const res = await api.getCustomers({
         page,
         limit,
-        search: debouncedSearch,
+        search: params.search,
         balance_filter: balanceFilter,
       });
 
@@ -104,7 +109,7 @@ const useCustomerList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, balanceFilter, debouncedSearch, t]);
+  }, [api, page, limit, balanceFilter, params.search, t]);
 
   useEffect(() => {
     refetch();
@@ -120,12 +125,6 @@ const useCustomerList = () => {
       if (res.success) setTagsByCustomer(res.data);
     });
   }, [customers, api]);
-
-  // Changing the filter re-queries the full dataset, so always snap back to page 1.
-  const setBalanceFilter = (nextFilter) => {
-    setBalanceFilterState(nextFilter);
-    setPage(1);
-  };
 
   const createCustomer = async (cust) => {
     const validationError = validateCustomer(cust);

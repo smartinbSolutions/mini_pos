@@ -536,7 +536,6 @@ const PurchaseList = () => {
             onPageChange={setPage}
             onLimitChange={(newLimit) => {
               setLimit(newLimit);
-              setPage(1);
             }}
           />
         </section>

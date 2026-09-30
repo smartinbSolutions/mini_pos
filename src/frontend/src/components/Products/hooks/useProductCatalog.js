@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import useListParams from "../../../Global/useListParams";
 
 const normalizeBarcodes = (barcodes = []) => {
   const seen = new Set();
@@ -65,11 +66,14 @@ const productPayload = (product) => ({
   date,
 });
 
-const emptyFilters = {
+const LIST_DEFAULTS = {
+  page: 1,
+  limit: 20,
+  search: "",
   type: null,
   unit_id: null,
   hasTax: null,
-  tagIds: null,
+  tagIds: [],
 };
 
 export default function useProductCatalog() {
@@ -82,39 +86,46 @@ export default function useProductCatalog() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [unavailableHandlers, setUnavailableHandlers] = useState([]);
-  const [search, setSearch] = useState("");
+
   const [activeProduct, setActiveProduct] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [actionError, setActionError] = useState("");
   const [openDeleteModel, setOpenDeleteModel] = useState(false);
   const [selectDeleteProduct, setSelectDeleteProduct] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCost, setTotalCost] = useState(1);
-  const [filters, setFiltersState] = useState(emptyFilters);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  const [params, setParams] = useListParams(LIST_DEFAULTS);
+  const { page, limit } = params;
+  const [search, setSearch] = useState(params.search);
+
+  // Same shape as before (tagIds null when empty) so consumers don't change
+  const filters = useMemo(
+    () => ({
+      type: params.type,
+      unit_id: params.unit_id,
+      hasTax: params.hasTax,
+      tagIds: params.tagIds.length ? params.tagIds : null,
+    }),
+    [params.type, params.unit_id, params.hasTax, params.tagIds.join(",")],
+  );
+
+  const setPage = (p) => setParams({ page: p });
+  const setLimit = (l) => setParams({ limit: l, page: 1 });
+
   const api = window.api;
 
   const canUseUnits = !unavailableHandlers.includes("units");
   const canManageBarcodes = !unavailableHandlers.includes("product barcodes");
   const canUseTaxes = !unavailableHandlers.includes("taxes");
 
-  const setFilters = (patch) => {
-    setFiltersState((prev) => ({ ...prev, ...patch }));
-    setPage(1);
-  };
+  const setFilters = (patch) => setParams({ ...patch, page: 1 });
 
-  const clearFilters = () => {
-    setFiltersState(emptyFilters);
-    setPage(1);
-  };
+  const clearFilters = () =>
+    setParams({ type: null, unit_id: null, hasTax: null, tagIds: [], page: 1 });
 
-  // Maps known backend error codes (from create/update-product) to a
-  // translated, user-facing message. Anything not in this map falls back
-  // to treating err.message as an already-human-readable string (or, if
-  // that's empty, the generic save-error text).
   const mapProductErrorCode = useCallback(
     (code) => {
       switch (code) {
@@ -137,11 +148,11 @@ export default function useProductCatalog() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
+      const next = search.trim();
+      if (next !== params.search) setParams({ search: next, page: 1 });
     }, 250);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, params.search, setParams]);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -160,7 +171,7 @@ export default function useProductCatalog() {
           api.getProducts({
             page,
             limit,
-            search: debouncedSearch,
+            search: params.search,
             type: filters.type || undefined,
             unit_id: filters.unit_id || undefined,
             hasTax: filters.hasTax || undefined,
@@ -224,7 +235,7 @@ export default function useProductCatalog() {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, debouncedSearch, filters, t]);
+  }, [api, page, limit, params.search, filters, t]);
 
   useEffect(() => {
     refetch();

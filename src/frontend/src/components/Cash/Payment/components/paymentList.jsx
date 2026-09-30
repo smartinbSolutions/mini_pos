@@ -30,6 +30,9 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useNavigate } from "react-router-dom";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import GoTo from "../../../../Global/GoTo";
+import useListParams from "../../../../Global/useListParams";
+
+const UI_DEFAULTS = { view: "active" };
 
 const AllocationBadge = ({ payment }) => {
   const { t } = useTranslation();
@@ -105,7 +108,8 @@ const PaymentList = () => {
   const isRtl = i18n.dir() === "rtl";
   const navigate = useNavigate();
 
-  const [view, setView] = useState("active");
+  const [ui, setUi] = useListParams(UI_DEFAULTS);
+  const view = ui.view;
 
   const {
     payments = [],
@@ -122,6 +126,8 @@ const PaymentList = () => {
     totalPages: activeTotalPages,
     filters: activeFilters,
     setFilters: setActiveFilters,
+    search: activeSearch,
+    setSearch: setActiveSearch,
   } = usePayment();
 
   const {
@@ -137,6 +143,8 @@ const PaymentList = () => {
     totalPages: deletedTotalPages,
     filters: deletedFilters,
     setFilters: setDeletedFilters,
+    search: deletedSearch,
+    setSearch: setDeletedSearch,
   } = useDeletedPayments();
 
   const isDeletedView = view === "deleted";
@@ -153,11 +161,12 @@ const PaymentList = () => {
   const totalPages = isDeletedView ? deletedTotalPages : activeTotalPages;
   const filters = isDeletedView ? deletedFilters : activeFilters;
   const setFilters = isDeletedView ? setDeletedFilters : setActiveFilters;
+  const searchQuery = isDeletedView ? deletedSearch : activeSearch;
+  const setSearchQuery = isDeletedView ? setDeletedSearch : setActiveSearch;
 
   const { money, primaryCurrency } = usePrimaryCurrency();
 
   const [deletePaymentId, setDeletePaymentId] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [expandedRows, setExpandedRows] = useState({});
   const [allocationsByPayment, setAllocationsByPayment] = useState({});
@@ -176,13 +185,7 @@ const PaymentList = () => {
     }
   }, [api]);
 
-  const filteredPayments = rows.filter((pay) => {
-    const partyName = pay.party_name?.toLowerCase() || "";
-    const paymentId = String(isDeletedView ? pay.payment_id : pay.id);
-    const query = searchQuery.toLowerCase();
-    return partyName.includes(query) || paymentId.includes(query);
-  });
-
+  const filteredPayments = rows;
   const toggleExpand = async (payment) => {
     const rowId = isDeletedView ? payment.deleted_payment_id : payment.id;
     const isExpanded = expandedRows[rowId];
@@ -210,8 +213,7 @@ const PaymentList = () => {
   };
 
   const handleViewChange = (nextView) => {
-    setView(nextView);
-    setSearchQuery("");
+    setUi({ view: nextView });
     setExpandedRows({});
   };
 
@@ -231,7 +233,7 @@ const PaymentList = () => {
       setSavingPdfId(paymentId);
       const res = await api.saveDocumentPdf(
         `/print-payment/${paymentId}`,
-        `payment-${paymentId}.pdf`
+        `payment-${paymentId}.pdf`,
       );
       if (!res.success && res.error !== "CANCELED") {
         console.error(res.error);
@@ -244,7 +246,7 @@ const PaymentList = () => {
   };
 
   const hasActiveFilters = Object.values(filters).some(
-    (value) => value !== null && value !== ""
+    (value) => value !== null && value !== "",
   );
 
   const clearFilters = () => {
@@ -667,7 +669,7 @@ const PaymentList = () => {
                                       `screens.invoices.invoiceType.${alloc.invoice_type}`,
                                       {
                                         defaultValue: alloc.invoice_type,
-                                      }
+                                      },
                                     )}{" "}
                                     #{alloc.invoice_id}
                                   </GoTo>
@@ -712,7 +714,6 @@ const PaymentList = () => {
             onPageChange={setPage}
             onLimitChange={(newLimit) => {
               setLimit(newLimit);
-              setPage(1);
             }}
           />
         </section>

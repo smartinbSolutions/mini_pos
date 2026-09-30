@@ -825,6 +825,22 @@ export default function registerFundIPC() {
       values.push(params.dateTo);
     }
 
+    // Transfer number (exact, "#12" or "12"), either fund's name, or note.
+    // Subqueries (not the joins) so the same WHERE works in the COUNT query.
+    const search = String(params.search || "")
+      .trim()
+      .replace(/^#/, "");
+    if (search) {
+      const like = `%${search}%`;
+      conditions.push(`(
+        CAST(t.id AS TEXT) = ?
+        OR t.note LIKE ?
+        OR (SELECT name FROM funds WHERE id = t.from_fund_id) LIKE ?
+        OR (SELECT name FROM funds WHERE id = t.to_fund_id) LIKE ?
+      )`);
+      values.push(search, like, like, like);
+    }
+
     const whereClause = conditions.length
       ? `WHERE ${conditions.join(" AND ")}`
       : "";
@@ -837,23 +853,20 @@ export default function registerFundIPC() {
         ff.name AS from_fund_name,
         ff.currency_code AS from_fund_currency,
         tf.name AS to_fund_name,
-        creator.full_name AS created_by_name,
-  
-        tf.currency_code AS to_fund_currency
-  
+        tf.currency_code AS to_fund_currency,
+        creator.full_name AS created_by_name
       FROM fund_transfers t
       LEFT JOIN (
         SELECT f.id, f.name, c.code AS currency_code
         FROM funds f
         LEFT JOIN currencies c ON c.id = f.currency_id
       ) ff ON ff.id = t.from_fund_id
-      LEFT JOIN users creator
-      ON creator.id = t.created_by
       LEFT JOIN (
         SELECT f.id, f.name, c.code AS currency_code
         FROM funds f
         LEFT JOIN currencies c ON c.id = f.currency_id
       ) tf ON tf.id = t.to_fund_id
+      LEFT JOIN users creator ON creator.id = t.created_by
       ${whereClause}
       ORDER BY t.date DESC, t.id DESC
       LIMIT ? OFFSET ?
@@ -862,11 +875,7 @@ export default function registerFundIPC() {
       .all(...values, limit, offset);
 
     const { total } = db
-      .prepare(
-        `
-      SELECT COUNT(*) AS total FROM fund_transfers t ${whereClause}
-    `,
-      )
+      .prepare(`SELECT COUNT(*) AS total FROM fund_transfers t ${whereClause}`)
       .get(...values);
 
     return {

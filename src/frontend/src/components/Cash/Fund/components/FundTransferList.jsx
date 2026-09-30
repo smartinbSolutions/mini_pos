@@ -7,6 +7,9 @@ import {
   Edit2,
   Eye,
   CalendarDays,
+  Search,
+  Filter,
+  RefreshCw,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import useFundTransfersList from "../hooks/useFundTransfersList";
@@ -35,12 +38,24 @@ const FundTransferList = () => {
     setLimit,
     total,
     totalPages,
+
+    search,
+    setSearch,
+    filters,
+    setFilters,
+    clearFilters,
+    funds,
   } = useFundTransfersList();
 
   const [deleteTransfer, setDeleteTransfer] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const [openTransferModal, setOpenTransferModal] = useState(false);
   const [selectedTransfer, setSelectedTransfer] = useState(null);
+
+  const hasActiveFilters = Object.values(filters).some(
+    (value) => value !== null && value !== "",
+  );
 
   const openCreateModal = () => {
     setSelectedTransfer(null);
@@ -58,6 +73,8 @@ const FundTransferList = () => {
     "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
   const primaryButtonClass =
     "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
+  const filterInputClass =
+    "h-11 w-full rounded-xl border border-[#dbe4ff] bg-white px-3 text-sm outline-none focus:border-[#4663ff]";
 
   const FlowArrow = isRtl ? ArrowLeft : ArrowRight;
 
@@ -85,8 +102,106 @@ const FundTransferList = () => {
             </button>
           </div>
 
+          {/* TOOLBAR — search + filters */}
+          <div className="flex flex-col gap-3 border-t border-[#e5ebff] bg-white/60 p-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative max-w-md flex-1">
+              <Search className="absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder={t("common.search")}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-12 w-full rounded-2xl border border-[#dbe4ff] bg-white ps-11 pe-4 text-sm outline-none transition focus:border-[#4663ff] focus:ring-2 focus:ring-[#4663ff]/10"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="h-12 rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100"
+                >
+                  {t("common.clear")}
+                </button>
+              )}
+              <button
+                onClick={() => setShowFilters((prev) => !prev)}
+                className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl border px-4 text-sm font-bold transition ${
+                  showFilters || hasActiveFilters
+                    ? "border-[#4663ff] bg-[#eef3ff] text-[#4663ff]"
+                    : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                }`}
+              >
+                <Filter size={16} />
+                {t("common.filters")}
+              </button>
+              <button
+                onClick={refetch}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+              >
+                <RefreshCw size={16} />
+                {t("common.refresh")}
+              </button>
+            </div>
+          </div>
+
+          {/* FILTER BAR — stays open while any filter is active */}
+          {(showFilters || hasActiveFilters) && (
+            <div className="grid grid-cols-1 gap-3 border-t border-[#e5ebff] bg-white/60 p-5 sm:grid-cols-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  {t("ui.fund")}
+                </span>
+                <select
+                  value={filters.fundId || ""}
+                  onChange={(e) =>
+                    setFilters({ fundId: e.target.value || null })
+                  }
+                  className={filterInputClass}
+                >
+                  <option value="">{t("screens.payments.allFunds")}</option>
+                  {funds.map((fund) => (
+                    <option key={fund.id} value={fund.id}>
+                      {fund.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  {t("filters.dateFrom")}
+                </span>
+                <input
+                  type="date"
+                  value={filters.dateFrom || ""}
+                  max={filters.dateTo || undefined}
+                  onChange={(e) =>
+                    setFilters({ dateFrom: e.target.value || null })
+                  }
+                  className={filterInputClass}
+                />
+              </label>
+
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  {t("filters.dateTo")}
+                </span>
+                <input
+                  type="date"
+                  value={filters.dateTo || ""}
+                  min={filters.dateFrom || undefined}
+                  onChange={(e) =>
+                    setFilters({ dateTo: e.target.value || null })
+                  }
+                  className={filterInputClass}
+                />
+              </label>
+            </div>
+          )}
+
           {actionError && (
-            <div className="mx-7 mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            <div className="mx-7 mb-5 mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
               {actionError}
             </div>
           )}
@@ -94,7 +209,7 @@ const FundTransferList = () => {
 
         {/* LIST */}
         <section className={panelClass}>
-          {loading ? (
+          {loading && transfers.length === 0 ? (
             <div className="p-10 text-center text-sm font-semibold text-slate-400">
               {t("common.loading")}
             </div>
@@ -221,10 +336,7 @@ const FundTransferList = () => {
             total={total}
             limit={limit}
             onPageChange={setPage}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit);
-              setPage(1);
-            }}
+            onLimitChange={setLimit}
           />
         </section>
       </div>

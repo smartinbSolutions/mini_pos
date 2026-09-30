@@ -1,5 +1,21 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import useListParams from "../../../../Global/useListParams";
+
+const LIST_DEFAULTS = {
+  page: 1,
+  limit: 20,
+  search: "",
+  status: null,
+  supplier_id: null,
+  startDate: null,
+  endDate: null,
+  minTotal: null,
+  maxTotal: null,
+  category_id: null,
+  taxIds: [],
+  tagIds: [],
+};
 
 const useExpenseList = () => {
   const { t } = useTranslation();
@@ -13,8 +29,7 @@ const useExpenseList = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -24,28 +39,41 @@ const useExpenseList = () => {
   const [openPaymentModel, setOpenPaymentModel] = useState(false);
   const [selecteInvoice, setSelecteInvoice] = useState(null);
 
-  const [filters, setFiltersState] = useState({
-    status: null,
-    supplier_id: null,
-    startDate: null,
-    endDate: null,
-    minTotal: null,
-    maxTotal: null,
-    category_id: null,
-    taxIds: null,
-    tagIds: null,
-  });
+  const [params, setParams] = useListParams(LIST_DEFAULTS);
+  const { page, limit } = params;
+  const [search, setSearch] = useState(params.search);
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  // Same shape as before (arrays null when empty) so consumers don't change
+  const filters = useMemo(
+    () => ({
+      status: params.status,
+      supplier_id: params.supplier_id,
+      startDate: params.startDate,
+      endDate: params.endDate,
+      minTotal: params.minTotal,
+      maxTotal: params.maxTotal,
+      category_id: params.category_id,
+      taxIds: params.taxIds.length ? params.taxIds : null,
+      tagIds: params.tagIds.length ? params.tagIds : null,
+    }),
+    [
+      params.status,
+      params.supplier_id,
+      params.startDate,
+      params.endDate,
+      params.minTotal,
+      params.maxTotal,
+      params.category_id,
+      params.taxIds.join(","),
+      params.tagIds.join(","),
+    ],
+  );
 
-  const setFilters = (patch) => {
-    setFiltersState((prev) => ({ ...prev, ...patch }));
-    setPage(1);
-  };
-
-  const clearFilters = () => {
-    setFiltersState({
+  const setPage = (p) => setParams({ page: p });
+  const setLimit = (l) => setParams({ limit: l, page: 1 });
+  const setFilters = (patch) => setParams({ ...patch, page: 1 });
+  const clearFilters = () =>
+    setParams({
       status: null,
       supplier_id: null,
       startDate: null,
@@ -53,11 +81,10 @@ const useExpenseList = () => {
       minTotal: null,
       maxTotal: null,
       category_id: null,
-      taxIds: null,
-      tagIds: null,
+      taxIds: [],
+      tagIds: [],
+      page: 1,
     });
-    setPage(1);
-  };
 
   useEffect(() => {
     if (api?.getSuppliers) {
@@ -100,11 +127,11 @@ const useExpenseList = () => {
   // Search is server-side so it covers every page, not just the loaded one.
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
+      const next = search.trim();
+      if (next !== params.search) setParams({ search: next, page: 1 });
     }, 250);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, params.search, setParams]);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -117,7 +144,7 @@ const useExpenseList = () => {
       const res = await api.getExpenses({
         page,
         limit,
-        search: debouncedSearch || undefined,
+        search: params.search || undefined,
         status: filters.status || undefined,
         supplier_id: filters.supplier_id || undefined,
         startDate: filters.startDate || undefined,
@@ -145,7 +172,7 @@ const useExpenseList = () => {
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters, debouncedSearch, t]);
+  }, [api, page, limit, filters, params.search, t]);
 
   useEffect(() => {
     refetch();
