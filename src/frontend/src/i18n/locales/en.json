@@ -1078,6 +1078,7 @@
       "inUseHint": "This category is in use and can't be deleted"
     },
     "expenses": {
+      "editExpense": "Edit Expense",
       "createExpense": "Create Expense",
       "manageItemsPayments": "Manage Items",
       "expensesTotal": "Expenses Total",

@@ -29,6 +29,8 @@ import NumberInput from "../../../../Global/NumberInput";
 import CustomerFormModal from "../../Sales/components/CustomerFormModal";
 import TagPickerField from "../../../Tags/components/TagPickerField";
 import useLatinMode from "../../../../Global/useLatinMode";
+import useProductCatalog from "../../../Products/hooks/useProductCatalog";
+import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 
 // ---- Shared, module-level so re-renders never remount them ----
 
@@ -86,6 +88,7 @@ function AdjustmentChip({ icon, tone, children, onRemove }) {
 export default function AddSalesQuotation() {
   const { t } = useTranslation();
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const catalog = useProductCatalog();
 
   const {
     quotation,
@@ -127,7 +130,21 @@ export default function AddSalesQuotation() {
     api,
     setProducts,
     products,
+    refetch,
+    setItemProduct,
+    addItemWithProduct,
   } = useAddSalesQuotation({ customerModalOpen });
+
+  const {
+    saving: productSaving,
+    canUseUnits,
+    canUseTaxes,
+    isFormOpen,
+    setIsFormOpen,
+    submitProduct,
+    units,
+    taxes: productTaxes,
+  } = catalog;
 
   const { submitDraft, setDraft, draft, actionError } = useCustomerList();
 
@@ -340,15 +357,24 @@ export default function AddSalesQuotation() {
                     </span>
                   )}
                 </div>
-
-                <button
+                <div className="flex gap-2">
+                  {/* <button
                   type="button"
                   onClick={addItem}
                   className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
                 >
                   <Plus size={13} />
                   {t("screens.invoices.addItem")}
-                </button>
+                </button> */}
+                  <button
+                    type="button"
+                    onClick={() => setIsFormOpen(true)}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-600 transition hover:bg-violet-100"
+                  >
+                    <Plus size={13} />
+                    {t("screens.products.create")}
+                  </button>
+                </div>
               </div>
 
               {loading ? (
@@ -694,6 +720,16 @@ export default function AddSalesQuotation() {
                       </div>
                     );
                   })}
+                  <div className="p-3.5">
+                    <button
+                      type="button"
+                      onClick={addItem}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#4663ff]/40 bg-white py-2.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                    >
+                      <Plus size={13} />
+                      {t("screens.invoices.addItem")}
+                    </button>
+                  </div>
                 </div>
               )}
             </section>
@@ -1042,6 +1078,56 @@ export default function AddSalesQuotation() {
           saving={saving}
           actionError={actionError}
           t={t}
+        />
+      )}
+
+      {isFormOpen && (
+        <ProductQuickAddModal
+          units={units}
+          taxes={productTaxes}
+          canUseUnits={canUseUnits}
+          canUseTaxes={canUseTaxes}
+          saving={productSaving}
+          onClose={() => setIsFormOpen(false)}
+          onSubmit={async (form) => {
+            try {
+              const result = await submitProduct(form);
+              const fullProduct = await api.getProduct(result.id);
+              const productUnits = fullProduct.productUnits || [];
+              const baseUnit = productUnits.find((u) => u.is_base) || null;
+              const matchedTax = productTaxes?.find(
+                (tx) => tx.id === form.tax_id,
+              );
+
+              const targetIndex = items.findIndex(
+                (i) => !i.product_id && !i.product_name?.trim(),
+              );
+
+              const productPayload = {
+                id: result.id,
+                name: form.name,
+                price: baseUnit?.sale_price ?? form.salePrice,
+                tax_id: form.tax_id,
+                tax_rate: matchedTax?.rate || 0,
+                available_units: productUnits,
+                unit_id: baseUnit?.id ?? null,
+                unit_name: baseUnit?.unit_name || "",
+              };
+
+              if (targetIndex === -1) {
+                addItemWithProduct(productPayload);
+              } else {
+                setItemProduct(targetIndex, productPayload);
+              }
+
+              setIsFormOpen(false);
+              await refetch();
+            } catch (err) {
+              // actionError is set inside submitProduct for its own failures;
+              // anything else (e.g. adding the item) must be visible
+              console.error("Quick add product failed:", err);
+            }
+          }}
         />
       )}
 

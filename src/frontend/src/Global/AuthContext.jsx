@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext(null);
 
@@ -9,8 +8,9 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // null = not logged in
   const [error, setError] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
-  const navigate = useNavigate();
 
+  // No navigation here: AuthGate swaps login ↔ app, RouteMemory restores
+  // the user's last route, and PosGate keeps POS users on /pos.
   const login = useCallback(
     async (pin) => {
       setLoggingIn(true);
@@ -19,7 +19,6 @@ export function AuthProvider({ children }) {
         const res = await window.api.login(pin);
         if (res?.success) {
           setUser(res.user);
-          navigate(res.user.role === "pos" ? "/pos" : "/", { replace: true });
           return true;
         }
         setError(t("errors.invalidPin") || res?.error);
@@ -31,14 +30,13 @@ export function AuthProvider({ children }) {
         setLoggingIn(false);
       }
     },
-    [navigate]
+    [t],
   );
 
   const logout = useCallback(() => {
     setUser(null);
     setError("");
-    navigate("/", { replace: true });
-  }, [navigate]);
+  }, []);
 
   return (
     <AuthContext.Provider

@@ -439,6 +439,72 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
     [afterQuotationDiscount, itemTaxTotal, quotationTaxValue],
   );
 
+  const setItemProduct = (
+    index,
+    {
+      id,
+      name,
+      code,
+      price,
+      tax_id,
+      tax_rate,
+      available_units,
+      unit_id,
+      unit_name,
+    },
+  ) => {
+    setItems((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index] };
+
+      item.product_id = id;
+      item.product_name = name || "";
+      item.product_code = code || "";
+      item.entered_price = Number(price || 0);
+      item.available_units = available_units || [];
+      item.unit_id = unit_id ?? null;
+      item.unit_name = unit_name || "";
+      item.unit_conversion_factor = 1;
+      item.tax_id = tax_id || null;
+      item.tax_rate = Number(tax_rate || 0);
+      item.tax_capable = Boolean(tax_id);
+
+      copy[index] = recalcItem(item);
+      return copy;
+    });
+  };
+
+  const addItemWithProduct = ({
+    id,
+    name,
+    code,
+    price,
+    tax_id,
+    tax_rate,
+    available_units,
+    unit_id,
+    unit_name,
+  }) => {
+    setItems((prev) => [
+      ...prev,
+      recalcItem({
+        product_id: id,
+        product_name: name || "",
+        product_code: code || "",
+        entered_quantity: 1,
+        entered_price: Number(price || 0),
+        tax_id: tax_id || null,
+        tax_rate: Number(tax_rate || 0),
+        tax_capable: Boolean(tax_id),
+        available_units: available_units || [],
+        unit_id: unit_id ?? null,
+        unit_name: unit_name || "",
+        discount_rate: 0,
+        description: "",
+      }),
+    ]);
+  };
+
   const submit = useCallback(async () => {
     if (!api) {
       setError(t("errors.apiNotAvailable"));
@@ -549,5 +615,7 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
     api,
     setProducts,
     refetch,
+    setItemProduct,
+    addItemWithProduct,
   };
 }

@@ -1060,6 +1060,7 @@
       "inUseHint": "هذا التصنيف مستخدم ولا يمكن حذفه"
     },
     "expenses": {
+      "editExpense": "تعديل المصروف",
       "createExpense": "انشاء مصروف",
       "manageItemsPayments": "إدارة العناصر",
       "expensesTotal": "إجمالي المصروفات",

@@ -4,8 +4,9 @@ import {
   Route,
   Navigate,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -134,6 +135,34 @@ function AuthGate({ children }) {
   return children;
 }
 
+// Remembers the last visited route per user and restores it after login.
+// Only restores when landing on "/", so a deliberate navigation isn't overridden.
+function RouteMemory({ children }) {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const restored = useRef(false);
+  const key = `lastRoute:${user?.id ?? "anon"}`;
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const current = location.pathname + location.search;
+
+    if (!restored.current) {
+      restored.current = true;
+      const last = localStorage.getItem(key);
+      if (last && location.pathname === "/" && last !== current) {
+        navigate(last, { replace: true });
+        return;
+      }
+    }
+
+    localStorage.setItem(key, current);
+  }, [location, key, navigate, user?.id]);
+
+  return children;
+}
+
 export default function App() {
   const { t } = useTranslation();
   const [licenseStatus, setLicenseStatus] = useState(null);
@@ -202,9 +231,11 @@ export default function App() {
                 element={
                   <AuthProvider>
                     <AuthGate>
-                      <PosGate>
-                        <Layout />
-                      </PosGate>
+                      <RouteMemory>
+                        <PosGate>
+                          <Layout />
+                        </PosGate>
+                      </RouteMemory>
                     </AuthGate>
                   </AuthProvider>
                 }

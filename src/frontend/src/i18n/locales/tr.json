@@ -1054,6 +1054,7 @@
       "inUseHint": "This category is in use and can't be deleted"
     },
     "expenses": {
+      "editExpense": "Gideri Düzenle",
       "createExpense": "Gider Oluştur",
       "manageItemsPayments": "Öğeleri Yönet",
       "expensesTotal": "Toplam Giderler",

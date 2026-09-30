@@ -360,7 +360,7 @@ export default function UpdateExpense() {
                   </span>
                 </div>
 
-                <button
+                {/* <button
                   type="button"
                   onClick={addItem}
                   disabled={isLocked}
@@ -368,7 +368,7 @@ export default function UpdateExpense() {
                 >
                   <Plus size={13} />
                   {t("screens.invoices.addItem")}
-                </button>
+                </button> */}
               </div>
 
               <div className="divide-y divide-[#eef1ff]">
@@ -577,6 +577,16 @@ export default function UpdateExpense() {
                     </div>
                   );
                 })}
+                <div className="p-3.5">
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#4663ff]/40 bg-white py-2.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                  >
+                    <Plus size={13} />
+                    {t("screens.invoices.addItem")}
+                  </button>
+                </div>
               </div>
             </section>
           </main>

@@ -384,14 +384,14 @@ export default function UpdateSalesQuotation() {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <button
+                  {/* <button
                     type="button"
                     onClick={addItem}
                     className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
                   >
                     <Plus size={13} />
                     {t("screens.invoices.addItem")}
-                  </button>
+                  </button> */}
                   <button
                     type="button"
                     onClick={() => setIsFormOpen(true)}
@@ -703,6 +703,16 @@ export default function UpdateSalesQuotation() {
                     </div>
                   );
                 })}
+                <div className="p-3.5">
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#4663ff]/40 bg-white py-2.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                  >
+                    <Plus size={13} />
+                    {t("screens.invoices.addItem")}
+                  </button>
+                </div>
               </div>
             </section>
           </main>

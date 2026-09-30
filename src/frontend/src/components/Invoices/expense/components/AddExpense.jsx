@@ -333,7 +333,7 @@ export default function AddExpense() {
                     </span>
                   )}
                 </div>
-
+                {/* 
                 <button
                   type="button"
                   onClick={addItem}
@@ -341,7 +341,7 @@ export default function AddExpense() {
                 >
                   <Plus size={13} />
                   {t("screens.invoices.addItem")}
-                </button>
+                </button> */}
               </div>
 
               {loading ? (
@@ -362,14 +362,6 @@ export default function AddExpense() {
                       {t("screens.expenses.addItemToStart")}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={addItem}
-                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-[#dbe4ff] bg-white px-3 py-1.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
-                  >
-                    <Plus size={13} />
-                    {t("screens.invoices.addItem")}
-                  </button>
                 </div>
               ) : (
                 <div className="divide-y divide-[#eef1ff]">
@@ -584,6 +576,16 @@ export default function AddExpense() {
                       </div>
                     );
                   })}
+                  <div className="p-3.5">
+                    <button
+                      type="button"
+                      onClick={addItem}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#4663ff]/40 bg-white py-2.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                    >
+                      <Plus size={13} />
+                      {t("screens.invoices.addItem")}
+                    </button>
+                  </div>
                 </div>
               )}
             </section>
