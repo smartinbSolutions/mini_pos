@@ -10,6 +10,8 @@ const useFundList = () => {
     initial_balance: 0,
     balance_type: "increase",
     date: "",
+    opening_balance: "",
+    hasOpeningBalance: false,
   };
 
   const [saving, setSaving] = useState(false);
@@ -34,7 +36,7 @@ const useFundList = () => {
         case "MISSING_REQUIRED_FIELDS":
           return t(
             "errors.missingRequiredFields",
-            "Please fill in all required fields."
+            "Please fill in all required fields.",
           );
         case "FUND_HAS_HISTORY":
           return t("errors.deleteHasData", { field: t("ui.fund") });
@@ -42,7 +44,7 @@ const useFundList = () => {
           return null;
       }
     },
-    [t]
+    [t],
   );
 
   const normalizeFund = (fund) => {
@@ -90,7 +92,7 @@ const useFundList = () => {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
       setError(
-        err?.message || t("errors.createFailed", { field: t("ui.fund") })
+        err?.message || t("errors.createFailed", { field: t("ui.fund") }),
       );
     } finally {
       setLoading(false);
@@ -125,7 +127,7 @@ const useFundList = () => {
         throw new Error(
           mapFundErrorCode(res?.error) ||
             res?.error ||
-            t("errors.createFailed", { field: t("ui.fund") })
+            t("errors.createFailed", { field: t("ui.fund") }),
         );
       }
 
@@ -141,6 +143,29 @@ const useFundList = () => {
       return false;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveOpeningBalance = async (fund) => {
+    const amount = Number(fund.opening_balance || 0);
+    const owner = { owner_type: "fund", owner_id: fund.id };
+
+    let res;
+    if (amount > 0) {
+      res = await api.upsertOpeningBalance({
+        ...owner,
+        amount,
+        balance_type: fund.balance_type,
+        date: fund.date || undefined,
+      });
+    } else if (fund.hasOpeningBalance) {
+      res = await api.deleteOpeningBalance(owner);
+    } else {
+      return;
+    }
+
+    if (!res?.success) {
+      throw new Error(t(`errors.${res?.error}`, { defaultValue: res?.error }));
     }
   };
 
@@ -160,10 +185,10 @@ const useFundList = () => {
         throw new Error(
           mapFundErrorCode(res?.error) ||
             res?.error ||
-            t("errors.updateFailed", { field: t("ui.fund") })
+            t("errors.updateFailed", { field: t("ui.fund") }),
         );
       }
-
+      await saveOpeningBalance(fund);
       await refetch();
       setActionError("");
       return true;
@@ -188,7 +213,7 @@ const useFundList = () => {
         throw new Error(
           mapFundErrorCode(res?.error) ||
             res?.error ||
-            t("errors.deleteFailed", { field: t("ui.fund") })
+            t("errors.deleteFailed", { field: t("ui.fund") }),
         );
       }
 
@@ -214,7 +239,7 @@ const useFundList = () => {
     return saved;
   };
 
-  const startEdit = (fund) => {
+  const startEdit = async (fund) => {
     setEditingId(fund.id);
     setEditing({
       id: fund.id,
@@ -224,7 +249,34 @@ const useFundList = () => {
       currency_id: fund.currency_id || "",
       currency_code: fund.currency_code || "",
       exchange_rate: fund.exchange_rate || 1,
+      opening_balance: "",
+      balance_type: "increase",
+      date: "",
+      hasOpeningBalance: false,
     });
+    let ob = null;
+    try {
+      ob = await api.getOpeningBalance({
+        owner_type: "fund",
+        owner_id: fund.id,
+      });
+    } catch (err) {
+      console.error("Failed to load opening balance:", err);
+    }
+
+    if (ob) {
+      setEditing((prev) =>
+        prev.id === fund.id
+          ? {
+              ...prev,
+              opening_balance: ob.amount,
+              balance_type: ob.balance_type,
+              date: ob.date?.slice(0, 10) || "",
+              hasOpeningBalance: true,
+            }
+          : prev,
+      );
+    }
   };
 
   const submitEdit = async (event) => {

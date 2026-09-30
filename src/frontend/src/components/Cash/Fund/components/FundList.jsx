@@ -9,6 +9,7 @@ import {
   ArrowDownLeft,
   Wallet,
   X,
+  Calendar,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatMoney, normalizeDigits } from "../../../../Global/FormatNumber";
@@ -171,7 +172,10 @@ const FundList = () => {
                         autoFocus
                         value={editing.name}
                         onChange={(e) =>
-                          setEditing({ ...editing, name: e.target.value })
+                          setEditing((prev) => ({
+                            ...prev,
+                            name: e.target.value,
+                          }))
                         }
                         className={`${inputClass} w-full`}
                         placeholder={t("screens.funds.namePlaceholder")}
@@ -190,15 +194,107 @@ const FundList = () => {
                         ))}
                       </select>
 
-                      <NumberInput
-                        value={editing.balance || ""}
-                        onChange={(val) =>
-                          setEditing({ ...editing, balance: val })
-                        }
-                        disabled
-                        className={`${inputClass} w-full`}
-                        placeholder={t("ui.balance")}
-                      />
+                      <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/60 p-3">
+                        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                          <Wallet size={12} />
+                          {t("ui.opening_balance")}
+                        </p>
+
+                        <NumberInput
+                          value={editing.opening_balance}
+                          onChange={(val) =>
+                            setEditing((prev) => ({
+                              ...prev,
+                              opening_balance: val,
+                            }))
+                          }
+                          className={`${inputClass} w-full`}
+                          placeholder="0.00"
+                        />
+
+                        {Number(editing.opening_balance || 0) !== 0 && (
+                          <>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {[
+                                {
+                                  value: "increase",
+                                  label: t("screens.funds.startsWithMoney"),
+                                  on: "border-emerald-400 bg-emerald-50 text-emerald-700",
+                                },
+                                {
+                                  value: "decrease",
+                                  label: t("screens.funds.startsInDeficit"),
+                                  on: "border-red-400 bg-red-50 text-red-700",
+                                },
+                              ].map((opt) => (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() =>
+                                    setEditing((prev) => ({
+                                      ...prev,
+                                      balance_type: opt.value,
+                                    }))
+                                  }
+                                  className={`rounded-xl border-2 px-2 py-2 text-[11px] font-bold transition ${
+                                    (editing.balance_type || "increase") ===
+                                    opt.value
+                                      ? opt.on
+                                      : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+
+                            <label className="block">
+                              <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                                <Calendar size={11} />
+                                {t("screens.funds.balanceAsOf")}
+                              </span>
+                              <input
+                                type="date"
+                                value={
+                                  editing.date ||
+                                  `${new Date().getFullYear()}-01-01`
+                                }
+                                max={new Date().toISOString().slice(0, 10)}
+                                onChange={(e) =>
+                                  setEditing((prev) => ({
+                                    ...prev,
+                                    date: e.target.value,
+                                  }))
+                                }
+                                className={`${inputClass} w-full`}
+                              />
+                            </label>
+                          </>
+                        )}
+
+                        {editing.hasOpeningBalance &&
+                          (Number(editing.opening_balance || 0) !== 0 ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditing((prev) => ({
+                                  ...prev,
+                                  opening_balance: "",
+                                }))
+                              }
+                              className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600"
+                            >
+                              <Trash2 size={12} />
+                              {t("screens.contacts.removeOpeningBalance")}
+                            </button>
+                          ) : (
+                            <p className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-2 text-[11px] font-bold text-red-700">
+                              {t(
+                                "screens.contacts.openingBalanceWillBeRemoved",
+                              )}
+                            </p>
+                          ))}
+                      </div>
 
                       <div className="flex gap-2 pt-1">
                         <button

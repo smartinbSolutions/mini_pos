@@ -9,7 +9,7 @@ import Pagination from "../../../Global/Pagination";
 import ContactListHeader from "../../../Global/Contactlistheader";
 import { ToastContainer } from "react-toastify";
 import TagList from "../../Tags/components/TagList";
-import TagPickerField from "../../Tags/components/TagPickerField";
+import ContactFormModal from "../../../Global/ContactFormModal";
 
 // dir="ltr" font-mono tabular-nums wrapper, per the app's RTL-number convention.
 // TODO: swap for the shared <Num> component if you'd rather keep one source of truth.
@@ -242,98 +242,6 @@ export const SuppliersList = () => {
                     const paid = supplier.total_paid || 0;
                     const balance = supplier.balance ?? supplierTotal - paid;
 
-                    if (editingId === supplier.id) {
-                      return (
-                        <tr key={supplier.id} className="bg-[#f8faff]">
-                          <td className="px-5 py-4" colSpan={6}>
-                            <form onSubmit={submitEdit} className="space-y-3">
-                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                <div className="space-y-1">
-                                  <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                    {t("ui.name")}
-                                  </label>
-                                  <input
-                                    required
-                                    value={editing.name}
-                                    onChange={(e) =>
-                                      setEditing({
-                                        ...editing,
-                                        name: e.target.value,
-                                      })
-                                    }
-                                    className={`${inputClass} w-full`}
-                                    placeholder={t("ui.name")}
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                    {t("ui.phone")}
-                                  </label>
-                                  <input
-                                    value={editing.phone}
-                                    onChange={(e) =>
-                                      setEditing({
-                                        ...editing,
-                                        phone: e.target.value,
-                                      })
-                                    }
-                                    className={`${inputClass} w-full`}
-                                    placeholder={t("ui.phone")}
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                    {t("ui.address")}
-                                  </label>
-                                  <input
-                                    value={editing.address}
-                                    onChange={(e) =>
-                                      setEditing({
-                                        ...editing,
-                                        address: e.target.value,
-                                      })
-                                    }
-                                    className={`${inputClass} w-full`}
-                                    placeholder={t("ui.address")}
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                  {t("screens.tags.title")}
-                                </label>
-                                <TagPickerField
-                                  scope="supplier"
-                                  entityType="supplier"
-                                  entityId={supplier.id}
-                                  selectedIds={editing.tagIds || []}
-                                  onChange={(ids) =>
-                                    setEditing({ ...editing, tagIds: ids })
-                                  }
-                                />
-                              </div>
-
-                              <div className="flex items-center justify-end gap-2 border-t border-[#e5ebff] pt-3">
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingId(null)}
-                                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-50"
-                                >
-                                  {t("common.cancel")}
-                                </button>
-                                <button className="rounded-xl bg-[#4663ff] px-4 py-2 text-xs font-bold text-white shadow-md shadow-[#4663ff]/20 transition hover:bg-[#3854e8]">
-                                  {t("common.save")}
-                                </button>
-                              </div>
-                            </form>
-                          </td>
-                        </tr>
-                      );
-                    }
-
                     return (
                       <tr
                         key={supplier.id}
@@ -428,6 +336,22 @@ export const SuppliersList = () => {
           )}
         </div>
       </div>
+
+      <ContactFormModal
+        open={Boolean(editingId)}
+        onClose={() => setEditingId(null)}
+        mode="edit"
+        form={editing}
+        setForm={setEditing}
+        onSubmit={submitEdit}
+        saving={saving}
+        actionError={actionError}
+        title={t("common.edit")}
+        subtitle={editing.name}
+        submitLabel={t("common.save")}
+        type="supplier"
+        t={t}
+      />
 
       <AddPayment
         isOpen={openPaymentModel}

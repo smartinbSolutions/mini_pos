@@ -10,6 +10,8 @@ const useCustomerList = () => {
     phone: "",
     address: "",
     opening_balance: 0,
+    balance_type: "increase",
+    date: "",
   };
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -201,12 +203,37 @@ const useCustomerList = () => {
     }
   };
 
+  const saveOpeningBalance = async (cust) => {
+    const amount = Number(cust.opening_balance || 0);
+    const owner = { owner_type: "customer", owner_id: cust.id };
+
+    let res;
+    if (amount > 0) {
+      res = await api.upsertOpeningBalance({
+        ...owner,
+        amount,
+        balance_type: cust.balance_type,
+        date: cust.date || undefined,
+      });
+    } else if (cust.hasOpeningBalance) {
+      res = await api.deleteOpeningBalance(owner);
+    } else {
+      return;
+    }
+
+    if (!res?.success) {
+      throw new Error(t(`errors.${res?.error}`, { defaultValue: res?.error }));
+    }
+    await refetch();
+  };
+
   const handleUpdateCustomer = async (cust) => {
     try {
       await updateCustomer(cust);
       if (cust.tagIds !== undefined) {
         await api.setEntityTags("customer", cust.id, cust.tagIds);
       }
+      await saveOpeningBalance(cust);
       setActionError("");
       toast.success(t("success.updated", { field: t("ui.customer") }));
       return true;
@@ -245,7 +272,7 @@ const useCustomerList = () => {
     return saved;
   };
 
-  const startEdit = (cust) => {
+  const startEdit = async (cust) => {
     setEditingId(cust.id);
     setEditing({
       id: cust.id,
@@ -253,7 +280,30 @@ const useCustomerList = () => {
       phone: cust.phone || "",
       address: cust.address || "",
       tagIds: (tagsByCustomer[cust.id] || []).map((t) => t.id),
+      opening_balance: "",
+      balance_type: "increase",
+      date: "",
+      hasOpeningBalance: false,
     });
+
+    const ob = await api.getOpeningBalance({
+      owner_type: "customer",
+      owner_id: cust.id,
+    });
+
+    if (ob) {
+      setEditing((prev) =>
+        prev.id === cust.id
+          ? {
+              ...prev,
+              opening_balance: ob.amount,
+              balance_type: ob.balance_type,
+              date: ob.date?.slice(0, 10) || "",
+              hasOpeningBalance: true,
+            }
+          : prev,
+      );
+    }
   };
 
   const submitEdit = async (event) => {
@@ -263,6 +313,7 @@ const useCustomerList = () => {
       setEditingId(null);
       setEditing(emptyCustomer);
     }
+    return saved;
   };
 
   return {

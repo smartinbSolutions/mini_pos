@@ -5,6 +5,7 @@
     "version": "v1.0.5 - POS System"
   },
   "common": {
+    "undo": "Undo",
     "export": "Export",
     "exportData": "Export Data",
     "dateRange": "Date Range",
@@ -400,6 +401,27 @@
       "genericPaymentOut": "Payment made"
     },
     "contacts": {
+      "partnerTheyOweYouTitle": "Partner contributed",
+      "partnerTheyOweYouHint": "Money the partner put into the business — the business owes it to them",
+      "partnerYouOweThemTitle": "Partner withdrew",
+      "partnerYouOweThemHint": "Money the partner took out beyond their share — they owe it back",
+      "partnerSummaryTheyOweYou": "{{name}} contributed {{amount}} as of {{date}}",
+      "partnerSummaryYouOweThem": "{{name}} owes the business {{amount}} as of {{date}}",
+
+      "addOpeningBalance": "Add opening balance",
+      "openingBalanceOnRecord": "Opening balance on record",
+      "changeOpeningBalance": "Change",
+      "openingBalanceExplain": "The balance carried over from before you started using the system. Leave it empty if there is none.",
+      "directionQuestion": "Who owes whom?",
+      "customerTheyOweYouHint": "An old debt the customer hasn't paid yet",
+      "customerYouOweThemHint": "Money you owe the customer, e.g. an advance or credit",
+      "supplierTheyOweYouHint": "Money the supplier owes you, e.g. a prepayment or refund",
+      "supplierYouOweThemHint": "An amount you haven't paid the supplier yet",
+      "balanceAsOfHint": "Must be on or before this contact's first transaction",
+      "openingSummaryTheyOweYou": "{{name}} owes you {{amount}} as of {{date}}",
+      "openingSummaryYouOweThem": "You owe {{name}} {{amount}} as of {{date}}",
+      "removeOpeningBalance": "Remove opening balance",
+      "openingBalanceWillBeRemoved": "The opening balance will be removed when you save.",
       "createCustomerDescription": "Add a new customer to your contacts",
       "maxPercentageAllowed": "Max allowed: {{value}}%",
       "balanceLockedWhileEditing": "Balance unchanged",
@@ -746,6 +768,11 @@
     },
 
     "errors": {
+      "OPENING_BALANCE_AFTER_FIRST_MOVEMENT": "The opening balance date must be on or before the first transaction.",
+      "INVALID_OPENING_BALANCE_AMOUNT": "Enter a valid opening balance amount.",
+      "OPENING_BALANCE_NOT_FOUND": "No opening balance found.",
+      "INVALID_OWNER_TYPE": "Invalid account type.",
+      "OWNER_NOT_FOUND": "Account not found.",
       "nameRequired": "{{field}} is required",
       "valueRequired": "{{field}} is required",
       "pinInvalid": "PIN must be exactly 6 digits",

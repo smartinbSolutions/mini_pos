@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import fs from "fs";
 import db from "../db";
 import createFundHistory from "../utils/createFundHistory";
+import { upsertOpeningBalance } from "../utils/openingBalance";
 
 const EXPORT_LABELS = {
   en: {
@@ -104,9 +105,10 @@ const formatExportDate = (value) => {
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
 };
+
 function fetchFundHistory(
   db,
-  { fundId, page = 1, limit = 50, startDate, endDate, exportAll = false }
+  { fundId, page = 1, limit = 50, startDate, endDate, exportAll = false },
 ) {
   const currentPage = Math.max(1, Number(page) || 1);
   const perPage = Math.max(1, Number(limit) || 50);
@@ -215,7 +217,7 @@ function fetchFundHistory(
       WHERE 1=1 ${dateFilter}
       ORDER BY datetime(date) DESC, id DESC
       ${pagingClause}
-      `
+      `,
     )
     .all(fundId, ...dateValues, ...pagingValues);
 
@@ -225,7 +227,7 @@ function fetchFundHistory(
 
   const { total } = db
     .prepare(
-      `SELECT COUNT(*) AS total FROM fund_history WHERE fund_id = ? ${plainDateFilter}`
+      `SELECT COUNT(*) AS total FROM fund_history WHERE fund_id = ? ${plainDateFilter}`,
     )
     .get(fundId, ...dateValues);
 
@@ -237,7 +239,7 @@ function fetchFundHistory(
         COALESCE(SUM(CASE WHEN movement_type = 'out' THEN amount ELSE 0 END), 0) AS totalOut
       FROM fund_history
       WHERE fund_id = ? ${plainDateFilter}
-      `
+      `,
     )
     .get(fundId, ...dateValues);
 
@@ -258,34 +260,25 @@ export default function registerFundIPC() {
       return { success: false, error: "MISSING_REQUIRED_FIELDS" };
     }
 
-    const initialBalance = Math.abs(Number(data.initial_balance || 0));
-    const balanceType =
-      data.balance_type === "decrease" ? "decrease" : "increase";
-
     const createFundTxn = db.transaction((data) => {
       const result = db
         .prepare(
           `
           INSERT INTO funds (name, currency_id)
           VALUES (?, ?)
-        `
+        `,
         )
         .run(data.name, data.currency_id);
 
       const fundId = result.lastInsertRowid;
 
-      if (initialBalance !== 0) {
-        const openingBalanceDate = data.date
-          ? `${data.date.slice(0, 10)} 00:00:00`
-          : `${new Date().getFullYear()}-01-01 00:00:00`;
-
-        createFundHistory(db, {
-          fund_id: fundId,
-          record_type: "opening_balance",
-          movement_type: balanceType === "increase" ? "in" : "out",
-          amount: initialBalance,
-          date: openingBalanceDate,
-          note: "Opening Balance",
+      if (Number(data.initial_balance || 0) !== 0) {
+        upsertOpeningBalance(db, {
+          owner_type: "fund",
+          owner_id: fundId,
+          amount: data.initial_balance,
+          balance_type: data.balance_type,
+          date: data.date,
         });
       }
 
@@ -312,7 +305,7 @@ export default function registerFundIPC() {
         UPDATE funds
         SET name = ?
         WHERE id = ?
-      `
+      `,
       ).run(data.name, data.id);
 
       return { success: true };
@@ -327,8 +320,10 @@ export default function registerFundIPC() {
       const { count } = db
         .prepare(
           `
-        SELECT COUNT(*) AS count FROM fund_history WHERE fund_id = ?
-      `
+        SELECT COUNT(*) AS count FROM fund_history
+        WHERE fund_id = ?
+          AND record_type <> 'opening_balance'
+      `,
         )
         .get(id);
 
@@ -336,11 +331,21 @@ export default function registerFundIPC() {
         return { success: false, error: "FUND_HAS_HISTORY" };
       }
 
-      db.prepare(
-        `
-        DELETE FROM funds WHERE id = ?
-      `
-      ).run(id);
+      db.transaction(() => {
+        db.prepare(
+          `
+          DELETE FROM fund_history
+          WHERE fund_id = ?
+            AND record_type = 'opening_balance'
+        `,
+        ).run(id);
+
+        db.prepare(
+          `
+          DELETE FROM funds WHERE id = ?
+        `,
+        ).run(id);
+      })();
 
       return { success: true };
     } catch (err) {
@@ -373,7 +378,7 @@ export default function registerFundIPC() {
       LEFT JOIN currencies c ON c.id = f.currency_id
       LEFT JOIN fund_history fh ON fh.fund_id = f.id
       GROUP BY f.id
-    `
+    `,
       )
       .all();
 
@@ -396,7 +401,7 @@ export default function registerFundIPC() {
       FROM funds f
       LEFT JOIN currencies c ON c.id = f.currency_id
       WHERE f.id = ?
-    `
+    `,
       )
       .get(id);
 
@@ -411,7 +416,7 @@ export default function registerFundIPC() {
 
       const row = db
         .prepare(
-          `SELECT MIN(date) AS minDate FROM fund_history WHERE fund_id = ?`
+          `SELECT MIN(date) AS minDate FROM fund_history WHERE fund_id = ?`,
         )
         .get(fundId);
       return { success: true, minDate: row?.minDate || null };
@@ -421,7 +426,7 @@ export default function registerFundIPC() {
   });
 
   ipcMain.handle("get-fund-history", (event, params) =>
-    fetchFundHistory(db, params)
+    fetchFundHistory(db, params),
   );
 
   ipcMain.handle("transfer-fund-to-fund", (event, transferData) => {
@@ -470,7 +475,7 @@ export default function registerFundIPC() {
           FROM funds f
           LEFT JOIN currencies c ON c.id = f.currency_id
           WHERE f.id = ?
-        `
+        `,
         )
         .get(from_fund_id);
 
@@ -481,7 +486,7 @@ export default function registerFundIPC() {
           FROM funds f
           LEFT JOIN currencies c ON c.id = f.currency_id
           WHERE f.id = ?
-        `
+        `,
         )
         .get(to_fund_id);
 
@@ -512,7 +517,7 @@ export default function registerFundIPC() {
           (from_fund_id, to_fund_id, deduct_amount, receive_amount, exchange_rate,
            effective_rate, note, date, created_by)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `
+        `,
           )
           .run(
             from_fund_id,
@@ -523,7 +528,7 @@ export default function registerFundIPC() {
             effectiveRate,
             note || null,
             fullDateTime,
-            transferData.created_by
+            transferData.created_by,
           );
 
         const transferId = transferResult.lastInsertRowid;
@@ -612,7 +617,7 @@ export default function registerFundIPC() {
           FROM funds f
           LEFT JOIN currencies c ON c.id = f.currency_id
           WHERE f.id = ?
-        `
+        `,
         )
         .get(from_fund_id);
 
@@ -623,7 +628,7 @@ export default function registerFundIPC() {
           FROM funds f
           LEFT JOIN currencies c ON c.id = f.currency_id
           WHERE f.id = ?
-        `
+        `,
         )
         .get(to_fund_id);
 
@@ -640,7 +645,7 @@ export default function registerFundIPC() {
           `
         SELECT * FROM fund_history
         WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'out'
-      `
+      `,
         )
         .get(id);
 
@@ -649,7 +654,7 @@ export default function registerFundIPC() {
           `
         SELECT * FROM fund_history
         WHERE payment_id = ? AND record_type = 'transfer' AND movement_type = 'in'
-      `
+      `,
         )
         .get(id);
 
@@ -688,7 +693,7 @@ export default function registerFundIPC() {
               note = ?,
               date = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           from_fund_id,
           to_fund_id,
@@ -698,7 +703,7 @@ export default function registerFundIPC() {
           effectiveRate,
           note || null,
           fullDateTime,
-          id
+          id,
         );
 
         db.prepare(
@@ -709,13 +714,13 @@ export default function registerFundIPC() {
               note = ?,
               date = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           from_fund_id,
           Number(deduct_amount),
           note || `Transferred to ${toFund.name}`,
           fullDateTime,
-          outRow.id
+          outRow.id,
         );
 
         db.prepare(
@@ -726,13 +731,13 @@ export default function registerFundIPC() {
               note = ?,
               date = ?
           WHERE id = ?
-        `
+        `,
         ).run(
           to_fund_id,
           Number(receive_amount),
           note || `Received from ${fromFund.name}`,
           fullDateTime,
-          inRow.id
+          inRow.id,
         );
 
         return { success: true, message: "Transfer updated successfully." };
@@ -767,7 +772,7 @@ export default function registerFundIPC() {
           `
           DELETE FROM fund_history
           WHERE payment_id = ? AND record_type IN ('transfer')
-        `
+        `,
         ).run(id);
 
         db.prepare("DELETE FROM fund_transfers WHERE id = ?").run(id);
@@ -852,7 +857,7 @@ export default function registerFundIPC() {
       ${whereClause}
       ORDER BY t.date DESC, t.id DESC
       LIMIT ? OFFSET ?
-    `
+    `,
       )
       .all(...values, limit, offset);
 
@@ -860,7 +865,7 @@ export default function registerFundIPC() {
       .prepare(
         `
       SELECT COUNT(*) AS total FROM fund_transfers t ${whereClause}
-    `
+    `,
       )
       .get(...values);
 
@@ -894,7 +899,7 @@ export default function registerFundIPC() {
         LEFT JOIN users creator
         ON creator.id = t.created_by
         WHERE t.id = ?
-        `
+        `,
       )
       .get(id);
   });
@@ -972,7 +977,7 @@ export default function registerFundIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    }
+    },
   );
 
   ipcMain.handle(
@@ -1008,7 +1013,7 @@ export default function registerFundIPC() {
           <td>${r.note || ""}</td>
           <td class="right">${Number(r.running_balance).toFixed(2)}</td>
         </tr>
-      `
+      `,
           )
           .join("");
 
@@ -1048,7 +1053,7 @@ export default function registerFundIPC() {
 
         const win = new BrowserWindow({ show: false });
         await win.loadURL(
-          "data:text/html;charset=utf-8," + encodeURIComponent(html)
+          "data:text/html;charset=utf-8," + encodeURIComponent(html),
         );
 
         const pdfBuffer = await win.webContents.printToPDF({
@@ -1072,6 +1077,6 @@ export default function registerFundIPC() {
       } catch (err) {
         return { success: false, error: err.message || String(err) };
       }
-    }
+    },
   );
 }

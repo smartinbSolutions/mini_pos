@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useState } from "react";
 import usePartnersList from "../hooks/usePartnersList";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
@@ -9,7 +9,7 @@ import ContactListHeader from "../../../Global/Contactlistheader";
 import Pagination from "../../../Global/Pagination";
 import { ToastContainer } from "react-toastify";
 import TagList from "../../Tags/components/TagList";
-import TagPickerField from "../../Tags/components/TagPickerField";
+import ContactFormModal from "../../../Global/ContactFormModal";
 
 const BalanceCell = ({ deposited, withdrawn, balance, money, t }) => {
   const isSettled = balance <= 0;
@@ -84,8 +84,6 @@ const PartnersList = () => {
     "min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900";
   const panelClass =
     "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
-  const inputClass =
-    "rounded-xl border border-[#dbe4ff] bg-white/90 px-3 py-2 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
 
   const filteredpartners = partners || [];
 
@@ -146,123 +144,6 @@ const PartnersList = () => {
                     const deposited = partner.total_deposit || 0;
                     const withdrawn = partner.total_withdrawal || 0;
                     const balance = deposited - withdrawn;
-
-                    if (editingId === partner.id) {
-                      return (
-                        <tr key={partner.id} className="bg-[#f8faff]">
-                          <td className="px-5 py-4" colSpan={6}>
-                            <form onSubmit={submitEdit} className="space-y-3">
-                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                <div className="space-y-1">
-                                  <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                    {t("ui.name")}
-                                  </label>
-                                  <input
-                                    required
-                                    value={editing.name}
-                                    onChange={(e) =>
-                                      setEditing({
-                                        ...editing,
-                                        name: e.target.value,
-                                      })
-                                    }
-                                    className={`${inputClass} w-full`}
-                                    placeholder={t("ui.name")}
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                    {t("ui.phone")}
-                                  </label>
-                                  <input
-                                    value={editing.phone}
-                                    onChange={(e) =>
-                                      setEditing({
-                                        ...editing,
-                                        phone: e.target.value,
-                                      })
-                                    }
-                                    className={`${inputClass} w-full`}
-                                    placeholder={t("ui.phone")}
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                    {t("ui.address")}
-                                  </label>
-                                  <input
-                                    value={editing.address}
-                                    onChange={(e) =>
-                                      setEditing({
-                                        ...editing,
-                                        address: e.target.value,
-                                      })
-                                    }
-                                    className={`${inputClass} w-full`}
-                                    placeholder={t("ui.address")}
-                                  />
-                                </div>
-                              </div>
-                              <div className="space-y-1">
-                                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                  {t("ui.percentage")}
-                                </label>
-                                <input
-                                  type="text"
-                                  inputMode="decimal"
-                                  value={editing.percentage}
-                                  onChange={(e) =>
-                                    setEditing({
-                                      ...editing,
-                                      percentage: e.target.value,
-                                    })
-                                  }
-                                  className={`${inputClass} w-full`}
-                                  placeholder="0"
-                                />
-                                <span className="text-[10px] text-slate-400">
-                                  {t("screens.contacts.maxPercentageAllowed", {
-                                    value:
-                                      remainingPercentage +
-                                      (editing.percentage || 0),
-                                  })}
-                                </span>
-                              </div>
-
-                              <div className="space-y-1">
-                                <label className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                                  {t("screens.tags.title")}
-                                </label>
-                                <TagPickerField
-                                  scope="partner"
-                                  entityType="partner"
-                                  entityId={partner.id}
-                                  selectedIds={editing.tagIds || []}
-                                  onChange={(ids) =>
-                                    setEditing({ ...editing, tagIds: ids })
-                                  }
-                                />
-                              </div>
-
-                              <div className="flex items-center justify-end gap-2 border-t border-[#e5ebff] pt-3">
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingId(null)}
-                                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-50"
-                                >
-                                  {t("common.cancel")}
-                                </button>
-                                <button className="rounded-xl bg-[#4663ff] px-4 py-2 text-xs font-bold text-white shadow-md shadow-[#4663ff]/20 transition hover:bg-[#3854e8]">
-                                  {t("common.save")}
-                                </button>
-                              </div>
-                            </form>
-                          </td>
-                        </tr>
-                      );
-                    }
 
                     return (
                       <tr
@@ -360,6 +241,25 @@ const PartnersList = () => {
           )}
         </div>
       </div>
+
+      <ContactFormModal
+        open={Boolean(editingId)}
+        onClose={() => setEditingId(null)}
+        mode="edit"
+        form={editing}
+        setForm={setEditing}
+        onSubmit={submitEdit}
+        saving={saving}
+        actionError={actionError}
+        title={t("common.edit")}
+        subtitle={editing.name}
+        submitLabel={t("common.save")}
+        type="partner"
+        t={t}
+        remainingPercentage={
+          remainingPercentage + (editing.originalPercentage || 0)
+        }
+      />
 
       <AddPayment
         isOpen={openPaymentModel}

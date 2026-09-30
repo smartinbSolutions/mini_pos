@@ -5,6 +5,7 @@
     "version": "v1.0.5 - POS Sistemi"
   },
   "common": {
+    "undo": "Geri al",
     "export": "Dışa aktar",
     "exportData": "Veri Dışa Aktar",
     "dateRange": "Tarih Aralığı",
@@ -400,6 +401,27 @@
       "genericPaymentOut": "Ödeme yapıldı"
     },
     "contacts": {
+      "partnerTheyOweYouTitle": "Ortak katkısı",
+      "partnerTheyOweYouHint": "Ortağın işletmeye koyduğu tutar — işletme bunu ortağa borçlu",
+      "partnerYouOweThemTitle": "Ortak çekişi",
+      "partnerYouOweThemHint": "Ortağın payından fazla çektiği tutar — işletmeye borçlu",
+      "partnerSummaryTheyOweYou": "{{name}}, {{date}} itibarıyla {{amount}} katkıda bulundu",
+      "partnerSummaryYouOweThem": "{{name}}, {{date}} itibarıyla işletmeye {{amount}} borçlu",
+      "addOpeningBalance": "Açılış bakiyesi ekle",
+      "openingBalanceOnRecord": "Kayıtlı açılış bakiyesi",
+      "changeOpeningBalance": "Değiştir",
+      "openingBalanceExplain": "Sistemi kullanmaya başlamadan önceki devreden bakiye. Önceki bir bakiye yoksa boş bırakın.",
+      "directionQuestion": "Kim kime borçlu?",
+      "customerTheyOweYouHint": "Müşterinin henüz ödemediği eski borcu",
+      "customerYouOweThemHint": "Müşteriye borçlu olduğunuz tutar, ör. avans veya alacak",
+      "supplierTheyOweYouHint": "Tedarikçinin size borçlu olduğu tutar, ör. ön ödeme veya iade",
+      "supplierYouOweThemHint": "Tedarikçiye henüz ödemediğiniz tutar",
+
+      "balanceAsOfHint": "Bu hesabın ilk hareket tarihinde veya öncesinde olmalıdır",
+      "openingSummaryTheyOweYou": "{{name}}, {{date}} itibarıyla size {{amount}} borçlu",
+      "openingSummaryYouOweThem": "{{date}} itibarıyla {{name}} için {{amount}} borcunuz var",
+      "removeOpeningBalance": "Açılış bakiyesini kaldır",
+      "openingBalanceWillBeRemoved": "Açılış bakiyesi kaydettiğinizde kaldırılacak.",
       "createCustomerDescription": "Kişi listenize yeni bir müşteri ekleyin",
       "maxPercentageAllowed": "İzin verilen maksimum: {{value}}%",
       "balanceLockedWhileEditing": "Bakiye değişmedi",
@@ -1441,6 +1463,11 @@
     "paymentTitle": "Bu makbuzu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
   },
   "errors": {
+    "OPENING_BALANCE_AFTER_FIRST_MOVEMENT": "Açılış bakiyesi tarihi ilk hareketten sonra olamaz.",
+    "INVALID_OPENING_BALANCE_AMOUNT": "Geçerli bir açılış bakiyesi tutarı girin.",
+    "OPENING_BALANCE_NOT_FOUND": "Açılış bakiyesi bulunamadı.",
+    "INVALID_OWNER_TYPE": "Geçersiz hesap türü.",
+    "OWNER_NOT_FOUND": "Hesap bulunamadı.",
     "productRequired": "Bir ürün seçin",
     "customer_required": "Müşteri gerekli",
     "percentageExceedsRemaining": "%{{remaining}}'den fazla ekleyemezsiniz",

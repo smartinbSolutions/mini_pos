@@ -82,6 +82,14 @@ contextBridge.exposeInMainWorld("api", {
   getPartyEarliestDate: (data) =>
     ipcRenderer.invoke("get-party-earliest-date", data),
 
+  /* ================= OPENING BALANCE ================= */
+  getOpeningBalance: (params) =>
+    ipcRenderer.invoke("get-opening-balance", params),
+  upsertOpeningBalance: (data) =>
+    ipcRenderer.invoke("upsert-opening-balance", data),
+  deleteOpeningBalance: (data) =>
+    ipcRenderer.invoke("delete-opening-balance", data),
+
   /* ================= PRODUCT BARCODE ================= */
   getProductBarcodes: () => ipcRenderer.invoke("get-product-barcodes"),
   getProductBarcode: (id) => ipcRenderer.invoke("get-product-barcode", id),

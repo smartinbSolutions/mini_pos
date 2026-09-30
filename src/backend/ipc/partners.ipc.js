@@ -2,6 +2,7 @@ const { ipcMain } = require("electron");
 import db from "../db";
 import createPartyHistory from "../utils/createPaymentHistory";
 import { buildOpeningBalanceNote } from "../utils/helpers";
+import { upsertOpeningBalance } from "../utils/openingBalance";
 
 function getPartnersPercentageSum(excludeId = null) {
   const row = excludeId
@@ -22,6 +23,7 @@ export default function registerPartnersIPC() {
     if (!data.name) {
       return { success: false, error: "ERROR ENTER DATA" };
     }
+
     const percentage = Number(data.percentage) || 0;
     const remaining = 100 - getPartnersPercentageSum();
     if (percentage > remaining) {
@@ -31,7 +33,8 @@ export default function registerPartnersIPC() {
         remaining,
       };
     }
-    try {
+
+    const createTx = db.transaction(() => {
       const result = db
         .prepare(
           `
@@ -43,26 +46,21 @@ export default function registerPartnersIPC() {
 
       const openingBalance = Number(data.opening_balance || 0);
       if (openingBalance !== 0) {
-        const openingBalanceDate = data.date
-          ? `${data.date.slice(0, 10)} 00:00:00`
-          : `${new Date().getFullYear()}-01-01 00:00:00`;
-
-        createPartyHistory(db, {
-          party_type: "partner",
-          party_id: result.lastInsertRowid,
-          invoice_id: null,
-          invoice_type: "opening_balance",
-          record_type: "opening_balance",
-          movement_type: data.balance_type,
+        upsertOpeningBalance(db, {
+          owner_type: "partner",
+          owner_id: result.lastInsertRowid,
           amount: openingBalance,
-          note: buildOpeningBalanceNote(db),
-          date: openingBalanceDate,
+          balance_type: data.balance_type,
+          date: data.date,
         });
       }
-      return {
-        success: true,
-        id: result.lastInsertRowid,
-      };
+
+      return result.lastInsertRowid;
+    });
+
+    try {
+      const id = createTx();
+      return { success: true, id };
     } catch (err) {
       console.error(err);
       return { success: false, error: err.message || String(err) };
@@ -177,7 +175,9 @@ export default function registerPartnersIPC() {
         .prepare(
           `
         SELECT COUNT(*) AS count FROM party_history
-        WHERE party_type = 'partner' AND party_id = ?
+        WHERE party_type = 'partner'
+          AND party_id = ?
+          AND record_type <> 'opening_balance'
       `,
         )
         .get(id);
@@ -186,11 +186,22 @@ export default function registerPartnersIPC() {
         return { success: false, error: "PARTNER_HAS_HISTORY" };
       }
 
-      db.prepare(
-        `
-        DELETE FROM partners WHERE id = ?
-      `,
-      ).run(id);
+      db.transaction(() => {
+        db.prepare(
+          `
+          DELETE FROM party_history
+          WHERE party_type = 'partner'
+            AND party_id = ?
+            AND record_type = 'opening_balance'
+        `,
+        ).run(id);
+
+        db.prepare(
+          `
+          DELETE FROM partners WHERE id = ?
+        `,
+        ).run(id);
+      })();
 
       return { success: true };
     } catch (err) {

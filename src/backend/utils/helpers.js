@@ -108,5 +108,5 @@ export function buildDefaultPaymentNote(db, kind, referenceId) {
 
 export function buildOpeningBalanceNote(db) {
   const lang = getCompanyLanguage(db);
-  return OPENING_BALANCE_LABEL[lang];
+  return OPENING_BALANCE_LABEL[lang] || OPENING_BALANCE_LABEL.en;
 }

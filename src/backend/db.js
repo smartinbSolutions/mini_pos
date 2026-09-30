@@ -1154,4 +1154,20 @@ db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_taggables_tag ON taggables(tag_id)`,
 ).run();
 
+// One opening balance per party / per fund. Wrapped so a legacy
+// duplicate row can't crash startup — the helper still enforces it.
+try {
+  db.prepare(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_party_history_one_opening_balance
+     ON party_history(party_type, party_id) WHERE record_type = 'opening_balance'`,
+  ).run();
+
+  db.prepare(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_fund_history_one_opening_balance
+     ON fund_history(fund_id) WHERE record_type = 'opening_balance'`,
+  ).run();
+} catch (err) {
+  console.error("Opening balance unique index failed:", err);
+}
+
 export default db;

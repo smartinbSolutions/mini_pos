@@ -28,6 +28,7 @@ import registerTagsIPC from "./ipc/tags.ipc";
 import registerBomsIPC from "./ipc/bom.ipc";
 import registerManufacturingOrdersIPC from "./ipc/manufacturing.ipc";
 import registerBackupIPC from "./ipc/Backup.ipc";
+import registerOpeningBalanceIPC from "./ipc/opening_balance.ipc";
 
 export default function registerAllIPC() {
   registerAuthHandlersIPC();
@@ -60,4 +61,5 @@ export default function registerAllIPC() {
   registerBomsIPC();
   registerManufacturingOrdersIPC();
   registerBackupIPC();
+  registerOpeningBalanceIPC();
 }

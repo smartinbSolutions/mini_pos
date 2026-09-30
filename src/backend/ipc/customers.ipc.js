@@ -1,7 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-import createPartyHistory from "../utils/createPaymentHistory";
-import { buildOpeningBalanceNote } from "../utils/helpers";
+import { upsertOpeningBalance } from "../utils/openingBalance";
 
 export default function registerCustomersIPC() {
   // CREATE
@@ -11,7 +10,7 @@ export default function registerCustomersIPC() {
     const address = (data.address || "").trim();
 
     if (!name) {
-      return { success: false, error: "ERROR ENTER DATA" }; // TODO: no generic error-string builder exists yet — see suppliers thread
+      return { success: false, error: "ERROR ENTER DATA" };
     }
 
     const createTx = db.transaction(() => {
@@ -26,20 +25,12 @@ export default function registerCustomersIPC() {
 
       const openingBalance = Number(data.opening_balance || 0);
       if (openingBalance !== 0) {
-        const openingBalanceDate = data.date
-          ? `${data.date.slice(0, 10)} 00:00:00`
-          : `${new Date().getFullYear()}-01-01 00:00:00`;
-
-        createPartyHistory(db, {
-          party_type: "customer",
-          party_id: result.lastInsertRowid,
-          invoice_id: null,
-          invoice_type: "opening_balance",
-          record_type: "opening_balance",
-          movement_type: "increase",
+        upsertOpeningBalance(db, {
+          owner_type: "customer",
+          owner_id: result.lastInsertRowid,
           amount: openingBalance,
-          note: buildOpeningBalanceNote(db),
-          date: openingBalanceDate,
+          balance_type: data.balance_type,
+          date: data.date,
         });
       }
 
@@ -240,6 +231,7 @@ export default function registerCustomersIPC() {
         FROM party_history
         WHERE party_type = 'customer'
           AND party_id = ?
+          AND record_type <> 'opening_balance'
         LIMIT 1
       `,
         )
@@ -252,12 +244,23 @@ export default function registerCustomersIPC() {
         };
       }
 
-      db.prepare(
-        `
-        DELETE FROM customers
-        WHERE id = ?
-      `,
-      ).run(id);
+      db.transaction(() => {
+        db.prepare(
+          `
+          DELETE FROM party_history
+          WHERE party_type = 'customer'
+            AND party_id = ?
+            AND record_type = 'opening_balance'
+        `,
+        ).run(id);
+
+        db.prepare(
+          `
+          DELETE FROM customers
+          WHERE id = ?
+        `,
+        ).run(id);
+      })();
 
       return { success: true };
     } catch (err) {

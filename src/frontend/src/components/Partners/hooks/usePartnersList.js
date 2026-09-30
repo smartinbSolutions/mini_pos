@@ -11,6 +11,8 @@ const usePartnersList = () => {
     address: "",
     opening_balance: 0,
     percentage: 0,
+    balance_type: "increase",
+    date: "",
   };
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -189,12 +191,37 @@ const usePartnersList = () => {
     }
   };
 
+  const saveOpeningBalance = async (part) => {
+    const amount = Number(part.opening_balance || 0);
+    const owner = { owner_type: "partner", owner_id: part.id };
+
+    let res;
+    if (amount > 0) {
+      res = await api.upsertOpeningBalance({
+        ...owner,
+        amount,
+        balance_type: part.balance_type,
+        date: part.date || undefined,
+      });
+    } else if (part.hasOpeningBalance) {
+      res = await api.deleteOpeningBalance(owner);
+    } else {
+      return;
+    }
+
+    if (!res?.success) {
+      throw new Error(t(`errors.${res?.error}`, { defaultValue: res?.error }));
+    }
+    await refetch();
+  };
+
   const handleUpdatePartner = async (cust) => {
     try {
       await updatePartner(cust);
       if (cust.tagIds !== undefined) {
         await api.setEntityTags("partner", cust.id, cust.tagIds);
       }
+      await saveOpeningBalance(cust);
       setActionError("");
       toast.success(t("success.updated", { field: t("ui.partner") }));
       return true;
@@ -238,7 +265,7 @@ const usePartnersList = () => {
     return saved;
   };
 
-  const startEdit = (cust) => {
+  const startEdit = async (cust) => {
     setEditingId(cust.id);
     setEditing({
       id: cust.id,
@@ -246,7 +273,36 @@ const usePartnersList = () => {
       phone: cust.phone || "",
       address: cust.address || "",
       percentage: cust.percentage || 0,
+      originalPercentage: Number(cust.percentage) || 0,
+      tagIds: (tagsByPartner[cust.id] || []).map((t) => t.id),
+      opening_balance: "",
+      balance_type: "increase",
+      date: "",
+      hasOpeningBalance: false,
     });
+    let ob = null;
+    try {
+      ob = await api.getOpeningBalance({
+        owner_type: "partner",
+        owner_id: cust.id,
+      });
+    } catch (err) {
+      console.error("Failed to load opening balance:", err);
+    }
+
+    if (ob) {
+      setEditing((prev) =>
+        prev.id === cust.id
+          ? {
+              ...prev,
+              opening_balance: ob.amount,
+              balance_type: ob.balance_type,
+              date: ob.date?.slice(0, 10) || "",
+              hasOpeningBalance: true,
+            }
+          : prev,
+      );
+    }
   };
 
   const submitEdit = async (event) => {
@@ -256,6 +312,7 @@ const usePartnersList = () => {
       setEditingId(null);
       setEditing(emptyPartner);
     }
+    return saved;
   };
 
   return {

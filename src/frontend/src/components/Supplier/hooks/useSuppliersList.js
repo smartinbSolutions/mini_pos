@@ -10,6 +10,8 @@ const useSuppliersList = () => {
     phone: "",
     address: "",
     opening_balance: 0,
+    balance_type: "increase",
+    date: "",
   };
   const navigate = useNavigate();
 
@@ -197,12 +199,37 @@ const useSuppliersList = () => {
     }
   };
 
+  const saveOpeningBalance = async (sup) => {
+    const amount = Number(sup.opening_balance || 0);
+    const owner = { owner_type: "supplier", owner_id: sup.id };
+
+    let res;
+    if (amount > 0) {
+      res = await api.upsertOpeningBalance({
+        ...owner,
+        amount,
+        balance_type: sup.balance_type,
+        date: sup.date || undefined,
+      });
+    } else if (sup.hasOpeningBalance) {
+      res = await api.deleteOpeningBalance(owner);
+    } else {
+      return;
+    }
+
+    if (!res?.success) {
+      throw new Error(t(`errors.${res?.error}`, { defaultValue: res?.error }));
+    }
+    await refetch();
+  };
+
   const handleUpdateSupplier = async (sup) => {
     try {
       await updateSupplier(sup);
       if (sup.tagIds !== undefined) {
         await api.setEntityTags("supplier", sup.id, sup.tagIds);
       }
+      await saveOpeningBalance(sup);
       setActionError("");
       toast.success(t("success.updated", { field: t("ui.supplier") }));
       return true;
@@ -240,7 +267,7 @@ const useSuppliersList = () => {
     return saved;
   };
 
-  const startEdit = (sup) => {
+  const startEdit = async (sup) => {
     setEditingId(sup.id);
     setEditing({
       id: sup.id,
@@ -248,7 +275,34 @@ const useSuppliersList = () => {
       phone: sup.phone || "",
       address: sup.address || "",
       tagIds: (tagsBySupplier[sup.id] || []).map((t) => t.id),
+      opening_balance: "",
+      balance_type: "increase",
+      date: "",
+      hasOpeningBalance: false,
     });
+    let ob = null;
+    try {
+      ob = await api.getOpeningBalance({
+        owner_type: "supplier",
+        owner_id: sup.id,
+      });
+    } catch (err) {
+      console.error("Failed to load opening balance:", err);
+    }
+
+    if (ob) {
+      setEditing((prev) =>
+        prev.id === sup.id
+          ? {
+              ...prev,
+              opening_balance: ob.amount,
+              balance_type: ob.balance_type,
+              date: ob.date?.slice(0, 10) || "",
+              hasOpeningBalance: true,
+            }
+          : prev,
+      );
+    }
   };
 
   const submitEdit = async (event) => {
@@ -258,6 +312,7 @@ const useSuppliersList = () => {
       setEditingId(null);
       setEditing(emptySupplier);
     }
+    return saved;
   };
 
   return {

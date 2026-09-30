@@ -9,7 +9,7 @@ import ContactListHeader from "../../../Global/Contactlistheader";
 import Pagination from "../../../Global/Pagination";
 import { ToastContainer } from "react-toastify";
 import TagList from "../../Tags/components/TagList";
-import TagPickerField from "../../Tags/components/TagPickerField";
+import ContactFormModal from "../../../Global/ContactFormModal";
 
 // dir="ltr" font-mono tabular-nums wrapper, per the app's RTL-number convention.
 // TODO: swap for the shared <Num> component if you'd rather keep one source of truth.
@@ -244,92 +244,6 @@ export const CustomerList = () => {
                     const paid = customer.total_paid || 0;
                     const balance = customer.balance ?? sales - paid;
 
-                    if (editingId === customer.id) {
-                      return (
-                        <tr key={customer.id} className="bg-[#f8faff]">
-                          <td className="px-5 py-3">
-                            <input
-                              required
-                              form={`edit-customer-${customer.id}`}
-                              value={editing.name}
-                              onChange={(e) =>
-                                setEditing({
-                                  ...editing,
-                                  name: e.target.value,
-                                })
-                              }
-                              className={`${inputClass} w-full`}
-                              placeholder={t("ui.name")}
-                            />
-                          </td>
-                          <td className="px-5 py-3">
-                            <input
-                              form={`edit-customer-${customer.id}`}
-                              value={editing.phone}
-                              onChange={(e) =>
-                                setEditing({
-                                  ...editing,
-                                  phone: e.target.value,
-                                })
-                              }
-                              className={`${inputClass} w-full`}
-                              placeholder={t("ui.phone")}
-                            />
-                          </td>
-                          <td className="px-5 py-3">
-                            <input
-                              form={`edit-customer-${customer.id}`}
-                              value={editing.address}
-                              onChange={(e) =>
-                                setEditing({
-                                  ...editing,
-                                  address: e.target.value,
-                                })
-                              }
-                              className={`${inputClass} w-full`}
-                              placeholder={t("ui.address")}
-                            />
-                          </td>
-                          <td className="px-5 py-3 text-center">
-                            <span className="text-xs font-medium text-slate-400">
-                              {t(
-                                "screens.contacts.balanceLockedWhileEditing",
-                              ) || "Balance unchanged"}
-                            </span>
-                          </td>
-                          <td className="px-5 py-3">
-                            <TagPickerField
-                              scope="customer"
-                              entityType="customer"
-                              entityId={customer.id}
-                              selectedIds={editing.tagIds || []}
-                              onChange={(ids) =>
-                                setEditing({ ...editing, tagIds: ids })
-                              }
-                            />
-                          </td>
-                          <td className="px-5 py-3">
-                            <form
-                              id={`edit-customer-${customer.id}`}
-                              onSubmit={submitEdit}
-                              className="flex items-center gap-1"
-                            >
-                              <button className="flex items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 py-2 text-xs font-bold text-white hover:bg-[#3854e8]">
-                                {t("common.save")}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setEditingId(null)}
-                                className="rounded-xl border border-[#dbe4ff] bg-white p-2 text-slate-500 hover:bg-[#eef3ff]"
-                              >
-                                <span>&times;</span>
-                              </button>
-                            </form>
-                          </td>
-                        </tr>
-                      );
-                    }
-
                     return (
                       <tr
                         key={customer.id}
@@ -423,6 +337,25 @@ export const CustomerList = () => {
           )}
         </div>
       </div>
+
+      <ContactFormModal
+        open={Boolean(editingId)}
+        onClose={() => setEditingId(null)}
+        mode="edit"
+        form={editing}
+        setForm={(v) => {
+          console.trace("setEditing called with", v);
+          setEditing(v);
+        }}
+        onSubmit={submitEdit}
+        saving={saving}
+        actionError={actionError}
+        title={t("common.edit")}
+        subtitle={editing.name}
+        submitLabel={t("common.save")}
+        type="customer"
+        t={t}
+      />
 
       <AddPayment
         isOpen={openPaymentModel}
