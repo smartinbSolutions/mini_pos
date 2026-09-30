@@ -295,7 +295,12 @@ export default function SalesQuotationView() {
                               {isNonBaseUnit && (
                                 <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
-                                  {line.unitName}
+                                  {t("screens.invoices.unitConversionDetail", {
+                                    enteredQty: line.quantity,
+                                    unitName: line.unitName,
+                                    factor: item.unit_conversion_factor,
+                                    baseQty: item.quantity,
+                                  })}
                                 </div>
                               )}
                               {item.description && (

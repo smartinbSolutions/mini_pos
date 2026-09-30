@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { toEnteredLine } from "../../../../Global/printLine";
 import { pickLatin } from "../../../../Global/useLatinMode";
+import GoTo from "../../../../Global/GoTo";
 
 export default function PrintSalesReturn() {
   const { t, i18n } = useTranslation();
@@ -177,6 +178,9 @@ export default function PrintSalesReturn() {
           </thead>
           <tbody>
             {items.map((item) => {
+              const isNonBaseUnit =
+                item.unit_conversion_factor &&
+                Number(item.unit_conversion_factor) !== 1;
               const afterDiscount =
                 Number(item.total || 0) - Number(item.discount || 0);
               const lineTotal = afterDiscount + Number(item.taxValue || 0);
@@ -185,20 +189,37 @@ export default function PrintSalesReturn() {
               return (
                 <tr key={item.id} className="border-b border-[#E5E5E2]">
                   <td className="p-2">
-                    {line.productName}
+                    <GoTo
+                      id={item.product_id}
+                      type={"products"}
+                      variant="light"
+                    >
+                      {line.productName || "-"}
+                    </GoTo>
                     {item.product_code && (
                       <div className="text-[10px] text-[#6B6F76]">
                         #{item.product_code}
                       </div>
                     )}
+                    {isNonBaseUnit && (
+                      <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                        <Tag size={11} className="shrink-0" />
+                        {t("screens.invoices.unitConversionDetail", {
+                          enteredQty: line.quantity,
+                          unitName: line.unitName,
+                          factor: item.unit_conversion_factor,
+                          baseQty: item.quantity,
+                        })}
+                      </div>
+                    )}
                   </td>
                   <td className="p-2 font-mono tabular-nums">
                     {line.quantity} {line.unitName}
-                    {line.factor !== 1 && (
+                    {/* {line.factor !== 1 && (
                       <div className="text-[10px] text-[#6B6F76]">
                         = {line.baseQuantity}
                       </div>
-                    )}
+                    )} */}
                   </td>
                   <td className="p-2 font-mono tabular-nums">
                     {money(line.price)}

@@ -184,11 +184,11 @@ export default function PrintPurchaseInvoice() {
                   </td>
                   <td className="p-2 font-mono tabular-nums">
                     {line.quantity} {line.unitName}
-                    {line.factor !== 1 && (
+                    {/* {line.factor !== 1 && (
                       <div className="text-[10px] text-[#6B6F76]">
                         = {line.baseQuantity}
                       </div>
-                    )}
+                    )} */}
                   </td>
                   <td className="p-2 font-mono tabular-nums">
                     {money(line.price)}

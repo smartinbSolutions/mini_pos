@@ -18,6 +18,7 @@ import HoverTooltip from "../../../../Global/HoverTooltip";
 import BackButton from "../../../../Global/BackButton";
 import TagList from "../../../Tags/components/TagList";
 import useLatinMode from "../../../../Global/useLatinMode";
+import { toEnteredLine } from "../../../../Global/printLine";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-emerald-50", text: "text-emerald-600" },
