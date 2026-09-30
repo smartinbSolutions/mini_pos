@@ -5,6 +5,7 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { toEnteredLine } from "../../../../Global/printLine";
 import { pickLatin } from "../../../../Global/useLatinMode";
 import GoTo from "../../../../Global/GoTo";
+import { Tag } from "lucide-react";
 
 export default function PrintSalesReturn() {
   const { t, i18n } = useTranslation();
