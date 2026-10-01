@@ -62,25 +62,26 @@ export default function createPayment(db, data) {
     });
   }
 
-  const isReturnRefund =
-    data.invoice_type === "purchase_return" ||
-    data.invoice_type === "sales_return";
-
-  // For customer/supplier, a normal payment always decreases the amount owed.
-  // A return refund is the opposite: the return itself already recorded a
-  // 'decrease' (goods came back, debt dropped, possibly going negative).
-  // Refunding cash back settles that debt upward again — so it must be an
-  // 'increase', not skipped and not another decrease (which would double-count).
+  // Reverse direction = money flows opposite to the party's normal flow:
+  // cash OUT to a customer, or cash IN from a supplier. This covers return
+  // refunds (sales_return / purchase_return) and free-voucher refunds or
+  // advances alike — the balance moves back up instead of down.
+  // Normal direction (customer pays you, you pay supplier) always decreases
+  // the amount owed.
   // For partners, direction depends on which way the money moved:
   // a deposit (income) increases what the company owes the partner,
   // a withdrawal (expense) decreases it.
+  const isReverse =
+    (data.party_type === "customer" && data.type === "expense") ||
+    (data.party_type === "supplier" && data.type === "income");
+
   const isPartner = data.party_type === "partner";
-  const movementType = isReturnRefund
-    ? "increase"
-    : isPartner
-      ? data.type === "income"
-        ? "increase"
-        : "decrease"
+  const movementType = isPartner
+    ? data.type === "income"
+      ? "increase"
+      : "decrease"
+    : isReverse
+      ? "increase"
       : "decrease";
 
   if (data.party_type !== "walk-in") {

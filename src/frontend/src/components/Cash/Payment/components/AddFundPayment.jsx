@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Save,
   X,
@@ -90,6 +89,9 @@ export default function AddFundPayment({
     );
 
   const fundCurrency = form.currency_code || form.currency_symbol || "";
+  const activeTab = isCashIn
+    ? "bg-green-50 text-green-600 shadow-sm"
+    : "bg-red-50 text-red-600 shadow-sm";
 
   const partyCard = (
     <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
@@ -98,29 +100,26 @@ export default function AddFundPayment({
       </div>
 
       <div className="grid grid-cols-3 gap-1.5 p-1 bg-white rounded-xl text-xs font-semibold border">
-        {isCashIn ? (
-          <button
-            type="button"
-            onClick={() => setPartyType("customer")}
-            className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "customer" ? "bg-green-50 text-green-600 shadow-sm" : "text-gray-500"}`}
-          >
-            <User size={14} />
-            {t("screens.payments.customer")}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setPartyType("supplier")}
-            className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "supplier" ? "bg-red-50 text-red-600 shadow-sm" : "text-gray-500"}`}
-          >
-            <Building2 size={14} />
-            {t("screens.payments.supplier")}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setPartyType("customer")}
+          className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "customer" ? activeTab : "text-gray-500"}`}
+        >
+          <User size={14} />
+          {t("screens.payments.customer")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setPartyType("supplier")}
+          className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "supplier" ? activeTab : "text-gray-500"}`}
+        >
+          <Building2 size={14} />
+          {t("screens.payments.supplier")}
+        </button>
         <button
           type="button"
           onClick={() => setPartyType("partner")}
-          className={`col-span-2 flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "partner" ? "bg-orange-50 text-orange-600 shadow-sm" : "text-gray-500"}`}
+          className={`flex items-center justify-center gap-1 py-2 rounded-lg transition ${partyType === "partner" ? "bg-orange-50 text-orange-600 shadow-sm" : "text-gray-500"}`}
         >
           <Users size={14} />
           {t("screens.payments.partner")}

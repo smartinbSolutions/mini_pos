@@ -94,7 +94,7 @@ export default function POSCart({
           </div>
         ) : (
           <div className="space-y-2.5">
-            {cart.map((item) => (
+            {[...cart].reverse().map((item) => (
               <POSCartItem
                 key={item.id}
                 item={item}

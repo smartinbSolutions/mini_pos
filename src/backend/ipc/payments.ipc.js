@@ -124,7 +124,11 @@ export default function registerPaymentIPC() {
         // much of the invoice was actually paid.
         const isTargeted = Boolean(data.invoiceId && data.mode);
 
-        if (!isTargeted && data.party_type === "supplier") {
+        if (
+          !isTargeted &&
+          data.party_type === "supplier" &&
+          data.type === "expense"
+        ) {
           allocateSupplierPayment(db, {
             supplierId: data.party_id,
             paymentId,
@@ -141,7 +145,11 @@ export default function registerPaymentIPC() {
           });
         }
 
-        if (!isTargeted && data.party_type === "customer") {
+        if (
+          !isTargeted &&
+          data.party_type === "customer" &&
+          data.type === "income"
+        ) {
           allocateCustomerPayment(db, {
             customerId: data.party_id,
             paymentId,
