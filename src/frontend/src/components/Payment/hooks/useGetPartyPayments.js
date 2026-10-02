@@ -54,16 +54,15 @@ export default function usePartyLedger(partyId, partyType) {
       });
 
       if (partyType === "customer") {
-        const customer = await api.getCustomer(partyId);
-        setParty(customer);
+        const res = await api.getCustomer(partyId);
+        setParty(res?.data ?? res);
       } else if (partyType === "supplier") {
-        const supplier = await api.getSupplier(partyId);
-        setParty(supplier);
+        const res = await api.getSupplier(partyId);
+        setParty(res?.data ?? res);
       } else if (partyType === "partner") {
-        const partner = await api.getPartner(partyId);
-        setParty(partner);
+        const res = await api.getPartner(partyId);
+        setParty(res?.data ?? res);
       }
-
       setData(rows);
       setTotal(totalCount);
       setTotalPages(pages);

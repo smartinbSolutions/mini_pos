@@ -3,7 +3,9 @@ import ExcelJS from "exceljs";
 import fs from "fs";
 import db from "../db";
 import { getPartyCredit, applyPartyCredit } from "../utils/partyCredit";
-import buildPartyStatement from "../utils/buildPartyStatement";
+import buildPartyStatement, {
+  getPaymentKind,
+} from "../utils/buildPartyStatement";
 
 const EXPORT_LABELS = {
   en: {
@@ -26,6 +28,16 @@ const EXPORT_LABELS = {
     cr: "Cr",
     allTime: "Beginning",
     present: "Today",
+    fundAmount: "Fund amount",
+    currency: "Currency",
+    combinedTitle: "Combined Statement of Account",
+    account: "Account",
+    netBalance: "Net balance",
+    accountTypes: {
+      customer: "Customer",
+      supplier: "Supplier",
+      partner: "Partner",
+    },
     docTypes: {
       sales: "Sales invoice",
       purchase: "Purchase invoice",
@@ -33,6 +45,10 @@ const EXPORT_LABELS = {
       sales_return: "Sales return",
       purchase_return: "Purchase return",
       payment: "Payment",
+      received: "Payment received",
+      made: "Payment made",
+      deposit: "Deposit",
+      withdrawal: "Withdrawal",
       opening_balance: "Opening balance",
     },
   },
@@ -56,6 +72,12 @@ const EXPORT_LABELS = {
     cr: "دائن",
     allTime: "البداية",
     present: "اليوم",
+    fundAmount: "مبلغ الصندوق",
+    currency: "العملة",
+    combinedTitle: "كشف حساب موحّد",
+    account: "الحساب",
+    netBalance: "صافي الرصيد",
+    accountTypes: { customer: "عميل", supplier: "مورد", partner: "شريك" },
     docTypes: {
       sales: "فاتورة مبيعات",
       purchase: "فاتورة مشتريات",
@@ -63,6 +85,10 @@ const EXPORT_LABELS = {
       sales_return: "مرتجع مبيعات",
       purchase_return: "مرتجع مشتريات",
       payment: "دفعة",
+      received: "دفعة مقبوضة",
+      made: "دفعة مدفوعة",
+      deposit: "إيداع",
+      withdrawal: "سحب",
       opening_balance: "رصيد افتتاحي",
     },
   },
@@ -86,6 +112,16 @@ const EXPORT_LABELS = {
     cr: "A",
     allTime: "Başlangıç",
     present: "Bugün",
+    fundAmount: "Kasa tutarı",
+    currency: "Döviz",
+    combinedTitle: "Birleşik Cari Hesap Ekstresi",
+    account: "Hesap",
+    netBalance: "Net bakiye",
+    accountTypes: {
+      customer: "Müşteri",
+      supplier: "Tedarikçi",
+      partner: "Ortak",
+    },
     docTypes: {
       sales: "Satış faturası",
       purchase: "Alış faturası",
@@ -93,6 +129,10 @@ const EXPORT_LABELS = {
       sales_return: "Satış iadesi",
       purchase_return: "Alış iadesi",
       payment: "Ödeme",
+      received: "Tahsilat",
+      made: "Ödeme",
+      deposit: "Para yatırma",
+      withdrawal: "Para çekme",
       opening_balance: "Açılış bakiyesi",
     },
   },
@@ -110,11 +150,25 @@ const formatExportDate = (value) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+// Foreign-fund payments: what actually moved in the fund.
+// Primary-currency rows (rate 1) return null.
+const getFundAmount = (r) => {
+  if (r.record_type !== "payment") return null;
+  const rate = Number(r.exchange_rate || 1);
+  if (rate === 1 || r.amount_fund_currency == null) return null;
+  return {
+    amount: Number(r.amount_fund_currency),
+    unit:
+      r.fund_currency_symbol || r.fund_currency_code || r.currency_code || "",
+  };
+};
+
 // ---- Statement row formatting (shared by Excel + PDF) ----
 
 const formatType = (L, r) => {
   if (r.record_type === "opening_balance") return L.docTypes.opening_balance;
-  if (r.record_type === "payment") return L.docTypes.payment;
+  if (r.record_type === "payment")
+    return L.docTypes[r.payment_kind] || L.docTypes.payment;
   return L.docTypes[r.invoice_type] || r.invoice_type || "";
 };
 
@@ -147,6 +201,43 @@ const escapeHtml = (value) =>
         c
       ],
   );
+
+const PARTY_TABLES = {
+  customer: "customers",
+  supplier: "suppliers",
+  partner: "partners",
+};
+
+// Which accounts go into the statement. The linked counterpart is resolved
+// here from the DB — never trusted from the client. Customer always first.
+function resolveStatementParties(db, { partyId, partyType, includeLinked }) {
+  const id = Number(partyId);
+  const parties = [{ partyType, partyId: id }];
+
+  if (includeLinked && partyType === "customer") {
+    const row = db
+      .prepare(`SELECT linked_supplier_id AS id FROM customers WHERE id = ?`)
+      .get(id);
+    if (row?.id) parties.push({ partyType: "supplier", partyId: row.id });
+  }
+
+  if (includeLinked && partyType === "supplier") {
+    const row = db
+      .prepare(`SELECT id FROM customers WHERE linked_supplier_id = ?`)
+      .get(id);
+    if (row?.id) parties.unshift({ partyType: "customer", partyId: row.id });
+  }
+
+  return parties.map((p) => {
+    const table = PARTY_TABLES[p.partyType];
+    const row = table
+      ? db.prepare(`SELECT name FROM ${table} WHERE id = ?`).get(p.partyId)
+      : null;
+    return { ...p, name: row?.name || "" };
+  });
+}
+
+const accountLine = (L, p) => `${p.name} (${L.accountTypes[p.partyType]})`;
 
 function fetchPartyHistoryLedger(
   db,
@@ -291,7 +382,7 @@ function fetchPartyHistoryLedger(
     .get(partyId, partyType, ...dateValues);
 
   return {
-    data: rows,
+    data: rows.map((r) => ({ ...r, payment_kind: getPaymentKind(r) })),
     page: currentPage,
     limit: perPage,
     total,
@@ -357,38 +448,81 @@ export default function registerPartyHistoryIPC() {
     "export-party-history-excel",
     async (
       event,
-      { partyId, partyType, startDate, endDate, language, partyName },
+      {
+        partyId,
+        partyType,
+        startDate,
+        endDate,
+        language,
+        partyName,
+        includeLinked,
+      },
     ) => {
       try {
         const L = getLabels(language);
         const isRtl = language === "ar";
 
+        const parties = resolveStatementParties(db, {
+          partyId,
+          partyType,
+          includeLinked,
+        });
+        const isCombined = parties.length > 1;
+
         const statement = buildPartyStatement(db, {
-          parties: [{ partyId, partyType }],
+          parties,
           startDate,
           endDate,
         });
 
+        const nameByKey = new Map(
+          parties.map((p) => [`${p.partyType}:${p.partyId}`, p.name]),
+        );
+        const headerName = isCombined
+          ? parties.map((p) => accountLine(L, p)).join(" + ")
+          : partyName || parties[0].name;
+
+        // Column layout — Account column only on the combined statement.
+        const columns = [
+          { key: "date", header: L.date, width: 12 },
+          ...(isCombined
+            ? [{ key: "account", header: L.account, width: 12 }]
+            : []),
+          { key: "type", header: L.type, width: 18 },
+          { key: "document", header: L.document, width: 16 },
+          { key: "description", header: L.description, width: 36 },
+          { key: "debit", header: L.debit, width: 14, money: true },
+          { key: "credit", header: L.credit, width: 14, money: true },
+          { key: "fundAmount", header: L.fundAmount, width: 14, money: true },
+          { key: "currency", header: L.currency, width: 10 },
+          { key: "balance", header: L.balance, width: 14, money: true },
+          { key: "side", header: "", width: 8 },
+        ];
+        const toRow = (values) => columns.map((c) => values[c.key] ?? null);
+
         const HEADER_ROW = 6;
-        const COLUMN_COUNT = 8;
-        const MONEY_COLUMNS = [5, 6, 7];
+        const COLUMN_COUNT = columns.length;
         const MONEY_FORMAT = "#,##0.00";
 
         const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet(L.title);
+        const sheet = workbook.addWorksheet(
+          isCombined ? L.combinedTitle.slice(0, 31) : L.title,
+        );
 
         sheet.views = [
           { rightToLeft: isRtl, state: "frozen", ySplit: HEADER_ROW },
         ];
-
-        [12, 18, 16, 38, 14, 14, 14, 8].forEach((width, i) => {
-          sheet.getColumn(i + 1).width = width;
+        columns.forEach((c, i) => {
+          sheet.getColumn(i + 1).width = c.width;
         });
 
         // ---- Title block ----
         const titleLines = [
-          { text: L.title, font: { bold: true, size: 14 } },
-          { text: `${L.party}: ${partyName || ""}`, font: { bold: true } },
+          {
+            text: isCombined ? L.combinedTitle : L.title,
+            font: { bold: true, size: 14 },
+          },
+          { text: `${L.party}: ${headerName}`, font: { bold: true } },
           { text: `${L.period}: ${formatPeriod(L, statement.period)}` },
           {
             text: `${L.generatedOn}: ${formatExportDate(new Date())}`,
@@ -405,16 +539,7 @@ export default function registerPartyHistoryIPC() {
 
         // ---- Column headings ----
         const header = sheet.getRow(HEADER_ROW);
-        header.values = [
-          L.date,
-          L.type,
-          L.document,
-          L.description,
-          L.debit,
-          L.credit,
-          L.balance,
-          "",
-        ];
+        header.values = columns.map((c) => c.header);
         header.font = { bold: true };
         header.eachCell((cell) => {
           cell.fill = {
@@ -427,72 +552,94 @@ export default function registerPartyHistoryIPC() {
 
         // ---- Brought forward ----
         if (statement.period.startDate) {
-          const bf = sheet.addRow([
-            "",
-            "",
-            "",
-            L.broughtForward,
-            null,
-            null,
-            Math.abs(statement.broughtForward),
-            sideLabel(L, statement.broughtForwardSide),
-          ]);
+          const bf = sheet.addRow(
+            toRow({
+              description: L.broughtForward,
+              balance: Math.abs(statement.broughtForward),
+              side: sideLabel(L, statement.broughtForwardSide),
+            }),
+          );
           bf.font = { italic: true, bold: true };
         }
 
         // ---- Movements ----
         statement.rows.forEach((r) => {
-          sheet.addRow([
-            formatExportDate(r.date),
-            formatType(L, r),
-            formatDocument(r),
-            formatDescription(r),
-            r.debit || null,
-            r.credit || null,
-            Math.abs(r.balance),
-            sideLabel(L, r.balance_side),
-          ]);
+          const fund = getFundAmount(r);
+          sheet.addRow(
+            toRow({
+              date: formatExportDate(r.date),
+              account: L.accountTypes[r.party_type],
+              type: formatType(L, r),
+              document: formatDocument(r),
+              description: formatDescription(r),
+              debit: r.debit || null,
+              credit: r.credit || null,
+              fundAmount: fund ? fund.amount : null,
+              currency: fund ? fund.unit : null,
+              balance: Math.abs(r.balance),
+              side: sideLabel(L, r.balance_side),
+            }),
+          );
         });
 
         // ---- Totals + closing ----
-        const totalsRow = sheet.addRow([
-          "",
-          "",
-          "",
-          L.totals,
-          statement.totals.debit,
-          statement.totals.credit,
-          null,
-          "",
-        ]);
+        const totalsRow = sheet.addRow(
+          toRow({
+            description: L.totals,
+            debit: statement.totals.debit,
+            credit: statement.totals.credit,
+          }),
+        );
         totalsRow.font = { bold: true };
         totalsRow.eachCell({ includeEmpty: true }, (cell) => {
           cell.border = { top: { style: "thin" } };
         });
 
-        const closingRow = sheet.addRow([
-          "",
-          "",
-          "",
-          L.closingBalance,
-          null,
-          null,
-          Math.abs(statement.closing),
-          sideLabel(L, statement.closingSide),
-        ]);
+        // Combined: each account's own closing, then the net.
+        if (isCombined) {
+          statement.parties.forEach((p) => {
+            sheet.addRow(
+              toRow({
+                description: accountLine(L, {
+                  ...p,
+                  name: nameByKey.get(`${p.partyType}:${p.partyId}`),
+                }),
+                balance: Math.abs(p.closing),
+                side: sideLabel(L, p.closingSide),
+              }),
+            );
+          });
+        }
+
+        const closingRow = sheet.addRow(
+          toRow({
+            description: isCombined ? L.netBalance : L.closingBalance,
+            balance: Math.abs(statement.closing),
+            side: sideLabel(L, statement.closingSide),
+          }),
+        );
         closingRow.font = { bold: true };
 
         // Money columns: numeric cells, consistent format
+        const moneyColumns = columns
+          .map((c, i) => (c.money ? i + 1 : null))
+          .filter(Boolean);
         sheet.eachRow((row, rowNumber) => {
           if (rowNumber <= HEADER_ROW) return;
-          MONEY_COLUMNS.forEach((col) => {
+          moneyColumns.forEach((col) => {
             row.getCell(col).numFmt = MONEY_FORMAT;
           });
         });
 
+        // Filter dropdowns on the heading row
+        sheet.autoFilter = {
+          from: { row: HEADER_ROW, column: 1 },
+          to: { row: HEADER_ROW, column: COLUMN_COUNT },
+        };
+
         const { canceled, filePath } = await dialog.showSaveDialog({
-          title: L.title,
-          defaultPath: `${partyName || "party"}-statement.xlsx`,
+          title: isCombined ? L.combinedTitle : L.title,
+          defaultPath: `${parties[0].name || partyName || "party"}-statement.xlsx`,
           filters: [{ name: "Excel Workbook", extensions: ["xlsx"] }],
         });
 
@@ -512,17 +659,43 @@ export default function registerPartyHistoryIPC() {
     "export-party-history-pdf",
     async (
       event,
-      { partyId, partyType, startDate, endDate, language, partyName },
+      {
+        partyId,
+        partyType,
+        startDate,
+        endDate,
+        language,
+        partyName,
+        includeLinked,
+      },
     ) => {
       try {
         const L = getLabels(language);
         const isRtl = language === "ar";
 
+        const parties = resolveStatementParties(db, {
+          partyId,
+          partyType,
+          includeLinked,
+        });
+        const isCombined = parties.length > 1;
+
         const statement = buildPartyStatement(db, {
-          parties: [{ partyId, partyType }],
+          parties,
           startDate,
           endDate,
         });
+
+        const nameByKey = new Map(
+          parties.map((p) => [`${p.partyType}:${p.partyId}`, p.name]),
+        );
+        const headerName = isCombined
+          ? parties.map((p) => accountLine(L, p)).join(" + ")
+          : partyName || parties[0].name;
+        const title = isCombined ? L.combinedTitle : L.title;
+
+        // Cells before Debit: Date, [Account], Type, Document, Description
+        const labelSpan = isCombined ? 5 : 4;
 
         const balanceCell = (value, side) =>
           `${fmtMoney(Math.abs(value))} <span class="side">${escapeHtml(
@@ -532,7 +705,8 @@ export default function registerPartyHistoryIPC() {
         const broughtForwardHtml = statement.period.startDate
           ? `
           <tr class="bf">
-            <td colspan="4">${escapeHtml(L.broughtForward)}</td>
+            <td colspan="${labelSpan}">${escapeHtml(L.broughtForward)}</td>
+            <td class="num"></td>
             <td class="num"></td>
             <td class="num"></td>
             <td class="num">${balanceCell(
@@ -543,19 +717,45 @@ export default function registerPartyHistoryIPC() {
           : "";
 
         const rowsHtml = statement.rows
-          .map(
-            (r) => `
+          .map((r) => {
+            const fund = getFundAmount(r);
+            return `
           <tr>
             <td class="nowrap">${escapeHtml(formatExportDate(r.date))}</td>
+            ${
+              isCombined
+                ? `<td class="nowrap">${escapeHtml(L.accountTypes[r.party_type])}</td>`
+                : ""
+            }
             <td>${escapeHtml(formatType(L, r))}</td>
             <td class="nowrap">${escapeHtml(formatDocument(r))}</td>
             <td>${escapeHtml(formatDescription(r))}</td>
             <td class="num">${r.debit ? fmtMoney(r.debit) : ""}</td>
             <td class="num">${r.credit ? fmtMoney(r.credit) : ""}</td>
+            <td class="num">${
+              fund ? `${fmtMoney(fund.amount)} ${escapeHtml(fund.unit)}` : ""
+            }</td>
             <td class="num">${balanceCell(r.balance, r.balance_side)}</td>
-          </tr>`,
-          )
+          </tr>`;
+          })
           .join("");
+
+        // Combined: each account's own closing above the net line.
+        const accountSummaryHtml = isCombined
+          ? statement.parties
+              .map(
+                (p) =>
+                  `<tr><td>${escapeHtml(
+                    accountLine(L, {
+                      ...p,
+                      name: nameByKey.get(`${p.partyType}:${p.partyId}`),
+                    }),
+                  )}</td><td class="num">${balanceCell(p.closing, p.closingSide)}</td></tr>`,
+              )
+              .join("")
+          : "";
+
+        const closingLabel = isCombined ? L.netBalance : L.closingBalance;
 
         const html = `
         <html dir="${isRtl ? "rtl" : "ltr"}" lang="${escapeHtml(language || "en")}">
@@ -581,7 +781,7 @@ export default function registerPartyHistoryIPC() {
               h1 { font-size: 18px; margin: 0 0 6px; }
               .meta { margin: 2px 0; color: #475569; }
               .meta strong { color: #1c2340; }
-              .summary { border-collapse: collapse; min-width: 220px; }
+              .summary { border-collapse: collapse; min-width: 240px; }
               .summary td { padding: 3px 0; }
               .summary td.num { padding-inline-start: 16px; }
               .summary tr.closing td {
@@ -625,8 +825,8 @@ export default function registerPartyHistoryIPC() {
           <body>
             <div class="head">
               <div>
-                <h1>${escapeHtml(L.title)}</h1>
-                <p class="meta">${escapeHtml(L.party)}: <strong>${escapeHtml(partyName || "")}</strong></p>
+                <h1>${escapeHtml(title)}</h1>
+                <p class="meta">${escapeHtml(L.party)}: <strong>${escapeHtml(headerName)}</strong></p>
                 <p class="meta">${escapeHtml(L.period)}: <strong>${escapeHtml(formatPeriod(L, statement.period))}</strong></p>
                 <p class="meta">${escapeHtml(L.generatedOn)}: ${escapeHtml(formatExportDate(new Date()))}</p>
               </div>
@@ -639,7 +839,8 @@ export default function registerPartyHistoryIPC() {
                 }
                 <tr><td>${escapeHtml(L.debit)}</td><td class="num">${fmtMoney(statement.totals.debit)}</td></tr>
                 <tr><td>${escapeHtml(L.credit)}</td><td class="num">${fmtMoney(statement.totals.credit)}</td></tr>
-                <tr class="closing"><td>${escapeHtml(L.closingBalance)}</td><td class="num">${balanceCell(statement.closing, statement.closingSide)}</td></tr>
+                ${accountSummaryHtml}
+                <tr class="closing"><td>${escapeHtml(closingLabel)}</td><td class="num">${balanceCell(statement.closing, statement.closingSide)}</td></tr>
               </table>
             </div>
 
@@ -647,11 +848,13 @@ export default function registerPartyHistoryIPC() {
               <thead>
                 <tr>
                   <th>${escapeHtml(L.date)}</th>
+                  ${isCombined ? `<th>${escapeHtml(L.account)}</th>` : ""}
                   <th>${escapeHtml(L.type)}</th>
                   <th>${escapeHtml(L.document)}</th>
                   <th>${escapeHtml(L.description)}</th>
                   <th class="num">${escapeHtml(L.debit)}</th>
                   <th class="num">${escapeHtml(L.credit)}</th>
+                  <th class="num">${escapeHtml(L.fundAmount)}</th>
                   <th class="num">${escapeHtml(L.balance)}</th>
                 </tr>
               </thead>
@@ -661,13 +864,15 @@ export default function registerPartyHistoryIPC() {
               </tbody>
               <tfoot>
                 <tr class="totals">
-                  <td colspan="4">${escapeHtml(L.totals)}</td>
+                  <td colspan="${labelSpan}">${escapeHtml(L.totals)}</td>
                   <td class="num">${fmtMoney(statement.totals.debit)}</td>
                   <td class="num">${fmtMoney(statement.totals.credit)}</td>
                   <td class="num"></td>
+                  <td class="num"></td>
                 </tr>
                 <tr class="closing">
-                  <td colspan="4">${escapeHtml(L.closingBalance)}</td>
+                  <td colspan="${labelSpan}">${escapeHtml(closingLabel)}</td>
+                  <td class="num"></td>
                   <td class="num"></td>
                   <td class="num"></td>
                   <td class="num">${balanceCell(statement.closing, statement.closingSide)}</td>
@@ -696,8 +901,8 @@ export default function registerPartyHistoryIPC() {
         win.close();
 
         const { canceled, filePath } = await dialog.showSaveDialog({
-          title: L.title,
-          defaultPath: `${partyName || "party"}-statement.pdf`,
+          title,
+          defaultPath: `${parties[0].name || partyName || "party"}-statement.pdf`,
           filters: [{ name: "PDF Document", extensions: ["pdf"] }],
         });
 

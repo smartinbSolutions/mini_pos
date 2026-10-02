@@ -33,52 +33,29 @@ export default function partyLedgerRowLabel({
   }
 
   if (row.record_type === "payment") {
-    if (partyType === "customer") {
-      return row.movement_type === "decrease"
-        ? t("screens.ledger.paymentCustomerToFund", {
-            party: partyName,
-            fund,
-            defaultValue: `Payment has been paid from customer ${partyName} to ${fund}`,
-          })
-        : t("screens.ledger.paymentFundToCustomer", {
-            party: partyName,
-            fund,
-            defaultValue: `Payment has been paid from ${fund} to customer ${partyName}`,
-          });
-    }
+    const key = {
+      received: "paymentReceived",
+      made: "paymentMade",
+      deposit: "partnerDeposit",
+      withdrawal: "partnerWithdrawal",
+    }[row.payment_kind];
 
-    if (partyType === "supplier") {
-      return row.movement_type === "decrease"
-        ? t("screens.ledger.paymentFundToSupplier", {
-            party: partyName,
-            fund,
-            defaultValue: `Payment has been paid from ${fund} to supplier ${partyName}`,
-          })
-        : t("screens.ledger.paymentSupplierToFund", {
-            party: partyName,
-            fund,
-            defaultValue: `Payment has been paid from supplier ${partyName} to ${fund}`,
-          });
-    }
+    const defaults = {
+      paymentReceived: `Payment received into ${fund}`,
+      paymentMade: `Payment made from ${fund}`,
+      partnerDeposit: `Deposit into ${fund}`,
+      partnerWithdrawal: `Withdrawal from ${fund}`,
+    };
 
-    // partner
-    return row.movement_type === "increase"
-      ? t("screens.ledger.paymentPartnerToFund", {
-          party: partyName,
-          fund,
-          defaultValue: `Payment has been paid from partner ${partyName} to ${fund}`,
-        })
-      : t("screens.ledger.paymentFundToPartner", {
-          party: partyName,
-          fund,
-          defaultValue: `Payment has been paid from ${fund} to partner ${partyName}`,
-        });
+    return key
+      ? t(`screens.ledger.${key}`, { fund, defaultValue: defaults[key] })
+      : t("ui.payment");
   }
 
   if (row.record_type === "invoice" || row.record_type === "return") {
     const typeLabel = t(
       `screens.invoices.invoiceType.${row.invoice_type}`,
-      row.invoice_type
+      row.invoice_type,
     );
 
     return row.record_type === "return"

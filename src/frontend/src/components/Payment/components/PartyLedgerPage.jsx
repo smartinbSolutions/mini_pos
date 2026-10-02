@@ -25,6 +25,7 @@ import GoTo from "../../../Global/GoTo";
 import Pagination from "../../../Global/Pagination";
 import ExportModal from "../../../Global/ExportModal";
 import partyLedgerRowLabel from "./PartyLedgerRowLabel";
+import LinkedPartyBadge from "../../../Global/LinkedPartyBadge";
 
 const PARTY_ICONS = {
   customer: User,
@@ -46,16 +47,15 @@ const KIND_STYLE = {
   other: { Icon: Wallet, tile: "bg-slate-100 text-slate-500" },
 };
 
-function rowKind(row, partyType) {
+function rowKind(row) {
   if (row.record_type === "opening_balance") return "opening";
   if (row.record_type === "invoice") return "invoice";
   if (row.record_type === "return") return "return";
   if (row.record_type === "payment") {
-    const isIncrease = row.movement_type === "increase";
-    // Customer: a decrease is them paying you (cash in).
-    // Supplier / partner: an increase is cash coming in (refund / deposit).
-    const cashIn = partyType === "customer" ? !isIncrease : isIncrease;
-    return cashIn ? "cashIn" : "cashOut";
+    // payment_kind comes from the backend (getPaymentKind) — single source.
+    return row.payment_kind === "received" || row.payment_kind === "deposit"
+      ? "cashIn"
+      : "cashOut";
   }
   return "other";
 }
@@ -118,7 +118,10 @@ const PartyLedgerPage = () => {
 
   const partyName = party?.name || `${typeLabel} #${id}`;
 
-  const runExport = async (apiFn, { startDate, endDate, language }) => {
+  const runExport = async (
+    apiFn,
+    { startDate, endDate, language, includeLinked },
+  ) => {
     setExporting(true);
     setExportError("");
     try {
@@ -129,6 +132,7 @@ const PartyLedgerPage = () => {
         endDate,
         language,
         partyName,
+        includeLinked,
       });
 
       if (res.success) {
@@ -215,6 +219,19 @@ const PartyLedgerPage = () => {
   const rowGrid =
     "grid grid-cols-[2.75rem_1fr_auto] sm:grid-cols-[2.75rem_1fr_9rem_9rem] gap-x-4";
 
+  const linkedName =
+    normalizedType === "customer"
+      ? party?.linked_supplier_name
+      : normalizedType === "supplier"
+        ? party?.linked_customer_name
+        : null;
+  const linkedLabel = linkedName
+    ? t("screens.ledger.includeLinkedAccount", {
+        name: linkedName,
+        defaultValue: `Include linked account (${linkedName})`,
+      })
+    : null;
+
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-4 text-slate-900 sm:p-6">
       <div className="mx-auto max-w-5xl space-y-5">
@@ -240,6 +257,28 @@ const PartyLedgerPage = () => {
                 <h1 className="truncate text-2xl font-black leading-tight text-[#1c2340] sm:text-3xl">
                   {partyName}
                 </h1>
+                {normalizedType === "customer" && (
+                  <LinkedPartyBadge
+                    type="supplier"
+                    id={party?.linked_supplier_id}
+                    name={party?.linked_supplier_name}
+                    onClick={() =>
+                      navigate(`/payment/supplier/${party.linked_supplier_id}`)
+                    }
+                    t={t}
+                  />
+                )}
+                {normalizedType === "supplier" && (
+                  <LinkedPartyBadge
+                    type="customer"
+                    id={party?.linked_customer_id}
+                    name={party?.linked_customer_name}
+                    onClick={() =>
+                      navigate(`/payment/customer/${party.linked_customer_id}`)
+                    }
+                    t={t}
+                  />
+                )}
               </div>
             </div>
 
@@ -362,7 +401,7 @@ const PartyLedgerPage = () => {
 
                   <div className="divide-y divide-[#eef1ff]">
                     {rows.map((p) => {
-                      const kind = rowKind(p, normalizedType);
+                      const kind = rowKind(p);
                       const { Icon, tile } = KIND_STYLE[kind];
                       const sign = p.movement_type === "decrease" ? "−" : "+";
                       const time = (p.date || "").slice(11, 16);
@@ -506,6 +545,7 @@ const PartyLedgerPage = () => {
         exporting={exporting}
         exportError={exportError}
         title={t("screens.ledger.exportTitle", "Export Ledger")}
+        linkedLabel={linkedLabel}
       />
     </div>
   );

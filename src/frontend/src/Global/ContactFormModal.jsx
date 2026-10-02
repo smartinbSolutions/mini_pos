@@ -17,6 +17,7 @@ import {
 import { normalizeDigits } from "./FormatNumber";
 import NumberInput from "./NumberInput";
 import TagPickerField from "../components/Tags/components/TagPickerField";
+import LinkedSupplierField from "./LinkedSupplierField";
 
 const defaultOpeningDate = () => `${new Date().getFullYear()}-01-01`;
 
@@ -277,6 +278,10 @@ const ContactFormModal = ({
                 onChange={(ids) => set({ tagIds: ids })}
               />
             </section>
+
+            {type === "customer" && (
+              <LinkedSupplierField form={form} onChange={set} t={t} />
+            )}
 
             {/* Opening balance */}
             <section className="rounded-2xl border border-[#e9edfb] bg-[#f8faff] p-4">

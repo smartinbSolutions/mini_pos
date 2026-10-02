@@ -402,13 +402,20 @@
       "genericPaymentOut": "تم دفع مبلغ"
     },
     "contacts": {
+      "alsoSupplierBadge": "مورد أيضاً: {{name}}",
+      "alsoCustomerBadge": "عميل أيضاً: {{name}}",
       "partnerTheyOweYouTitle": "مساهمة من الشريك",
       "partnerTheyOweYouHint": "مبلغ أدخله الشريك إلى المنشأة — المنشأة مدينة له به",
       "partnerYouOweThemTitle": "سحب من الشريك",
       "partnerYouOweThemHint": "مبلغ سحبه الشريك زيادة عن حصته — مدين به للمنشأة",
       "partnerSummaryTheyOweYou": "ساهم {{name}} بمبلغ {{amount}} بتاريخ {{date}}",
       "partnerSummaryYouOweThem": "{{name}} مدين للمنشأة بمبلغ {{amount}} بتاريخ {{date}}",
-
+      "alsoSupplier": "مورد أيضاً",
+      "alsoSupplierHint": "اربط حساب المورد لنفس الشخص للحصول على كشف حساب موحّد.",
+      "selectSupplierToLink": "اختر مورداً موجوداً",
+      "createMatchingSupplier": "إنشاء مورد بنفس البيانات",
+      "willCreateSupplier": "سيتم إنشاء مورد باسم {{name}} وربطه.",
+      "unlink": "إلغاء الربط",
       "addOpeningBalance": "إضافة رصيد افتتاحي",
       "openingBalanceOnRecord": "الرصيد الافتتاحي المسجّل",
       "changeOpeningBalance": "تعديل",
@@ -1000,6 +1007,7 @@
       "deleted": "محذوف"
     },
     "ledger": {
+      "includeLinkedAccount": "تضمين الحساب المرتبط ({{name}})",
       "owesYou": "{{party}} مدين لك",
       "youOwe": "أنت مدين لـ {{party}}",
       "settled": "الحساب مسدّد بالكامل",
@@ -1476,6 +1484,8 @@
     "paymentTitle": "هل أنت متأكد من رغبتك في حذف هذا السند المالي؟ لا يمكن التراجع عن هذه العملية."
   },
   "errors": {
+    "SUPPLIER_NOT_FOUND": "المورد المحدد لم يعد موجوداً.",
+    "SUPPLIER_ALREADY_LINKED": "هذا المورد مرتبط بعميل آخر بالفعل.",
     "OPENING_BALANCE_AFTER_FIRST_MOVEMENT": "يجب أن يكون تاريخ الرصيد الافتتاحي في تاريخ أول حركة أو قبله.",
     "INVALID_OPENING_BALANCE_AMOUNT": "أدخل مبلغاً صحيحاً للرصيد الافتتاحي.",
     "OPENING_BALANCE_NOT_FOUND": "لا يوجد رصيد افتتاحي.",

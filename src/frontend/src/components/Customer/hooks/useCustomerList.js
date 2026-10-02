@@ -14,6 +14,9 @@ const useCustomerList = () => {
     opening_balance: 0,
     balance_type: "increase",
     date: "",
+    linked_supplier_id: null,
+    linked_supplier_name: "",
+    create_linked_supplier: false,
   };
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -283,8 +286,10 @@ const useCustomerList = () => {
       balance_type: "increase",
       date: "",
       hasOpeningBalance: false,
+      linked_supplier_id: cust.linked_supplier_id || null,
+      linked_supplier_name: cust.linked_supplier_name || "",
+      create_linked_supplier: false,
     });
-
     const ob = await api.getOpeningBalance({
       owner_type: "customer",
       owner_id: cust.id,

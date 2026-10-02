@@ -67,6 +67,8 @@ export default function registerSuppliersIPC() {
     const whereValues = search ? [`%${search}%`, `%${search}%`] : [];
 
     // Balance must be computed here (not just selected) so HAVING can filter on it.
+    // The linked-customer join is one-to-one (unique index), so it never
+    // multiplies party_history rows.
     const perSupplierCTE = `
       SELECT
         s.id,
@@ -74,11 +76,15 @@ export default function registerSuppliersIPC() {
         s.phone,
         s.address,
         s.createdAt,
+        lc.id AS linked_customer_id,
+        lc.name AS linked_customer_name,
         COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0) AS total,
         COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS total_paid,
         COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0)
           - COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS balance
       FROM suppliers s
+      LEFT JOIN customers lc
+        ON lc.linked_supplier_id = s.id
       LEFT JOIN party_history ph
         ON ph.party_type = 'supplier'
        AND ph.party_id = s.id
@@ -158,6 +164,8 @@ export default function registerSuppliersIPC() {
           `
       SELECT
         s.*,
+        lc.id AS linked_customer_id,
+        lc.name AS linked_customer_name,
 
         COALESCE(
           SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
@@ -181,6 +189,9 @@ export default function registerSuppliersIPC() {
         ) AS balance
 
       FROM suppliers s
+
+      LEFT JOIN customers lc
+        ON lc.linked_supplier_id = s.id
 
       LEFT JOIN party_history ph
         ON ph.party_type = 'supplier'

@@ -2,6 +2,32 @@ const { ipcMain } = require("electron");
 import db from "../db";
 import { upsertOpeningBalance } from "../utils/openingBalance";
 
+// Normalizes + validates the customer → supplier link.
+// Returns the supplier id to store, or null for "not linked".
+function resolveLinkedSupplier(db, value, customerId = null) {
+  const supplierId = Number(value) || null;
+  if (!supplierId) return null;
+
+  const supplier = db
+    .prepare(`SELECT id FROM suppliers WHERE id = ?`)
+    .get(supplierId);
+  if (!supplier) {
+    throw new Error("SUPPLIER_NOT_FOUND");
+  }
+
+  // One-to-one: the supplier must not already be linked to another customer.
+  const takenBy = db
+    .prepare(
+      `SELECT id FROM customers WHERE linked_supplier_id = ? AND id IS NOT ?`,
+    )
+    .get(supplierId, customerId);
+  if (takenBy) {
+    throw new Error("SUPPLIER_ALREADY_LINKED");
+  }
+
+  return supplierId;
+}
+
 export default function registerCustomersIPC() {
   // CREATE
   ipcMain.handle("create-customer", (event, data) => {
@@ -14,14 +40,26 @@ export default function registerCustomersIPC() {
     }
 
     const createTx = db.transaction(() => {
+      let linkedSupplierId = resolveLinkedSupplier(db, data.linked_supplier_id);
+
+      // "Create a supplier with the same details" — made in the same
+      // transaction, so a failure never leaves a half-made supplier behind.
+      if (!linkedSupplierId && data.create_linked_supplier) {
+        linkedSupplierId = db
+          .prepare(
+            `INSERT INTO suppliers (name, phone, address) VALUES (?,?,?)`,
+          )
+          .run(name, phone, address).lastInsertRowid;
+      }
+
       const result = db
         .prepare(
           `
-        INSERT INTO customers (name, phone, address)
-        VALUES (?,?,?)
+        INSERT INTO customers (name, phone, address, linked_supplier_id)
+        VALUES (?,?,?,?)
       `,
         )
-        .run(name, phone, address);
+        .run(name, phone, address, linkedSupplierId);
 
       const openingBalance = Number(data.opening_balance || 0);
       if (openingBalance !== 0) {
@@ -74,11 +112,15 @@ export default function registerCustomersIPC() {
         c.phone,
         c.address,
         c.createdAt,
+        c.linked_supplier_id,
+        ls.name AS linked_supplier_name,
         COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0) AS total,
         COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS total_paid,
         COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0)
           - COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS balance
       FROM customers c
+      LEFT JOIN suppliers ls
+        ON ls.id = c.linked_supplier_id
       LEFT JOIN party_history ph
         ON ph.party_type = 'customer'
        AND ph.party_id = c.id
@@ -157,6 +199,7 @@ export default function registerCustomersIPC() {
           `
       SELECT
         c.*,
+        ls.name AS linked_supplier_name,
 
         COALESCE(
           SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
@@ -180,6 +223,9 @@ export default function registerCustomersIPC() {
         ) AS balance
 
       FROM customers c
+
+      LEFT JOIN suppliers ls
+        ON ls.id = c.linked_supplier_id
 
       LEFT JOIN party_history ph
         ON ph.party_type = 'customer'
@@ -208,13 +254,38 @@ export default function registerCustomersIPC() {
     }
 
     try {
-      db.prepare(
-        `
-        UPDATE customers
-        SET name = ?, phone = ?, address = ?
-        WHERE id = ?
-      `,
-      ).run(name, phone, address, data.id);
+      db.transaction(() => {
+        db.prepare(
+          `
+          UPDATE customers
+          SET name = ?, phone = ?, address = ?
+          WHERE id = ?
+        `,
+        ).run(name, phone, address, data.id);
+
+        // Only touch the link when the form actually sends it — callers that
+        // don't send the field can never clear an existing link by accident.
+        // Sending null / "" unlinks.
+        if ("linked_supplier_id" in data || data.create_linked_supplier) {
+          let linkedSupplierId = resolveLinkedSupplier(
+            db,
+            data.linked_supplier_id,
+            data.id,
+          );
+
+          if (!linkedSupplierId && data.create_linked_supplier) {
+            linkedSupplierId = db
+              .prepare(
+                `INSERT INTO suppliers (name, phone, address) VALUES (?,?,?)`,
+              )
+              .run(name, phone, address).lastInsertRowid;
+          }
+
+          db.prepare(
+            `UPDATE customers SET linked_supplier_id = ? WHERE id = ?`,
+          ).run(linkedSupplierId, data.id);
+        }
+      })();
 
       return { success: true };
     } catch (err) {

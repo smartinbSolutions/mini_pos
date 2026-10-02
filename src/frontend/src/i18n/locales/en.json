@@ -401,13 +401,20 @@
       "genericPaymentOut": "Payment made"
     },
     "contacts": {
+      "alsoSupplierBadge": "Also supplier: {{name}}",
+      "alsoCustomerBadge": "Also customer: {{name}}",
       "partnerTheyOweYouTitle": "Partner contributed",
       "partnerTheyOweYouHint": "Money the partner put into the business — the business owes it to them",
       "partnerYouOweThemTitle": "Partner withdrew",
       "partnerYouOweThemHint": "Money the partner took out beyond their share — they owe it back",
       "partnerSummaryTheyOweYou": "{{name}} contributed {{amount}} as of {{date}}",
       "partnerSummaryYouOweThem": "{{name}} owes the business {{amount}} as of {{date}}",
-
+      "alsoSupplier": "Also a supplier",
+      "alsoSupplierHint": "Link the supplier account of the same person to get one combined statement.",
+      "selectSupplierToLink": "Select an existing supplier",
+      "createMatchingSupplier": "Create a supplier with the same details",
+      "willCreateSupplier": "A supplier named {{name}} will be created and linked.",
+      "unlink": "Unlink",
       "addOpeningBalance": "Add opening balance",
       "openingBalanceOnRecord": "Opening balance on record",
       "changeOpeningBalance": "Change",
@@ -1018,6 +1025,7 @@
       "deleted": "Deleted"
     },
     "ledger": {
+      "includeLinkedAccount": "Include linked account ({{name}})",
       "owesYou": "{{party}} owes you",
       "youOwe": "You owe {{party}}",
       "settled": "All settled",
@@ -1494,6 +1502,8 @@
     "paymentTitle": "Are you sure you want to delete this financial voucher? This action cannot be undone."
   },
   "errors": {
+    "SUPPLIER_NOT_FOUND": "The selected supplier no longer exists.",
+    "SUPPLIER_ALREADY_LINKED": "This supplier is already linked to another customer.",
     "productRequired": "Select a product",
     "percentageExceedsRemaining": "You can't add more than {{remaining}}%",
     "rendererTitle": "Renderer error",

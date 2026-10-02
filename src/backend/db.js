@@ -437,7 +437,19 @@ CREATE TABLE IF NOT EXISTS partners (
 )
 `,
 ).run();
+
 ensureColumn("partners", "percentage", "REAL DEFAULT 0");
+ensureColumn(
+  "customers",
+  "linked_supplier_id",
+  "INTEGER REFERENCES suppliers(id) ON DELETE SET NULL",
+);
+
+// One-to-one: a supplier can be linked to at most one customer.
+db.prepare(
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_linked_supplier
+   ON customers(linked_supplier_id) WHERE linked_supplier_id IS NOT NULL`,
+).run();
 
 /* ============================================================
    CURRENCY & FUNDS

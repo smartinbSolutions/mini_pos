@@ -10,6 +10,7 @@ import Pagination from "../../../Global/Pagination";
 import { ToastContainer } from "react-toastify";
 import TagList from "../../Tags/components/TagList";
 import ContactFormModal from "../../../Global/ContactFormModal";
+import LinkedPartyBadge from "../../../Global/LinkedPartyBadge";
 
 // dir="ltr" font-mono tabular-nums wrapper, per the app's RTL-number convention.
 // TODO: swap for the shared <Num> component if you'd rather keep one source of truth.
@@ -254,9 +255,22 @@ export const CustomerList = () => {
                             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4663ff] text-xs font-bold text-white shadow-md shadow-[#4663ff]/20">
                               {customer.name?.charAt(0)?.toUpperCase() || "C"}
                             </div>
-                            <span className="font-bold text-slate-900">
-                              {customer.name}
-                            </span>
+                            <div className="min-w-0 text-start">
+                              <span className="block font-bold text-slate-900">
+                                {customer.name}
+                              </span>
+                              <LinkedPartyBadge
+                                type="supplier"
+                                id={customer.linked_supplier_id}
+                                name={customer.linked_supplier_name}
+                                onClick={() =>
+                                  navigate(
+                                    `/payment/supplier/${customer.linked_supplier_id}`,
+                                  )
+                                }
+                                t={t}
+                              />
+                            </div>
                           </div>
                         </td>
                         <td className="px-5 py-3 text-slate-500">

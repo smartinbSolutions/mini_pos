@@ -401,6 +401,14 @@
       "genericPaymentOut": "Ödeme yapıldı"
     },
     "contacts": {
+      "alsoSupplierBadge": "Tedarikçi olarak: {{name}}",
+      "alsoCustomerBadge": "Müşteri olarak: {{name}}",
+      "alsoSupplier": "Aynı zamanda tedarikçi",
+      "alsoSupplierHint": "Birleşik ekstre için aynı kişinin tedarikçi hesabını bağlayın.",
+      "selectSupplierToLink": "Mevcut bir tedarikçi seçin",
+      "createMatchingSupplier": "Aynı bilgilerle tedarikçi oluştur",
+      "willCreateSupplier": "{{name}} adında bir tedarikçi oluşturulup bağlanacak.",
+      "unlink": "Bağlantıyı kaldır",
       "partnerTheyOweYouTitle": "Ortak katkısı",
       "partnerTheyOweYouHint": "Ortağın işletmeye koyduğu tutar — işletme bunu ortağa borçlu",
       "partnerYouOweThemTitle": "Ortak çekişi",
@@ -994,6 +1002,7 @@
       "deleted": "Silindi"
     },
     "ledger": {
+      "includeLinkedAccount": "Bağlı hesabı dahil et ({{name}})",
       "owesYou": "Alacağınız",
       "youOwe": "Borcunuz",
       "settled": "Hesap kapalı",
@@ -1472,6 +1481,8 @@
     "paymentTitle": "Bu makbuzu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
   },
   "errors": {
+    "SUPPLIER_NOT_FOUND": "Seçilen tedarikçi artık mevcut değil.",
+    "SUPPLIER_ALREADY_LINKED": "Bu tedarikçi zaten başka bir müşteriye bağlı.",
     "OPENING_BALANCE_AFTER_FIRST_MOVEMENT": "Açılış bakiyesi tarihi ilk hareketten sonra olamaz.",
     "INVALID_OPENING_BALANCE_AMOUNT": "Geçerli bir açılış bakiyesi tutarı girin.",
     "OPENING_BALANCE_NOT_FOUND": "Açılış bakiyesi bulunamadı.",
