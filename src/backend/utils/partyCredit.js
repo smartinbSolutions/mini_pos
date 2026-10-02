@@ -1,4 +1,5 @@
 import createPaymentAllocation from "./createPaymentAllocations";
+import { findLegacyContact } from "./contacts";
 
 // Whitelisted table map — invoice_type is passed as a bound SQL parameter,
 // table name is not (never interpolate a table name from user input).
@@ -16,17 +17,49 @@ const OPEN_INVOICE_TABLES = {
   ],
 };
 
-// Normal direction = how money usually flows for this party.
-// Reverse-direction payments (refunds / advances) with no allocation
+// Normal direction = how money usually flows on this side of the account.
+// Reverse-direction payments (refunds / advances back) with no allocation
 // cancel out the same amount of unallocated normal payments.
+//   customer side (sales):     money IN is normal, money OUT is a refund
+//   supplier side (purchases): money OUT is normal, money IN is a refund
 const PAYMENT_DIRECTION = {
   customer: { normal: "income", reverse: "expense" },
   supplier: { normal: "expense", reverse: "income" },
 };
 
+// Which payments belong to this side of this account.
+// Contact model: contact_id + side (payments.party_type = 'customer' is the
+// sales side, 'supplier' the purchase side). Falls back to the old party id
+// when the party has no contact yet.
+function paymentScope(db, { partyId, partyType }) {
+  const contactId = findLegacyContact(db, partyType, partyId);
+  return contactId
+    ? {
+        clause: "p.contact_id = ? AND p.party_type = ?",
+        values: [contactId, partyType],
+        contactId,
+      }
+    : {
+        clause: "p.party_id = ? AND p.party_type = ?",
+        values: [Number(partyId), partyType],
+        contactId: null,
+      };
+}
+
 function getOpenInvoicesForParty(db, { partyId, partyType }) {
   const configs = OPEN_INVOICE_TABLES[partyType] || [];
+  const contactId = findLegacyContact(db, partyType, partyId);
   const openInvoices = [];
+
+  // Contact's documents on this side: by contact_id, or by the old id for
+  // documents written before contact_id was filled.
+  const ownerClause = (column) =>
+    contactId
+      ? `(inv.contact_id = ? OR inv.${column} = ?)`
+      : `inv.${column} = ?`;
+  const ownerValues = contactId
+    ? [contactId, Number(partyId)]
+    : [Number(partyId)];
 
   for (const { invoice_type, table, column } of configs) {
     const rows = db
@@ -39,12 +72,12 @@ function getOpenInvoicesForParty(db, { partyId, partyType }) {
         FROM ${table} inv
         LEFT JOIN payment_allocations pa
           ON pa.invoice_id = inv.id AND pa.invoice_type = ?
-        WHERE inv.${column} = ?
+        WHERE ${ownerClause(column)}
         GROUP BY inv.id
         HAVING remaining > 0
         `,
       )
-      .all(invoice_type, partyId);
+      .all(invoice_type, ...ownerValues);
 
     rows.forEach((r) =>
       openInvoices.push({
@@ -60,13 +93,10 @@ function getOpenInvoicesForParty(db, { partyId, partyType }) {
   return openInvoices;
 }
 
-// Total unallocated amount of reverse-direction payments (cash out to a
-// customer / cash in from a supplier). Targeted return refunds are fully
-// allocated to their return, so they contribute 0 here.
-function getReverseUnallocated(db, { partyId, partyType }) {
-  const dir = PAYMENT_DIRECTION[partyType];
-  if (!dir) return 0;
-
+// Total unallocated amount of reverse-direction payments on this side.
+// Targeted return refunds are fully allocated to their return, so they
+// contribute 0 here.
+function getReverseUnallocated(db, scope, dir) {
   const row = db
     .prepare(
       `
@@ -75,14 +105,13 @@ function getReverseUnallocated(db, { partyId, partyType }) {
         SELECT p.amount - COALESCE(SUM(pa.amount), 0) AS available
         FROM payments p
         LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
-        WHERE p.party_id = ?
-          AND p.party_type = ?
+        WHERE ${scope.clause}
           AND p.type = ?
         GROUP BY p.id
       )
-    `,
+      `,
     )
-    .get(partyId, partyType, dir.reverse);
+    .get(...scope.values, dir.reverse);
 
   return Number(row?.total || 0);
 }
@@ -90,6 +119,8 @@ function getReverseUnallocated(db, { partyId, partyType }) {
 export function getPartyCredit(db, { partyId, partyType }) {
   const dir = PAYMENT_DIRECTION[partyType];
   if (!dir) return { totalAvailable: 0, payments: [] };
+
+  const scope = paymentScope(db, { partyId, partyType });
 
   const payments = db
     .prepare(
@@ -106,18 +137,17 @@ export function getPartyCredit(db, { partyId, partyType }) {
       FROM payments p
       LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
       LEFT JOIN funds f ON f.id = p.fund_id
-      WHERE p.party_id = ?
-        AND p.party_type = ?
+      WHERE ${scope.clause}
         AND p.type = ?
       GROUP BY p.id
       HAVING available > 0
       ORDER BY p.date ASC
     `,
     )
-    .all(partyId, partyType, dir.normal);
+    .all(...scope.values, dir.normal);
 
   const grossAvailable = payments.reduce((sum, p) => sum + p.available, 0);
-  const reverseUnallocated = getReverseUnallocated(db, { partyId, partyType });
+  const reverseUnallocated = getReverseUnallocated(db, scope, dir);
   const totalAvailable = Math.max(0, grossAvailable - reverseUnallocated);
 
   return {
@@ -133,6 +163,8 @@ export function applyPartyCredit(
   const dir = PAYMENT_DIRECTION[partyType];
   if (!dir) throw new Error("INSUFFICIENT_CREDIT");
 
+  const scope = paymentScope(db, { partyId, partyType });
+
   const unallocated = db
     .prepare(
       `
@@ -141,22 +173,20 @@ export function applyPartyCredit(
         p.amount - COALESCE(SUM(pa.amount), 0) AS available
       FROM payments p
       LEFT JOIN payment_allocations pa ON pa.payment_id = p.id
-      WHERE p.party_id = ?
-        AND p.party_type = ?
+      WHERE ${scope.clause}
         AND p.type = ?
       GROUP BY p.id
       HAVING available > 0
       ORDER BY p.date ASC
     `,
     )
-    .all(partyId, partyType, dir.normal);
+    .all(...scope.values, dir.normal);
 
   const requested = Number(amount || 0);
 
   // Net credit — refunds/advances already handed back part of it.
   const grossAvailable = unallocated.reduce((sum, p) => sum + p.available, 0);
-  const netAvailable =
-    grossAvailable - getReverseUnallocated(db, { partyId, partyType });
+  const netAvailable = grossAvailable - getReverseUnallocated(db, scope, dir);
 
   if (requested > netAvailable + 0.001) {
     throw new Error("INSUFFICIENT_CREDIT");
@@ -166,7 +196,7 @@ export function applyPartyCredit(
   let totalApplied = 0;
 
   // No specific invoice given — instead of a specific target, close
-  // whatever open invoices this party has, oldest first, using the
+  // whatever open invoices this side has, oldest first, using the
   // same unallocated payments, oldest first.
   if (!invoiceId) {
     const openInvoices = getOpenInvoicesForParty(db, { partyId, partyType });

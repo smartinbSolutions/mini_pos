@@ -1,6 +1,7 @@
 const { ipcMain } = require("electron");
 import db from "../db";
 import attachLatinNames from "../utils/attachLatinNames";
+import { ensureLegacyContact } from "../utils/contacts";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -198,9 +199,10 @@ export default function registerPurchaseInvoicesIPC() {
               taxRate,
               taxValue,
               net_total,
-              created_by
+              created_by,
+              contact_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
@@ -215,6 +217,7 @@ export default function registerPurchaseInvoicesIPC() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by,
+            ensureLegacyContact(db, "supplier", data.supplier_id),
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -1191,7 +1194,8 @@ export default function registerPurchaseInvoicesIPC() {
         UPDATE purchase_invoices
         SET supplier_id = ?, invoice_name = ?, description = ?, date = ?,
             subtotal = ?, discount = ?, discount_rate = ?,
-            taxRate = ?, taxValue = ?, net_total = ?, updated_by = ?
+           taxRate = ?, taxValue = ?, net_total = ?, updated_by = ?,
+            contact_id = ?
         WHERE id = ?
       `,
         ).run(
@@ -1206,6 +1210,7 @@ export default function registerPurchaseInvoicesIPC() {
           invoiceTaxValueTotal,
           netTotal,
           data.updated_by,
+          ensureLegacyContact(db, "supplier", newSupplierId),
           data.id,
         );
 

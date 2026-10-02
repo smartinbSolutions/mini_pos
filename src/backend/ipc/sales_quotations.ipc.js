@@ -1,6 +1,7 @@
 const { ipcMain } = require("electron");
 import db from "../db";
 import attachLatinNames from "../utils/attachLatinNames";
+import { ensureLegacyContact } from "../utils/contacts";
 import { buildDefaultInvoiceName } from "../utils/helpers";
 
 export default function registerSalesQuotationsIPC() {
@@ -159,8 +160,8 @@ export default function registerSalesQuotationsIPC() {
             (customer_id, quotation_name, description, status, date,
              subtotal, discount, discount_rate,
              taxRate, taxValue,
-             created_by, updated_by, net_total)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             created_by, updated_by, net_total, contact_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
@@ -177,6 +178,7 @@ export default function registerSalesQuotationsIPC() {
             data.created_by || null,
             null,
             netTotal,
+            ensureLegacyContact(db, "customer", data.customer_id),
           );
 
         const quotationId = quotationResult.lastInsertRowid;
@@ -481,7 +483,8 @@ export default function registerSalesQuotationsIPC() {
               taxRate = ?,
               taxValue = ?,
               net_total = ?,
-              updated_by = ?
+              updated_by = ?,
+              contact_id = ?
           WHERE id = ?
           `,
         ).run(
@@ -497,6 +500,7 @@ export default function registerSalesQuotationsIPC() {
           quotationTaxValueTotal,
           netTotal,
           data.updated_by,
+          ensureLegacyContact(db, "customer", data.customer_id),
           data.id,
         );
       });

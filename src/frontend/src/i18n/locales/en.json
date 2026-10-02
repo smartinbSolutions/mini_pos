@@ -1025,6 +1025,7 @@
       "deleted": "Deleted"
     },
     "ledger": {
+      "paymentSettlement": "Settlement (no cash)",
       "includeLinkedAccount": "Include linked account ({{name}})",
       "owesYou": "{{party}} owes you",
       "youOwe": "You owe {{party}}",
@@ -1502,6 +1503,19 @@
     "paymentTitle": "Are you sure you want to delete this financial voucher? This action cannot be undone."
   },
   "errors": {
+    "INVALID_SETTLEMENT_AMOUNT": "Enter a settlement amount greater than zero.",
+    "SETTLEMENT_SIDES_MUST_MATCH": "Both sides of the settlement must add up to the same amount.",
+    "SETTLEMENT_NOT_FOUND": "Settlement not found.",
+    "PAYMENT_PART_OF_SETTLEMENT": "This payment is part of a settlement. Delete the settlement instead.",
+    "ALLOCATIONS_WITH_TARGETED_INVOICE": "Choose either one invoice or an allocation list, not both.",
+    "DUPLICATE_ALLOCATION": "The same document appears twice in the allocation.",
+    "ALLOCATION_DOCUMENT_NOT_OPEN": "One of the documents is already paid or doesn't belong to this contact.",
+    "ALLOCATION_EXCEEDS_REMAINING": "An allocation is more than the document's remaining amount.",
+    "ALLOCATION_EXCEEDS_PAYMENT": "The allocations add up to more than the payment.",
+    "CONTACT_NOT_FOUND": "Contact not found.",
+    "CONTACT_ROLE_REQUIRED": "Choose at least one role: customer or supplier.",
+    "CONTACT_ROLE_IN_USE": "This role has transactions and can't be removed.",
+    "CONTACT_HAS_TRANSACTIONS": "This contact has transactions and can't be deleted.",
     "SUPPLIER_NOT_FOUND": "The selected supplier no longer exists.",
     "SUPPLIER_ALREADY_LINKED": "This supplier is already linked to another customer.",
     "productRequired": "Select a product",

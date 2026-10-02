@@ -5,6 +5,11 @@ import allocateCustomerPayment from "../services/payment/party/allocateCustomerP
 import allocateSupplierPayment from "../services/payment/party/allocateSupplierPayment.service";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
+import createPaymentAllocation from "../utils/createPaymentAllocations";
+import {
+  resolveContactId,
+  validateAllocations,
+} from "../utils/paymentAllocation";
 
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
@@ -34,6 +39,13 @@ export default function registerPaymentIPC() {
 
       if (!validTypes.includes(data.type)) {
         return { message: "INVALID PAYMENT TYPE", status: 400 };
+      }
+
+      // Explicit, user-confirmed allocation list (phase 5). Mutually
+      // exclusive with a targeted invoice.
+      const hasExplicitAllocations = Array.isArray(data.allocations);
+      if (hasExplicitAllocations && data.invoiceId) {
+        return { message: "ALLOCATIONS_WITH_TARGETED_INVOICE", status: 400 };
       }
 
       // Guard: if a specific invoice/expense was targeted, the payment amount
@@ -118,51 +130,74 @@ export default function registerPaymentIPC() {
         // invoiceId was targeted (see its `if (data.invoice_id != null)` block).
         // Only fall through to the FIFO/account-level allocator when NO
         // invoice was targeted — otherwise this double-writes
-        // payment_allocations for the same payment: createPayment's row is
-        // uncapped (full data.amount) while the allocator's row is capped to
-        // the invoice's remaining balance, so together they overstate how
-        // much of the invoice was actually paid.
+        // payment_allocations for the same payment.
         const isTargeted = Boolean(data.invoiceId && data.mode);
 
-        if (
-          !isTargeted &&
-          data.party_type === "supplier" &&
-          data.type === "expense"
-        ) {
-          allocateSupplierPayment(db, {
-            supplierId: data.party_id,
-            paymentId,
-            amount,
-            mode: data.mode,
-            fund_id: data.fund_id,
-            note: data.note,
-            currency_code: data.currency_code,
-            exchange_rate: data.exchange_rate,
-            effective_rate: data.effective_rate,
-            amount_fund_currency: data.collected_amount,
-            invoiceId: data.invoiceId || null,
-            invoiceType: data.mode || null,
+        if (hasExplicitAllocations) {
+          // User-confirmed list — re-validated INSIDE the transaction
+          // against live data. Any failure rolls back the whole payment.
+          const contactId = resolveContactId(db, {
+            partyType: data.party_type,
+            partyId: data.party_id,
           });
-        }
+          if (!contactId) throw new Error("CONTACT_NOT_FOUND");
 
-        if (
-          !isTargeted &&
-          data.party_type === "customer" &&
-          data.type === "income"
-        ) {
-          allocateCustomerPayment(db, {
-            customerId: data.party_id,
-            paymentId,
+          const lines = validateAllocations(db, {
+            contactId,
+            direction: data.type === "income" ? "in" : "out",
             amount,
-            fund_id: data.fund_id,
-            note: data.note,
-            currency_code: data.currency_code,
-            exchange_rate: data.exchange_rate,
-            effective_rate: data.effective_rate,
-            amount_fund_currency: data.collected_amount,
-            invoiceId: data.invoiceId || null,
-            invoiceType: data.mode || null,
+            allocations: data.allocations,
           });
+
+          for (const line of lines) {
+            createPaymentAllocation(db, {
+              payment_id: paymentId,
+              invoice_id: line.invoice_id,
+              invoice_type: line.invoice_type,
+              amount: line.amount,
+            });
+          }
+        } else {
+          if (
+            !isTargeted &&
+            data.party_type === "supplier" &&
+            data.type === "expense"
+          ) {
+            allocateSupplierPayment(db, {
+              supplierId: data.party_id,
+              paymentId,
+              amount,
+              mode: data.mode,
+              fund_id: data.fund_id,
+              note: data.note,
+              currency_code: data.currency_code,
+              exchange_rate: data.exchange_rate,
+              effective_rate: data.effective_rate,
+              amount_fund_currency: data.collected_amount,
+              invoiceId: data.invoiceId || null,
+              invoiceType: data.mode || null,
+            });
+          }
+
+          if (
+            !isTargeted &&
+            data.party_type === "customer" &&
+            data.type === "income"
+          ) {
+            allocateCustomerPayment(db, {
+              customerId: data.party_id,
+              paymentId,
+              amount,
+              fund_id: data.fund_id,
+              note: data.note,
+              currency_code: data.currency_code,
+              exchange_rate: data.exchange_rate,
+              effective_rate: data.effective_rate,
+              amount_fund_currency: data.collected_amount,
+              invoiceId: data.invoiceId || null,
+              invoiceType: data.mode || null,
+            });
+          }
         }
 
         createFundHistory(db, {
@@ -728,6 +763,11 @@ export default function registerPaymentIPC() {
 
       if (!payment) {
         throw new Error("PAYMENT_NOT_FOUND");
+      }
+      // Half of a settlement — deleting it alone would unbalance the
+      // account. Settlements are deleted as a whole (delete-settlement).
+      if (payment.settlement_id) {
+        throw new Error("PAYMENT_PART_OF_SETTLEMENT");
       }
 
       const history = db

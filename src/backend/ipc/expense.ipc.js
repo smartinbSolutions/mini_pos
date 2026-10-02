@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
+import { ensureLegacyContact } from "../utils/contacts";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -170,8 +171,8 @@ export default function registerExpenseIPC() {
             INSERT INTO expense
             (supplier_id, invoice_name, description, date,
              subtotal, discount, discount_rate, taxRate, taxValue,
-             net_total, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             net_total, created_by, contact_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
@@ -186,6 +187,7 @@ export default function registerExpenseIPC() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by,
+            ensureLegacyContact(db, "supplier", data.supplier_id),
           );
         const invoiceId = invoiceResult.lastInsertRowid;
 
@@ -822,7 +824,8 @@ export default function registerExpenseIPC() {
               taxRate = ?,
               taxValue = ?,
               net_total = ?,
-              updated_by = ?
+              updated_by = ?,
+              contact_id = ?
           WHERE id = ?
         `,
         ).run(
@@ -837,6 +840,7 @@ export default function registerExpenseIPC() {
           invoiceTaxValueTotal,
           netTotal,
           data.updated_by,
+          ensureLegacyContact(db, "supplier", newSupplierId),
           data.id,
         );
 

@@ -1007,6 +1007,7 @@
       "deleted": "محذوف"
     },
     "ledger": {
+      "paymentSettlement": "مقاصة (بدون نقد)",
       "includeLinkedAccount": "تضمين الحساب المرتبط ({{name}})",
       "owesYou": "{{party}} مدين لك",
       "youOwe": "أنت مدين لـ {{party}}",
@@ -1484,6 +1485,19 @@
     "paymentTitle": "هل أنت متأكد من رغبتك في حذف هذا السند المالي؟ لا يمكن التراجع عن هذه العملية."
   },
   "errors": {
+    "INVALID_SETTLEMENT_AMOUNT": "أدخل مبلغ مقاصة أكبر من صفر.",
+    "SETTLEMENT_SIDES_MUST_MATCH": "يجب أن يتساوى مجموع طرفي المقاصة.",
+    "SETTLEMENT_NOT_FOUND": "المقاصة غير موجودة.",
+    "PAYMENT_PART_OF_SETTLEMENT": "هذه الدفعة جزء من مقاصة. احذف المقاصة بدلاً منها.",
+    "ALLOCATIONS_WITH_TARGETED_INVOICE": "اختر فاتورة واحدة أو قائمة توزيع، وليس كليهما.",
+    "DUPLICATE_ALLOCATION": "المستند نفسه مكرر في التوزيع.",
+    "ALLOCATION_DOCUMENT_NOT_OPEN": "أحد المستندات مدفوع بالكامل أو لا يخص جهة الاتصال هذه.",
+    "ALLOCATION_EXCEEDS_REMAINING": "أحد المبالغ الموزعة أكبر من المتبقي على المستند.",
+    "ALLOCATION_EXCEEDS_PAYMENT": "مجموع التوزيع أكبر من مبلغ الدفعة.",
+    "CONTACT_NOT_FOUND": "جهة الاتصال غير موجودة.",
+    "CONTACT_ROLE_REQUIRED": "اختر دوراً واحداً على الأقل: عميل أو مورد.",
+    "CONTACT_ROLE_IN_USE": "لهذا الدور حركات مسجلة ولا يمكن إزالته.",
+    "CONTACT_HAS_TRANSACTIONS": "لجهة الاتصال حركات مسجلة ولا يمكن حذفها.",
     "SUPPLIER_NOT_FOUND": "المورد المحدد لم يعد موجوداً.",
     "SUPPLIER_ALREADY_LINKED": "هذا المورد مرتبط بعميل آخر بالفعل.",
     "OPENING_BALANCE_AFTER_FIRST_MOVEMENT": "يجب أن يكون تاريخ الرصيد الافتتاحي في تاريخ أول حركة أو قبله.",

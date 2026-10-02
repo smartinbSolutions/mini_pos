@@ -1,6 +1,7 @@
 const { ipcMain } = require("electron");
 import db from "../db";
 import attachLatinNames from "../utils/attachLatinNames";
+import { ensureLegacyContact } from "../utils/contacts";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -217,9 +218,10 @@ export default function registerPurchaseReturnIPC() {
               taxRate,
               taxValue,
               net_total,
-              created_by
+              created_by,
+              contact_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
@@ -235,6 +237,7 @@ export default function registerPurchaseReturnIPC() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by,
+            ensureLegacyContact(db, "supplier", data.supplier_id),
           );
 
         const returnId = returnResult.lastInsertRowid;

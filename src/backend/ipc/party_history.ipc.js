@@ -6,6 +6,7 @@ import { getPartyCredit, applyPartyCredit } from "../utils/partyCredit";
 import buildPartyStatement, {
   getPaymentKind,
 } from "../utils/buildPartyStatement";
+import { findLegacyContact } from "../utils/contacts";
 
 const EXPORT_LABELS = {
   en: {
@@ -49,6 +50,7 @@ const EXPORT_LABELS = {
       made: "Payment made",
       deposit: "Deposit",
       withdrawal: "Withdrawal",
+      settlement: "Settlement",
       opening_balance: "Opening balance",
     },
   },
@@ -89,6 +91,7 @@ const EXPORT_LABELS = {
       made: "دفعة مدفوعة",
       deposit: "إيداع",
       withdrawal: "سحب",
+      settlement: "مقاصة",
       opening_balance: "رصيد افتتاحي",
     },
   },
@@ -133,6 +136,7 @@ const EXPORT_LABELS = {
       made: "Ödeme",
       deposit: "Para yatırma",
       withdrawal: "Para çekme",
+      settlement: "Mahsup",
       opening_balance: "Açılış bakiyesi",
     },
   },
@@ -208,33 +212,24 @@ const PARTY_TABLES = {
   partner: "partners",
 };
 
-// Which accounts go into the statement. The linked counterpart is resolved
-// here from the DB — never trusted from the client. Customer always first.
-function resolveStatementParties(db, { partyId, partyType, includeLinked }) {
-  const id = Number(partyId);
-  const parties = [{ partyType, partyId: id }];
+const lookupPartyName = (db, partyType, partyId) => {
+  const table = PARTY_TABLES[partyType];
+  return table
+    ? db.prepare(`SELECT name FROM ${table} WHERE id = ?`).get(partyId)?.name ||
+        ""
+    : "";
+};
 
-  if (includeLinked && partyType === "customer") {
-    const row = db
-      .prepare(`SELECT linked_supplier_id AS id FROM customers WHERE id = ?`)
-      .get(id);
-    if (row?.id) parties.push({ partyType: "supplier", partyId: row.id });
-  }
-
-  if (includeLinked && partyType === "supplier") {
-    const row = db
-      .prepare(`SELECT id FROM customers WHERE linked_supplier_id = ?`)
-      .get(id);
-    if (row?.id) parties.unshift({ partyType: "customer", partyId: row.id });
-  }
-
-  return parties.map((p) => {
-    const table = PARTY_TABLES[p.partyType];
-    const row = table
-      ? db.prepare(`SELECT name FROM ${table} WHERE id = ?`).get(p.partyId)
-      : null;
-    return { ...p, name: row?.name || "" };
-  });
+// Accounts in the statement (customer side / supplier side of the contact),
+// with names. Falls back to the requested party when the period is empty.
+function statementAccounts(db, statement, { partyId, partyType, partyName }) {
+  const accounts = statement.parties.map((p) => ({
+    ...p,
+    name: lookupPartyName(db, p.partyType, p.partyId),
+  }));
+  return accounts.length > 0
+    ? accounts
+    : [{ partyType, partyId: Number(partyId), name: partyName || "" }];
 }
 
 const accountLine = (L, p) => `${p.name} (${L.accountTypes[p.partyType]})`;
@@ -255,6 +250,26 @@ function fetchPartyHistoryLedger(
   const perPage = Math.max(1, Number(limit) || 50);
   const offset = (currentPage - 1) * perPage;
 
+  // Customer / supplier pages read the whole CONTACT (sales + purchase side).
+  // Partners — or a party with no contact yet — keep the legacy scope.
+  const contactId = findLegacyContact(db, partyType, partyId);
+  const scope = contactId
+    ? { clause: "p.contact_id = ?", values: [contactId] }
+    : {
+        clause: "p.party_id = ? AND p.party_type = ?",
+        values: [partyId, partyType],
+      };
+
+  // "Increase" from the viewed page's point of view, so the screen's existing
+  // rules hold: customer page → debit raises the balance (he owes you);
+  // supplier page → credit raises it (you owe him).
+  const increaseCond = contactId
+    ? partyType === "customer"
+      ? "p.side = 'debit'"
+      : "p.side = 'credit'"
+    : "p.movement_type = 'increase'";
+  const signedAmount = `CASE WHEN ${increaseCond} THEN p.amount ELSE -p.amount END`;
+
   const dateConditions = [];
   const dateValues = [];
 
@@ -273,10 +288,9 @@ function fetchPartyHistoryLedger(
   const pagingClause = exportAll ? "" : "LIMIT ? OFFSET ?";
   const pagingValues = exportAll ? [] : [perPage, offset];
 
-  // Running balance is computed over the party's FULL history first (in the
-  // CTE), then the date filter / pagination are applied outside — so a
-  // filtered range still shows the true balance at each row, not a balance
-  // restarted from 0 at the range start.
+  // Running balance is computed over the FULL history first (in the CTE),
+  // then the date filter / pagination are applied outside — so a filtered
+  // range still shows the true balance at each row.
   // Chronological order: by date, opening balance first within the same
   // moment, then insertion id as the final tiebreaker.
   const rows = db
@@ -285,14 +299,8 @@ function fetchPartyHistoryLedger(
       WITH ledger AS (
         SELECT
           p.*,
-          SUM(
-            CASE
-              WHEN p.movement_type = 'increase' THEN p.amount
-              WHEN p.movement_type = 'decrease' THEN -p.amount
-              ELSE 0
-            END
-          ) OVER (
-            PARTITION BY p.party_type, p.party_id
+          (${increaseCond}) AS view_increase,
+          SUM(${signedAmount}) OVER (
             ORDER BY
               datetime(p.date),
               CASE WHEN p.record_type = 'opening_balance' THEN 0 ELSE 1 END,
@@ -300,8 +308,7 @@ function fetchPartyHistoryLedger(
             ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
           ) AS running_balance
         FROM party_history p
-        WHERE p.party_id = ?
-          AND p.party_type = ?
+        WHERE ${scope.clause}
       )
       SELECT
         p.*,
@@ -312,6 +319,7 @@ function fetchPartyHistoryLedger(
         -- payment-side info, resolved via payment_id
         pay.note AS payment_note,
         pay.fund_id AS payment_fund_id,
+        pay.settlement_id,
         f.name AS fund_name
 
       FROM ledger p
@@ -347,42 +355,45 @@ function fetchPartyHistoryLedger(
       ${pagingClause}
       `,
     )
-    .all(partyId, partyType, ...dateValues, ...pagingValues);
+    .all(...scope.values, ...dateValues, ...pagingValues);
 
   const { total } = db
     .prepare(
       `
       SELECT COUNT(*) AS total
       FROM party_history p
-      WHERE p.party_id = ?
-        AND p.party_type = ?
+      WHERE ${scope.clause}
         ${dateFilter}
       `,
     )
-    .get(partyId, partyType, ...dateValues);
+    .get(...scope.values, ...dateValues);
 
   const summary = db
     .prepare(
       `
       SELECT
-        COALESCE(SUM(CASE WHEN movement_type = 'increase' THEN amount ELSE 0 END), 0) AS total_increase,
-        COALESCE(SUM(CASE WHEN movement_type = 'decrease' THEN amount ELSE 0 END), 0) AS total_decrease,
-        COALESCE(SUM(CASE WHEN record_type = 'invoice' THEN amount ELSE 0 END), 0) AS total_invoice,
-        COALESCE(SUM(CASE WHEN record_type = 'return' THEN amount ELSE 0 END), 0) AS total_return,
-        COALESCE(SUM(CASE WHEN record_type = 'payment' THEN amount ELSE 0 END), 0) AS total_payment,
-        COALESCE(SUM(CASE WHEN record_type = 'opening_balance' THEN
-          CASE WHEN movement_type = 'increase' THEN amount ELSE -amount END
-        ELSE 0 END), 0) AS opening_balance
+        COALESCE(SUM(CASE WHEN ${increaseCond} THEN p.amount ELSE 0 END), 0) AS total_increase,
+        COALESCE(SUM(CASE WHEN ${increaseCond} THEN 0 ELSE p.amount END), 0) AS total_decrease,
+        COALESCE(SUM(CASE WHEN p.record_type = 'invoice' THEN p.amount ELSE 0 END), 0) AS total_invoice,
+        COALESCE(SUM(CASE WHEN p.record_type = 'return' THEN p.amount ELSE 0 END), 0) AS total_return,
+        COALESCE(SUM(CASE WHEN p.record_type = 'payment' THEN p.amount ELSE 0 END), 0) AS total_payment,
+        COALESCE(SUM(CASE WHEN p.record_type = 'opening_balance' THEN ${signedAmount} ELSE 0 END), 0) AS opening_balance
       FROM party_history p
-      WHERE p.party_id = ?
-        AND p.party_type = ?
+      WHERE ${scope.clause}
         ${dateFilter}
       `,
     )
-    .get(partyId, partyType, ...dateValues);
+    .get(...scope.values, ...dateValues);
 
   return {
-    data: rows.map((r) => ({ ...r, payment_kind: getPaymentKind(r) })),
+    // payment_kind uses the row's OWN party_type + movement_type (true cash
+    // direction); movement_type is then re-oriented to the viewed page so
+    // the +/− sign and opening-balance wording read correctly.
+    data: rows.map(({ view_increase, ...r }) => ({
+      ...r,
+      payment_kind: getPaymentKind(r),
+      movement_type: view_increase ? "increase" : "decrease",
+    })),
     page: currentPage,
     limit: perPage,
     total,
@@ -462,25 +473,22 @@ export default function registerPartyHistoryIPC() {
         const L = getLabels(language);
         const isRtl = language === "ar";
 
-        const parties = resolveStatementParties(db, {
-          partyId,
-          partyType,
-          includeLinked,
-        });
-        const isCombined = parties.length > 1;
-
         const statement = buildPartyStatement(db, {
-          parties,
+          parties: [{ partyId, partyType }],
           startDate,
           endDate,
         });
 
-        const nameByKey = new Map(
-          parties.map((p) => [`${p.partyType}:${p.partyId}`, p.name]),
-        );
+        const accounts = statementAccounts(db, statement, {
+          partyId,
+          partyType,
+          partyName,
+        });
+        const isCombined = accounts.length > 1;
+
         const headerName = isCombined
-          ? parties.map((p) => accountLine(L, p)).join(" + ")
-          : partyName || parties[0].name;
+          ? accounts.map((p) => accountLine(L, p)).join(" + ")
+          : partyName || accounts[0].name;
 
         // Column layout — Account column only on the combined statement.
         const columns = [
@@ -597,13 +605,10 @@ export default function registerPartyHistoryIPC() {
 
         // Combined: each account's own closing, then the net.
         if (isCombined) {
-          statement.parties.forEach((p) => {
+          accounts.forEach((p) => {
             sheet.addRow(
               toRow({
-                description: accountLine(L, {
-                  ...p,
-                  name: nameByKey.get(`${p.partyType}:${p.partyId}`),
-                }),
+                description: accountLine(L, p),
                 balance: Math.abs(p.closing),
                 side: sideLabel(L, p.closingSide),
               }),
@@ -639,7 +644,7 @@ export default function registerPartyHistoryIPC() {
 
         const { canceled, filePath } = await dialog.showSaveDialog({
           title: isCombined ? L.combinedTitle : L.title,
-          defaultPath: `${parties[0].name || partyName || "party"}-statement.xlsx`,
+          defaultPath: `${accounts[0].name || partyName || "party"}-statement.xlsx`,
           filters: [{ name: "Excel Workbook", extensions: ["xlsx"] }],
         });
 
@@ -673,25 +678,23 @@ export default function registerPartyHistoryIPC() {
         const L = getLabels(language);
         const isRtl = language === "ar";
 
-        const parties = resolveStatementParties(db, {
-          partyId,
-          partyType,
-          includeLinked,
-        });
-        const isCombined = parties.length > 1;
-
         const statement = buildPartyStatement(db, {
-          parties,
+          parties: [{ partyId, partyType }],
           startDate,
           endDate,
         });
 
-        const nameByKey = new Map(
-          parties.map((p) => [`${p.partyType}:${p.partyId}`, p.name]),
-        );
+        const accounts = statementAccounts(db, statement, {
+          partyId,
+          partyType,
+          partyName,
+        });
+        const isCombined = accounts.length > 1;
+
         const headerName = isCombined
-          ? parties.map((p) => accountLine(L, p)).join(" + ")
-          : partyName || parties[0].name;
+          ? accounts.map((p) => accountLine(L, p)).join(" + ")
+          : partyName || accounts[0].name;
+
         const title = isCombined ? L.combinedTitle : L.title;
 
         // Cells before Debit: Date, [Account], Type, Document, Description
@@ -742,15 +745,10 @@ export default function registerPartyHistoryIPC() {
 
         // Combined: each account's own closing above the net line.
         const accountSummaryHtml = isCombined
-          ? statement.parties
+          ? accounts
               .map(
                 (p) =>
-                  `<tr><td>${escapeHtml(
-                    accountLine(L, {
-                      ...p,
-                      name: nameByKey.get(`${p.partyType}:${p.partyId}`),
-                    }),
-                  )}</td><td class="num">${balanceCell(p.closing, p.closingSide)}</td></tr>`,
+                  `<tr><td>${escapeHtml(accountLine(L, p))}</td><td class="num">${balanceCell(p.closing, p.closingSide)}</td></tr>`,
               )
               .join("")
           : "";
@@ -902,7 +900,7 @@ export default function registerPartyHistoryIPC() {
 
         const { canceled, filePath } = await dialog.showSaveDialog({
           title,
-          defaultPath: `${parties[0].name || partyName || "party"}-statement.pdf`,
+          defaultPath: `${accounts[0].name || partyName || "party"}-statement.pdf`,
           filters: [{ name: "PDF Document", extensions: ["pdf"] }],
         });
 

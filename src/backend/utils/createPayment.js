@@ -1,5 +1,6 @@
 import createPaymentAllocation from "./createPaymentAllocations";
 import createPartyHistory from "./createPaymentHistory";
+import { ensureLegacyContact } from "./contacts";
 
 export default function createPayment(db, data) {
   const insertPayment = db.prepare(`
@@ -16,7 +17,8 @@ export default function createPayment(db, data) {
       amount_fund_currency,
       invoice_type,
       date,
-      created_by
+      created_by,
+      contact_id
     )
     VALUES (
       @type,
@@ -31,7 +33,8 @@ export default function createPayment(db, data) {
       @amount_fund_currency,
       @invoice_type,
       @date,
-      @created_by
+      @created_by,
+      @contact_id
     )
   `);
 
@@ -51,6 +54,8 @@ export default function createPayment(db, data) {
     invoice_type: data.invoice_type || null,
     date: paymentDate,
     created_by: data.created_by,
+    // Derived at the source — callers don't change. Null for partner/other.
+    contact_id: ensureLegacyContact(db, data.party_type, data.party_id),
   });
 
   if (data.invoice_id != null) {

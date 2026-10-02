@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const { app } = require("electron");
 const Database = require("better-sqlite3");
+import { syncContacts } from "./migrations/contactsSync";
 
 const userDataPath = app.getPath("userData");
 fs.mkdirSync(userDataPath, { recursive: true });
@@ -1147,6 +1148,105 @@ CREATE TABLE IF NOT EXISTS taggables (
   UNIQUE(tag_id, entity_type, entity_id)
 )
 `,
+).run();
+/* ============================================================
+   CONTACTS (UNIFIED) — phase 1: schema only
+   One contact can buy, sell, pay and receive. Customer / supplier
+   lists become views over contacts (is_customer / is_supplier).
+   Old customer_id / supplier_id / party_* columns stay untouched
+   until the migration (phase 2) and the service switch (phase 3).
+   ============================================================ */
+
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS contacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  phone TEXT,
+  address TEXT,
+  is_customer INTEGER NOT NULL DEFAULT 0,
+  is_supplier INTEGER NOT NULL DEFAULT 0,
+  -- Migration mapping: which old customer / supplier row(s) became this
+  -- contact. A linked pair fills both. NULLs don't collide in UNIQUE.
+  legacy_customer_id INTEGER UNIQUE,
+  legacy_supplier_id INTEGER UNIQUE,
+  createdAt TEXT DEFAULT (datetime('now'))
+)
+`,
+).run();
+
+// One-time data migrations run once and are recorded here (phase 2+).
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  name TEXT PRIMARY KEY,
+  applied_at TEXT DEFAULT (datetime('now'))
+)
+`,
+).run();
+
+// contact_id on every document that today points at a customer or supplier.
+const CONTACT_REF = "INTEGER REFERENCES contacts(id)";
+[
+  "sales_invoices",
+  "sales_returns",
+  "sales_quotations",
+  "purchase_invoices",
+  "purchase_returns",
+  "expense",
+  "payments",
+  "party_history",
+].forEach((table) => ensureColumn(table, "contact_id", CONTACT_REF));
+
+// Ledger direction in the company's books: 'debit' | 'credit'.
+// Replaces increase/decrease for contact rows (partner rows keep theirs).
+ensureColumn("party_history", "side", "TEXT");
+
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_party_history_contact ON party_history(contact_id)`,
+).run();
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_sales_invoices_contact ON sales_invoices(contact_id)`,
+).run();
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_purchase_invoices_contact ON purchase_invoices(contact_id)`,
+).run();
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_payments_contact ON payments(contact_id)`,
+).run();
+
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_payments_contact ON payments(contact_id)`,
+).run();
+
+// Phase 2 — non-destructive sync into contacts (runs until cutover).
+syncContacts(db, { dbPath });
+
+// Settlements (phase 6): closing documents on one side of a contact's
+// account against documents on the other side — no cash. Stored as two
+// non-cash payments (fund_id NULL) sharing a settlement_id.
+// source_type is 'contact' for now; validated in code (no CHECK) so a
+// 'partner' source can be added later without a table rebuild.
+db.prepare(
+  `
+CREATE TABLE IF NOT EXISTS settlements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_type TEXT NOT NULL DEFAULT 'contact',
+  contact_id INTEGER NOT NULL REFERENCES contacts(id),
+  amount REAL NOT NULL,
+  date TEXT,
+  note TEXT,
+  created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  createdAt TEXT DEFAULT (datetime('now'))
+)
+`,
+).run();
+
+// Links each of the two non-cash payments to its settlement.
+ensureColumn("payments", "settlement_id", "INTEGER REFERENCES settlements(id)");
+
+db.prepare(
+  `CREATE INDEX IF NOT EXISTS idx_payments_settlement ON payments(settlement_id)`,
 ).run();
 
 /* ============================================================

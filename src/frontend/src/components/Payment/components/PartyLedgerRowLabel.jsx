@@ -38,6 +38,7 @@ export default function partyLedgerRowLabel({
       made: "paymentMade",
       deposit: "partnerDeposit",
       withdrawal: "partnerWithdrawal",
+      settlement: "paymentSettlement",
     }[row.payment_kind];
 
     const defaults = {
@@ -45,6 +46,7 @@ export default function partyLedgerRowLabel({
       paymentMade: `Payment made from ${fund}`,
       partnerDeposit: `Deposit into ${fund}`,
       partnerWithdrawal: `Withdrawal from ${fund}`,
+      paymentSettlement: "Settlement (no cash)",
     };
 
     return key

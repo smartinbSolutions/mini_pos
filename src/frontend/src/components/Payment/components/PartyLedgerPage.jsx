@@ -15,6 +15,7 @@ import {
   User,
   Truck,
   Handshake,
+  ArrowLeftRight,
 } from "lucide-react";
 
 import usePartyLedger from "../hooks/useGetPartyPayments";
@@ -44,6 +45,7 @@ const KIND_STYLE = {
   return: { Icon: RefreshCw, tile: "bg-amber-50 text-amber-600" },
   cashIn: { Icon: ArrowDownLeft, tile: "bg-emerald-50 text-emerald-600" },
   cashOut: { Icon: ArrowUpRight, tile: "bg-rose-50 text-rose-600" },
+  settlement: { Icon: ArrowLeftRight, tile: "bg-violet-50 text-violet-600" },
   other: { Icon: Wallet, tile: "bg-slate-100 text-slate-500" },
 };
 
@@ -52,6 +54,7 @@ function rowKind(row) {
   if (row.record_type === "invoice") return "invoice";
   if (row.record_type === "return") return "return";
   if (row.record_type === "payment") {
+    if (row.payment_kind === "settlement") return "settlement";
     // payment_kind comes from the backend (getPaymentKind) — single source.
     return row.payment_kind === "received" || row.payment_kind === "deposit"
       ? "cashIn"

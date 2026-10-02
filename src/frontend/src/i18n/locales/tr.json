@@ -1002,6 +1002,7 @@
       "deleted": "Silindi"
     },
     "ledger": {
+      "paymentSettlement": "Mahsup (nakitsiz)",
       "includeLinkedAccount": "Bağlı hesabı dahil et ({{name}})",
       "owesYou": "Alacağınız",
       "youOwe": "Borcunuz",
@@ -1481,6 +1482,19 @@
     "paymentTitle": "Bu makbuzu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
   },
   "errors": {
+    "INVALID_SETTLEMENT_AMOUNT": "Sıfırdan büyük bir mahsup tutarı girin.",
+    "SETTLEMENT_SIDES_MUST_MATCH": "Mahsubun iki tarafı aynı tutara eşit olmalı.",
+    "SETTLEMENT_NOT_FOUND": "Mahsup bulunamadı.",
+    "PAYMENT_PART_OF_SETTLEMENT": "Bu ödeme bir mahsubun parçası. Bunun yerine mahsubu silin.",
+    "ALLOCATIONS_WITH_TARGETED_INVOICE": "Tek bir fatura veya bir dağıtım listesi seçin, ikisini birden değil.",
+    "DUPLICATE_ALLOCATION": "Aynı belge dağıtımda iki kez geçiyor.",
+    "ALLOCATION_DOCUMENT_NOT_OPEN": "Belgelerden biri zaten ödenmiş veya bu kişiye ait değil.",
+    "ALLOCATION_EXCEEDS_REMAINING": "Bir dağıtım tutarı belgenin kalan tutarından fazla.",
+    "ALLOCATION_EXCEEDS_PAYMENT": "Dağıtımların toplamı ödeme tutarından fazla.",
+    "CONTACT_NOT_FOUND": "Kişi bulunamadı.",
+    "CONTACT_ROLE_REQUIRED": "En az bir rol seçin: müşteri veya tedarikçi.",
+    "CONTACT_ROLE_IN_USE": "Bu rolün işlemleri var, kaldırılamaz.",
+    "CONTACT_HAS_TRANSACTIONS": "Bu kişinin işlemleri var, silinemez.",
     "SUPPLIER_NOT_FOUND": "Seçilen tedarikçi artık mevcut değil.",
     "SUPPLIER_ALREADY_LINKED": "Bu tedarikçi zaten başka bir müşteriye bağlı.",
     "OPENING_BALANCE_AFTER_FIRST_MOVEMENT": "Açılış bakiyesi tarihi ilk hareketten sonra olamaz.",

@@ -8,6 +8,7 @@ import {
   getReceiptLanguage,
 } from "../services/receiptPrinter";
 import attachLatinNames from "../utils/attachLatinNames";
+import { ensureLegacyContact } from "../utils/contacts";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -230,8 +231,8 @@ export default function registerSalesInvoiceIPC() {
             (customer_id, invoice_name, description, channel, date,
              subtotal, discount, discount_rate,
              taxRate, taxValue,
-             created_by, updated_by, net_total)
-          VALUES (?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             created_by, updated_by, net_total, contact_id)
+          VALUES (?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
@@ -247,6 +248,7 @@ export default function registerSalesInvoiceIPC() {
             data.created_by || null,
             null,
             netTotal,
+            ensureLegacyContact(db, "customer", data.customer_id),
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -1253,7 +1255,8 @@ export default function registerSalesInvoiceIPC() {
             taxRate = ?,
             taxValue = ?,
             net_total = ?,
-            updated_by = ?
+            updated_by = ?,
+            contact_id = ?
         WHERE id = ?
       `,
         ).run(
@@ -1268,6 +1271,7 @@ export default function registerSalesInvoiceIPC() {
           invoiceTaxValueTotal,
           netTotal,
           data.updated_by,
+          ensureLegacyContact(db, "customer", newCustomerId),
           data.id,
         );
 
@@ -1656,9 +1660,9 @@ export default function registerSalesInvoiceIPC() {
               customer_id, invoice_name, description, channel, date,
               subtotal, discount, discount_rate,
               taxRate, taxValue,
-              net_total, created_by
+              net_total, created_by, contact_id
             )
-            VALUES (?, ?, ?, 'pos', ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, 'pos', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
@@ -1673,6 +1677,7 @@ export default function registerSalesInvoiceIPC() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by || null,
+            ensureLegacyContact(db, "customer", data.customer_id),
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;

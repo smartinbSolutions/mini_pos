@@ -1,3 +1,5 @@
+import { ensureLegacyContact, sideFor } from "./contacts";
+
 export default function createPartyHistory(db, data) {
   const stmt = db.prepare(`
     INSERT INTO party_history (
@@ -10,7 +12,9 @@ export default function createPartyHistory(db, data) {
       movement_type,
       amount,
       date,
-      note
+      note,
+      contact_id,
+      side
     )
     VALUES (
       @party_type,
@@ -22,7 +26,9 @@ export default function createPartyHistory(db, data) {
       @movement_type,
       @amount,
       @date,
-      @note
+      @note,
+      @contact_id,
+      @side
     )
   `);
 
@@ -37,5 +43,8 @@ export default function createPartyHistory(db, data) {
     amount: Number(data.amount || 0),
     date: data.date || new Date().toISOString(),
     note: data.note ?? "",
+    // Derived at the source — callers don't change.
+    contact_id: ensureLegacyContact(db, data.party_type, data.party_id),
+    side: sideFor(data.party_type, data.movement_type),
   });
 }

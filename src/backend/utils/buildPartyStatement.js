@@ -1,18 +1,17 @@
-// Statement of account builder — the single source for Excel/PDF exports
-// and the combined customer + supplier statement.
+// Statement of account builder — the single source for Excel/PDF exports.
 //
-// Everything is from the company's books perspective:
-//   customer: increase → Debit (they owe more),  decrease → Credit
-//   supplier: increase → Credit (you owe more),  decrease → Debit
-//   partner:  increase → Credit (deposit),       decrease → Debit
+// Reads by CONTACT: a customer or supplier id resolves to its contact, and
+// the statement covers every row of that contact (sales side + purchase side).
+// Partners stay on party_type/party_id.
+//
+// Debit / credit come straight from party_history.side (company's books).
 // Balance = Σ debit − Σ credit.  > 0 → Dr (party owes you)
 //                                < 0 → Cr (you owe the party)
 
-const DEBIT_ON_INCREASE = {
-  customer: true,
-  supplier: false,
-  partner: false,
-};
+import { findLegacyContact } from "./contacts";
+
+const SUPPORTED_TYPES = ["customer", "supplier", "partner"];
+const ACCOUNT_ORDER = { customer: 0, supplier: 1, partner: 2 };
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
@@ -32,6 +31,8 @@ export function balanceSide(value) {
 // Cash OUT: customer increase, supplier decrease, partner decrease
 export function getPaymentKind(row) {
   if (row?.record_type !== "payment") return null;
+  // Non-cash half of a settlement — named as such, not as cash in/out.
+  if (row.settlement_id) return "settlement";
 
   const isIncrease = row.movement_type === "increase";
 
@@ -48,41 +49,57 @@ export default function buildPartyStatement(
   { parties, startDate, endDate },
 ) {
   const list = (parties || []).filter(
-    (p) => p?.partyId && p.partyType in DEBIT_ON_INCREASE,
+    (p) => p?.partyId && SUPPORTED_TYPES.includes(p.partyType),
   );
-  if (list.length === 0) {
+
+  // Customer / supplier → contact id; partner stays as-is.
+  const contactIds = new Set();
+  const partnerIds = [];
+  for (const p of list) {
+    if (p.partyType === "partner") {
+      partnerIds.push(Number(p.partyId));
+    } else {
+      const contactId = findLegacyContact(db, p.partyType, p.partyId);
+      if (contactId) contactIds.add(contactId);
+    }
+  }
+
+  if (contactIds.size === 0 && partnerIds.length === 0) {
     throw new Error("MISSING_REQUIRED_FIELDS");
   }
 
-  // One or more parties — the combined report passes two.
-  const partyClause = list
-    .map(() => "(p.party_type = ? AND p.party_id = ?)")
-    .join(" OR ");
-  const partyValues = list.flatMap((p) => [p.partyType, Number(p.partyId)]);
+  const clauses = [];
+  const partyValues = [];
+  if (contactIds.size > 0) {
+    clauses.push(
+      `p.contact_id IN (${[...contactIds].map(() => "?").join(", ")})`,
+    );
+    partyValues.push(...contactIds);
+  }
+  for (const id of partnerIds) {
+    clauses.push("(p.party_type = 'partner' AND p.party_id = ?)");
+    partyValues.push(id);
+  }
+  const partyClause = clauses.join(" OR ");
 
-  // Per-account accumulators, in the order the caller passed the parties.
-  const accounts = new Map(
-    list.map((p) => [
-      partyKey(p.partyType, p.partyId),
-      {
-        partyType: p.partyType,
-        partyId: Number(p.partyId),
+  // Per-account accumulators (customer side / supplier side / partner),
+  // created from whatever rows the contact actually has.
+  const accounts = new Map();
+  const accountFor = (partyType, partyId) => {
+    const key = partyKey(partyType, partyId);
+    if (!accounts.has(key)) {
+      accounts.set(key, {
+        partyType,
+        partyId: Number(partyId),
         broughtForward: 0,
         debit: 0,
         credit: 0,
-      },
-    ]),
-  );
+      });
+    }
+    return accounts.get(key);
+  };
 
-  // Signed amount (debit +, credit −) in SQL — used for brought forward.
-  const signedAmount = `
-    CASE
-      WHEN p.party_type = 'customer' AND p.movement_type = 'increase' THEN p.amount
-      WHEN p.party_type = 'customer' AND p.movement_type = 'decrease' THEN -p.amount
-      WHEN p.movement_type = 'increase' THEN -p.amount
-      ELSE p.amount
-    END
-  `;
+  const signedAmount = `CASE WHEN p.side = 'debit' THEN p.amount ELSE -p.amount END`;
 
   // ---- Balance brought forward: everything before the start date ----
   let broughtForward = 0;
@@ -103,8 +120,7 @@ export default function buildPartyStatement(
       .all(...partyValues, startDate);
 
     for (const r of bfRows) {
-      const account = accounts.get(partyKey(r.party_type, r.party_id));
-      if (account) account.broughtForward = round2(r.total);
+      accountFor(r.party_type, r.party_id).broughtForward = round2(r.total);
       broughtForward += Number(r.total || 0);
     }
     broughtForward = round2(broughtForward);
@@ -132,11 +148,13 @@ export default function buildPartyStatement(
         p.id,
         p.party_type,
         p.party_id,
+        p.contact_id,
         p.record_type,
         p.invoice_type,
         p.invoice_id,
         p.payment_id,
         p.movement_type,
+        p.side,
         p.amount,
         p.date,
         p.note,
@@ -144,6 +162,7 @@ export default function buildPartyStatement(
         COALESCE(si.invoice_name, pi.invoice_name, ex.invoice_name) AS invoice_name,
 
         pay.fund_id AS payment_fund_id,
+        pay.settlement_id,
         pay.currency_code,
         pay.exchange_rate,
         pay.effective_rate,
@@ -190,15 +209,14 @@ export default function buildPartyStatement(
     )
     .all(...partyValues, ...rangeValues);
 
-  // ---- Debit / credit split + running balance ----
+  // ---- Debit / credit from side + running balance ----
   let balance = broughtForward;
   let totalDebit = 0;
   let totalCredit = 0;
 
   const rows = movements.map((m) => {
     const amount = round2(m.amount);
-    const isIncrease = m.movement_type === "increase";
-    const isDebit = isIncrease === DEBIT_ON_INCREASE[m.party_type];
+    const isDebit = m.side === "debit";
 
     const debit = isDebit ? amount : 0;
     const credit = isDebit ? 0 : amount;
@@ -207,11 +225,9 @@ export default function buildPartyStatement(
     totalCredit += credit;
     balance = round2(balance + debit - credit);
 
-    const account = accounts.get(partyKey(m.party_type, m.party_id));
-    if (account) {
-      account.debit += debit;
-      account.credit += credit;
-    }
+    const account = accountFor(m.party_type, m.party_id);
+    account.debit += debit;
+    account.credit += credit;
 
     return {
       ...m,
@@ -228,22 +244,24 @@ export default function buildPartyStatement(
   totalCredit = round2(totalCredit);
   const closing = round2(broughtForward + totalDebit - totalCredit);
 
-  // Per-account closing — for the combined statement's summary lines.
-  const accountSummaries = [...accounts.values()].map((a) => {
-    const debit = round2(a.debit);
-    const credit = round2(a.credit);
-    const accountClosing = round2(a.broughtForward + debit - credit);
-    return {
-      partyType: a.partyType,
-      partyId: a.partyId,
-      broughtForward: a.broughtForward,
-      broughtForwardSide: balanceSide(a.broughtForward),
-      debit,
-      credit,
-      closing: accountClosing,
-      closingSide: balanceSide(accountClosing),
-    };
-  });
+  // Per-account closing — customer side first, then supplier, then partner.
+  const accountSummaries = [...accounts.values()]
+    .sort((a, b) => ACCOUNT_ORDER[a.partyType] - ACCOUNT_ORDER[b.partyType])
+    .map((a) => {
+      const debit = round2(a.debit);
+      const credit = round2(a.credit);
+      const accountClosing = round2(a.broughtForward + debit - credit);
+      return {
+        partyType: a.partyType,
+        partyId: a.partyId,
+        broughtForward: a.broughtForward,
+        broughtForwardSide: balanceSide(a.broughtForward),
+        debit,
+        credit,
+        closing: accountClosing,
+        closingSide: balanceSide(accountClosing),
+      };
+    });
 
   return {
     period: { startDate: startDate || null, endDate: endDate || null },

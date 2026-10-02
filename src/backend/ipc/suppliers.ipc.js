@@ -66,9 +66,9 @@ export default function registerSuppliersIPC() {
     const whereClause = search ? "WHERE s.name LIKE ? OR s.phone LIKE ?" : "";
     const whereValues = search ? [`%${search}%`, `%${search}%`] : [];
 
-    // Balance must be computed here (not just selected) so HAVING can filter on it.
-    // The linked-customer join is one-to-one (unique index), so it never
-    // multiplies party_history rows.
+    // Supplier view of the contact's account: credit raises the balance
+    // (you owe him), debit lowers it. Both joins are one-to-one
+    // (unique indexes), so they never multiply history rows.
     const perSupplierCTE = `
       SELECT
         s.id,
@@ -77,17 +77,19 @@ export default function registerSuppliersIPC() {
         s.address,
         s.createdAt,
         lc.id AS linked_customer_id,
-        lc.name AS linked_customer_name,
-        COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0) AS total,
-        COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS total_paid,
-        COALESCE(SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END), 0)
-          - COALESCE(SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END), 0) AS balance
+        ct.id AS contact_id,
+        ct.is_customer,
+        ct.is_supplier,
+        ROUND(COALESCE(SUM(CASE WHEN ph.side = 'credit' THEN ph.amount ELSE 0 END), 0), 2) AS total,
+        ROUND(COALESCE(SUM(CASE WHEN ph.side = 'debit' THEN ph.amount ELSE 0 END), 0), 2) AS total_paid,
+        ROUND(COALESCE(SUM(CASE WHEN ph.side = 'credit' THEN ph.amount ELSE -ph.amount END), 0), 2) AS balance
       FROM suppliers s
       LEFT JOIN customers lc
         ON lc.linked_supplier_id = s.id
+      LEFT JOIN contacts ct
+        ON ct.legacy_supplier_id = s.id
       LEFT JOIN party_history ph
-        ON ph.party_type = 'supplier'
-       AND ph.party_id = s.id
+        ON ph.contact_id = ct.id
       ${whereClause}
       GROUP BY s.id
       ${havingClause}
@@ -167,21 +169,23 @@ export default function registerSuppliersIPC() {
         lc.id AS linked_customer_id,
         lc.name AS linked_customer_name,
 
+        -- Supplier view of the contact's account: credit raises the balance
+        -- (you owe him), debit lowers it.
         COALESCE(
-          SUM(CASE WHEN ph.movement_type = 'increase' THEN ph.amount ELSE 0 END),
+          SUM(CASE WHEN ph.side = 'credit' THEN ph.amount ELSE 0 END),
           0
         ) AS total,
 
         COALESCE(
-          SUM(CASE WHEN ph.movement_type = 'decrease' THEN ph.amount ELSE 0 END),
+          SUM(CASE WHEN ph.side = 'debit' THEN ph.amount ELSE 0 END),
           0
         ) AS total_paid,
 
         COALESCE(
           SUM(
             CASE
-              WHEN ph.movement_type = 'increase' THEN ph.amount
-              WHEN ph.movement_type = 'decrease' THEN -ph.amount
+              WHEN ph.side = 'credit' THEN ph.amount
+              WHEN ph.side = 'debit' THEN -ph.amount
               ELSE 0
             END
           ),
@@ -193,9 +197,11 @@ export default function registerSuppliersIPC() {
       LEFT JOIN customers lc
         ON lc.linked_supplier_id = s.id
 
+      LEFT JOIN contacts ct
+        ON ct.legacy_supplier_id = s.id
+
       LEFT JOIN party_history ph
-        ON ph.party_type = 'supplier'
-       AND ph.party_id = s.id
+        ON ph.contact_id = ct.id
 
       WHERE s.id = ?
 

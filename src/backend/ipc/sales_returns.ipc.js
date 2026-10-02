@@ -9,6 +9,7 @@ import {
 } from "../utils/helpers";
 import db from "../db";
 import attachLatinNames from "../utils/attachLatinNames";
+import { ensureLegacyContact } from "../utils/contacts";
 
 export default function registerSalesReturnsIpc() {
   ipcMain.handle("create-sales-return", (event, data) => {
@@ -220,9 +221,10 @@ export default function registerSalesReturnsIpc() {
               taxRate,
               taxValue,
               net_total,
-              created_by
+              created_by,
+             contact_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
@@ -239,6 +241,7 @@ export default function registerSalesReturnsIpc() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by,
+            ensureLegacyContact(db, "customer", data.customer_id),
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -334,31 +337,32 @@ export default function registerSalesReturnsIpc() {
         }
 
         // ---- Party history ----
-        createPartyHistory(db, {
-          party_type: "customer",
-          party_id: data.customer_id || null,
-          invoice_id: returnId,
-          invoice_type: "sales_return",
-          record_type: "return",
-          movement_type: "decrease",
-          amount: netTotal,
-          date: fullDateTime,
-          note: buildDefaultReturnNote(
-            db,
-            "sales_return",
-            returnId,
-            data.sales_invoice_id,
-          ),
-        });
-
+        if (data.customer_id) {
+          createPartyHistory(db, {
+            party_type: "customer",
+            party_id: data.customer_id,
+            invoice_id: returnId,
+            invoice_type: "sales_return",
+            record_type: "return",
+            movement_type: "decrease",
+            amount: netTotal,
+            date: fullDateTime,
+            note: buildDefaultReturnNote(
+              db,
+              "sales_return",
+              returnId,
+              data.sales_invoice_id,
+            ),
+          });
+        }
         // ---- Refund out through the same funds the sale came in through —
         // one payment + fund history row per fund ----
         const insertPaymentIds = [];
 
         for (const p of payments) {
           const paymentId = createPayment(db, {
-            type: p.type || "refund",
-            party_type: "customer",
+            type: p.type || "expense",
+            party_type: data.customer_id ? "customer" : "walk-in",
             party_id: data.customer_id || null,
             fund_id: p.fund_id,
             amount: p.amount,

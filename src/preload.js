@@ -72,6 +72,22 @@ contextBridge.exposeInMainWorld("api", {
   getDeletedPayments: (params) =>
     ipcRenderer.invoke("get-deleted-payments", params),
 
+  /* ================= CONTACTS ================= */
+  getContacts: (params) => ipcRenderer.invoke("get-contacts", params),
+  getContact: (id) => ipcRenderer.invoke("get-contact", id),
+  createContact: (data) => ipcRenderer.invoke("create-contact", data),
+  updateContact: (data) => ipcRenderer.invoke("update-contact", data),
+  deleteContact: (id) => ipcRenderer.invoke("delete-contact", id),
+  previewPaymentAllocation: (params) =>
+    ipcRenderer.invoke("preview-payment-allocation", params),
+
+  /* ================= Settlement ================= */
+  previewSettlement: (params) =>
+    ipcRenderer.invoke("preview-settlement", params),
+  createSettlement: (data) => ipcRenderer.invoke("create-settlement", data),
+  deleteSettlement: (id, deletedBy) =>
+    ipcRenderer.invoke("delete-settlement", { id, deletedBy }),
+
   /* ================= PARTY HISTORY ================= */
   getPartyHistoryLedger: (params) =>
     ipcRenderer.invoke("get-party-history-ledger", params),
