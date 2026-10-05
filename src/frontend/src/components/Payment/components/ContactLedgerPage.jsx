@@ -224,7 +224,7 @@ export default function ContactLedgerPage() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-4 text-slate-900 sm:p-6">
-      <div className="mx-auto max-w-5xl space-y-5">
+      <div className="mx-auto max-w-7xl space-y-5">
         {/* HEADER + BALANCE */}
         <section className={panelClass}>
           <div className="flex flex-wrap items-start justify-between gap-4 p-6 sm:p-7">

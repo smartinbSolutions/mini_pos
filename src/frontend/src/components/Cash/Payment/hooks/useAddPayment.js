@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
@@ -28,7 +34,9 @@ const useAddPayment = ({
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageTone, setMessageTone] = useState("error"); // error | success
+  const [messageTone, setMessageTone] = useState("error");
+  const [allocationLines, setAllocationLines] = useState([]);
+  const [allocationLoading, setAllocationLoading] = useState(false);
   const [funds, setFunds] = useState([]);
   const { money } = usePrimaryCurrency();
   const { user } = useAuth();
@@ -172,6 +180,7 @@ const useAddPayment = ({
       });
 
       setMessage("");
+      setAllocationLines([]);
     }
   }, [
     isOpen,
@@ -251,6 +260,48 @@ const useAddPayment = ({
     }));
   };
 
+  const allocationDirection =
+    partyType === "customer" ? "in" : partyType === "supplier" ? "out" : null;
+
+  const fetchAllocationPreview = useCallback(
+    async (amount) => {
+      if (
+        !isDirectCollection ||
+        !party ||
+        !allocationDirection ||
+        amount <= 0
+      ) {
+        setAllocationLines([]);
+        return;
+      }
+      setAllocationLoading(true);
+      try {
+        const res = await api.previewPaymentAllocation({
+          partyType,
+          partyId: party,
+          direction: allocationDirection,
+          amount,
+        });
+        setAllocationLines(res?.success ? res.lines : []);
+      } catch {
+        setAllocationLines([]);
+      } finally {
+        setAllocationLoading(false);
+      }
+    },
+    [api, isDirectCollection, party, partyType, allocationDirection],
+  );
+
+  const allocationTimer = useRef(null);
+  useEffect(() => {
+    if (!isDirectCollection) return;
+    clearTimeout(allocationTimer.current);
+    allocationTimer.current = setTimeout(() => {
+      fetchAllocationPreview(baseAmount);
+    }, 300);
+    return () => clearTimeout(allocationTimer.current);
+  }, [baseAmount, isDirectCollection, fetchAllocationPreview]);
+
   const handleFundAmountChange = (val) => {
     setForm((prev) => {
       const next = { ...prev, collected_amount: val };
@@ -290,6 +341,22 @@ const useAddPayment = ({
   const handleCreditAmountChange = (val) => {
     setForm((prev) => ({ ...prev, amount_in_base: val }));
   };
+
+  const updateAllocationLine = (index, value) => {
+    setAllocationLines((prev) => {
+      const copy = [...prev];
+      const line = copy[index];
+      const capped = Math.max(0, Math.min(Number(value) || 0, line.remaining));
+      copy[index] = { ...line, allocate: capped };
+      return copy;
+    });
+  };
+
+  const allocationTotal = allocationLines.reduce(
+    (sum, l) => sum + (Number(l.allocate) || 0),
+    0,
+  );
+  const allocationLeftover = round2(baseAmount - allocationTotal);
 
   const toggleUseCredit = () => {
     setUseCredit((prev) => {
@@ -333,6 +400,15 @@ const useAddPayment = ({
       showError(t("errors.creditExceeded"));
       return;
     }
+    if (isDirectCollection && allocationLeftover < -0.005) {
+      showError(
+        t(
+          "screens.payments.allocationExceedsAmount",
+          "The allocated amounts add up to more than the payment.",
+        ),
+      );
+      return;
+    }
     if (showDatePicker) {
       if (!form.date) {
         showError(t("errors.dateRequired"));
@@ -368,6 +444,16 @@ const useAddPayment = ({
       created_by: user.id,
       date: showDatePicker ? form.date : undefined,
     };
+
+    if (isDirectCollection && allocationTotal > 0) {
+      paymentData.allocations = allocationLines
+        .filter((l) => Number(l.allocate) > 0)
+        .map((l) => ({
+          invoice_type: l.invoice_type,
+          invoice_id: l.invoice_id,
+          amount: Number(l.allocate),
+        }));
+    }
 
     if (isCollectorMode && onSubmit) {
       onSubmit?.(paymentData);
@@ -452,6 +538,11 @@ const useAddPayment = ({
     effectiveRate,
     rateChanged,
     rateWarning,
+    isDirectCollection,
+    allocationLines,
+    allocationLoading,
+    allocationLeftover,
+    updateAllocationLine,
   };
 };
 

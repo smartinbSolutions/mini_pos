@@ -1139,12 +1139,12 @@ export default function AddSales() {
       <AddPayment
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
+        onSubmit={handlePaymentCollected}
         invoice={null}
         totalAmount={netTotal}
         party={invoice.legacy_customer_id}
         partyName={customerName}
         mode="sales"
-        onSubmit={handlePaymentCollected}
         confirmLabel={t("screens.invoices.saveInvoice")}
       />
 
