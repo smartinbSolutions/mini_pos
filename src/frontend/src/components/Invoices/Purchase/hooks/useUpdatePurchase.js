@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
 
 const emptyInvoice = {
-  supplier_id: "",
+  contact_id: "",
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
   discount: 0,
@@ -119,7 +119,7 @@ export default function useUpdatePurchase() {
       const [inv, prodsRes, supsRes, taxRes] = await Promise.all([
         api.getPurchaseInvoiceById(id),
         api.getProducts({ limit: 100 }),
-        api.getSuppliers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
@@ -130,7 +130,7 @@ export default function useUpdatePurchase() {
 
       setInvoiceState({
         id: inv.id,
-        supplier_id: inv.supplier_id,
+        contact_id: inv.contact_id,
         supplier_name: inv.supplier_name || "",
         date: inv.date?.slice(0, 10) || emptyInvoice.date,
         discount_rate: Number(inv.discount_rate || 0),
@@ -176,7 +176,7 @@ export default function useUpdatePurchase() {
       );
 
       setProducts(prodsRes?.data || []);
-      setSuppliers(supsRes || []);
+      setSuppliers(supsRes?.data || []);
       setTaxes(taxRes || []);
       setError("");
     } catch (err) {
@@ -192,12 +192,12 @@ export default function useUpdatePurchase() {
     try {
       const [prodsRes, supsRes, taxRes] = await Promise.all([
         api.getProducts({ limit: 100 }),
-        api.getSuppliers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
       setProducts(prodsRes?.data || []);
-      setSuppliers(supsRes || []);
+      setSuppliers(supsRes?.data || []);
       setTaxes(taxRes || []);
     } catch (err) {
       setError(err.message || t("errors.loadError"));
@@ -210,8 +210,8 @@ export default function useUpdatePurchase() {
     (query) => {
       clearTimeout(supplierSearchTimer.current);
       supplierSearchTimer.current = setTimeout(async () => {
-        const res = await api.getSuppliers({ search: query, limit: 50 });
-        setSuppliers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setSuppliers(res?.data || []);
       }, 250);
     },
     [api],

@@ -69,3 +69,50 @@ export function findLegacyContact(db, partyType, partyId) {
     null
   );
 }
+
+// Picker sent a contact → make sure it has this role, adding it on first use
+// (first purchase makes a contact a supplier, first sale a customer).
+// Returns the legacy customer / supplier id the handlers still use.
+// Must run inside the caller's transaction.
+export function ensureContactRole(db, contactId, role) {
+  const cfg =
+    role === "customer"
+      ? {
+          table: "customers",
+          legacy: "legacy_customer_id",
+          flag: "is_customer",
+        }
+      : {
+          table: "suppliers",
+          legacy: "legacy_supplier_id",
+          flag: "is_supplier",
+        };
+
+  const contact = db
+    .prepare(`SELECT * FROM contacts WHERE id = ?`)
+    .get(Number(contactId));
+  if (!contact) throw new Error("CONTACT_NOT_FOUND");
+
+  if (contact[cfg.legacy]) {
+    if (!contact[cfg.flag]) {
+      db.prepare(`UPDATE contacts SET ${cfg.flag} = 1 WHERE id = ?`).run(
+        contact.id,
+      );
+    }
+    return contact[cfg.legacy];
+  }
+
+  const legacyId = db
+    .prepare(`INSERT INTO ${cfg.table} (name, phone, address) VALUES (?, ?, ?)`)
+    .run(
+      contact.name,
+      contact.phone || "",
+      contact.address || "",
+    ).lastInsertRowid;
+
+  db.prepare(
+    `UPDATE contacts SET ${cfg.legacy} = ?, ${cfg.flag} = 1 WHERE id = ?`,
+  ).run(legacyId, contact.id);
+
+  return legacyId;
+}

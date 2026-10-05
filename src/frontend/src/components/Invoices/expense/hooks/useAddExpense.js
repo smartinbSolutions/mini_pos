@@ -19,7 +19,9 @@ const emptyItem = {
 };
 
 const emptyInvoice = {
-  supplier_id: NO_SUPPLIER,
+  contact_id: NO_SUPPLIER,
+  supplier_name: "",
+  legacy_supplier_id: null, // only for the payment modal's credit lookup
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
   discount: 0,
@@ -79,12 +81,12 @@ const useAddExpense = ({ supplierModalOpen }) => {
 
       const [categoryRes, suppliersRes, taxesRes] = await Promise.all([
         api.getExpensesCategory(),
-        api.getSuppliers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
       setCategory(categoryRes || []);
-      setSuppliers(suppliersRes || []);
+      setSuppliers(suppliersRes?.data || []);
       setTaxes(taxesRes || []);
 
       setError("");
@@ -101,8 +103,8 @@ const useAddExpense = ({ supplierModalOpen }) => {
     (query) => {
       clearTimeout(supplierSearchTimer.current);
       supplierSearchTimer.current = setTimeout(async () => {
-        const res = await api.getSuppliers({ search: query, limit: 50 });
-        setSuppliers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setSuppliers(res?.data || []);
       }, 250);
     },
     [api],
@@ -117,7 +119,7 @@ const useAddExpense = ({ supplierModalOpen }) => {
   const supplierOptions = useMemo(
     () => [
       { id: NO_SUPPLIER, name: t("ui.noSupplier") },
-      ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
+      ...(Array.isArray(suppliers) ? suppliers : []),
     ],
     [suppliers, t],
   );
@@ -371,8 +373,8 @@ const useAddExpense = ({ supplierModalOpen }) => {
 
         const payload = {
           ...invoice,
-          supplier_id:
-            invoice.supplier_id === NO_SUPPLIER ? null : invoice.supplier_id,
+          contact_id:
+            invoice.contact_id === NO_SUPPLIER ? null : invoice.contact_id,
           taxes: (invoice.taxes || []).map((t) => t.id),
           discount: invoiceDiscount,
           taxValue: invoiceTaxValue,
@@ -429,6 +431,7 @@ const useAddExpense = ({ supplierModalOpen }) => {
   };
 
   return {
+    api,
     invoice,
     setInvoice,
     addInvoiceTax,

@@ -22,15 +22,14 @@ import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
-import useCustomerList from "../../../Customer/hooks/useCustomerList";
 
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import NumberInput from "../../../../Global/NumberInput";
-import CustomerFormModal from "../../Sales/components/CustomerFormModal";
 import TagPickerField from "../../../Tags/components/TagPickerField";
 import useLatinMode from "../../../../Global/useLatinMode";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
+import ContactFormModal from "../../../../Global/ContactFormModal";
 
 // ---- Shared, module-level so re-renders never remount them ----
 
@@ -146,7 +145,16 @@ export default function AddSalesQuotation() {
     taxes: productTaxes,
   } = catalog;
 
-  const { submitDraft, setDraft, draft, actionError } = useCustomerList();
+  const emptyDraft = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+    balance_type: "increase",
+    date: "",
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [actionError, setActionError] = useState("");
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
 
@@ -270,14 +278,14 @@ export default function AddSalesQuotation() {
                         <SearchableSelect
                           placeholder={t("ui.selectCustomerOptional")}
                           options={customers}
-                          selectedValue={quotation?.customer_id}
+                          selectedValue={quotation?.contact_id}
                           selectedLabel={quotation?.customer_name}
                           onInputChange={searchCustomers}
-                          onChange={(customer) =>
+                          onChange={(contact) =>
                             setQuotation((p) => ({
                               ...p,
-                              customer_id: customer.id,
-                              customer_name: customer.name,
+                              contact_id: contact.id,
+                              customer_name: contact.name,
                             }))
                           }
                         />
@@ -1063,24 +1071,59 @@ export default function AddSalesQuotation() {
       />
 
       {customerModalOpen && (
-        <CustomerFormModal
+        <ContactFormModal
           open={customerModalOpen}
           onClose={() => setCustomerModalOpen(false)}
-          draft={draft}
-          setDraft={setDraft}
+          mode="create"
+          form={draft}
+          setForm={setDraft}
           onSubmit={async (event) => {
-            const result = await submitDraft(event);
-            if (result && result.id) {
-              setQuotation((prev) => ({ ...prev, customer_id: result.id }));
-              setCustomerModalOpen(false);
+            event.preventDefault();
+            const name = draft.name.trim();
+            if (!name) return;
+
+            const result = await api.createContact({
+              ...draft,
+              name,
+              is_customer: 1,
+              is_supplier: 0,
+              opening_side:
+                draft.balance_type === "decrease" ? "credit" : "debit",
+            });
+
+            if (!result?.success) {
+              setActionError(
+                t(`errors.${result?.error}`, { defaultValue: result?.error }),
+              );
+              return;
             }
+
+            if (result.legacy_customer_id && draft.tagIds !== undefined) {
+              await api.setEntityTags(
+                "customer",
+                result.legacy_customer_id,
+                draft.tagIds,
+              );
+            }
+
+            setQuotation((prev) => ({
+              ...prev,
+              contact_id: result.id,
+              customer_name: name,
+            }));
+            setDraft(emptyDraft);
+            setActionError("");
+            setCustomerModalOpen(false);
           }}
           saving={saving}
           actionError={actionError}
+          title={t("screens.contacts.createCustomer")}
+          subtitle={t("screens.contacts.addCustomerContact")}
+          submitLabel={t("screens.contacts.addCustomer")}
+          type="customer"
           t={t}
         />
       )}
-
       {isFormOpen && (
         <ProductQuickAddModal
           units={units}

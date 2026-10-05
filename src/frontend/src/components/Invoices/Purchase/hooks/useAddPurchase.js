@@ -29,7 +29,9 @@ const emptyItem = {
 };
 
 const emptyInvoice = {
-  supplier_id: "",
+  contact_id: "",
+  supplier_name: "",
+  legacy_supplier_id: null, // only for the payment modal's credit lookup
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
   discount: 0,
@@ -105,8 +107,8 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
       setProducts(res?.data || []);
       const taxResult = await api.getTaxes();
       setTaxes(taxResult || []);
-      const suppliersResult = await api.getSuppliers();
-      setSuppliers(suppliersResult || []);
+      const suppliersResult = await api.getContacts({ limit: 50 });
+      setSuppliers(suppliersResult?.data || []);
       setError("");
     } catch (err) {
       setError(err?.message || t("errors.loadError"));
@@ -121,8 +123,8 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
     (query) => {
       clearTimeout(supplierSearchTimer.current);
       supplierSearchTimer.current = setTimeout(async () => {
-        const res = await api.getSuppliers({ search: query, limit: 50 });
-        setSuppliers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setSuppliers(res?.data || []);
       }, 250);
     },
     [api],
@@ -622,7 +624,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
         return;
       }
 
-      if (!invoice.supplier_id) {
+      if (!invoice.contact_id) {
         setError(t("errors.supplierRequired"));
         return;
       }

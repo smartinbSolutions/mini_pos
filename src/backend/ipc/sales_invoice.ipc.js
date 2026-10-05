@@ -8,7 +8,7 @@ import {
   getReceiptLanguage,
 } from "../services/receiptPrinter";
 import attachLatinNames from "../utils/attachLatinNames";
-import { ensureLegacyContact } from "../utils/contacts";
+import { ensureLegacyContact, ensureContactRole } from "../utils/contacts";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -32,6 +32,9 @@ export default function registerSalesInvoiceIPC() {
   ipcMain.handle("create-sales-invoice", (event, data) => {
     try {
       const transaction = db.transaction(() => {
+        const customerId = data.contact_id
+          ? ensureContactRole(db, data.contact_id, "customer")
+          : data.customer_id || null;
         if (
           !data.date ||
           !Array.isArray(data.items) ||
@@ -236,7 +239,7 @@ export default function registerSalesInvoiceIPC() {
           `,
           )
           .run(
-            data.customer_id || null,
+            customerId || null,
             data.invoice_name?.trim() || null,
             data.description?.trim() || null,
             fullDateTime,
@@ -248,7 +251,7 @@ export default function registerSalesInvoiceIPC() {
             data.created_by || null,
             null,
             netTotal,
-            ensureLegacyContact(db, "customer", data.customer_id),
+            ensureLegacyContact(db, "customer", customerId),
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -338,10 +341,10 @@ export default function registerSalesInvoiceIPC() {
         }
 
         // ---- Party history, payment/credit (unchanged) ----
-        if (data.customer_id) {
+        if (customerId) {
           createPartyHistory(db, {
             party_type: "customer",
-            party_id: data.customer_id,
+            party_id: customerId,
             invoice_id: invoiceId,
             invoice_type: "sales",
             record_type: "invoice",
@@ -357,7 +360,7 @@ export default function registerSalesInvoiceIPC() {
 
         if (isPaid && isCredit) {
           creditApplied = applyPartyCredit(db, {
-            partyId: payment.party_id,
+            partyId: payment.party_id || customerId,
             partyType: payment.party_type,
             invoiceId,
             invoiceType: "sales",
@@ -367,7 +370,7 @@ export default function registerSalesInvoiceIPC() {
           insertPaymentId = createPayment(db, {
             type: payment.type,
             party_type: payment.party_type,
-            party_id: payment.party_id,
+            partyId: payment.party_id || customerId,
             fund_id: payment.fund_id,
             amount: payment.amount,
             amount_fund_currency: payment.collected_amount,
@@ -972,7 +975,9 @@ export default function registerSalesInvoiceIPC() {
         }
 
         const oldCustomerId = oldInvoice.customer_id || null;
-        const newCustomerId = data.customer_id || null;
+        const newCustomerId = data.contact_id
+          ? ensureContactRole(db, data.contact_id, "customer")
+          : data.customer_id || null;
 
         // ---- Resolve invoice-level taxes — PARALLEL, same as create ----
         const requestedTaxIds = Array.isArray(data.taxes)
@@ -1420,6 +1425,9 @@ export default function registerSalesInvoiceIPC() {
   ipcMain.handle("pos-checkout", (event, data) => {
     try {
       const transaction = db.transaction(() => {
+        const customerId = data.contact_id
+          ? ensureContactRole(db, data.contact_id, "customer")
+          : data.customer_id || null;
         if (!Array.isArray(data.items) || data.items.length === 0) {
           throw new Error("ERROR ENTER DATA");
         }
@@ -1666,7 +1674,7 @@ export default function registerSalesInvoiceIPC() {
             `,
           )
           .run(
-            data.customer_id || null,
+            customerId,
             data.invoice_name?.trim() || null,
             data.description?.trim() || null,
             fullDateTime,
@@ -1677,7 +1685,7 @@ export default function registerSalesInvoiceIPC() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by || null,
-            ensureLegacyContact(db, "customer", data.customer_id),
+            ensureLegacyContact(db, "customer", customerId),
           );
 
         const invoiceId = invoiceResult.lastInsertRowid;
@@ -1764,10 +1772,10 @@ export default function registerSalesInvoiceIPC() {
         }
 
         // ---- Party history (only when a real customer is attached) ----
-        if (data.customer_id) {
+        if (customerId) {
           createPartyHistory(db, {
             party_type: "customer",
-            party_id: data.customer_id,
+            party_id: customerId,
             invoice_id: invoiceId,
             invoice_type: "sales",
             record_type: "invoice",
@@ -1784,8 +1792,8 @@ export default function registerSalesInvoiceIPC() {
         for (const payment of payments) {
           const paymentId = createPayment(db, {
             type: "income",
-            party_type: data.customer_id ? "customer" : "walk-in",
-            party_id: data.customer_id || null,
+            party_type: customerId ? "customer" : "walk-in",
+            party_id: customerId,
             fund_id: payment.fundId,
             amount: payment.amount,
             amount_fund_currency: payment.amountFundCurrency,

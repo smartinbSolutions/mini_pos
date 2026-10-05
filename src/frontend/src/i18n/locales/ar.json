@@ -402,6 +402,13 @@
       "genericPaymentOut": "تم دفع مبلغ"
     },
     "contacts": {
+      "owesYou": "مدين لك",
+      "youOwe": "أنت مدين",
+      "owedToYou": "مستحق لك",
+      "youOweTotal": "مستحق عليك",
+      "net": "الصافي",
+      "roleCustomer": "عميل",
+      "roleSupplier": "مورد",
       "alsoSupplierBadge": "مورد أيضاً: {{name}}",
       "alsoCustomerBadge": "عميل أيضاً: {{name}}",
       "partnerTheyOweYouTitle": "مساهمة من الشريك",
@@ -1007,6 +1014,8 @@
       "deleted": "محذوف"
     },
     "ledger": {
+      "totalSales": "إجمالي المبيعات",
+      "totalPurchases": "إجمالي المشتريات",
       "paymentSettlement": "مقاصة (بدون نقد)",
       "includeLinkedAccount": "تضمين الحساب المرتبط ({{name}})",
       "owesYou": "{{party}} مدين لك",

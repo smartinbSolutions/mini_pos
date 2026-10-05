@@ -25,10 +25,8 @@ import ConfirmModal from "../../../../Global/ConfirmModal";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
-import useCustomerList from "../../../Customer/hooks/useCustomerList";
-import CustomerFormModal from "./CustomerFormModal";
+import ContactFormModal from "../../../../Global/ContactFormModal";
 import DropdownMenu from "../../../../Global/DropdownMenu";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
 import NumberInput from "../../../../Global/NumberInput";
 import TagPickerField from "../../../Tags/components/TagPickerField";
 import useLatinMode from "../../../../Global/useLatinMode";
@@ -145,7 +143,16 @@ export default function AddSales() {
     setTagIds,
   } = useAddSales({ customerModalOpen, isFormOpen });
 
-  const { submitDraft, setDraft, draft, actionError } = useCustomerList();
+  const emptyDraft = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+    balance_type: "increase",
+    date: "",
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [actionError, setActionError] = useState("");
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -183,7 +190,7 @@ export default function AddSales() {
   const customerName = invoice.customer_name || "";
 
   const hasUsableItems = items.some((i) => i.product_id);
-  const canSave = !!invoice.customer_id && hasUsableItems && !saving;
+  const canSave = !!invoice.contact_id && hasUsableItems && !saving;
 
   const toggleItemDiscount = (index, revealed) => {
     setRevealedItemDiscounts((prev) => {
@@ -220,7 +227,7 @@ export default function AddSales() {
   };
 
   const handleOpenPayModal = () => {
-    if (!invoice.customer_id) {
+    if (!invoice.contact_id) {
       toast.error(t("errors.customer_required"));
       return;
     }
@@ -324,14 +331,16 @@ export default function AddSales() {
                         <SearchableSelect
                           placeholder={t("ui.selectCustomer")}
                           options={customers}
-                          selectedValue={invoice?.customer_id}
+                          selectedValue={invoice?.contact_id}
                           selectedLabel={invoice?.customer_name}
                           onInputChange={searchCustomers}
-                          onChange={(customer) =>
+                          onChange={(contact) =>
                             setInvoice((p) => ({
                               ...p,
-                              customer_id: customer.id,
-                              customer_name: customer.name,
+                              contact_id: contact.id,
+                              customer_name: contact.name,
+                              legacy_customer_id:
+                                contact.legacy_customer_id || null,
                             }))
                           }
                         />
@@ -347,7 +356,7 @@ export default function AddSales() {
                       </button>
                     </div>
 
-                    {!invoice.customer_id && (
+                    {!invoice.contact_id && (
                       <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-amber-600">
                         <AlertCircle size={12} />
                         {t("errors.customer_required")}
@@ -1085,7 +1094,7 @@ export default function AddSales() {
                 {!canSave && !saving && (
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
                     <AlertCircle size={12} />
-                    {!invoice.customer_id
+                    {!invoice.contact_id
                       ? t("errors.customer_required")
                       : t("errors.addOneItem")}
                   </p>
@@ -1132,7 +1141,7 @@ export default function AddSales() {
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice.customer_id}
+        party={invoice.legacy_customer_id}
         partyName={customerName}
         mode="sales"
         onSubmit={handlePaymentCollected}
@@ -1140,25 +1149,57 @@ export default function AddSales() {
       />
 
       {customerModalOpen && (
-        <CustomerFormModal
+        <ContactFormModal
           open={customerModalOpen}
           onClose={() => setCustomerModalOpen(false)}
-          draft={draft}
-          setDraft={setDraft}
+          mode="create"
+          form={draft}
+          setForm={setDraft}
           onSubmit={async (event) => {
-            const name = draft.name;
-            const result = await submitDraft(event);
-            if (result && result.id) {
-              setInvoice((prev) => ({
-                ...prev,
-                customer_id: result.id,
-                customer_name: name,
-              }));
-              setCustomerModalOpen(false);
+            event.preventDefault();
+            const name = draft.name.trim();
+            if (!name) return;
+
+            const result = await api.createContact({
+              ...draft,
+              name,
+              is_customer: 1,
+              is_supplier: 0,
+              opening_side:
+                draft.balance_type === "decrease" ? "credit" : "debit",
+            });
+
+            if (!result?.success) {
+              setActionError(
+                t(`errors.${result?.error}`, { defaultValue: result?.error }),
+              );
+              return;
             }
+
+            if (result.legacy_customer_id && draft.tagIds !== undefined) {
+              await api.setEntityTags(
+                "customer",
+                result.legacy_customer_id,
+                draft.tagIds,
+              );
+            }
+
+            setInvoice((prev) => ({
+              ...prev,
+              contact_id: result.id,
+              customer_name: name,
+              legacy_customer_id: result.legacy_customer_id,
+            }));
+            setDraft(emptyDraft);
+            setActionError("");
+            setCustomerModalOpen(false);
           }}
           saving={saving}
           actionError={actionError}
+          title={t("screens.contacts.createCustomer")}
+          subtitle={t("screens.contacts.addCustomerContact")}
+          submitLabel={t("screens.contacts.addCustomer")}
+          type="customer"
           t={t}
         />
       )}

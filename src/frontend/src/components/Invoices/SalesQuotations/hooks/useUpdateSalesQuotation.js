@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
 
 const emptyQuotation = {
-  customer_id: "",
+  contact_id: "",
   quotation_name: "",
   date: new Date().toISOString().slice(0, 10),
   status: "draft",
@@ -118,7 +118,7 @@ export default function useUpdateSalesQuotation() {
       const [q, prodsRes, custsRes, taxRes] = await Promise.all([
         api.getSalesQuotationById(id),
         api.getProducts({ limit: 100 }),
-        api.getCustomers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
@@ -129,7 +129,7 @@ export default function useUpdateSalesQuotation() {
 
       setQuotationState({
         id: q.id,
-        customer_id: q.customer_id,
+        contact_id: q.contact_id,
         customer_name: q.customer_name || "",
         date: q.date?.slice(0, 10) || emptyQuotation.date,
         status: q.status || "draft",
@@ -179,7 +179,7 @@ export default function useUpdateSalesQuotation() {
       );
 
       setProducts(prodsRes?.data || []);
-      setCustomers(custsRes || []);
+      setCustomers(custsRes?.data || []);
       setTaxes(taxRes || []);
       setError("");
     } catch (err) {
@@ -195,12 +195,12 @@ export default function useUpdateSalesQuotation() {
     try {
       const [prodsRes, custsRes, taxRes] = await Promise.all([
         api.getProducts({ limit: 100 }),
-        api.getCustomers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
       setProducts(prodsRes?.data || []);
-      setCustomers(custsRes || []);
+      setCustomers(custsRes?.data || []);
       setTaxes(taxRes || []);
     } catch (err) {
       setError(err.message || t("errors.loadError"));
@@ -213,8 +213,8 @@ export default function useUpdateSalesQuotation() {
     (query) => {
       clearTimeout(customerSearchTimer.current);
       customerSearchTimer.current = setTimeout(async () => {
-        const res = await api.getCustomers({ search: query, limit: 50 });
-        setCustomers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setCustomers(res?.data || []);
       }, 250);
     },
     [api],

@@ -155,8 +155,7 @@ export default function UpdateExpense() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
-  const supplierName =
-    supplierOptions.find((s) => s.id === invoice.supplier_id)?.name || "";
+  const supplierName = invoice.supplier_name || "";
 
   const isLocked = status === "paid" || status === "partial";
   const hasUsableItems = items.some((i) => i.category_id);
@@ -284,14 +283,15 @@ export default function UpdateExpense() {
                   <SearchableSelect
                     placeholder={t("ui.selectSupplier")}
                     options={supplierOptions}
-                    selectedValue={invoice.supplier_id}
+                    selectedValue={invoice.contact_id}
                     selectedLabel={invoice.supplier_name}
                     onInputChange={searchSuppliers}
                     onChange={(e) =>
                       setInvoice({
                         ...invoice,
-                        supplier_id: e.id,
+                        contact_id: e.id,
                         supplier_name: e.name,
+                        legacy_supplier_id: e.legacy_supplier_id || null,
                       })
                     }
                     disabled={isLocked}
@@ -948,7 +948,7 @@ export default function UpdateExpense() {
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice.supplier_id}
+        party={invoice.legacy_supplier_id}
         partyName={supplierName}
         mode="expense"
         onSubmit={handlePaymentCollected}

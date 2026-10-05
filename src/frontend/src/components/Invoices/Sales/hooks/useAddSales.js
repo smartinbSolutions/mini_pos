@@ -29,7 +29,10 @@ const emptyItem = {
 };
 
 const emptyInvoice = {
-  customer_id: "",
+  contact_id: "",
+  customer_name: "",
+  legacy_customer_id: null, // only for the payment modal's credit lookup
+
   invoice_name: "",
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
@@ -101,12 +104,12 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
       const [res, taxRes, custRes] = await Promise.all([
         api.getProducts({ page: 1, limit: 200 }),
         api.getTaxes(),
-        api.getCustomers(),
+        api.getContacts({ limit: 50 }),
       ]);
 
       setProducts(res?.data || []);
       setTaxes(taxRes || []);
-      setCustomers(custRes || []);
+      setCustomers(custRes?.data || []);
       setError("");
     } catch (err) {
       setError(err.message);
@@ -121,8 +124,8 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
     (query) => {
       clearTimeout(customerSearchTimer.current);
       customerSearchTimer.current = setTimeout(async () => {
-        const res = await api.getCustomers({ search: query, limit: 50 });
-        setCustomers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setCustomers(res?.data || []);
       }, 250);
     },
     [api],
@@ -607,7 +610,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
         return;
       }
 
-      if (!invoice.customer_id) {
+      if (!invoice.contact_id) {
         setError(t("errors.customer_required"));
         return;
       }
@@ -623,6 +626,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
 
         const payload = {
           ...invoice,
+          contact_id: invoice.contact_id,
           taxes: (invoice.taxes || []).map((t) => t.id),
           discount: invoiceDiscount,
           taxValue: invoiceTaxValue,

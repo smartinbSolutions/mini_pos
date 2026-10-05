@@ -401,6 +401,13 @@
       "genericPaymentOut": "Payment made"
     },
     "contacts": {
+      "owesYou": "Owes you",
+      "youOwe": "You owe",
+      "owedToYou": "Owed to you",
+      "youOweTotal": "You owe",
+      "net": "Net",
+      "roleCustomer": "Customer",
+      "roleSupplier": "Supplier",
       "alsoSupplierBadge": "Also supplier: {{name}}",
       "alsoCustomerBadge": "Also customer: {{name}}",
       "partnerTheyOweYouTitle": "Partner contributed",
@@ -1025,6 +1032,8 @@
       "deleted": "Deleted"
     },
     "ledger": {
+      "totalSales": "Total sales",
+      "totalPurchases": "Total purchases",
       "paymentSettlement": "Settlement (no cash)",
       "includeLinkedAccount": "Include linked account ({{name}})",
       "owesYou": "{{party}} owes you",

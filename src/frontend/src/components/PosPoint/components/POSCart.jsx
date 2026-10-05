@@ -5,6 +5,7 @@ import POSCartItem from "./POSCartItem";
 export default function POSCart({
   cart,
   customers,
+  searchCustomers,
   selectedCustomerId,
   setSelectedCustomerId,
   clearCart,
@@ -74,6 +75,7 @@ export default function POSCart({
                 .filter(Boolean)
                 .join(" - ")
             }
+            onInputChange={searchCustomers}
           />
         </div>
       </div>

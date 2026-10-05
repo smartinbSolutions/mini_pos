@@ -22,11 +22,10 @@ import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
-import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
-import SupplierFormModal from "../../Purchase/components/SupplierFormModal";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import NumberInput from "../../../../Global/NumberInput";
 import TagPickerField from "../../../Tags/components/TagPickerField";
+import ContactFormModal from "../../../../Global/ContactFormModal";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -82,6 +81,7 @@ export default function AddExpense() {
   const [supplierModalOpen, setSupplierModalOpen] = useState(false);
 
   const {
+    api,
     invoice,
     setInvoice,
     addInvoiceTax,
@@ -126,7 +126,16 @@ export default function AddExpense() {
     reset,
     refetch,
   } = useAddExpense({ supplierModalOpen });
-  const { submitDraft, setDraft, draft, actionError } = useSuppliersList();
+  const emptyDraft = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+    balance_type: "increase",
+    date: "",
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [actionError, setActionError] = useState("");
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const { money } = usePrimaryCurrency();
@@ -139,8 +148,7 @@ export default function AddExpense() {
   const [invoiceTaxRevealed, setInvoiceTaxRevealed] = useState(false);
   const [invoiceNoteRevealed, setInvoiceNoteRevealed] = useState(false);
 
-  const supplierName =
-    supplierOptions.find((s) => s.id === invoice.supplier_id)?.name || "";
+  const supplierName = invoice.supplier_name || "";
 
   const hasUsableItems = items.some((i) => i.category_id);
   const canSave = hasUsableItems && !saving;
@@ -251,14 +259,15 @@ export default function AddExpense() {
                       <SearchableSelect
                         placeholder={t("ui.selectSupplier")}
                         options={supplierOptions}
-                        selectedValue={invoice?.supplier_id}
+                        selectedValue={invoice?.contact_id}
                         selectedLabel={invoice?.supplier_name}
                         onInputChange={searchSuppliers}
                         onChange={(e) =>
                           setInvoice({
                             ...invoice,
-                            supplier_id: e.id,
+                            contact_id: e.id,
                             supplier_name: e.name,
+                            legacy_supplier_id: e.legacy_supplier_id || null,
                           })
                         }
                       />
@@ -924,17 +933,61 @@ export default function AddExpense() {
       </div>
 
       {supplierModalOpen && (
-        <SupplierFormModal
+        <ContactFormModal
           open={supplierModalOpen}
           onClose={() => setSupplierModalOpen(false)}
-          draft={draft}
-          setDraft={setDraft}
-          onSubmit={submitDraft}
+          mode="create"
+          form={draft}
+          setForm={setDraft}
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const name = draft.name.trim();
+            if (!name) return;
+
+            const result = await api.createContact({
+              ...draft,
+              name,
+              is_customer: 0,
+              is_supplier: 1,
+              opening_side:
+                draft.balance_type === "decrease" ? "debit" : "credit",
+            });
+
+            if (!result?.success) {
+              setActionError(
+                t(`errors.${result?.error}`, { defaultValue: result?.error }),
+              );
+              return;
+            }
+
+            if (result.legacy_supplier_id && draft.tagIds !== undefined) {
+              await api.setEntityTags(
+                "supplier",
+                result.legacy_supplier_id,
+                draft.tagIds,
+              );
+            }
+
+            setInvoice((prev) => ({
+              ...prev,
+              contact_id: result.id,
+              supplier_name: name,
+              legacy_supplier_id: result.legacy_supplier_id,
+            }));
+            setDraft(emptyDraft);
+            setActionError("");
+            setSupplierModalOpen(false);
+          }}
           saving={saving}
           actionError={actionError}
+          title={t("screens.contacts.createSupplier")}
+          subtitle={t("screens.contacts.addSupplierContact")}
+          submitLabel={t("screens.contacts.addSupplier")}
+          type="supplier"
           t={t}
         />
       )}
+
       <DeleteModal
         open={deleteItemIndex !== null}
         onClose={() => setDeleteItemIndex(null)}
@@ -951,7 +1004,7 @@ export default function AddExpense() {
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice.supplier_id}
+        party={invoice.legacy_supplier_id}
         partyName={supplierName}
         mode="expense"
         onSubmit={handlePaymentCollected}

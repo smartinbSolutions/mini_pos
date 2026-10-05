@@ -401,6 +401,13 @@
       "genericPaymentOut": "Ödeme yapıldı"
     },
     "contacts": {
+      "owesYou": "Size borçlu",
+      "youOwe": "Borcunuz",
+      "owedToYou": "Alacağınız",
+      "youOweTotal": "Borcunuz",
+      "net": "Net",
+      "roleCustomer": "Müşteri",
+      "roleSupplier": "Tedarikçi",
       "alsoSupplierBadge": "Tedarikçi olarak: {{name}}",
       "alsoCustomerBadge": "Müşteri olarak: {{name}}",
       "alsoSupplier": "Aynı zamanda tedarikçi",
@@ -1002,6 +1009,8 @@
       "deleted": "Silindi"
     },
     "ledger": {
+      "totalSales": "Toplam satış",
+      "totalPurchases": "Toplam alış",
       "paymentSettlement": "Mahsup (nakitsiz)",
       "includeLinkedAccount": "Bağlı hesabı dahil et ({{name}})",
       "owesYou": "Alacağınız",

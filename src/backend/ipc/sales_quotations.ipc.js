@@ -178,7 +178,8 @@ export default function registerSalesQuotationsIPC() {
             data.created_by || null,
             null,
             netTotal,
-            ensureLegacyContact(db, "customer", data.customer_id),
+            data.contact_id ||
+              ensureLegacyContact(db, "customer", data.customer_id),
           );
 
         const quotationId = quotationResult.lastInsertRowid;
@@ -560,8 +561,8 @@ export default function registerSalesQuotationsIPC() {
         (
           q.quotation_name LIKE ?
           OR CAST(q.id AS TEXT) = ?
-          OR q.customer_id IN (
-            SELECT id FROM customers WHERE name LIKE ? OR phone LIKE ?
+          OR q.contact_id IN (
+            SELECT id FROM contacts WHERE name LIKE ? OR phone LIKE ?
           )
         )
       `);
@@ -601,8 +602,8 @@ export default function registerSalesQuotationsIPC() {
         `
       SELECT
         q.*,
-        c.name AS customer_name,
-        c.phone AS customer_phone,
+        ct.name AS customer_name,
+        ct.phone AS customer_phone,
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name,
         invoiceTaxAgg.taxes_json,
@@ -680,12 +681,12 @@ export default function registerSalesQuotationsIPC() {
         `
       SELECT
         q.*,
-        c.name AS customer_name,
-        c.phone AS customer_phone,
+        ct.name AS customer_name,
+        ct.phone AS customer_phone,
         creator.full_name AS created_by_name,
         updater.full_name AS updated_by_name
       FROM sales_quotations q
-      LEFT JOIN customers c ON c.id = q.customer_id
+      LEFT JOIN contacts ct ON ct.id = q.contact_id
       LEFT JOIN users creator ON creator.id = q.created_by
       LEFT JOIN users updater ON updater.id = q.updated_by
       WHERE q.id = ?

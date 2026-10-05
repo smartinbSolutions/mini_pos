@@ -239,6 +239,7 @@ function fetchPartyHistoryLedger(
   {
     partyId,
     partyType,
+    contactId: contactIdParam,
     page = 1,
     limit = 50,
     startDate,
@@ -252,7 +253,9 @@ function fetchPartyHistoryLedger(
 
   // Customer / supplier pages read the whole CONTACT (sales + purchase side).
   // Partners — or a party with no contact yet — keep the legacy scope.
-  const contactId = findLegacyContact(db, partyType, partyId);
+  const contactId = contactIdParam
+    ? Number(contactIdParam)
+    : findLegacyContact(db, partyType, partyId);
   const scope = contactId
     ? { clause: "p.contact_id = ?", values: [contactId] }
     : {
@@ -264,7 +267,7 @@ function fetchPartyHistoryLedger(
   // rules hold: customer page → debit raises the balance (he owes you);
   // supplier page → credit raises it (you owe him).
   const increaseCond = contactId
-    ? partyType === "customer"
+    ? contactIdParam || partyType === "customer"
       ? "p.side = 'debit'"
       : "p.side = 'credit'"
     : "p.movement_type = 'increase'";
@@ -377,6 +380,10 @@ function fetchPartyHistoryLedger(
         COALESCE(SUM(CASE WHEN p.record_type = 'invoice' THEN p.amount ELSE 0 END), 0) AS total_invoice,
         COALESCE(SUM(CASE WHEN p.record_type = 'return' THEN p.amount ELSE 0 END), 0) AS total_return,
         COALESCE(SUM(CASE WHEN p.record_type = 'payment' THEN p.amount ELSE 0 END), 0) AS total_payment,
+        COALESCE(SUM(CASE WHEN p.invoice_type = 'sales' THEN p.amount ELSE 0 END), 0) AS sales_total,
+        COALESCE(SUM(CASE WHEN p.invoice_type = 'sales_return' THEN p.amount ELSE 0 END), 0) AS sales_returns_total,
+        COALESCE(SUM(CASE WHEN p.invoice_type IN ('purchase','expense') THEN p.amount ELSE 0 END), 0) AS purchases_total,
+        COALESCE(SUM(CASE WHEN p.invoice_type = 'purchase_return' THEN p.amount ELSE 0 END), 0) AS purchase_returns_total,
         COALESCE(SUM(CASE WHEN p.record_type = 'opening_balance' THEN ${signedAmount} ELSE 0 END), 0) AS opening_balance
       FROM party_history p
       WHERE ${scope.clause}
@@ -404,6 +411,10 @@ function fetchPartyHistoryLedger(
       total_invoice: Number(summary?.total_invoice || 0),
       total_return: Number(summary?.total_return || 0),
       total_payment: Number(summary?.total_payment || 0),
+      sales_total: Number(summary?.sales_total || 0),
+      sales_returns_total: Number(summary?.sales_returns_total || 0),
+      purchases_total: Number(summary?.purchases_total || 0),
+      purchase_returns_total: Number(summary?.purchase_returns_total || 0),
       opening_balance: Number(summary?.opening_balance || 0),
     },
   };

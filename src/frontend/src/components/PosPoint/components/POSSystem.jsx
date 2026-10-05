@@ -53,6 +53,7 @@ export default function POSSystem() {
   const {
     products,
     customers,
+    searchCustomers,
     funds,
     taxes,
     cart,
@@ -477,6 +478,7 @@ export default function POSSystem() {
         <POSCart
           cart={cart}
           customers={customers}
+          searchCustomers={searchCustomers}
           selectedCustomerId={selectedCustomerId}
           setSelectedCustomerId={setSelectedCustomerId}
           clearCart={clearCart}

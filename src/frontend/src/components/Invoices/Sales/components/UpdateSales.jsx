@@ -23,13 +23,11 @@ import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import { ToastContainer } from "react-toastify";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
-import useCustomerList from "../../../Customer/hooks/useCustomerList";
-import CustomerFormModal from "./CustomerFormModal";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
 import NumberInput from "../../../../Global/NumberInput";
 import TagPickerField from "../../../Tags/components/TagPickerField";
 import useLatinMode from "../../../../Global/useLatinMode";
+import ContactFormModal from "../../../../Global/ContactFormModal";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -142,7 +140,16 @@ export default function UpdateSales() {
     taxes: productTaxes,
   } = catalog;
 
-  const { submitDraft, setDraft, draft, actionError } = useCustomerList();
+  const emptyDraft = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+    balance_type: "increase",
+    date: "",
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [actionError, setActionError] = useState("");
 
   const { money } = usePrimaryCurrency();
   const { pick } = useLatinMode();
@@ -211,7 +218,7 @@ export default function UpdateSales() {
     status === "paid" || status === "partial" || hasReturn || isPosInvoice;
   const hasUsableItems = items.some((i) => i.product_id);
   const canSave =
-    !!invoice?.customer_id && hasUsableItems && !saving && !isLocked;
+    !!invoice?.contact_id && hasUsableItems && !saving && !isLocked;
 
   const toggleItemDiscount = (index, revealed) => {
     setRevealedItemDiscounts((prev) => {
@@ -248,7 +255,7 @@ export default function UpdateSales() {
   };
 
   const handleOpenPayModal = () => {
-    if (!invoice?.customer_id) {
+    if (!invoice?.contact_id) {
       toast.error(t("errors.customer_required"));
       return;
     }
@@ -394,14 +401,16 @@ export default function UpdateSales() {
                       <SearchableSelect
                         placeholder={t("ui.selectCustomer")}
                         options={customers}
-                        selectedValue={invoice?.customer_id}
+                        selectedValue={invoice?.contact_id}
                         selectedLabel={invoice?.customer_name}
                         onInputChange={searchCustomers}
-                        onChange={(customer) =>
+                        onChange={(contact) =>
                           setInvoice((prev) => ({
                             ...prev,
-                            customer_id: customer.id,
-                            customer_name: customer.name,
+                            contact_id: contact.id,
+                            customer_name: contact.name,
+                            legacy_customer_id:
+                              contact.legacy_customer_id || null,
                           }))
                         }
                         disabled={isLocked}
@@ -1116,7 +1125,7 @@ export default function UpdateSales() {
                   {!canSave && !saving && (
                     <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
                       <AlertCircle size={12} />
-                      {!invoice?.customer_id
+                      {!invoice?.contact_id
                         ? t("errors.customer_required")
                         : t("errors.addOneItem")}
                     </p>
@@ -1164,7 +1173,7 @@ export default function UpdateSales() {
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice?.customer_id}
+        party={invoice?.legacy_customer_id}
         partyName={customerName}
         mode="sales"
         onSubmit={handlePaymentCollected}
@@ -1172,21 +1181,58 @@ export default function UpdateSales() {
       />
 
       {customerModalOpen && (
-        <CustomerFormModal
+        <ContactFormModal
           open={customerModalOpen}
           onClose={() => setCustomerModalOpen(false)}
-          draft={draft}
-          setDraft={setDraft}
+          mode="create"
+          form={draft}
+          setForm={setDraft}
           onSubmit={async (event) => {
-            const result = await submitDraft(event);
-            if (result && result.id) {
-              setInvoice((prev) => ({ ...prev, customer_id: result.id }));
-              setCustomerModalOpen(false);
-              await refetch();
+            event.preventDefault();
+            const name = draft.name.trim();
+            if (!name) return;
+
+            const result = await api.createContact({
+              ...draft,
+              name,
+              is_customer: 1,
+              is_supplier: 0,
+              opening_side:
+                draft.balance_type === "decrease" ? "credit" : "debit",
+            });
+
+            if (!result?.success) {
+              setActionError(
+                t(`errors.${result?.error}`, { defaultValue: result?.error }),
+              );
+              return;
             }
+
+            if (result.legacy_customer_id && draft.tagIds !== undefined) {
+              await api.setEntityTags(
+                "customer",
+                result.legacy_customer_id,
+                draft.tagIds,
+              );
+            }
+
+            setInvoice((prev) => ({
+              ...prev,
+              contact_id: result.id,
+              customer_name: name,
+              legacy_customer_id: result.legacy_customer_id,
+            }));
+            setDraft(emptyDraft);
+            setActionError("");
+            setCustomerModalOpen(false);
+            await refetch();
           }}
           saving={saving}
           actionError={actionError}
+          title={t("screens.contacts.createCustomer")}
+          subtitle={t("screens.contacts.addCustomerContact")}
+          submitLabel={t("screens.contacts.addCustomer")}
+          type="customer"
           t={t}
         />
       )}

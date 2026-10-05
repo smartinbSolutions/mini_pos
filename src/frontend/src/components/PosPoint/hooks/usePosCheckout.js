@@ -106,7 +106,7 @@ export default function usePosCheckout({ weight } = {}) {
         taxesResult,
         tagsResult,
       ] = await Promise.allSettled([
-        api.getCustomers(),
+        api.getContacts({ limit: 50 }),
         api.getFunds(),
         api.getCurrencies(),
         api.getCompanySetting(),
@@ -179,6 +179,21 @@ export default function usePosCheckout({ weight } = {}) {
       setLoading(false);
     }
   }, [api, t]);
+
+  const customerSearchTimer = useRef(null);
+
+  const searchCustomers = useCallback(
+    (query) => {
+      clearTimeout(customerSearchTimer.current);
+      customerSearchTimer.current = setTimeout(async () => {
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setCustomers(res?.data || []);
+      }, 250);
+    },
+    [api],
+  );
+
+  useEffect(() => () => clearTimeout(customerSearchTimer.current), []);
 
   const loadProducts = useCallback(async () => {
     if (!api) return;
@@ -536,7 +551,7 @@ export default function usePosCheckout({ weight } = {}) {
         description: invoiceNote?.trim() || null,
         net_total: netTotal,
         paid_amount: netTotal,
-        customer_id: selectedCustomerId,
+        contact_id: selectedCustomerId || null,
         payments: normalizedPayments,
         date,
         created_by: user.id,
@@ -606,6 +621,7 @@ export default function usePosCheckout({ weight } = {}) {
   return {
     products,
     customers,
+    searchCustomers,
     funds,
     taxes,
     cart,

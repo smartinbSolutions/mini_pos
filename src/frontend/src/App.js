@@ -107,6 +107,7 @@ import ManufacturingOrderList from "./components/Manufactoring/components/Manufa
 import ManufacturingOrderFormPage from "./components/Manufactoring/components/ManufacturingOrderFormPage";
 import ManufacturingOrderDetailPage from "./components/Manufactoring/components/ManufacturingOrderDetailPage";
 import { LicenseProvider } from "./Global/LicenseContext";
+import ContactLedgerPage from "./components/Payment/components/ContactLedgerPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -289,6 +290,7 @@ export default function App() {
                 />
                 <Route path="edit-purchase/:id" element={<UpdatePurchase />} />
                 <Route path="supplier" element={<SuppliersList />} />
+                <Route path="/contact/:id" element={<ContactLedgerPage />} />
 
                 {/* ================= PURCHASE RETURN ================= */}
                 <Route

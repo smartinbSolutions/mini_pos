@@ -26,10 +26,8 @@ import ConfirmModal from "../../../../Global/ConfirmModal";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
-import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
-import SupplierFormModal from "./SupplierFormModal";
 import DropdownMenu from "../../../../Global/DropdownMenu";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
+import ContactFormModal from "../../../../Global/ContactFormModal";
 import NumberInput from "../../../../Global/NumberInput";
 import TagPickerField from "../../../Tags/components/TagPickerField";
 
@@ -151,7 +149,16 @@ export default function AddPurchase() {
     products,
     refetch,
   } = useAddPurchase({ isFormOpen, supplierModalOpen });
-  const { submitDraft, setDraft, draft, actionError } = useSuppliersList();
+  const emptyDraft = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+    balance_type: "increase",
+    date: "",
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [actionError, setActionError] = useState("");
 
   const [deleteItemIndex, setDeleteItemIndex] = useState(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -187,11 +194,10 @@ export default function AddPurchase() {
     return u ? unitOptionLabel(item, u) : item.unit_name;
   };
 
-  const supplierName =
-    suppliers?.data?.find((s) => s.id === invoice.supplier_id)?.name || "";
+  const supplierName = invoice.supplier_name || "";
 
   const hasUsableItems = items.some((i) => i.product_id);
-  const canSave = !!invoice.supplier_id && hasUsableItems && !saving;
+  const canSave = !!invoice.contact_id && hasUsableItems && !saving;
 
   const toggleItemDiscount = (index, revealed) => {
     setRevealedItemDiscounts((prev) => {
@@ -228,7 +234,7 @@ export default function AddPurchase() {
   };
 
   const handleOpenPayModal = () => {
-    if (!invoice.supplier_id) {
+    if (!invoice.contact_id) {
       toast.error(t("errors.supplierRequired"));
       return;
     }
@@ -340,14 +346,15 @@ export default function AddPurchase() {
                         <SearchableSelect
                           placeholder={t("ui.selectSupplier")}
                           options={suppliers}
-                          selectedValue={invoice?.supplier_id}
+                          selectedValue={invoice?.contact_id}
                           selectedLabel={invoice?.supplier_name}
                           onInputChange={searchSuppliers}
                           onChange={(e) =>
                             setInvoice({
                               ...invoice,
-                              supplier_id: e.id,
+                              contact_id: e.id,
                               supplier_name: e.name,
+                              legacy_supplier_id: e.legacy_supplier_id || null,
                             })
                           }
                         />
@@ -363,7 +370,7 @@ export default function AddPurchase() {
                       </button>
                     </div>
 
-                    {!invoice.supplier_id && (
+                    {!invoice.contact_id && (
                       <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-amber-600">
                         <AlertCircle size={12} />
                         {t("errors.supplierRequired")}
@@ -1100,7 +1107,7 @@ export default function AddPurchase() {
                 {!canSave && !saving && (
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
                     <AlertCircle size={12} />
-                    {!invoice.supplier_id
+                    {!invoice.contact_id
                       ? t("errors.supplierRequired")
                       : t("errors.addOneItem")}
                   </p>
@@ -1147,7 +1154,7 @@ export default function AddPurchase() {
         onClose={() => setPaymentModalOpen(false)}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice.supplier_id}
+        party={invoice.legacy_supplier_id}
         partyName={supplierName}
         mode="purchase"
         onSubmit={handlePaymentCollected}
@@ -1155,20 +1162,57 @@ export default function AddPurchase() {
       />
 
       {supplierModalOpen && (
-        <SupplierFormModal
+        <ContactFormModal
           open={supplierModalOpen}
           onClose={() => setSupplierModalOpen(false)}
-          draft={draft}
-          setDraft={setDraft}
+          mode="create"
+          form={draft}
+          setForm={setDraft}
           onSubmit={async (event) => {
-            const result = await submitDraft(event);
-            if (result && result.id) {
-              setInvoice((prev) => ({ ...prev, supplier_id: result.id }));
-              setSupplierModalOpen(false);
+            event.preventDefault();
+            const name = draft.name.trim();
+            if (!name) return;
+
+            const result = await api.createContact({
+              ...draft,
+              name,
+              is_customer: 0,
+              is_supplier: 1,
+              opening_side:
+                draft.balance_type === "decrease" ? "debit" : "credit",
+            });
+
+            if (!result?.success) {
+              setActionError(
+                t(`errors.${result?.error}`, { defaultValue: result?.error }),
+              );
+              return;
             }
+
+            if (result.legacy_supplier_id && draft.tagIds !== undefined) {
+              await api.setEntityTags(
+                "supplier",
+                result.legacy_supplier_id,
+                draft.tagIds,
+              );
+            }
+
+            setInvoice((prev) => ({
+              ...prev,
+              contact_id: result.id,
+              supplier_name: name,
+              legacy_supplier_id: result.legacy_supplier_id,
+            }));
+            setDraft(emptyDraft);
+            setActionError("");
+            setSupplierModalOpen(false);
           }}
           saving={saving}
           actionError={actionError}
+          title={t("screens.contacts.createSupplier")}
+          subtitle={t("screens.contacts.addSupplierContact")}
+          submitLabel={t("screens.contacts.addSupplier")}
+          type="supplier"
           t={t}
         />
       )}

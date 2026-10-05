@@ -29,7 +29,8 @@ const emptyItem = {
 };
 
 const emptyQuotation = {
-  customer_id: "",
+  contact_id: "",
+  customer_name: "",
   quotation_name: "",
   date: new Date().toISOString().slice(0, 10),
   status: "draft",
@@ -102,12 +103,12 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
       const [res, taxRes, custRes] = await Promise.all([
         api.getProducts({ page: 1, limit: 200 }),
         api.getTaxes(),
-        api.getCustomers(),
+        api.getContacts({ limit: 50 }),
       ]);
 
       setProducts(res?.data || []);
       setTaxes(taxRes || []);
-      setCustomers(custRes || []);
+      setCustomers(custRes?.data || []);
       setError("");
     } catch (err) {
       setError(err.message);
@@ -122,8 +123,8 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
     (query) => {
       clearTimeout(customerSearchTimer.current);
       customerSearchTimer.current = setTimeout(async () => {
-        const res = await api.getCustomers({ search: query, limit: 50 });
-        setCustomers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setCustomers(res?.data || []);
       }, 250);
     },
     [api],

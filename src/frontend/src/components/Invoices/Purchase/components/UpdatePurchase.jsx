@@ -22,12 +22,10 @@ import ConfirmModal from "../../../../Global/ConfirmModal";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
-import useSuppliersList from "../../../Supplier/hooks/useSuppliersList";
-import SupplierFormModal from "./SupplierFormModal";
-import { normalizeDigits } from "../../../../Global/FormatNumber";
 import NumberInput from "../../../../Global/NumberInput";
 import TagPickerField from "../../../Tags/components/TagPickerField";
 import useLatinMode from "../../../../Global/useLatinMode";
+import ContactFormModal from "../../../../Global/ContactFormModal";
 
 const inputClass =
   "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
@@ -141,7 +139,16 @@ export default function UpdatePurchase() {
     status,
   } = useUpdatePurchase();
 
-  const { submitDraft, setDraft, draft, actionError } = useSuppliersList();
+  const emptyDraft = {
+    name: "",
+    phone: "",
+    address: "",
+    opening_balance: 0,
+    balance_type: "increase",
+    date: "",
+  };
+  const [draft, setDraft] = useState(emptyDraft);
+  const [actionError, setActionError] = useState("");
 
   const { money } = usePrimaryCurrency();
 
@@ -341,13 +348,13 @@ export default function UpdatePurchase() {
                       <SearchableSelect
                         placeholder={t("ui.selectSupplier")}
                         options={suppliers}
-                        selectedValue={invoice?.supplier_id}
+                        selectedValue={invoice?.contact_id}
                         selectedLabel={invoice?.supplier_name}
                         onInputChange={searchSuppliers}
                         onChange={(e) =>
                           setInvoice({
                             ...invoice,
-                            supplier_id: e.id,
+                            contact_id: e.id,
                             supplier_name: e.name,
                           })
                         }
@@ -1087,22 +1094,59 @@ export default function UpdatePurchase() {
             : ""
         }
       />
+
       {supplierModalOpen && (
-        <SupplierFormModal
+        <ContactFormModal
           open={supplierModalOpen}
           onClose={() => setSupplierModalOpen(false)}
-          draft={draft}
-          setDraft={setDraft}
+          mode="create"
+          form={draft}
+          setForm={setDraft}
           onSubmit={async (event) => {
-            const result = await submitDraft(event);
-            if (result && result.id) {
-              setInvoice((prev) => ({ ...prev, supplier_id: result.id }));
-              setSupplierModalOpen(false);
-              await refetch();
+            event.preventDefault();
+            const name = draft.name.trim();
+            if (!name) return;
+
+            const result = await api.createContact({
+              ...draft,
+              name,
+              is_customer: 0,
+              is_supplier: 1,
+              opening_side:
+                draft.balance_type === "decrease" ? "debit" : "credit",
+            });
+
+            if (!result?.success) {
+              setActionError(
+                t(`errors.${result?.error}`, { defaultValue: result?.error }),
+              );
+              return;
             }
+
+            if (result.legacy_supplier_id && draft.tagIds !== undefined) {
+              await api.setEntityTags(
+                "supplier",
+                result.legacy_supplier_id,
+                draft.tagIds,
+              );
+            }
+
+            setInvoice((prev) => ({
+              ...prev,
+              contact_id: result.id,
+              supplier_name: name,
+            }));
+            setDraft(emptyDraft);
+            setActionError("");
+            setSupplierModalOpen(false);
+            await refetch();
           }}
           saving={saving}
           actionError={actionError}
+          title={t("screens.contacts.createSupplier")}
+          subtitle={t("screens.contacts.addSupplierContact")}
+          submitLabel={t("screens.contacts.addSupplier")}
+          type="supplier"
           t={t}
         />
       )}

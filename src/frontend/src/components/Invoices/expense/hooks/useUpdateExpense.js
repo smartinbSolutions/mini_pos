@@ -20,7 +20,7 @@ const emptyItem = {
 };
 
 const makeEmptyInvoice = () => ({
-  supplier_id: NO_SUPPLIER,
+  contact_id: NO_SUPPLIER,
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
   discount: 0,
@@ -77,12 +77,12 @@ const useUpdateExpense = () => {
 
       const [catRes, supRes, taxRes] = await Promise.all([
         api.getExpensesCategory(),
-        api.getSuppliers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
       setCategory(catRes || []);
-      setSuppliers(supRes || []);
+      setSuppliers(supRes?.data || []);
       setTaxes(taxRes || []);
     } catch (err) {
       setError(err?.message || t("errors.loadError"));
@@ -103,7 +103,8 @@ const useUpdateExpense = () => {
 
       setInvoice({
         ...res,
-        supplier_id: res.supplier_id || NO_SUPPLIER,
+        contact_id: res.contact_id || NO_SUPPLIER,
+        legacy_supplier_id: res.supplier_id || null,
         date: res.date
           ? res.date.slice(0, 10)
           : new Date().toISOString().slice(0, 10),
@@ -141,8 +142,8 @@ const useUpdateExpense = () => {
     (query) => {
       clearTimeout(supplierSearchTimer.current);
       supplierSearchTimer.current = setTimeout(async () => {
-        const res = await api.getSuppliers({ search: query, limit: 50 });
-        setSuppliers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setSuppliers(res?.data || []);
       }, 250);
     },
     [api],
@@ -153,7 +154,7 @@ const useUpdateExpense = () => {
   const supplierOptions = useMemo(
     () => [
       { id: NO_SUPPLIER, name: t("ui.noSupplier") },
-      ...(Array.isArray(suppliers?.data) ? suppliers?.data : []),
+      ...(Array.isArray(suppliers) ? suppliers : []),
     ],
     [suppliers, t],
   );
@@ -408,8 +409,9 @@ const useUpdateExpense = () => {
         const payload = {
           ...invoice,
           id,
-          supplier_id:
-            invoice.supplier_id === NO_SUPPLIER ? null : invoice.supplier_id,
+          supplier_id: null,
+          contact_id:
+            invoice.contact_id === NO_SUPPLIER ? null : invoice.contact_id,
           taxes: (invoice.taxes || []).map((t) => t.id),
           discount: invoiceDiscount,
           taxValue: invoiceTaxValue,

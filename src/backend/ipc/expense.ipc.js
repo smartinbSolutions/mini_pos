@@ -1,6 +1,6 @@
 const { ipcMain } = require("electron");
 import db from "../db";
-import { ensureLegacyContact } from "../utils/contacts";
+import { ensureLegacyContact, ensureContactRole } from "../utils/contacts";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -11,6 +11,9 @@ export default function registerExpenseIPC() {
   ipcMain.handle("create-expense", (event, data) => {
     try {
       const transaction = db.transaction(() => {
+        const supplierId = data.contact_id
+          ? ensureContactRole(db, data.contact_id, "supplier")
+          : data.supplier_id || null;
         if (
           !data.date ||
           !Array.isArray(data.items) ||
@@ -176,7 +179,7 @@ export default function registerExpenseIPC() {
           `,
           )
           .run(
-            data.supplier_id || null,
+            supplierId,
             data.invoice_name?.trim() || null,
             data.description || null,
             fullDateTime,
@@ -187,7 +190,7 @@ export default function registerExpenseIPC() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by,
-            ensureLegacyContact(db, "supplier", data.supplier_id),
+            ensureLegacyContact(db, "supplier", supplierId),
           );
         const invoiceId = invoiceResult.lastInsertRowid;
 
@@ -238,10 +241,10 @@ export default function registerExpenseIPC() {
           );
         }
 
-        if (data.supplier_id) {
+        if (supplierId) {
           createPartyHistory(db, {
             party_type: "supplier",
-            party_id: data.supplier_id,
+            party_id: supplierId,
             invoice_id: invoiceId,
             invoice_type: "expense",
             record_type: "invoice",
@@ -257,7 +260,7 @@ export default function registerExpenseIPC() {
 
         if (isPaid && isCredit) {
           creditApplied = applyPartyCredit(db, {
-            partyId: payment.party_id,
+            partyId: payment.party_id || supplierId,
             partyType: payment.party_type,
             invoiceId,
             invoiceType: "expense",
@@ -267,7 +270,7 @@ export default function registerExpenseIPC() {
           insertPaymentId = createPayment(db, {
             type: payment.type,
             party_type: payment.party_type,
-            party_id: payment.party_id,
+            party_id: payment.party_id || supplierId,
             fund_id: payment.fund_id,
             amount: payment.amount,
             amount_fund_currency: payment.collected_amount,
@@ -680,7 +683,9 @@ export default function registerExpenseIPC() {
         }
 
         const oldSupplierId = oldInvoice.supplier_id || null;
-        const newSupplierId = data.supplier_id || null;
+        const newSupplierId = data.contact_id
+          ? ensureContactRole(db, data.contact_id, "supplier")
+          : data.supplier_id || null;
 
         const dateOnly = data.date.slice(0, 10);
         const now = new Date();
@@ -934,7 +939,7 @@ export default function registerExpenseIPC() {
           insertPaymentId = createPayment(db, {
             type: payment.type,
             party_type: payment.party_type,
-            party_id: payment.party_id,
+            party_id: payment.party_id || newSupplierId,
             fund_id: payment.fund_id,
             amount: payment.amount,
             amount_fund_currency: payment.collected_amount,

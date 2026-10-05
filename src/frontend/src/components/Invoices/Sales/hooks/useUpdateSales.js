@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "../../../../Global/AuthContext";
 
 const emptyInvoice = {
-  customer_id: "",
+  contact_id: "",
+  legacy_customer_id: null, // only for the payment modal's credit lookup
   invoice_name: "",
   date: new Date().toISOString().slice(0, 10),
   discount_rate: 0,
@@ -117,7 +118,7 @@ export default function useUpdateSales() {
       const [inv, prodsRes, custsRes, taxRes] = await Promise.all([
         api.getSalesInvoiceById(id),
         api.getProducts({ limit: 100 }),
-        api.getCustomers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
@@ -128,7 +129,8 @@ export default function useUpdateSales() {
 
       setInvoiceState({
         id: inv.id,
-        customer_id: inv.customer_id,
+        contact_id: inv.contact_id,
+        legacy_customer_id: inv.customer_id || null,
         customer_name: inv.customer_name || "",
         date: inv.date?.slice(0, 10) || emptyInvoice.date,
         discount_rate: Number(inv.discount_rate || 0),
@@ -175,7 +177,7 @@ export default function useUpdateSales() {
       );
 
       setProducts(prodsRes?.data || []);
-      setCustomers(custsRes || []);
+      setCustomers(custsRes?.data || []);
       setTaxes(taxRes || []);
       setError("");
     } catch (err) {
@@ -191,12 +193,12 @@ export default function useUpdateSales() {
     try {
       const [prodsRes, custsRes, taxRes] = await Promise.all([
         api.getProducts({ limit: 100 }),
-        api.getCustomers(),
+        api.getContacts({ limit: 50 }),
         api.getTaxes(),
       ]);
 
       setProducts(prodsRes?.data || []);
-      setCustomers(custsRes || []);
+      setCustomers(custsRes?.data || []);
       setTaxes(taxRes || []);
     } catch (err) {
       setError(err.message || t("errors.loadError"));
@@ -209,8 +211,8 @@ export default function useUpdateSales() {
     (query) => {
       clearTimeout(customerSearchTimer.current);
       customerSearchTimer.current = setTimeout(async () => {
-        const res = await api.getCustomers({ search: query, limit: 50 });
-        setCustomers(res || []);
+        const res = await api.getContacts({ search: query, limit: 50 });
+        setCustomers(res?.data || []);
       }, 250);
     },
     [api],
