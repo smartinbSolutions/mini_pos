@@ -24,6 +24,7 @@ import {
   Download,
   Printer,
   CalendarDays,
+  ArrowLeftRight,
 } from "lucide-react";
 import { formatMoney } from "../../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
@@ -31,11 +32,20 @@ import { useNavigate } from "react-router-dom";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import GoTo from "../../../../Global/GoTo";
 import useListParams from "../../../../Global/useListParams";
+import { toast } from "react-toastify";
 
 const UI_DEFAULTS = { view: "active" };
 
 const AllocationBadge = ({ payment }) => {
   const { t } = useTranslation();
+
+  if (payment.isSettlement) {
+    return (
+      <span className="rounded-lg bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">
+        {t("screens.payments.settlement", "Settlement")}
+      </span>
+    );
+  }
 
   if (payment.party_type === "partner") {
     return (
@@ -69,6 +79,19 @@ const AllocationBadge = ({ payment }) => {
 };
 
 const PaymentFlow = ({ payment, isRtl }) => {
+  if (payment.isSettlement) {
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <span className="truncate font-semibold text-slate-500">
+          {payment.receiptPartyName}
+        </span>
+        <ArrowLeftRight size={13} className="shrink-0 text-violet-500" />
+        <span className="truncate font-bold text-slate-900">
+          {payment.paymentPartyName}
+        </span>
+      </div>
+    );
+  }
   const isIncome = payment.type === "income";
   const Arrow = isRtl ? ArrowLeft : ArrowRight;
 
@@ -481,7 +504,8 @@ const PaymentList = () => {
               {filteredPayments.map((pay) => {
                 const rowId = isDeletedView ? pay.deleted_payment_id : pay.id;
                 const displayId = isDeletedView ? pay.payment_id : pay.id;
-                const canExpand = pay.party_type !== "partner";
+                const canExpand =
+                  pay.party_type !== "partner" && !pay.isSettlement;
                 const isExpanded = expandedRows[rowId];
                 const allocations = isDeletedView
                   ? pay.allocations
@@ -519,12 +543,16 @@ const PaymentList = () => {
 
                         <div
                           className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
-                            isIncome
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-red-100 text-red-600"
+                            pay.isSettlement
+                              ? "bg-violet-100 text-violet-700"
+                              : isIncome
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-red-100 text-red-600"
                           }`}
                         >
-                          {isIncome ? (
+                          {pay.isSettlement ? (
+                            <ArrowLeftRight size={19} />
+                          ) : isIncome ? (
                             <TrendingUp size={19} />
                           ) : (
                             <TrendingDown size={19} />
@@ -577,10 +605,14 @@ const PaymentList = () => {
                       <div className="shrink-0 text-end lg:w-44">
                         <div
                           className={`text-lg font-black tabular-nums ${
-                            isIncome ? "text-emerald-700" : "text-red-600"
+                            pay.isSettlement
+                              ? "text-violet-700"
+                              : isIncome
+                                ? "text-emerald-700"
+                                : "text-red-600"
                           }`}
                         >
-                          {isIncome ? "+" : "-"}
+                          {pay.isSettlement ? "" : isIncome ? "+" : "-"}
                           {formatMoney(pay.amount, primaryCurrency)}
                         </div>
                         {hasFundCurrencyDiff && (
@@ -618,19 +650,26 @@ const PaymentList = () => {
                                 key: "view",
                                 icon: <Eye size={14} />,
                                 label: t("common.view"),
-                                onClick: () => navigate(`/payments/${pay.id}`),
+                                onClick: () =>
+                                  navigate(
+                                    pay.isSettlement
+                                      ? `/payments/${pay.id}`
+                                      : `/payments/${pay.id}`,
+                                  ),
                               },
                               {
                                 key: "savePdf",
                                 icon: <Download size={14} />,
                                 label: t("common.savePdf"),
                                 onClick: () => handleSavePdf(pay.id),
+                                visible: !pay.isSettlement,
                               },
                               {
                                 key: "print",
                                 icon: <Printer size={14} />,
                                 label: t("common.print"),
                                 onClick: () => handlePrint(pay.id),
+                                visible: !pay.isSettlement,
                               },
                               {
                                 key: "delete",
@@ -723,14 +762,39 @@ const PaymentList = () => {
         open={Boolean(deletePaymentId)}
         onClose={() => setDeletePaymentId(null)}
         onConfirm={async () => {
-          if (deletePaymentId) {
+          if (!deletePaymentId) return;
+          if (deletePaymentId.isSettlement) {
+            const res = await window.api.deleteSettlement(
+              deletePaymentId.settlement_id,
+              undefined,
+            );
+            if (!res?.success) {
+              toast.error(
+                t(`errors.${res?.error}`, { defaultValue: res?.error }),
+              );
+            } else {
+              await refetchActive();
+            }
+          } else {
             await handleDeletePayment(deletePaymentId);
             await refetchDeleted();
-            setDeletePaymentId(null);
           }
+          setDeletePaymentId(null);
         }}
-        title={t("deleteModal.paymentTitle")}
-        message={t("deleteModal.paymentMessage")}
+
+        title={
+          deletePaymentId?.isSettlement
+            ? t("deleteModal.settlementTitle", "Delete settlement?")
+            : t("deleteModal.paymentTitle")
+        }
+        message={
+          deletePaymentId?.isSettlement
+            ? t(
+                "deleteModal.settlementMessage",
+                "This reopens the documents that were settled.",
+              )
+            : t("deleteModal.paymentMessage")
+        }
       />
     </div>
   );

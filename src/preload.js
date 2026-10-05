@@ -87,6 +87,8 @@ contextBridge.exposeInMainWorld("api", {
   createSettlement: (data) => ipcRenderer.invoke("create-settlement", data),
   deleteSettlement: (id, deletedBy) =>
     ipcRenderer.invoke("delete-settlement", { id, deletedBy }),
+  getSettlement: (id) => ipcRenderer.invoke("get-settlement", id),
+  getSettlements: (params) => ipcRenderer.invoke("get-settlements", params),
 
   /* ================= PARTY HISTORY ================= */
   getPartyHistoryLedger: (params) =>

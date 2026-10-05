@@ -444,6 +444,7 @@ const useAddPayment = ({
       created_by: user.id,
       date: showDatePicker ? form.date : undefined,
     };
+    console.log("Submitting payment data:", paymentData);
 
     if (isDirectCollection && allocationTotal > 0) {
       paymentData.allocations = allocationLines

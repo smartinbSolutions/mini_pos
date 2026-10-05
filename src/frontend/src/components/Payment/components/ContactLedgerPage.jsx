@@ -490,11 +490,24 @@ export default function ContactLedgerPage() {
                                   </GoTo>
                                 )}
 
-                              {p.record_type === "payment" && p.payment_id && (
-                                <GoTo type="payment" id={p.payment_id}>
-                                  {t("screens.ledger.payment")} #{p.payment_id}
-                                </GoTo>
-                              )}
+                              {p.record_type === "payment" &&
+                                p.settlement_id && (
+                                  <GoTo type="settlements" id={p.settlement_id}>
+                                    {t(
+                                      "screens.payments.settlement",
+                                      "Settlement",
+                                    )}{" "}
+                                    #{p.settlement_id}
+                                  </GoTo>
+                                )}
+                              {p.record_type === "payment" &&
+                                !p.settlement_id &&
+                                p.payment_id && (
+                                  <GoTo type="payment" id={p.payment_id}>
+                                    {t("screens.ledger.payment")} #
+                                    {p.payment_id}
+                                  </GoTo>
+                                )}
 
                               {p.record_type === "payment" && p.fund_name && (
                                 <GoTo type="fund" id={p.payment_fund_id}>

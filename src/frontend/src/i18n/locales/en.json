@@ -924,6 +924,18 @@
       "fundRateShort": "Fund rate"
     },
     "payments": {
+      "documentCount": "{{count}} document",
+      "documentsClosedCount": "{{count}} documents closed, no cash moved",
+      "settlementExplainer": "This matched {{amount}} of what {{party}} owed you against {{amount}} of what you owed them. Their overall balance with you is unchanged — only these specific documents are now marked closed.",
+      "viewAccount": "View account",
+      "settlementId": "Settlement ID",
+      "settlement": "Settlement",
+      "settleAmount": "Amount to settle",
+      "nothingToSettle": "No open documents on both sides to settle.",
+      "settlementMismatch": "Both sides must add up to the same amount",
+      "confirmSettlement": "Confirm settlement",
+      "noOpenDocuments": "Nothing open on this side",
+      "openingBalanceLine": "Opening balance",
       "amountReceived": "Amount received",
       "amountPaid": "Amount paid",
       "exchangeRate": "Exchange rate",
@@ -1388,6 +1400,7 @@
     }
   },
   "navigation": {
+    "settlements": "Settlements",
     "manufacturing": "Manufacturing",
     "boms": "Bills of Materials",
     "manufacturingOrders": "Manufacturing Orders",
@@ -1506,6 +1519,8 @@
     "enterKey": "Enter your license key"
   },
   "deleteModal": {
+    "settlementTitle": "Delete settlement?",
+    "settlementMessage": "This reopens the documents that were settled.",
     "title": "Delete Item",
     "message": "Are you sure you want to delete this item?",
     "paymentMessage": "Delete Voucher",

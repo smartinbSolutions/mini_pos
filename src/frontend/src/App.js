@@ -56,7 +56,6 @@ import FundList from "./components/Cash/Fund/components/FundList";
 import FundMovementsPage from "./components/Cash/Fund/components/FundMovementsPage";
 import FundTransferList from "./components/Cash/Fund/components/FundTransferList";
 import PaymentList from "./components/Cash/Payment/components/paymentList";
-import PartyLedgerPage from "./components/Payment/components/PartyLedgerPage";
 import CurrencyList from "./components/Cash/Currency/components/CurrencyList";
 
 // Products
@@ -108,6 +107,9 @@ import ManufacturingOrderFormPage from "./components/Manufactoring/components/Ma
 import ManufacturingOrderDetailPage from "./components/Manufactoring/components/ManufacturingOrderDetailPage";
 import { LicenseProvider } from "./Global/LicenseContext";
 import ContactLedgerPage from "./components/Payment/components/ContactLedgerPage";
+import SettlementList from "./components/Cash/Settlement/components/SettlementList";
+import SettlementDocumentPage from "./components/Cash/Settlement/components/SettlementDocumentPage";
+import PartnerLedgerPage from "./components/Partners/components/PartnerLedgerPage";
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -325,12 +327,17 @@ export default function App() {
                 <Route path="fund/:id" element={<FundMovementsPage />} />
                 <Route path="fundTransfer" element={<FundTransferList />} />
                 <Route path="payments" element={<PaymentList />} />
-                <Route path="payment/:type/:id" element={<PartyLedgerPage />} />
+
                 <Route path="currency" element={<CurrencyList />} />
                 <Route path="/payments/:id" element={<PaymentDocumentPage />} />
                 <Route
                   path="/funds/transfers/:id"
                   element={<FundTransferDocumentPage />}
+                />
+                <Route path="/settlements" element={<SettlementList />} />
+                <Route
+                  path="/settlements/:id"
+                  element={<SettlementDocumentPage />}
                 />
 
                 {/* ================= PRODUCTS ================= */}
@@ -366,6 +373,10 @@ export default function App() {
 
                 {/* ================= PARTNERS ================= */}
                 <Route path="partners" element={<PartnersList />} />
+                <Route
+                  path="/payment/partner/:id"
+                  element={<PartnerLedgerPage />}
+                />
                 {/* ================= REPORTS ================= */}
                 <Route
                   path="/reports/profit-loss"

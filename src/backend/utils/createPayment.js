@@ -43,7 +43,7 @@ export default function createPayment(db, data) {
   const result = insertPayment.run({
     type: data.type,
     party_type: data.party_type,
-    party_id: data.party_id || null,
+    party_id: data.party_id || data.partyId || null,
     fund_id: data.fund_id,
     amount: Number(data.amount || 0),
     note: data.note || "",
@@ -55,7 +55,11 @@ export default function createPayment(db, data) {
     date: paymentDate,
     created_by: data.created_by,
     // Derived at the source — callers don't change. Null for partner/other.
-    contact_id: ensureLegacyContact(db, data.party_type, data.party_id),
+    contact_id: ensureLegacyContact(
+      db,
+      data.party_type,
+      data.party_id || data.partyId,
+    ),
   });
 
   if (data.invoice_id != null) {
@@ -90,9 +94,21 @@ export default function createPayment(db, data) {
       : "decrease";
 
   if (data.party_type !== "walk-in") {
+    // console.log("Creating party history for payment:", {
+    //   party_type: data.party_type,
+    //   party_id: data.party_id,
+    //   record_type: "payment",
+    //   invoice_id: data.invoice_id,
+    //   invoice_type: "payment",
+    //   amount: data.amount,
+    //   movement_type: movementType,
+    //   note: data.note,
+    //   payment_id: result.lastInsertRowid,
+    //   date: paymentDate,
+    // });
     createPartyHistory(db, {
       party_type: data.party_type,
-      party_id: data.party_id,
+      party_id: data.party_id || data.partyId,
       record_type: "payment",
       invoice_id: data.invoice_id,
       invoice_type: "payment",

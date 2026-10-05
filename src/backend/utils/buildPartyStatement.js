@@ -158,11 +158,11 @@ export default function buildPartyStatement(
         p.amount,
         p.date,
         p.note,
+        p.settlement_id,
 
         COALESCE(si.invoice_name, pi.invoice_name, ex.invoice_name) AS invoice_name,
 
         pay.fund_id AS payment_fund_id,
-        pay.settlement_id,
         pay.currency_code,
         pay.exchange_rate,
         pay.effective_rate,

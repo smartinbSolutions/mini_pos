@@ -367,6 +367,7 @@ export default function registerSalesInvoiceIPC() {
             amount: payment.amount,
           });
         } else if (isPaid) {
+          // console.log("Creating payment:", payment);
           insertPaymentId = createPayment(db, {
             type: payment.type,
             party_type: payment.party_type,

@@ -27,6 +27,8 @@ const ROUTES = {
   expense_category: (id) => `/expense-category/${id}`,
   payment: (id) => `/payments/${id}`,
   transfer: (id) => `/funds/transfers/${id}`,
+  settlement: (id) => `/settlements/${id}`,
+  contact: (id) => `/contact/${id}`,
 
   // product_movements.reference_type actual values
   products: (id) => `/products/${id}`,

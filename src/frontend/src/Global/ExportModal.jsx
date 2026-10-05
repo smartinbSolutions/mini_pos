@@ -8,7 +8,6 @@ import {
   AlertCircle,
   Loader2,
   Globe,
-  Link2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getDefaultDateRange } from "./dateDefaults";
@@ -27,9 +26,6 @@ const ExportModal = ({
   exporting = false,
   exportError = "",
   title,
-  // Optional — when set (party has a linked customer/supplier account),
-  // shows a toggle to export the combined statement.
-  linkedLabel,
 }) => {
   const { t, i18n } = useTranslation();
   const [startDate, setStartDate] = useState(
@@ -37,7 +33,6 @@ const ExportModal = ({
   );
   const [endDate, setEndDate] = useState(() => getDefaultDateRange().endDate);
   const [language, setLanguage] = useState(i18n.language?.slice(0, 2) || "en");
-  const [includeLinked, setIncludeLinked] = useState(false);
 
   if (!isOpen) return null;
 
@@ -46,7 +41,6 @@ const ExportModal = ({
       startDate,
       endDate,
       language,
-      includeLinked: Boolean(linkedLabel) && includeLinked,
     };
     if (format === "excel") onExportExcel?.(range);
     else onExportPdf?.(range);
@@ -114,19 +108,6 @@ const ExportModal = ({
             </select>
           </div>
         </div>
-
-        {linkedLabel && (
-          <label className="mb-5 flex cursor-pointer items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={includeLinked}
-              onChange={(e) => setIncludeLinked(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-[#4663ff] focus:ring-[#4663ff]/30"
-            />
-            <Link2 size={15} className="shrink-0 text-[#4663ff]" />
-            <span>{linkedLabel}</span>
-          </label>
-        )}
 
         {exportError && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">

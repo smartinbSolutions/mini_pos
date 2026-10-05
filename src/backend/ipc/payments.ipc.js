@@ -764,11 +764,6 @@ export default function registerPaymentIPC() {
       if (!payment) {
         throw new Error("PAYMENT_NOT_FOUND");
       }
-      // Half of a settlement — deleting it alone would unbalance the
-      // account. Settlements are deleted as a whole (delete-settlement).
-      if (payment.settlement_id) {
-        throw new Error("PAYMENT_PART_OF_SETTLEMENT");
-      }
 
       const history = db
         .prepare(

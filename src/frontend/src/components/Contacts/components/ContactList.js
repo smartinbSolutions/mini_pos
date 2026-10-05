@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Eye, Edit2, Trash2, HandCoins } from "lucide-react";
+import { Eye, Edit2, Trash2, HandCoins, ArrowLeftRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
 import useContactList from "../hooks/useContactList";
@@ -10,6 +10,7 @@ import ContactListHeader from "../../../Global/Contactlistheader";
 import ContactFormModal from "../../../Global/ContactFormModal";
 import Pagination from "../../../Global/Pagination";
 import TagList from "../../Tags/components/TagList";
+import SettlementModal from "../../Cash/Settlement/components/SettlementModal";
 
 // dir="ltr" font-mono tabular-nums wrapper, per the app's RTL-number convention.
 const Num = ({ children, className = "" }) => (
@@ -77,6 +78,7 @@ export default function ContactList({ role }) {
   const { t } = useTranslation();
   const { money } = usePrimaryCurrency();
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [settlementContact, setSettlementContact] = useState(null);
 
   const {
     legacyKey,
@@ -310,6 +312,16 @@ export default function ContactList({ role }) {
                             <HandCoins size={16} />
                           </button>
                           <button
+                            onClick={() => setSettlementContact(contact)}
+                            className="rounded-xl p-2 text-slate-500 transition hover:bg-violet-50 hover:text-violet-600"
+                            title={t(
+                              "screens.payments.settlement",
+                              "Settlement",
+                            )}
+                          >
+                            <ArrowLeftRight size={16} />
+                          </button>
+                          <button
                             onClick={() => startEdit(contact)}
                             className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
                             title={t("common.edit")}
@@ -366,6 +378,12 @@ export default function ContactList({ role }) {
         partyName={selectedContact?.name}
         mode={role}
         refetchList={refetch}
+      />
+      <SettlementModal
+        isOpen={Boolean(settlementContact)}
+        onClose={() => setSettlementContact(null)}
+        contactId={settlementContact?.id}
+        onSaved={refetch}
       />
 
       <DeleteModal

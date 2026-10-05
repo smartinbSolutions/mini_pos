@@ -3,8 +3,6 @@ import {
   proposeAllocation,
   validateAllocations,
 } from "./paymentAllocation";
-import createPayment from "./createPayment";
-import createPaymentAllocation from "./createPaymentAllocations";
 
 const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
@@ -36,34 +34,6 @@ export function previewSettlement(db, { contactId, amount }) {
   };
 }
 
-// Which legacy party each non-cash payment is recorded on.
-//   receipt (money "in", closes his side)  → customer side if he has one
-//   payment (money "out", closes your side) → supplier side if he has one
-// Either way the ledger lands correctly: the receipt is a credit row and
-// the payment a debit row of the same amount, so the balance is unchanged.
-function settlementParties(db, contactId) {
-  const contact = db
-    .prepare(
-      `SELECT legacy_customer_id, legacy_supplier_id FROM contacts WHERE id = ?`,
-    )
-    .get(contactId);
-  if (!contact) throw new Error("CONTACT_NOT_FOUND");
-
-  const asCustomer = contact.legacy_customer_id
-    ? { party_type: "customer", party_id: contact.legacy_customer_id }
-    : null;
-  const asSupplier = contact.legacy_supplier_id
-    ? { party_type: "supplier", party_id: contact.legacy_supplier_id }
-    : null;
-
-  return {
-    receipt: asCustomer || asSupplier,
-    payment: asSupplier || asCustomer,
-  };
-}
-
-// Save a confirmed settlement. Must run inside a transaction (the caller
-// wraps it) — any failure rolls back every row.
 export function createSettlement(
   db,
   { contactId, amount, receivable, payable, date, note, created_by },
@@ -113,85 +83,69 @@ export function createSettlement(
       created_by || null,
     ).lastInsertRowid;
 
-  const parties = settlementParties(db, contactId);
+  const insertAllocation = db.prepare(`
+    INSERT INTO payment_allocations (invoice_id, invoice_type, amount, settlement_id)
+    VALUES (?, ?, ?, ?)
+  `);
 
-  const sides = [
-    { type: "income", party: parties.receipt, lines: receivableLines },
-    { type: "expense", party: parties.payment, lines: payableLines },
-  ];
-
-  for (const side of sides) {
-    // Non-cash: fund_id NULL, no fund_history row. invoice_id NULL so
-    // createPayment doesn't auto-allocate — the confirmed lines do.
-    const paymentId = createPayment(db, {
-      type: side.type,
-      party_type: side.party.party_type,
-      party_id: side.party.party_id,
-      fund_id: null,
-      amount: value,
-      amount_fund_currency: 0,
-      exchange_rate: 1,
-      effective_rate: 1,
-      currency_code: null,
-      invoice_id: null,
-      invoice_type: "settlement",
-      note: note || null,
-      date: settlementDate,
-      created_by,
-    });
-
-    db.prepare(`UPDATE payments SET settlement_id = ? WHERE id = ?`).run(
+  for (const line of [...receivableLines, ...payableLines]) {
+    insertAllocation.run(
+      line.invoice_id,
+      line.invoice_type,
+      line.amount,
       settlementId,
-      paymentId,
     );
-
-    for (const line of side.lines) {
-      createPaymentAllocation(db, {
-        payment_id: paymentId,
-        invoice_id: line.invoice_id,
-        invoice_type: line.invoice_type,
-        amount: line.amount,
-      });
-    }
   }
+
+  // Ledger: a credit row (closes what he owes you) and a debit row
+  // (closes what you owe him) — net zero, so the balance is unchanged,
+  // exactly as the two payment rows used to produce.
+  const insertHistory = db.prepare(`
+    INSERT INTO party_history
+      (party_type, party_id, record_type, invoice_type, movement_type,
+       amount, date, note, contact_id, side, settlement_id)
+    VALUES
+      (?, NULL, 'payment', 'payment', ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  // party_type on a settlement row is nominal (contact_id is what the
+  // reads actually scope by) — 'customer' keeps the CHECK happy without
+  // implying a legacy id exists.
+  insertHistory.run(
+    "customer",
+    "decrease", // credit side, re-oriented like createPaymentHistory does
+    value,
+    settlementDate,
+    note || null,
+    contactId,
+    "credit",
+    settlementId,
+  );
+  insertHistory.run(
+    "customer",
+    "increase", // debit side
+    value,
+    settlementDate,
+    note || null,
+    contactId,
+    "debit",
+    settlementId,
+  );
 
   return settlementId;
 }
 
-// Delete a settlement and everything it wrote — the documents reopen.
-// Must run inside a transaction.
-export function deleteSettlement(db, { settlementId, deletedBy }) {
+export function deleteSettlement(db, { settlementId }) {
   const settlement = db
     .prepare(`SELECT * FROM settlements WHERE id = ?`)
     .get(settlementId);
   if (!settlement) throw new Error("SETTLEMENT_NOT_FOUND");
 
-  const payments = db
-    .prepare(`SELECT * FROM payments WHERE settlement_id = ?`)
-    .all(settlementId);
-
-  for (const payment of payments) {
-    const allocations = db
-      .prepare(`SELECT * FROM payment_allocations WHERE payment_id = ?`)
-      .all(payment.id);
-
-    // Same audit trail as a deleted payment.
-    db.prepare(
-      `INSERT INTO deleted_payments (payment_id, payload, deleted_by) VALUES (?, ?, ?)`,
-    ).run(
-      payment.id,
-      JSON.stringify({ payment, allocations, settlement }),
-      deletedBy ?? null,
-    );
-
-    db.prepare(`DELETE FROM payment_allocations WHERE payment_id = ?`).run(
-      payment.id,
-    );
-    db.prepare(`DELETE FROM party_history WHERE payment_id = ?`).run(
-      payment.id,
-    );
-    db.prepare(`DELETE FROM payments WHERE id = ?`).run(payment.id);
-  }
-
+  db.prepare(`DELETE FROM payment_allocations WHERE settlement_id = ?`).run(
+    settlementId,
+  );
+  db.prepare(`DELETE FROM party_history WHERE settlement_id = ?`).run(
+    settlementId,
+  );
   db.prepare(`DELETE FROM settlements WHERE id = ?`).run(settlementId);
 }

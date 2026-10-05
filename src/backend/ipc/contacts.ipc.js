@@ -457,6 +457,135 @@ export default function registerContactsIPC() {
     }
   });
 
+  // GET ONE SETTLEMENT — contact, both sides, and what each side closed.
+  // Reads straight from settlements + payment_allocations; no payments
+  // table involved, since settlements never create payment rows.
+  ipcMain.handle("get-settlement", (event, id) => {
+    try {
+      const settlement = db
+        .prepare(
+          `
+          SELECT
+            s.*,
+            ct.name AS contact_name,
+            u.full_name AS created_by_name
+          FROM settlements s
+          LEFT JOIN contacts ct ON ct.id = s.contact_id
+          LEFT JOIN users u ON u.id = s.created_by
+          WHERE s.id = ?
+          `,
+        )
+        .get(id);
+
+      if (!settlement) return { success: false, error: "SETTLEMENT_NOT_FOUND" };
+
+      // Both sides' allocations, each resolved to its invoice's name.
+      // receivable = sales / purchase_return (he owed you, now reduced)
+      // payable    = purchase / expense / sales_return (you owed him, now reduced)
+      const allocations = db
+        .prepare(
+          `
+          SELECT
+            pa.invoice_id,
+            pa.invoice_type,
+            pa.amount,
+            COALESCE(si.invoice_name, pi.invoice_name, ex.invoice_name, pr.invoice_name, sr.invoice_name) AS invoice_name
+          FROM payment_allocations pa
+          LEFT JOIN sales_invoices si
+            ON pa.invoice_type = 'sales' AND si.id = pa.invoice_id
+          LEFT JOIN purchase_invoices pi
+            ON pa.invoice_type = 'purchase' AND pi.id = pa.invoice_id
+          LEFT JOIN expense ex
+            ON pa.invoice_type = 'expense' AND ex.id = pa.invoice_id
+          LEFT JOIN purchase_returns pr
+            ON pa.invoice_type = 'purchase_return' AND pr.id = pa.invoice_id
+          LEFT JOIN sales_returns sr
+            ON pa.invoice_type = 'sales_return' AND sr.id = pa.invoice_id
+          WHERE pa.settlement_id = ?
+          ORDER BY pa.id ASC
+          `,
+        )
+        .all(id);
+
+      const RECEIVABLE_TYPES = ["sales", "purchase_return"];
+      const receivable = allocations.filter((a) =>
+        RECEIVABLE_TYPES.includes(a.invoice_type),
+      );
+      const payable = allocations.filter(
+        (a) => !RECEIVABLE_TYPES.includes(a.invoice_type),
+      );
+
+      return {
+        success: true,
+        data: { ...settlement, receivable, payable },
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
+  // LIST SETTLEMENTS — paginated, newest first. Optional contact filter.
+  ipcMain.handle("get-settlements", (event, params = {}) => {
+    try {
+      const page = Math.max(1, Number(params.page) || 1);
+      const limit = Math.max(1, Number(params.limit) || 20);
+      const offset = (page - 1) * limit;
+
+      const whereConditions = [];
+      const whereValues = [];
+
+      if (params.contactId) {
+        whereConditions.push("s.contact_id = ?");
+        whereValues.push(params.contactId);
+      }
+      if (params.search) {
+        whereConditions.push("ct.name LIKE ?");
+        whereValues.push(`%${params.search}%`);
+      }
+
+      const whereClause = whereConditions.length
+        ? `WHERE ${whereConditions.join(" AND ")}`
+        : "";
+
+      const rows = db
+        .prepare(
+          `
+          SELECT
+            s.*,
+            ct.name AS contact_name
+          FROM settlements s
+          LEFT JOIN contacts ct ON ct.id = s.contact_id
+          ${whereClause}
+          ORDER BY s.id DESC
+          LIMIT ? OFFSET ?
+          `,
+        )
+        .all(...whereValues, limit, offset);
+
+      const { total } = db
+        .prepare(
+          `
+          SELECT COUNT(*) AS total
+          FROM settlements s
+          LEFT JOIN contacts ct ON ct.id = s.contact_id
+          ${whereClause}
+          `,
+        )
+        .get(...whereValues);
+
+      return {
+        success: true,
+        data: rows,
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 1,
+      };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  });
+
   // PREVIEW SETTLEMENT — both sides of the account, before confirming.
   // Read-only: nothing is written.
   ipcMain.handle("preview-settlement", (event, params = {}) => {
@@ -500,9 +629,7 @@ export default function registerContactsIPC() {
   // DELETE SETTLEMENT — removes both halves together.
   ipcMain.handle("delete-settlement", (event, { id, deletedBy } = {}) => {
     try {
-      db.transaction(() =>
-        deleteSettlement(db, { settlementId: id, deletedBy }),
-      )();
+      db.transaction(() => deleteSettlement(db, { settlementId: id }))();
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };

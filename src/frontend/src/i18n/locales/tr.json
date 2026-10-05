@@ -900,6 +900,21 @@
       "fundRateShort": "Fon kuru"
     },
     "payments": {
+      "documentCount": "{{count}} belge",
+      "documentsClosedCount": "{{count}} belge kapatıldı, nakit hareketi olmadı",
+      "settlementExplainer": "Bu mahsup, {{party}}'nin size olan {{amount}} borcunu, sizin ona olan {{amount}} borcunuzla eşleştirdi. Genel bakiyesi değişmedi — yalnızca bu belgeler artık kapalı olarak işaretlendi.",
+      "viewAccount": "Hesabı görüntüle",
+      "settlementId": "Mahsup No",
+      "settlement": "Mahsup",
+      "noCashMoved": "Nakit hareketi yok",
+      "settlementDeleted": "Mahsup silindi",
+      "notFound": "Bulunamadı",
+      "settleAmount": "Mahsup edilecek tutar",
+      "nothingToSettle": "Her iki tarafta da mahsup edilecek açık belge yok.",
+      "settlementMismatch": "İki taraf da aynı tutara eşit olmalı",
+      "confirmSettlement": "Mahsubu onayla",
+      "noOpenDocuments": "Bu tarafta açık bir şey yok",
+      "openingBalanceLine": "Açılış bakiyesi",
       "amountReceived": "Alınan tutar",
       "amountPaid": "Ödenen tutar",
       "exchangeRate": "Döviz kuru",
@@ -1366,6 +1381,7 @@
     }
   },
   "navigation": {
+    "settlements": "Mahsuplar",
     "manufacturing": "Üretim",
     "boms": "Malzeme Listeleri",
     "manufacturingOrders": "Üretim Emirleri",
@@ -1485,6 +1501,8 @@
     }
   },
   "deleteModal": {
+    "settlementTitle": "Mahsup silinsin mi?",
+    "settlementMessage": "Bu, mahsup edilen belgeleri yeniden açar.",
     "title": "Öğeyi Sil",
     "message": "Bu öğeyi silmek istediğinizden emin misiniz?",
     "paymentMessage": "Makbuzu Sil",

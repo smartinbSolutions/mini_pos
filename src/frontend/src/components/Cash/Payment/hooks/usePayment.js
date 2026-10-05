@@ -73,7 +73,47 @@ const usePayment = () => {
         search: params.search || undefined,
       });
 
-      setPayments(res?.data || []);
+      // A settlement writes two payment rows (income + expense, fund_id
+      // NULL) sharing settlement_id. Collapse each pair into one entry
+      // for display — the list shows one settlement, not two payments.
+      const raw = res?.data || [];
+      const settlementIds = [
+        ...new Set(
+          raw.filter((p) => p.settlement_id).map((p) => p.settlement_id),
+        ),
+      ];
+      const bySettlement = new Map();
+      for (const id of settlementIds) bySettlement.set(id, []);
+      for (const p of raw) {
+        if (p.settlement_id) bySettlement.get(p.settlement_id).push(p);
+      }
+
+      const collapsed = [];
+      const seenSettlements = new Set();
+      for (const p of raw) {
+        if (!p.settlement_id) {
+          collapsed.push(p);
+          continue;
+        }
+        if (seenSettlements.has(p.settlement_id)) continue;
+        seenSettlements.add(p.settlement_id);
+
+        const pair = bySettlement.get(p.settlement_id);
+        const receipt = pair.find((x) => x.type === "income") || p;
+        const payment = pair.find((x) => x.type === "expense") || p;
+
+        collapsed.push({
+          ...p,
+          isSettlement: true,
+          settlement_id: p.settlement_id,
+          amount: Number(receipt.amount || payment.amount || 0),
+          receiptPartyName: receipt.party_name,
+          paymentPartyName: payment.party_name,
+          date: p.date,
+        });
+      }
+
+      setPayments(collapsed);
       setTotal(res?.total || 0);
       setTotalPages(res?.totalPages || 1);
       setSummary(

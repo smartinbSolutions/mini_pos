@@ -75,6 +75,7 @@ export default function Sidebar() {
       children: [
         { title: "navigation.funds", path: "/funds" },
         { title: "navigation.payment", path: "/payments" },
+        { title: "navigation.settlements", path: "/settlements" },
         { title: "navigation.transfers", path: "/fundTransfer" },
       ],
     },

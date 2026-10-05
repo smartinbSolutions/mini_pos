@@ -101,6 +101,62 @@ function ensureProductMovementsManufacturingType() {
 
   migrate();
 }
+// --- Migration: payment_allocations gains settlement_id + nullable
+// payment_id, so a settlement can write allocation rows directly without
+// a payment underneath it. Existing rows are untouched — all currently
+// have payment_id set, settlement_id stays NULL for them. ---
+function needsPaymentAllocationsSettlementMigration() {
+  const tableInfo = db
+    .prepare(
+      `SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'payment_allocations'`,
+    )
+    .get();
+
+  if (!tableInfo) return false;
+  return !tableInfo.sql.includes("settlement_id");
+}
+
+function ensurePaymentAllocationsSettlementSupport() {
+  if (!needsPaymentAllocationsSettlementMigration()) return;
+
+  const migrate = db.transaction(() => {
+    db.prepare(
+      `ALTER TABLE payment_allocations RENAME TO payment_allocations_old`,
+    ).run();
+
+    db.prepare(
+      `
+      CREATE TABLE payment_allocations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        payment_id INTEGER,
+        invoice_id INTEGER NOT NULL,
+        invoice_type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        settlement_id INTEGER REFERENCES settlements(id),
+        FOREIGN KEY (payment_id) REFERENCES payments(id),
+        CHECK (
+          (payment_id IS NOT NULL AND settlement_id IS NULL)
+          OR (payment_id IS NULL AND settlement_id IS NOT NULL)
+        )
+      )
+      `,
+    ).run();
+
+    db.prepare(
+      `
+      INSERT INTO payment_allocations
+        (id, payment_id, invoice_id, invoice_type, amount, settlement_id)
+      SELECT
+        id, payment_id, invoice_id, invoice_type, amount, NULL
+      FROM payment_allocations_old
+      `,
+    ).run();
+
+    db.prepare(`DROP TABLE payment_allocations_old`).run();
+  });
+
+  migrate();
+}
 
 /* ============================================================
    AUTH & USERS
@@ -991,11 +1047,16 @@ db.prepare(
   `
 CREATE TABLE IF NOT EXISTS payment_allocations (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    payment_id INTEGER NOT NULL,
+    payment_id INTEGER,
     invoice_id INTEGER NOT NULL,
     invoice_type TEXT NOT NULL,
     amount REAL NOT NULL,
-    FOREIGN KEY (payment_id) REFERENCES payments(id)
+    settlement_id INTEGER REFERENCES settlements(id),
+    FOREIGN KEY (payment_id) REFERENCES payments(id),
+    CHECK (
+      (payment_id IS NOT NULL AND settlement_id IS NULL)
+      OR (payment_id IS NULL AND settlement_id IS NOT NULL)
+    )
 );
 `,
 ).run();
@@ -1032,6 +1093,12 @@ CREATE TABLE IF NOT EXISTS party_history (
 )
 `,
 ).run();
+
+ensureColumn(
+  "party_history",
+  "settlement_id",
+  "INTEGER REFERENCES settlements(id)",
+);
 
 db.prepare(
   `
@@ -1248,6 +1315,7 @@ ensureColumn("payments", "settlement_id", "INTEGER REFERENCES settlements(id)");
 db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_payments_settlement ON payments(settlement_id)`,
 ).run();
+ensurePaymentAllocationsSettlementSupport();
 
 /* ============================================================
    INDEXES

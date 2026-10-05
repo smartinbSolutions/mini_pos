@@ -91,7 +91,7 @@ const EXPORT_LABELS = {
       made: "دفعة مدفوعة",
       deposit: "إيداع",
       withdrawal: "سحب",
-      settlement: "مقاصة",
+      settlement: "تسوية غير نقدية",
       opening_balance: "رصيد افتتاحي",
     },
   },
@@ -322,7 +322,6 @@ function fetchPartyHistoryLedger(
         -- payment-side info, resolved via payment_id
         pay.note AS payment_note,
         pay.fund_id AS payment_fund_id,
-        pay.settlement_id,
         f.name AS fund_name
 
       FROM ledger p
