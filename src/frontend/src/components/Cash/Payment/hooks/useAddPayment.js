@@ -8,6 +8,7 @@ import React, {
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
+import usePaymentAllocationPreview from "./usePaymentAllocationPreview";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -35,8 +36,6 @@ const useAddPayment = ({
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState("error");
-  const [allocationLines, setAllocationLines] = useState([]);
-  const [allocationLoading, setAllocationLoading] = useState(false);
   const [funds, setFunds] = useState([]);
   const { money } = usePrimaryCurrency();
   const { user } = useAuth();
@@ -180,7 +179,6 @@ const useAddPayment = ({
       });
 
       setMessage("");
-      setAllocationLines([]);
     }
   }, [
     isOpen,
@@ -263,44 +261,20 @@ const useAddPayment = ({
   const allocationDirection =
     partyType === "customer" ? "in" : partyType === "supplier" ? "out" : null;
 
-  const fetchAllocationPreview = useCallback(
-    async (amount) => {
-      if (
-        !isDirectCollection ||
-        !party ||
-        !allocationDirection ||
-        amount <= 0
-      ) {
-        setAllocationLines([]);
-        return;
-      }
-      setAllocationLoading(true);
-      try {
-        const res = await api.previewPaymentAllocation({
-          partyType,
-          partyId: party,
-          direction: allocationDirection,
-          amount,
-        });
-        setAllocationLines(res?.success ? res.lines : []);
-      } catch {
-        setAllocationLines([]);
-      } finally {
-        setAllocationLoading(false);
-      }
-    },
-    [api, isDirectCollection, party, partyType, allocationDirection],
-  );
-
-  const allocationTimer = useRef(null);
-  useEffect(() => {
-    if (!isDirectCollection) return;
-    clearTimeout(allocationTimer.current);
-    allocationTimer.current = setTimeout(() => {
-      fetchAllocationPreview(baseAmount);
-    }, 300);
-    return () => clearTimeout(allocationTimer.current);
-  }, [baseAmount, isDirectCollection, fetchAllocationPreview]);
+  const {
+    allocationLines,
+    allocationLoading,
+    allocationTotal,
+    allocationLeftover,
+    updateAllocationLine,
+  } = usePaymentAllocationPreview({
+    api,
+    active: isDirectCollection && Boolean(allocationDirection),
+    partyType,
+    partyId: party,
+    direction: allocationDirection,
+    amount: baseAmount,
+  });
 
   const handleFundAmountChange = (val) => {
     setForm((prev) => {
@@ -341,22 +315,6 @@ const useAddPayment = ({
   const handleCreditAmountChange = (val) => {
     setForm((prev) => ({ ...prev, amount_in_base: val }));
   };
-
-  const updateAllocationLine = (index, value) => {
-    setAllocationLines((prev) => {
-      const copy = [...prev];
-      const line = copy[index];
-      const capped = Math.max(0, Math.min(Number(value) || 0, line.remaining));
-      copy[index] = { ...line, allocate: capped };
-      return copy;
-    });
-  };
-
-  const allocationTotal = allocationLines.reduce(
-    (sum, l) => sum + (Number(l.allocate) || 0),
-    0,
-  );
-  const allocationLeftover = round2(baseAmount - allocationTotal);
 
   const toggleUseCredit = () => {
     setUseCredit((prev) => {
@@ -444,7 +402,6 @@ const useAddPayment = ({
       created_by: user.id,
       date: showDatePicker ? form.date : undefined,
     };
-    console.log("Submitting payment data:", paymentData);
 
     if (isDirectCollection && allocationTotal > 0) {
       paymentData.allocations = allocationLines

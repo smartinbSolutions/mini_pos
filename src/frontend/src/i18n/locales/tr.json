@@ -900,6 +900,12 @@
       "fundRateShort": "Fon kuru"
     },
     "payments": {
+      "paymentReceived": "{{fund}} hesabına ödeme alındı",
+      "paymentMade": "{{fund}} hesabından ödeme yapıldı",
+      "partnerDeposit": "{{fund}} hesabına yatırıldı",
+      "partnerWithdrawal": "{{fund}} hesabından çekildi",
+      "paymentIn": "Gelen Ödeme",
+      "paymentOut": "Giden Ödeme",
       "willCloseTitle": "Kapatılacak",
       "leftoverAsCredit": "Kalan (alacak olarak kalır)",
       "documentCount": "{{count}} belge",

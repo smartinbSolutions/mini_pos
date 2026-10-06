@@ -379,7 +379,7 @@ const ExpenseList = () => {
                         </td>
 
                         <td className="px-5 py-4 text-center font-bold text-slate-900">
-                          <GoTo id={exp.supplier_id} type={"supplier"}>
+                          <GoTo id={exp.contact_id} type={"supplier"}>
                             {exp.supplier_name || "-"}
                           </GoTo>
                         </td>

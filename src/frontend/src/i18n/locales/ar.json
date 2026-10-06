@@ -97,7 +97,7 @@
     "net": "الصافي",
     "netTotal": "الإجمالي الصافي",
     "date": "التاريخ",
-    "invoice": "الفاتورة",
+    "invoice": "فاتورة",
     "invoices": "الفواتير",
     "items": "العناصر",
     "summary": "الملخص",
@@ -1029,6 +1029,12 @@
       "deleted": "محذوف"
     },
     "ledger": {
+      "paymentReceived": "دفعة مستلمة في {{fund}}",
+      "paymentMade": "دفعة مدفوعة من {{fund}}",
+      "partnerDeposit": "إيداع في {{fund}}",
+      "partnerWithdrawal": "سحب من {{fund}}",
+      "paymentIn": "دفعة واردة",
+      "paymentOut": "دفعة صادرة",
       "totalSales": "إجمالي المبيعات",
       "totalPurchases": "إجمالي المشتريات",
       "paymentSettlement": "تسوية غير نقدية (بدون نقد)",

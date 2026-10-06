@@ -1046,6 +1046,12 @@
       "deleted": "Deleted"
     },
     "ledger": {
+      "paymentReceived": "Payment received into {{fund}}",
+      "paymentMade": "Payment made from {{fund}}",
+      "partnerDeposit": "Deposit into {{fund}}",
+      "partnerWithdrawal": "Withdrawal from {{fund}}",
+      "paymentIn": "Payment In",
+      "paymentOut": "Payment Out",
       "totalSales": "Total sales",
       "totalPurchases": "Total purchases",
       "paymentSettlement": "Settlement (no cash)",

@@ -1,6 +1,7 @@
 import createPaymentAllocation from "./createPaymentAllocations";
 import createPartyHistory from "./createPaymentHistory";
 import { ensureLegacyContact } from "./contacts";
+import { buildDefaultPaymentNote } from "./helpers";
 
 export default function createPayment(db, data) {
   const insertPayment = db.prepare(`
@@ -39,7 +40,7 @@ export default function createPayment(db, data) {
   `);
 
   const paymentDate = data.date;
-
+  console.log(data, "data");
   const result = insertPayment.run({
     type: data.type,
     party_type: data.party_type,
@@ -94,18 +95,18 @@ export default function createPayment(db, data) {
       : "decrease";
 
   if (data.party_type !== "walk-in") {
-    // console.log("Creating party history for payment:", {
-    //   party_type: data.party_type,
-    //   party_id: data.party_id,
-    //   record_type: "payment",
-    //   invoice_id: data.invoice_id,
-    //   invoice_type: "payment",
-    //   amount: data.amount,
-    //   movement_type: movementType,
-    //   note: data.note,
-    //   payment_id: result.lastInsertRowid,
-    //   date: paymentDate,
-    // });
+    console.log("Creating party history for payment:", {
+      party_type: data.party_type,
+      party_id: data.party_id,
+      record_type: "payment",
+      invoice_id: data.invoice_id,
+      invoice_type: "payment",
+      amount: data.amount,
+      movement_type: movementType,
+      note: data.note,
+      payment_id: result.lastInsertRowid,
+      date: paymentDate,
+    });
     createPartyHistory(db, {
       party_type: data.party_type,
       party_id: data.party_id || data.partyId,
@@ -114,7 +115,13 @@ export default function createPayment(db, data) {
       invoice_type: "payment",
       amount: data.amount,
       movement_type: movementType,
-      note: data.note,
+      note:
+        data.note ||
+        buildDefaultPaymentNote(
+          db,
+          isReverse ? "refund" : "payment",
+          result.lastInsertRowid,
+        ),
       payment_id: result.lastInsertRowid,
       date: paymentDate,
     });

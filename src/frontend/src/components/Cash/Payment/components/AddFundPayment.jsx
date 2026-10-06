@@ -14,6 +14,7 @@ import { formatMoney } from "../../../../Global/FormatNumber";
 import useAddFundPayment from "../hooks/useAddFundPayment";
 import NumberInput from "../../../../Global/NumberInput";
 import SearchableSelect from "../../../../Global/SearchableSelect";
+import AllocationPreviewCard from "./AllocationPreviewCard";
 
 // Defined outside the component so its reference is stable — SearchableSelect
 // lists getOptionLabel in its effect deps.
@@ -54,6 +55,11 @@ export default function AddFundPayment({
     submit,
     money,
     t,
+
+    allocationLines,
+    allocationLoading,
+    allocationLeftover,
+    updateAllocationLine,
   } = useAddFundPayment({
     isOpen,
     onClose,
@@ -314,6 +320,18 @@ export default function AddFundPayment({
           </div>
 
           {amountSection}
+
+          {baseAmount > 0 &&
+            (allocationLoading || allocationLines.length > 0) && (
+              <AllocationPreviewCard
+                t={t}
+                money={money}
+                allocationLoading={allocationLoading}
+                allocationLines={allocationLines}
+                allocationLeftover={allocationLeftover}
+                updateAllocationLine={updateAllocationLine}
+              />
+            )}
 
           <div>
             <label className="text-sm font-medium text-gray-600">

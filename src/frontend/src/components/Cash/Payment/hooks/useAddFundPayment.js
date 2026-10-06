@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
 import { formatMoney } from "../../../../Global/FormatNumber";
+import usePaymentAllocationPreview from "./usePaymentAllocationPreview";
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -263,6 +264,31 @@ const useAddFundPayment = ({
     }
   }, [autoNote, noteEdited]);
 
+  // Only the "normal" direction for each party type closes open documents —
+  // a customer paying you (in), or you paying a supplier (out). Partner has
+  // no invoices to close. A reversed movement (e.g. refunding a customer
+  // via cash-out) isn't a closing event, so no preview is fetched for it.
+  const allocationDirection =
+    (partyType === "customer" && mode === "in") ||
+    (partyType === "supplier" && mode === "out")
+      ? mode
+      : null;
+
+  const {
+    allocationLines,
+    allocationLoading,
+    allocationTotal,
+    allocationLeftover,
+    updateAllocationLine,
+  } = usePaymentAllocationPreview({
+    api,
+    active: Boolean(form.party_id) && Boolean(allocationDirection),
+    partyType,
+    partyId: form.party_id ? Number(form.party_id) : null,
+    direction: allocationDirection,
+    amount: baseAmount,
+  });
+
   const submit = async () => {
     if (!form.fund_id) {
       showError(t("screens.payments.please_select_fund_first"));
@@ -282,6 +308,15 @@ const useAddFundPayment = ({
       showError(t("screens.payments.please_enter_valid_amount"));
       return;
     }
+    if (allocationLeftover < -0.005) {
+      showError(
+        t(
+          "screens.payments.allocationExceedsAmount",
+          "The allocated amounts add up to more than the payment.",
+        ),
+      );
+      return;
+    }
 
     const paymentData = {
       type: mode === "in" ? "income" : "expense",
@@ -298,6 +333,16 @@ const useAddFundPayment = ({
       mode: partyType,
       created_by: user.id,
     };
+
+    if (allocationTotal > 0) {
+      paymentData.allocations = allocationLines
+        .filter((l) => Number(l.allocate) > 0)
+        .map((l) => ({
+          invoice_type: l.invoice_type,
+          invoice_id: l.invoice_id,
+          amount: Number(l.allocate),
+        }));
+    }
 
     setLoading(true);
     setMessage("");
@@ -356,6 +401,11 @@ const useAddFundPayment = ({
     submit,
     money,
     t,
+
+    allocationLines,
+    allocationLoading,
+    allocationLeftover,
+    updateAllocationLine,
   };
 };
 

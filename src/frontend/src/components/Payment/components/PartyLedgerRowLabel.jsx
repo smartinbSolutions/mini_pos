@@ -17,9 +17,9 @@ export default function partyLedgerRowLabel({
   const fund = row.fund_name || t("ui.fund", "Fund");
 
   if (row.record_type === "opening_balance") {
-    const isPositive = row.movement_type === "increase";
+    const theyOweYou = row.movement_type === "increase";
 
-    return isPositive
+    return !theyOweYou
       ? t("screens.ledger.openingBalancePositiveFor", {
           party: partyName,
           amount: formattedAmount,

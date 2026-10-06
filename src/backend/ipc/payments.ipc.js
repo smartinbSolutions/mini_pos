@@ -105,7 +105,7 @@ export default function registerPaymentIPC() {
       const dateOnly = (data.date || new Date().toISOString()).slice(0, 10);
       const time = new Date().toTimeString().slice(0, 8);
       const paymentDate = `${dateOnly} ${time}`;
-
+      console.log("data from Ipc", data);
       const transaction = db.transaction(() => {
         const result = createPayment(db, {
           type: data.type,

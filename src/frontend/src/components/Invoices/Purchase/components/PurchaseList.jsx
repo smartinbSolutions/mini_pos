@@ -349,7 +349,7 @@ const PurchaseList = () => {
                       inv.total_discount_value ??
                         itemDiscount + invoiceDiscount,
                     );
-                    console.log(inv);
+
                     return (
                       <tr
                         key={inv.id}
@@ -545,7 +545,7 @@ const PurchaseList = () => {
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={selecteInvoice}
-        party={selecteInvoice?.supplier_id}
+        party={selecteInvoice?.contact_id}
         partyName={selecteInvoice?.supplier_name}
         mode="purchase"
         refetchList={refetch}

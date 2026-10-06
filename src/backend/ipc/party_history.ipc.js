@@ -273,6 +273,11 @@ function fetchPartyHistoryLedger(
     : "p.movement_type = 'increase'";
   const signedAmount = `CASE WHEN ${increaseCond} THEN p.amount ELSE -p.amount END`;
 
+  const cashInCond = contactId
+    ? "p.side = 'credit'"
+    : `((p.party_type = 'customer' AND p.movement_type = 'decrease')
+        OR (p.party_type = 'supplier' AND p.movement_type = 'increase'))`;
+
   const dateConditions = [];
   const dateValues = [];
 
@@ -383,7 +388,14 @@ function fetchPartyHistoryLedger(
         COALESCE(SUM(CASE WHEN p.invoice_type = 'sales_return' THEN p.amount ELSE 0 END), 0) AS sales_returns_total,
         COALESCE(SUM(CASE WHEN p.invoice_type IN ('purchase','expense') THEN p.amount ELSE 0 END), 0) AS purchases_total,
         COALESCE(SUM(CASE WHEN p.invoice_type = 'purchase_return' THEN p.amount ELSE 0 END), 0) AS purchase_returns_total,
-        COALESCE(SUM(CASE WHEN p.record_type = 'opening_balance' THEN ${signedAmount} ELSE 0 END), 0) AS opening_balance
+        COALESCE(SUM(CASE WHEN p.record_type = 'opening_balance' THEN ${signedAmount} ELSE 0 END), 0) AS opening_balance,
+        COALESCE(SUM(CASE WHEN p.record_type = 'payment' AND p.settlement_id IS NULL
+                           AND ${cashInCond} THEN p.amount ELSE 0 END), 0) AS payments_in_total,
+        COALESCE(SUM(CASE WHEN p.record_type = 'payment' AND p.settlement_id IS NULL
+                           AND NOT ${cashInCond} THEN p.amount ELSE 0 END), 0) AS payments_out_total,
+        -- a settlement writes one row per side with equal amounts; count one side
+        COALESCE(SUM(CASE WHEN p.settlement_id IS NOT NULL
+                           AND p.side = 'credit' THEN p.amount ELSE 0 END), 0) AS settlements_total
       FROM party_history p
       WHERE ${scope.clause}
         ${dateFilter}
@@ -415,6 +427,9 @@ function fetchPartyHistoryLedger(
       purchases_total: Number(summary?.purchases_total || 0),
       purchase_returns_total: Number(summary?.purchase_returns_total || 0),
       opening_balance: Number(summary?.opening_balance || 0),
+      payments_in_total: Number(summary?.payments_in_total || 0),
+      payments_out_total: Number(summary?.payments_out_total || 0),
+      settlements_total: Number(summary?.settlements_total || 0),
     },
   };
 }
