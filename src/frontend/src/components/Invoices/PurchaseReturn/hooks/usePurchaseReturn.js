@@ -201,7 +201,7 @@ export default function usePurchaseReturn() {
 
       const payload = {
         purchase_invoice_id: invoice.id,
-        supplier_id: invoice.supplier_id,
+        contact_id: invoice.contact_id || null,
         date: new Date().toISOString().slice(0, 10),
         description: note,
         created_by: user.id,

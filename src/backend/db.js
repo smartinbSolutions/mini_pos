@@ -2,7 +2,6 @@ const path = require("path");
 const fs = require("fs");
 const { app } = require("electron");
 const Database = require("better-sqlite3");
-import { syncContacts } from "./migrations/contactsSync";
 
 const userDataPath = app.getPath("userData");
 fs.mkdirSync(userDataPath, { recursive: true });
@@ -496,17 +495,6 @@ CREATE TABLE IF NOT EXISTS partners (
 ).run();
 
 ensureColumn("partners", "percentage", "REAL DEFAULT 0");
-ensureColumn(
-  "customers",
-  "linked_supplier_id",
-  "INTEGER REFERENCES suppliers(id) ON DELETE SET NULL",
-);
-
-// One-to-one: a supplier can be linked to at most one customer.
-db.prepare(
-  `CREATE UNIQUE INDEX IF NOT EXISTS idx_customers_linked_supplier
-   ON customers(linked_supplier_id) WHERE linked_supplier_id IS NOT NULL`,
-).run();
 
 /* ============================================================
    CURRENCY & FUNDS
@@ -1285,9 +1273,6 @@ db.prepare(
 db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_payments_contact ON payments(contact_id)`,
 ).run();
-
-// Phase 2 — non-destructive sync into contacts (runs until cutover).
-syncContacts(db, { dbPath });
 
 // Settlements (phase 6): closing documents on one side of a contact's
 // account against documents on the other side — no cash. Stored as two

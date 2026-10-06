@@ -225,7 +225,7 @@ export default function useSalesReturn() {
 
       const payload = {
         sales_invoice_id: invoice.id,
-        customer_id: invoice.customer_id || null,
+        contact_id: invoice.contact_id || null,
         date: new Date().toISOString().slice(0, 10),
         description: note,
         created_by: user.id,

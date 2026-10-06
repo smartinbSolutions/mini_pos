@@ -46,11 +46,11 @@ export default function PrintSalesByCustomer() {
 
   const totalInvoices = rows.reduce(
     (sum, r) => sum + Number(r.invoiceCount || 0),
-    0
+    0,
   );
   const totalPurchased = rows.reduce(
     (sum, r) => sum + Number(r.totalPurchased || 0),
-    0
+    0,
   );
 
   return (
@@ -121,7 +121,7 @@ export default function PrintSalesByCustomer() {
           <tbody>
             {rows.map((row) => (
               <tr
-                key={row.customer_id ?? row.name}
+                key={row.contact_id ?? row.name}
                 className="border-b border-[#E5E5E2]"
               >
                 <td className="p-2">{row.name}</td>

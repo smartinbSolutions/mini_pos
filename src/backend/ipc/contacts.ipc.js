@@ -46,7 +46,7 @@ function createLegacyRow(db, role, { name, phone, address }) {
     .prepare(
       `INSERT INTO ${ROLES[role].table} (name, phone, address) VALUES (?, ?, ?)`,
     )
-    .run(name, phone, address).lastInsertRowid;
+    .run(name, phone || null, address || null).lastInsertRowid;
 }
 
 // Anything on this side of the account (invoices, returns, payments,
@@ -347,7 +347,12 @@ export default function registerContactsIPC() {
           // Role kept → keep the legacy row's details in step.
           db.prepare(
             `UPDATE ${table} SET name = ?, phone = ?, address = ? WHERE id = ?`,
-          ).run(input.name, input.phone, input.address, legacyId);
+          ).run(
+            input.name,
+            input.phone || null,
+            input.address || null,
+            legacyId,
+          );
         } else if (!wanted && legacyId) {
           // Role removed → only when that side has nothing on it.
           if (roleInUse(db, contact.id, role)) {

@@ -231,15 +231,14 @@ export default function registerSalesInvoiceIPC() {
           .prepare(
             `
           INSERT INTO sales_invoices
-            (customer_id, invoice_name, description, channel, date,
+            ( invoice_name, description, channel, date,
              subtotal, discount, discount_rate,
              taxRate, taxValue,
              created_by, updated_by, net_total, contact_id)
-          VALUES (?, ?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, 'manual', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
-            customerId || null,
             data.invoice_name?.trim() || null,
             data.description?.trim() || null,
             fullDateTime,
@@ -566,8 +565,8 @@ export default function registerSalesInvoiceIPC() {
 
     FROM sales_invoices s
 
-    LEFT JOIN customers c
-      ON c.id = s.customer_id
+     LEFT JOIN contacts c
+      ON c.id = s.contact_id
 
     LEFT JOIN payment_allocations pa
       ON pa.invoice_id = s.id
@@ -687,7 +686,8 @@ export default function registerSalesInvoiceIPC() {
       END AS status
   
     FROM sales_invoices sa
-    LEFT JOIN customers c ON c.id = sa.customer_id
+    LEFT JOIN contacts c
+      ON c.id = sa.contact_id
   
     LEFT JOIN users creator
     ON creator.id = sa.created_by
@@ -1251,8 +1251,7 @@ export default function registerSalesInvoiceIPC() {
         db.prepare(
           `
         UPDATE sales_invoices
-        SET customer_id = ?,
-            invoice_name = ?,
+        SET invoice_name = ?,
             description = ?,
             date = ?,
             subtotal = ?,
@@ -1266,7 +1265,6 @@ export default function registerSalesInvoiceIPC() {
         WHERE id = ?
       `,
         ).run(
-          newCustomerId,
           invoiceName,
           data.description?.trim() || null,
           fullDateTime,
@@ -1666,16 +1664,15 @@ export default function registerSalesInvoiceIPC() {
             `
             INSERT INTO sales_invoices
             (
-              customer_id, invoice_name, description, channel, date,
+             invoice_name, description, channel, date,
               subtotal, discount, discount_rate,
               taxRate, taxValue,
               net_total, created_by, contact_id
             )
-            VALUES (?, ?, ?, 'pos', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, 'pos', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
-            customerId,
             data.invoice_name?.trim() || null,
             data.description?.trim() || null,
             fullDateTime,

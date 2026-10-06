@@ -157,15 +157,14 @@ export default function registerSalesQuotationsIPC() {
           .prepare(
             `
           INSERT INTO sales_quotations
-            (customer_id, quotation_name, description, status, date,
+            (quotation_name, description, status, date,
              subtotal, discount, discount_rate,
              taxRate, taxValue,
              created_by, updated_by, net_total, contact_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
-            data.customer_id || null,
             data.quotation_name?.trim() || null,
             data.description?.trim() || null,
             "draft",
@@ -473,8 +472,7 @@ export default function registerSalesQuotationsIPC() {
         db.prepare(
           `
           UPDATE sales_quotations
-          SET customer_id = ?,
-              quotation_name = ?,
+          SET quotation_name = ?,
               description = ?,
               status = ?,
               date = ?,
@@ -489,7 +487,6 @@ export default function registerSalesQuotationsIPC() {
           WHERE id = ?
           `,
         ).run(
-          data.customer_id || null,
           quotationName,
           data.description?.trim() || null,
           data.status || oldQuotation.status,
@@ -501,7 +498,8 @@ export default function registerSalesQuotationsIPC() {
           quotationTaxValueTotal,
           netTotal,
           data.updated_by,
-          ensureLegacyContact(db, "customer", data.customer_id),
+          data.contact_id ||
+            ensureLegacyContact(db, "customer", data.customer_id),
           data.id,
         );
       });
@@ -533,7 +531,7 @@ export default function registerSalesQuotationsIPC() {
       whereParams.push(params.dateTo);
     }
     if (params.customerId) {
-      whereConditions.push("q.customer_id = ?");
+      whereConditions.push("q.contact_id = ?");
       whereParams.push(params.customerId);
     }
     if (params.status) {
@@ -615,8 +613,8 @@ export default function registerSalesQuotationsIPC() {
   
       FROM sales_quotations q
   
-      LEFT JOIN customers c
-        ON c.id = q.customer_id
+      LEFT JOIN contacts ct
+        ON ct.id = q.contact_id
   
       LEFT JOIN users creator
         ON creator.id = q.created_by

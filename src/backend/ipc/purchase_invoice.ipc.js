@@ -192,7 +192,6 @@ export default function registerPurchaseInvoicesIPC() {
             `
             INSERT INTO purchase_invoices
             (
-              supplier_id,
               invoice_name,
               description,
               date,
@@ -205,11 +204,10 @@ export default function registerPurchaseInvoicesIPC() {
               created_by,
               contact_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
-            supplierId,
             data.invoice_name?.trim() || null,
             data.description?.trim() || null,
             fullDateTime,
@@ -435,7 +433,7 @@ export default function registerPurchaseInvoicesIPC() {
       whereParams.push(params.dateTo);
     }
     if (params.supplierId) {
-      whereConditions.push("p.supplier_id = ?");
+      whereConditions.push("p.contact_id = ?");
       whereParams.push(params.supplierId);
     }
     if (
@@ -487,8 +485,8 @@ export default function registerPurchaseInvoicesIPC() {
         (
           p.invoice_name LIKE ?
           OR CAST(p.id AS TEXT) = ?
-          OR p.supplier_id IN (
-            SELECT id FROM suppliers WHERE name LIKE ? OR phone LIKE ?
+          OR p.contact_id IN (
+            SELECT id FROM contacts WHERE name LIKE ? OR phone LIKE ?
           )
         )
       `);
@@ -556,8 +554,8 @@ export default function registerPurchaseInvoicesIPC() {
 
     FROM purchase_invoices p
 
-    LEFT JOIN suppliers s
-      ON s.id = p.supplier_id
+    LEFT JOIN contacts s
+      ON s.id = p.contact_id
 
     LEFT JOIN payment_allocations pa
       ON pa.invoice_id = p.id
@@ -676,7 +674,7 @@ export default function registerPurchaseInvoicesIPC() {
       END AS status
 
     FROM purchase_invoices pi
-    LEFT JOIN suppliers s ON s.id = pi.supplier_id
+    LEFT JOIN contacts s ON s.id = pi.contact_id
 
     LEFT JOIN users creator
     ON creator.id = pi.created_by
@@ -1197,14 +1195,13 @@ export default function registerPurchaseInvoicesIPC() {
         db.prepare(
           `
         UPDATE purchase_invoices
-        SET supplier_id = ?, invoice_name = ?, description = ?, date = ?,
+        SET invoice_name = ?, description = ?, date = ?,
             subtotal = ?, discount = ?, discount_rate = ?,
            taxRate = ?, taxValue = ?, net_total = ?, updated_by = ?,
             contact_id = ?
         WHERE id = ?
       `,
         ).run(
-          newSupplierId,
           invoiceName,
           data.description?.trim() || null,
           fullDateTime,

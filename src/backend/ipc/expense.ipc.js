@@ -172,14 +172,13 @@ export default function registerExpenseIPC() {
           .prepare(
             `
             INSERT INTO expense
-            (supplier_id, invoice_name, description, date,
+            (invoice_name, description, date,
              subtotal, discount, discount_rate, taxRate, taxValue,
              net_total, created_by, contact_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `,
           )
           .run(
-            supplierId,
             data.invoice_name?.trim() || null,
             data.description || null,
             fullDateTime,
@@ -341,9 +340,9 @@ export default function registerExpenseIPC() {
       whereValues.push(endDate);
     }
     if (supplier_id === "none") {
-      whereConditions.push("e.supplier_id IS NULL");
+      whereConditions.push("e.contact_id IS NULL");
     } else if (supplier_id) {
-      whereConditions.push("e.supplier_id = ?");
+      whereConditions.push("e.contact_id = ?");
       whereValues.push(supplier_id);
     }
     if (Array.isArray(params.taxIds) && params.taxIds.length) {
@@ -363,8 +362,8 @@ export default function registerExpenseIPC() {
           e.invoice_name LIKE ?
           OR e.description LIKE ?
           OR CAST(e.id AS TEXT) = ?
-          OR e.supplier_id IN (
-            SELECT id FROM suppliers WHERE name LIKE ? OR phone LIKE ?
+          OR e.contact_id IN (
+            SELECT id FROM contacts WHERE name LIKE ? OR phone LIKE ?
           )
         )
       `);
@@ -451,8 +450,8 @@ export default function registerExpenseIPC() {
     
         FROM expense e
     
-        LEFT JOIN suppliers s
-          ON s.id = e.supplier_id
+        LEFT JOIN contacts s
+          ON s.id = e.contact_id
     
         LEFT JOIN users creator
           ON creator.id = e.created_by
@@ -571,7 +570,7 @@ export default function registerExpenseIPC() {
           FROM expense e
           LEFT JOIN users creator ON creator.id = e.created_by
           LEFT JOIN users updater ON updater.id = e.updated_by
-          LEFT JOIN suppliers s ON s.id = e.supplier_id
+          LEFT JOIN contacts s ON s.id = e.contact_id
           LEFT JOIN (
             SELECT invoice_id, SUM(amount) AS paid_amount
             FROM payment_allocations
@@ -819,8 +818,7 @@ export default function registerExpenseIPC() {
         db.prepare(
           `
           UPDATE expense
-          SET supplier_id = ?,
-              invoice_name = ?,
+          SET invoice_name = ?,
               description = ?,
               date = ?,
               subtotal = ?,
@@ -834,7 +832,6 @@ export default function registerExpenseIPC() {
           WHERE id = ?
         `,
         ).run(
-          newSupplierId,
           invoiceName,
           data.description || null,
           fullDateTime,

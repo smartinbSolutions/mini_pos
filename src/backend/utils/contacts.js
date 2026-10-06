@@ -106,8 +106,8 @@ export function ensureContactRole(db, contactId, role) {
     .prepare(`INSERT INTO ${cfg.table} (name, phone, address) VALUES (?, ?, ?)`)
     .run(
       contact.name,
-      contact.phone || "",
-      contact.address || "",
+      contact.phone || null,
+      contact.address || null,
     ).lastInsertRowid;
 
   db.prepare(

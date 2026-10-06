@@ -9,7 +9,7 @@ import {
 } from "../utils/helpers";
 import db from "../db";
 import attachLatinNames from "../utils/attachLatinNames";
-import { ensureLegacyContact } from "../utils/contacts";
+import { ensureContactRole } from "../utils/contacts";
 
 export default function registerSalesReturnsIpc() {
   ipcMain.handle("create-sales-return", (event, data) => {
@@ -203,6 +203,11 @@ export default function registerSalesReturnsIpc() {
           }
         }
 
+        const contactId = data.contact_id || null;
+        const legacyCustomerId = contactId
+          ? ensureContactRole(db, contactId, "customer")
+          : null;
+
         // ---- Insert return header — tax column dropped ----
         const returnResult = db
           .prepare(
@@ -210,7 +215,6 @@ export default function registerSalesReturnsIpc() {
             INSERT INTO sales_returns
             (
               sales_invoice_id,
-              customer_id,
               channel,
               invoice_name,
               description,
@@ -224,12 +228,11 @@ export default function registerSalesReturnsIpc() {
               created_by,
              contact_id
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
             data.sales_invoice_id,
-            data.customer_id || null,
             channel,
             data.invoice_name || null,
             data.description || null,
@@ -241,7 +244,7 @@ export default function registerSalesReturnsIpc() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by,
-            ensureLegacyContact(db, "customer", data.customer_id),
+            contactId,
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -337,10 +340,10 @@ export default function registerSalesReturnsIpc() {
         }
 
         // ---- Party history ----
-        if (data.customer_id) {
+        if (legacyCustomerId) {
           createPartyHistory(db, {
             party_type: "customer",
-            party_id: data.customer_id,
+            party_id: legacyCustomerId,
             invoice_id: returnId,
             invoice_type: "sales_return",
             record_type: "return",
@@ -362,8 +365,8 @@ export default function registerSalesReturnsIpc() {
         for (const p of payments) {
           const paymentId = createPayment(db, {
             type: p.type || "expense",
-            party_type: data.customer_id ? "customer" : "walk-in",
-            party_id: data.customer_id || null,
+            party_type: legacyCustomerId ? "customer" : "walk-in",
+            party_id: legacyCustomerId,
             fund_id: p.fund_id,
             amount: p.amount,
             amount_fund_currency: p.amount_fund_currency,
@@ -434,7 +437,7 @@ export default function registerSalesReturnsIpc() {
         whereValues.push(dateTo);
       }
       if (customerId) {
-        whereConditions.push("sr.customer_id = ?");
+        whereConditions.push("sr.contact_id = ?");
         whereValues.push(customerId);
       }
       if (channel) {
@@ -458,8 +461,8 @@ export default function registerSalesReturnsIpc() {
             OR sr.sales_invoice_id IN (
               SELECT id FROM sales_invoices WHERE invoice_name LIKE ?
             )
-            OR sr.customer_id IN (
-              SELECT id FROM customers WHERE name LIKE ? OR phone LIKE ?
+            OR sr.contact_id IN (
+              SELECT id FROM contacts WHERE name LIKE ? OR phone LIKE ?
             )
           )
         `);
@@ -533,7 +536,7 @@ export default function registerSalesReturnsIpc() {
           END AS status
   
         FROM sales_returns sr
-        LEFT JOIN customers c ON c.id = sr.customer_id
+        LEFT JOIN contacts c ON c.id = sr.contact_id
         LEFT JOIN users creator ON creator.id = sr.created_by
         LEFT JOIN sales_invoices si ON si.id = sr.sales_invoice_id
         LEFT JOIN (
@@ -630,7 +633,7 @@ export default function registerSalesReturnsIpc() {
       END AS status
   
     FROM sales_returns sr
-    LEFT JOIN customers c ON c.id = sr.customer_id
+    LEFT JOIN contacts c ON c.id = sr.contact_id
     LEFT JOIN users creator ON creator.id = sr.created_by
     LEFT JOIN sales_invoices si ON si.id = sr.sales_invoice_id
     LEFT JOIN (

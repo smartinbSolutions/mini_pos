@@ -448,15 +448,15 @@ export function getSalesByCustomer(
     .prepare(
       `
         SELECT
-          si.customer_id,
+          si.contact_id,
           c.name AS name,
           COUNT(*) AS invoiceCount,
           COALESCE(SUM(si.net_total), 0) AS totalPurchased,
           COALESCE(SUM(si.net_total), 0) / COUNT(*) AS averageOrderValue
         FROM sales_invoices si
-        LEFT JOIN customers c ON c.id = si.customer_id
+        LEFT JOIN contacts c ON c.id = si.contact_id
         WHERE 1=1 ${invoiceDate.clause}
-        GROUP BY si.customer_id
+         GROUP BY si.contact_id
         ORDER BY totalPurchased DESC
         LIMIT ?
       `,

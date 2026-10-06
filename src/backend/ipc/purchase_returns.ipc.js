@@ -1,7 +1,7 @@
 const { ipcMain } = require("electron");
 import db from "../db";
 import attachLatinNames from "../utils/attachLatinNames";
-import { ensureLegacyContact } from "../utils/contacts";
+import { ensureContactRole } from "../utils/contacts";
 import createFundHistory from "../utils/createFundHistory";
 import createPayment from "../utils/createPayment";
 import createPartyHistory from "../utils/createPaymentHistory";
@@ -17,7 +17,7 @@ export default function registerPurchaseReturnIPC() {
     try {
       const transaction = db.transaction(() => {
         if (
-          !data.supplier_id ||
+          !data.contact_id ||
           !data.purchase_invoice_id ||
           !data.date ||
           !Array.isArray(data.items) ||
@@ -201,6 +201,9 @@ export default function registerPurchaseReturnIPC() {
           }
         }
 
+        const contactId = data.contact_id;
+        const legacySupplierId = ensureContactRole(db, contactId, "supplier");
+
         // ---- Insert return header — tax column dropped ----
         const returnResult = db
           .prepare(
@@ -208,7 +211,6 @@ export default function registerPurchaseReturnIPC() {
             INSERT INTO purchase_returns
             (
               purchase_invoice_id,
-              supplier_id,
               invoice_name,
               description,
               date,
@@ -221,12 +223,11 @@ export default function registerPurchaseReturnIPC() {
               created_by,
               contact_id
             )
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
           )
           .run(
             data.purchase_invoice_id,
-            data.supplier_id,
             data.invoice_name || null,
             data.description || null,
             fullDateTime,
@@ -237,7 +238,7 @@ export default function registerPurchaseReturnIPC() {
             invoiceTaxValueTotal,
             netTotal,
             data.created_by,
-            ensureLegacyContact(db, "supplier", data.supplier_id),
+            contactId,
           );
 
         const returnId = returnResult.lastInsertRowid;
@@ -337,7 +338,7 @@ export default function registerPurchaseReturnIPC() {
         // ---- Party history, refund (unchanged) ----
         createPartyHistory(db, {
           party_type: "supplier",
-          party_id: data.supplier_id,
+          party_id: legacySupplierId,
           invoice_id: returnId,
           invoice_type: "purchase_return",
           record_type: "return",
@@ -423,7 +424,7 @@ export default function registerPurchaseReturnIPC() {
       whereValues.push(dateTo);
     }
     if (supplierId) {
-      whereConditions.push("pr.supplier_id = ?");
+      whereConditions.push("pr.contact_id = ?");
       whereValues.push(supplierId);
     }
     if (minTotal !== undefined && minTotal !== "" && minTotal !== null) {
@@ -443,8 +444,8 @@ export default function registerPurchaseReturnIPC() {
           OR pr.purchase_invoice_id IN (
             SELECT id FROM purchase_invoices WHERE invoice_name LIKE ?
           )
-          OR pr.supplier_id IN (
-            SELECT id FROM suppliers WHERE name LIKE ? OR phone LIKE ?
+         OR pr.contact_id IN (
+            SELECT id FROM contacts WHERE name LIKE ? OR phone LIKE ?
           )
         )
       `);
@@ -537,8 +538,8 @@ export default function registerPurchaseReturnIPC() {
       LEFT JOIN users creator
         ON creator.id = pr.created_by
 
-      LEFT JOIN suppliers s
-        ON s.id = pr.supplier_id
+     LEFT JOIN contacts s
+        ON s.id = pr.contact_id
 
       LEFT JOIN (
         SELECT
@@ -636,8 +637,8 @@ export default function registerPurchaseReturnIPC() {
 
     FROM purchase_returns pr
 
-    LEFT JOIN suppliers s 
-      ON s.id = pr.supplier_id
+    LEFT JOIN contacts s 
+      ON s.id = pr.contact_id
 
     LEFT JOIN users creator
       ON creator.id = pr.created_by
