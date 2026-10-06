@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 
 const ROUTES = {
-  customer: (id) => `/payment/customer/${id}`,
-  supplier: (id) => `/payment/supplier/${id}`,
+  customer: (id) => `/contact/${id}`,
+  supplier: (id) => `/contact/${id}`,
   partner: (id) => `/payment/partner/${id}`,
   fund: (id) => `/fund/${id}`,
   sales: (id) => `/view-sales/${id}`,

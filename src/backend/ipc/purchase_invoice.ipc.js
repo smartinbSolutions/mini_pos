@@ -857,10 +857,22 @@ export default function registerPurchaseInvoicesIPC() {
       return { success: false, error: "CANNOT_MODIFY_INVOICE_WITH_RETURN" };
     }
 
-    const oldSupplierId = oldInvoice.supplier_id || null;
+    const hasPayment = db
+      .prepare(
+        `SELECT 1 FROM payment_allocations
+         WHERE invoice_id = ? AND invoice_type = 'purchase' LIMIT 1`,
+      )
+      .get(data.id);
+
+    if (hasPayment) {
+      return { success: false, error: "CANNOT_EDIT_PAID_INVOICE" };
+    }
 
     try {
       const transaction = db.transaction(() => {
+        const oldSupplierId = oldInvoice.contact_id
+          ? ensureContactRole(db, oldInvoice.contact_id, "supplier")
+          : oldInvoice.supplier_id || null;
         const newSupplierId = data.contact_id
           ? ensureContactRole(db, data.contact_id, "supplier")
           : data.supplier_id || null;

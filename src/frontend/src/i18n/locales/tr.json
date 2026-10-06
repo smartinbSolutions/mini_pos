@@ -900,6 +900,8 @@
       "fundRateShort": "Fon kuru"
     },
     "payments": {
+      "willCloseTitle": "Kapatılacak",
+      "leftoverAsCredit": "Kalan (alacak olarak kalır)",
       "documentCount": "{{count}} belge",
       "documentsClosedCount": "{{count}} belge kapatıldı, nakit hareketi olmadı",
       "settlementExplainer": "Bu mahsup, {{party}}'nin size olan {{amount}} borcunu, sizin ona olan {{amount}} borcunuzla eşleştirdi. Genel bakiyesi değişmedi — yalnızca bu belgeler artık kapalı olarak işaretlendi.",

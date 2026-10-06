@@ -924,6 +924,8 @@
       "fundRateShort": "Fund rate"
     },
     "payments": {
+      "willCloseTitle": "This will close",
+      "leftoverAsCredit": "Leftover (stays as credit)",
       "documentCount": "{{count}} document",
       "documentsClosedCount": "{{count}} documents closed, no cash moved",
       "settlementExplainer": "This matched {{amount}} of what {{party}} owed you against {{amount}} of what you owed them. Their overall balance with you is unchanged — only these specific documents are now marked closed.",

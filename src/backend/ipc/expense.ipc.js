@@ -681,7 +681,9 @@ export default function registerExpenseIPC() {
           throw new Error("CANNOT_EDIT_PAID_EXPENSE");
         }
 
-        const oldSupplierId = oldInvoice.supplier_id || null;
+        const oldSupplierId = oldInvoice.contact_id
+          ? ensureContactRole(db, oldInvoice.contact_id, "supplier")
+          : oldInvoice.supplier_id || null;
         const newSupplierId = data.contact_id
           ? ensureContactRole(db, data.contact_id, "supplier")
           : data.supplier_id || null;

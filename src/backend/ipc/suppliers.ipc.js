@@ -76,7 +76,6 @@ export default function registerSuppliersIPC() {
         s.phone,
         s.address,
         s.createdAt,
-        lc.id AS linked_customer_id,
         ct.id AS contact_id,
         ct.is_customer,
         ct.is_supplier,
@@ -84,8 +83,6 @@ export default function registerSuppliersIPC() {
         ROUND(COALESCE(SUM(CASE WHEN ph.side = 'debit' THEN ph.amount ELSE 0 END), 0), 2) AS total_paid,
         ROUND(COALESCE(SUM(CASE WHEN ph.side = 'credit' THEN ph.amount ELSE -ph.amount END), 0), 2) AS balance
       FROM suppliers s
-      LEFT JOIN customers lc
-        ON lc.linked_supplier_id = s.id
       LEFT JOIN contacts ct
         ON ct.legacy_supplier_id = s.id
       LEFT JOIN party_history ph
@@ -166,9 +163,6 @@ export default function registerSuppliersIPC() {
           `
       SELECT
         s.*,
-        lc.id AS linked_customer_id,
-        lc.name AS linked_customer_name,
-
         -- Supplier view of the contact's account: credit raises the balance
         -- (you owe him), debit lowers it.
         COALESCE(
@@ -193,9 +187,6 @@ export default function registerSuppliersIPC() {
         ) AS balance
 
       FROM suppliers s
-
-      LEFT JOIN customers lc
-        ON lc.linked_supplier_id = s.id
 
       LEFT JOIN contacts ct
         ON ct.legacy_supplier_id = s.id

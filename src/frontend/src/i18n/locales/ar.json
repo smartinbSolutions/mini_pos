@@ -905,6 +905,8 @@
       "fundRateShort": "سعر الصندوق"
     },
     "payments": {
+      "willCloseTitle": "سيتم إغلاق",
+      "leftoverAsCredit": "المتبقي (يبقى كرصيد دائن)",
       "documentCount": "{{count}} مستند",
       "documentsClosedCount": "تم إغلاق {{count}} مستند، دون تحرك أي أموال نقدية",
       "settlementExplainer": "طابقت هذه التسوية غير النقدية {{amount}} مما كان {{party}} مديناً لك به مقابل {{amount}} مما كنت مديناً له به. رصيده الإجمالي معك لم يتغير — فقط هذه المستندات أصبحت مغلقة الآن.",

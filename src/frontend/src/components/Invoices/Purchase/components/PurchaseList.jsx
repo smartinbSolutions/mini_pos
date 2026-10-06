@@ -349,7 +349,7 @@ const PurchaseList = () => {
                       inv.total_discount_value ??
                         itemDiscount + invoiceDiscount,
                     );
-
+                    console.log(inv);
                     return (
                       <tr
                         key={inv.id}
@@ -359,7 +359,7 @@ const PurchaseList = () => {
                           <InvoiceIdBadge id={inv.id} name={inv.invoice_name} />
                         </td>
                         <td className="px-4 py-3 font-bold text-slate-900 text-center">
-                          <GoTo type={"supplier"} id={inv?.supplier_id}>
+                          <GoTo type={"supplier"} id={inv?.contact_id}>
                             {" "}
                             {inv.supplier_name || "-"}
                           </GoTo>

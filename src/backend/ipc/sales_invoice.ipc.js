@@ -941,6 +941,17 @@ export default function registerSalesInvoiceIPC() {
       return { success: false, error: "ERROR ENTER DATA" };
     }
 
+    const existingPayment = db
+      .prepare(
+        `SELECT 1 FROM payment_allocations
+     WHERE invoice_id = ? AND invoice_type = 'sales' LIMIT 1`,
+      )
+      .get(data.id);
+
+    if (existingPayment) {
+      return { success: false, error: "CANNOT_EDIT_PAID_INVOICE" };
+    }
+
     const dateOnly = data.date.slice(0, 10);
     const time = new Date().toTimeString().slice(0, 8);
     const fullDateTime = `${dateOnly} ${time}`;
@@ -975,7 +986,9 @@ export default function registerSalesInvoiceIPC() {
           throw new Error("CANNOT_MODIFY_INVOICE_WITH_RETURN");
         }
 
-        const oldCustomerId = oldInvoice.customer_id || null;
+        const oldCustomerId = oldInvoice.contact_id
+          ? ensureContactRole(db, oldInvoice.contact_id, "customer")
+          : oldInvoice.customer_id || null;
         const newCustomerId = data.contact_id
           ? ensureContactRole(db, data.contact_id, "customer")
           : data.customer_id || null;
