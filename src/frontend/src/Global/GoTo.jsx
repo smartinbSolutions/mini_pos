@@ -7,6 +7,7 @@ import {
   ShoppingCart,
   CreditCard,
   BanknoteArrowDown,
+  ArrowUpRight,
   ArrowRightLeft,
   Receipt,
   Package,
@@ -55,13 +56,12 @@ const ICONS = {
 
 const VARIANT_STYLES = {
   solid: {
-    active: "bg-[#eef3ff] text-[#4663ff] hover:bg-[#4663ff]/15",
-    disabled: "bg-slate-100 text-slate-500",
+    active: "bg-slate-100/70 text-slate-600 hover:bg-slate-200/70",
+    disabled: "bg-slate-50 text-slate-400",
   },
   light: {
-    active:
-      "border border-slate-200 bg-transparent text-slate-600 hover:border-[#4663ff]/40 hover:bg-[#f6f8fd] hover:text-[#4663ff]",
-    disabled: "border border-slate-100 bg-transparent text-slate-400",
+    active: "bg-slate-100/70 text-slate-600 hover:bg-slate-200/70",
+    disabled: "bg-slate-50 text-slate-400",
   },
 };
 
@@ -79,7 +79,7 @@ export default function GoTo({
   if (!routeFn || !id) {
     return (
       <span
-        className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition ${styles.disabled} ${className}`}
+        className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold ${styles.disabled} ${className}`}
       >
         {Icon && <Icon size={11} />}
         {children}
@@ -90,10 +90,14 @@ export default function GoTo({
   return (
     <Link
       to={routeFn(id)}
-      className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold transition ${styles.active} ${className}`}
+      className={`group inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-semibold transition-colors ${styles.active} ${className}`}
     >
-      {Icon && <Icon size={11} />}
-      {children}
+      {Icon && <Icon size={11} className="shrink-0" />}
+      <span className="truncate">{children}</span>
+      <ArrowUpRight
+        size={10}
+        className="shrink-0 opacity-0 transition-opacity group-hover:opacity-60"
+      />
     </Link>
   );
 }

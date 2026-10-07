@@ -243,6 +243,19 @@ export default function registerPurchaseReturnIPC() {
 
         const returnId = returnResult.lastInsertRowid;
 
+        let invoiceName = data.invoice_name?.trim();
+        if (!invoiceName) {
+          invoiceName = buildDefaultReturnNote(
+            db,
+            "purchase_return",
+            returnId,
+            data.purchase_invoice_id,
+          );
+          db.prepare(
+            `UPDATE purchase_returns SET invoice_name = ? WHERE id = ?`,
+          ).run(invoiceName, returnId);
+        }
+
         // ---- Insert return-level tax rows ----
         const insertReturnTax = db.prepare(`
           INSERT INTO purchase_return_taxes

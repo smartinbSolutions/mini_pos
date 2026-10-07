@@ -5,11 +5,26 @@ import db from "../db";
 import { getPartyCredit, applyPartyCredit } from "../utils/partyCredit";
 import buildPartyStatement, {
   getPaymentKind,
+  round2,
 } from "../utils/buildPartyStatement";
 import { findLegacyContact } from "../utils/contacts";
 
 const EXPORT_LABELS = {
   en: {
+    supplierSide: "Supplier",
+    customerSide: "Customer",
+    openingShort: "Opening",
+    purchasesShort: "Purchases",
+    salesShort: "Sales",
+    purchaseReturnsShort: "Purchase return",
+    salesReturnsShort: "Sales return",
+    paymentsOutShort: "Payment Out",
+    paymentsInShort: "Payment In",
+    balanceShort: "Balance",
+    cashFlow: "Cash flow",
+    paymentsIn: "Payment In",
+    paymentsOut: "Payment Out",
+    settlements: "Settled (non-cash)",
     title: "Statement of Account",
     party: "Account",
     period: "Period",
@@ -55,6 +70,20 @@ const EXPORT_LABELS = {
     },
   },
   ar: {
+    supplierSide: "مورد",
+    customerSide: "عميل",
+    openingShort: "الرصيد الافتتاحي",
+    purchasesShort: "المشتريات",
+    salesShort: "المبيعات",
+    purchaseReturnsShort: "مرتجع مشتريات",
+    salesReturnsShort: "مرتجع مبيعات",
+    paymentsOutShort: "دفعة صادرة",
+    paymentsInShort: "دفعة واردة",
+    balanceShort: "الرصيد",
+    cashFlow: "التدفق النقدي",
+    paymentsIn: "دفعة واردة",
+    paymentsOut: "دفعة صادرة",
+    settlements: "تسوية (بدون نقد)",
     title: "كشف حساب",
     party: "الحساب",
     period: "الفترة",
@@ -96,6 +125,20 @@ const EXPORT_LABELS = {
     },
   },
   tr: {
+    supplierSide: "Tedarikçi",
+    customerSide: "Müşteri",
+    openingShort: "Açılış bakiyesi",
+    purchasesShort: "Alışlar",
+    salesShort: "Satışlar",
+    purchaseReturnsShort: "Alış iadesi",
+    salesReturnsShort: "Satış iadesi",
+    paymentsOutShort: "Giden ödeme",
+    paymentsInShort: "Gelen ödeme",
+    balanceShort: "Bakiye",
+    cashFlow: "Nakit akışı",
+    paymentsIn: "Gelen Ödeme",
+    paymentsOut: "Giden Ödeme",
+    settlements: "Mahsup (nakitsiz)",
     title: "Cari Hesap Ekstresi",
     party: "Cari",
     period: "Dönem",
@@ -141,6 +184,54 @@ const EXPORT_LABELS = {
     },
   },
 };
+
+function computeSideFormulas(statement) {
+  const rows = statement.rows;
+  const sum = (pred) =>
+    round2(rows.filter(pred).reduce((s, r) => s + (r.amount || 0), 0));
+
+  const openingPurchase = sum(
+    (r) => r.record_type === "opening_balance" && r.party_type === "supplier",
+  );
+  const openingSales = sum(
+    (r) => r.record_type === "opening_balance" && r.party_type === "customer",
+  );
+  const purchasesTotal = sum(
+    (r) =>
+      r.record_type === "invoice" &&
+      ["purchase", "expense"].includes(r.invoice_type),
+  );
+  const purchaseReturnsTotal = sum((r) => r.invoice_type === "purchase_return");
+  const salesTotal = sum((r) => r.invoice_type === "sales");
+  const salesReturnsTotal = sum((r) => r.invoice_type === "sales_return");
+
+  const paymentsIn = round2(statement.totals.paymentsIn || 0);
+  const paymentsOut = round2(statement.totals.paymentsOut || 0);
+
+  const purchaseSideBalance = round2(
+    openingPurchase + purchasesTotal - purchaseReturnsTotal - paymentsOut,
+  );
+  const salesSideBalance = round2(
+    openingSales + salesTotal - salesReturnsTotal - paymentsIn,
+  );
+
+  return {
+    purchaseSide: {
+      opening: openingPurchase,
+      main: purchasesTotal,
+      returns: purchaseReturnsTotal,
+      payments: paymentsOut,
+      balance: purchaseSideBalance,
+    },
+    salesSide: {
+      opening: openingSales,
+      main: salesTotal,
+      returns: salesReturnsTotal,
+      payments: paymentsIn,
+      balance: salesSideBalance,
+    },
+  };
+}
 
 const getLabels = (language) => EXPORT_LABELS[language] || EXPORT_LABELS.en;
 
@@ -206,6 +297,46 @@ const escapeHtml = (value) =>
       ],
   );
 
+const fmtMoneyExcel = (n) =>
+  Number(n || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const formulaRichText = (
+  roleLabel,
+  f,
+  mainLabel,
+  returnsLabel,
+  paymentsLabel,
+  L,
+) => {
+  const roleBold = { color: { argb: "FF1C2340" }, bold: true, size: 10.5 };
+  const dark = { color: { argb: "FF1C2340" }, bold: false, size: 10.5 };
+  const reduceColor = { color: { argb: "FFE11D48" }, bold: false, size: 10.5 };
+  const balColor = {
+    color: { argb: f.balance >= 0 ? "FF047857" : "FFE11D48" },
+    bold: true,
+    size: 10.5,
+  };
+
+  return {
+    richText: [
+      { text: `${roleLabel}   `, font: roleBold },
+      { text: `${L.openingShort} ${fmtMoneyExcel(f.opening)}    `, font: dark },
+      { text: `${mainLabel} ${fmtMoneyExcel(f.main)}    `, font: dark },
+      {
+        text: `${returnsLabel} ${fmtMoneyExcel(f.returns)}    `,
+        font: reduceColor,
+      },
+      {
+        text: `${paymentsLabel} ${fmtMoneyExcel(f.payments)}    `,
+        font: reduceColor,
+      },
+      { text: `${L.balanceShort} ${fmtMoneyExcel(f.balance)}`, font: balColor },
+    ],
+  };
+};
 const PARTY_TABLES = {
   customer: "customers",
   supplier: "suppliers",
@@ -517,23 +648,19 @@ export default function registerPartyHistoryIPC() {
 
         // Column layout — Account column only on the combined statement.
         const columns = [
-          { key: "date", header: L.date, width: 12 },
-          ...(isCombined
-            ? [{ key: "account", header: L.account, width: 12 }]
-            : []),
           { key: "type", header: L.type, width: 18 },
+          { key: "date", header: L.date, width: 12 },
+          { key: "description", header: L.description, width: 48 },
           { key: "document", header: L.document, width: 16 },
-          { key: "description", header: L.description, width: 36 },
           { key: "debit", header: L.debit, width: 14, money: true },
+          { key: "debitFx", header: L.fundAmount, width: 16 },
           { key: "credit", header: L.credit, width: 14, money: true },
-          { key: "fundAmount", header: L.fundAmount, width: 14, money: true },
-          { key: "currency", header: L.currency, width: 10 },
+          { key: "creditFx", header: L.fundAmount, width: 16 },
           { key: "balance", header: L.balance, width: 14, money: true },
-          { key: "side", header: "", width: 8 },
         ];
         const toRow = (values) => columns.map((c) => values[c.key] ?? null);
 
-        const HEADER_ROW = 6;
+        const HEADER_ROW = 9;
         const COLUMN_COUNT = columns.length;
         const MONEY_FORMAT = "#,##0.00";
 
@@ -550,25 +677,61 @@ export default function registerPartyHistoryIPC() {
         });
 
         // ---- Title block ----
-        const titleLines = [
-          {
-            text: isCombined ? L.combinedTitle : L.title,
-            font: { bold: true, size: 14 },
-          },
-          { text: `${L.party}: ${headerName}`, font: { bold: true } },
-          { text: `${L.period}: ${formatPeriod(L, statement.period)}` },
-          {
-            text: `${L.generatedOn}: ${formatExportDate(new Date())}`,
-            font: { color: { argb: "FF64748B" } },
-          },
-        ];
-        titleLines.forEach((line, i) => {
-          const rowNumber = i + 1;
+        // ---- Title block ----
+        const merge = (rowNumber, value, font) => {
           sheet.mergeCells(rowNumber, 1, rowNumber, COLUMN_COUNT);
           const cell = sheet.getCell(rowNumber, 1);
-          cell.value = line.text;
-          if (line.font) cell.font = line.font;
+          cell.value = value;
+          if (font) cell.font = font;
+          return cell;
+        };
+
+        merge(1, isCombined ? L.combinedTitle : L.title, {
+          bold: true,
+          size: 14,
         });
+        merge(2, `${L.party}: ${headerName}`, { bold: true });
+        merge(3, `${L.period}: ${formatPeriod(L, statement.period)}`);
+        merge(4, `${L.generatedOn}: ${formatExportDate(new Date())}`, {
+          color: { argb: "FF64748B" },
+        });
+
+        merge(
+          5,
+          `${L.closingBalance}: ${fmtMoneyExcel(Math.abs(statement.closing))} ${sideLabel(L, statement.closingSide)}`,
+          {
+            bold: true,
+            size: 13,
+            color: {
+              argb: statement.closingSide === "dr" ? "FF047857" : "FFE11D48",
+            },
+          },
+        );
+
+        const { purchaseSide, salesSide } = computeSideFormulas(statement);
+
+        merge(
+          6,
+          formulaRichText(
+            L.supplierSide,
+            purchaseSide,
+            L.purchasesShort,
+            L.purchaseReturnsShort,
+            L.paymentsOutShort,
+            L,
+          ),
+        );
+        merge(
+          7,
+          formulaRichText(
+            L.customerSide,
+            salesSide,
+            L.salesShort,
+            L.salesReturnsShort,
+            L.paymentsInShort,
+            L,
+          ),
+        );
 
         // ---- Column headings ----
         const header = sheet.getRow(HEADER_ROW);
@@ -598,17 +761,17 @@ export default function registerPartyHistoryIPC() {
         // ---- Movements ----
         statement.rows.forEach((r) => {
           const fund = getFundAmount(r);
+          const fxText = fund ? `${fmtMoney(fund.amount)} ${fund.unit}` : null;
           sheet.addRow(
             toRow({
-              date: formatExportDate(r.date),
-              account: L.accountTypes[r.party_type],
               type: formatType(L, r),
-              document: formatDocument(r),
+              date: formatExportDate(r.date),
               description: formatDescription(r),
+              document: formatDocument(r),
               debit: r.debit || null,
+              debitFx: r.debit ? fxText : null,
               credit: r.credit || null,
-              fundAmount: fund ? fund.amount : null,
-              currency: fund ? fund.unit : null,
+              creditFx: r.credit ? fxText : null,
               balance: Math.abs(r.balance),
               side: sideLabel(L, r.balance_side),
             }),
@@ -627,19 +790,6 @@ export default function registerPartyHistoryIPC() {
         totalsRow.eachCell({ includeEmpty: true }, (cell) => {
           cell.border = { top: { style: "thin" } };
         });
-
-        // Combined: each account's own closing, then the net.
-        if (isCombined) {
-          accounts.forEach((p) => {
-            sheet.addRow(
-              toRow({
-                description: accountLine(L, p),
-                balance: Math.abs(p.closing),
-                side: sideLabel(L, p.closingSide),
-              }),
-            );
-          });
-        }
 
         const closingRow = sheet.addRow(
           toRow({
@@ -689,15 +839,7 @@ export default function registerPartyHistoryIPC() {
     "export-party-history-pdf",
     async (
       event,
-      {
-        partyId,
-        partyType,
-        startDate,
-        endDate,
-        language,
-        partyName,
-        includeLinked,
-      },
+      { partyId, partyType, startDate, endDate, language, partyName },
     ) => {
       try {
         const L = getLabels(language);
@@ -722,123 +864,147 @@ export default function registerPartyHistoryIPC() {
 
         const title = isCombined ? L.combinedTitle : L.title;
 
-        // Cells before Debit: Date, [Account], Type, Document, Description
-        const labelSpan = isCombined ? 5 : 4;
-
-        const balanceCell = (value, side) =>
-          `${fmtMoney(Math.abs(value))} <span class="side">${escapeHtml(
-            sideLabel(L, side),
-          )}</span>`;
+        const balanceCell = (value) => fmtMoney(Math.abs(value));
 
         const broughtForwardHtml = statement.period.startDate
           ? `
           <tr class="bf">
-            <td colspan="${labelSpan}">${escapeHtml(L.broughtForward)}</td>
+             <td>${escapeHtml(L.broughtForward)}</td>
+            <td></td>
+            <td></td>
+            <td></td>
             <td class="num"></td>
             <td class="num"></td>
             <td class="num"></td>
-            <td class="num">${balanceCell(
-              statement.broughtForward,
-              statement.broughtForwardSide,
-            )}</td>
+            <td class="num"></td>
+           <td class="num">${balanceCell(statement.broughtForward)}</td>
           </tr>`
           : "";
 
         const rowsHtml = statement.rows
           .map((r) => {
             const fund = getFundAmount(r);
+            const fxText = fund
+              ? `${fmtMoney(fund.amount)} ${escapeHtml(fund.unit)}`
+              : "";
             return `
           <tr>
-            <td class="nowrap">${escapeHtml(formatExportDate(r.date))}</td>
-            ${
-              isCombined
-                ? `<td class="nowrap">${escapeHtml(L.accountTypes[r.party_type])}</td>`
-                : ""
-            }
             <td>${escapeHtml(formatType(L, r))}</td>
-            <td class="nowrap">${escapeHtml(formatDocument(r))}</td>
+            <td class="nowrap">${escapeHtml(formatExportDate(r.date))}</td>
             <td>${escapeHtml(formatDescription(r))}</td>
+             <td class="nowrap doc">${escapeHtml(formatDocument(r))}</td>
             <td class="num">${r.debit ? fmtMoney(r.debit) : ""}</td>
+            <td class="num">${r.debit ? fxText : ""}</td>
             <td class="num">${r.credit ? fmtMoney(r.credit) : ""}</td>
-            <td class="num">${
-              fund ? `${fmtMoney(fund.amount)} ${escapeHtml(fund.unit)}` : ""
-            }</td>
-            <td class="num">${balanceCell(r.balance, r.balance_side)}</td>
+            <td class="num">${r.credit ? fxText : ""}</td>
+           <td class="num">${balanceCell(r.balance)}</td>
           </tr>`;
           })
           .join("");
 
-        // Combined: each account's own closing above the net line.
-        const accountSummaryHtml = isCombined
-          ? accounts
-              .map(
-                (p) =>
-                  `<tr><td>${escapeHtml(accountLine(L, p))}</td><td class="num">${balanceCell(p.closing, p.closingSide)}</td></tr>`,
-              )
-              .join("")
-          : "";
-
         const closingLabel = isCombined ? L.netBalance : L.closingBalance;
+
+        const { purchaseSide, salesSide } = computeSideFormulas(statement);
+
+        const formulaRowHtml = (
+          roleLabel,
+          f,
+          mainLabel,
+          returnsLabel,
+          paymentsLabel,
+        ) => {
+          const balColor = f.balance >= 0 ? "#047857" : "#e11d48";
+          return `
+            <p class="formula">
+              <span class="role">${escapeHtml(roleLabel)}</span>
+              <span class="seg">${escapeHtml(L.openingShort)} ${fmtMoney(f.opening)}</span>
+              <span class="seg">${escapeHtml(mainLabel)} ${fmtMoney(f.main)}</span>
+              <span class="seg reduce">${escapeHtml(returnsLabel)} ${fmtMoney(f.returns)}</span>
+              <span class="seg reduce">${escapeHtml(paymentsLabel)} ${fmtMoney(f.payments)}</span>
+              <span class="seg" style="color:${balColor};font-weight:700;">${escapeHtml(L.balanceShort)} ${fmtMoney(f.balance)}</span>
+            </p>`;
+        };
+
+        const closingColor = statement.closing >= 0 ? "#047857" : "#e11d48";
 
         const html = `
         <html dir="${isRtl ? "rtl" : "ltr"}" lang="${escapeHtml(language || "en")}">
           <head>
             <meta charset="UTF-8" />
             <style>
-              @page { size: A4; margin: 14mm 12mm 16mm; }
+               @page { size: A4; margin: 10mm 8mm 14mm; }
               * { box-sizing: border-box; }
               body {
                 font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-                font-size: 10.5px;
+                font-size: 7.5px;
                 color: #1c2340;
                 margin: 0;
               }
               .head {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                gap: 24px;
                 padding-bottom: 12px;
                 border-bottom: 2px solid #1c2340;
               }
-              h1 { font-size: 18px; margin: 0 0 6px; }
-              .meta { margin: 2px 0; color: #475569; }
+              h1 { font-size: 15px; margin: 0 0 5px; }
+              .meta { margin: 1px 0; color: #475569; font-size: 9px; }
               .meta strong { color: #1c2340; }
-              .summary { border-collapse: collapse; min-width: 240px; }
-              .summary td { padding: 3px 0; }
-              .summary td.num { padding-inline-start: 16px; }
-              .summary tr.closing td {
-                border-top: 1px solid #1c2340;
+              .balance-line {
+                margin: 8px 0 3px;
+                font-size: 12px;
                 font-weight: 700;
-                padding-top: 5px;
+              }
+              .formula {
+                margin: 2px 0;
+                font-size: 8.5px;
+              }
+              .formula .role {
+                font-weight: 700;
+                margin-inline-end: 8px;
+              }
+              .formula .seg {
+                margin-inline-end: 10px;
+                color: #1c2340;
+              }
+              .formula .seg.reduce {
+                color: #e11d48;
               }
               table.lines {
                 width: 100%;
+                table-layout: fixed;
                 border-collapse: collapse;
-                margin-top: 14px;
+                margin-top: 10px;
+                font-size: 8px;
               }
               table.lines th {
                 background: #eef3ff;
                 font-weight: 700;
                 text-align: start;
-                padding: 6px 6px;
+                padding: 4px 3px;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
                 border-bottom: 1px solid #c7d2fe;
               }
-              table.lines td {
-                padding: 5px 6px;
-                border-bottom: 1px solid #e5e7eb;
-                vertical-align: top;
+             table.lines td {
+                padding: 3px 3px;
+                 border-bottom: 1px solid #e5e7eb;
+                 vertical-align: top;
+                overflow: hidden;
+                word-break: break-word;
+               }
+              table.lines td:not(.num) {
+                max-width: 0; /* forces fixed-layout cells to actually wrap/ellipsis instead of pushing table width */
               }
+          .doc { padding-inline-start: 4px; }
               thead { display: table-header-group; }
               tr { page-break-inside: avoid; }
               .num {
-                text-align: end;
+               
                 white-space: nowrap;
                 font-variant-numeric: tabular-nums;
               }
-              th.num { text-align: end; }
-              .nowrap { white-space: nowrap; }
-              .side { color: #64748b; font-size: 9px; margin-inline-start: 2px; }
+           
+           .nowrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+              .side { color: #64748b; font-size: 7.5px; margin-inline-start: 2px; }
               tr.bf td { font-style: italic; font-weight: 700; background: #f8fafc; }
               tfoot td { font-weight: 700; border-bottom: none; }
               tfoot tr.totals td { border-top: 1.5px solid #1c2340; }
@@ -847,38 +1013,42 @@ export default function registerPartyHistoryIPC() {
           </head>
           <body>
             <div class="head">
-              <div>
-                <h1>${escapeHtml(title)}</h1>
-                <p class="meta">${escapeHtml(L.party)}: <strong>${escapeHtml(headerName)}</strong></p>
-                <p class="meta">${escapeHtml(L.period)}: <strong>${escapeHtml(formatPeriod(L, statement.period))}</strong></p>
-                <p class="meta">${escapeHtml(L.generatedOn)}: ${escapeHtml(formatExportDate(new Date()))}</p>
-              </div>
+              <h1>${escapeHtml(title)}</h1>
+              <p class="meta">${escapeHtml(L.party)}: <strong>${escapeHtml(headerName)}</strong></p>
+              <p class="meta">${escapeHtml(L.period)}: <strong>${escapeHtml(formatPeriod(L, statement.period))}</strong></p>
+              <p class="meta">${escapeHtml(L.generatedOn)}: ${escapeHtml(formatExportDate(new Date()))}</p>
 
-              <table class="summary">
-                ${
-                  statement.period.startDate
-                    ? `<tr><td>${escapeHtml(L.broughtForward)}</td><td class="num">${balanceCell(statement.broughtForward, statement.broughtForwardSide)}</td></tr>`
-                    : ""
-                }
-                <tr><td>${escapeHtml(L.debit)}</td><td class="num">${fmtMoney(statement.totals.debit)}</td></tr>
-                <tr><td>${escapeHtml(L.credit)}</td><td class="num">${fmtMoney(statement.totals.credit)}</td></tr>
-                ${accountSummaryHtml}
-                <tr class="closing"><td>${escapeHtml(closingLabel)}</td><td class="num">${balanceCell(statement.closing, statement.closingSide)}</td></tr>
-              </table>
+              <p class="balance-line" style="color:${closingColor};">
+                ${escapeHtml(closingLabel)}: ${fmtMoney(Math.abs(statement.closing))} ${escapeHtml(sideLabel(L, statement.closingSide))}
+              </p>
+
+              ${formulaRowHtml(L.supplierSide, purchaseSide, L.purchasesShort, L.purchaseReturnsShort, L.paymentsOutShort)}
+              ${formulaRowHtml(L.customerSide, salesSide, L.salesShort, L.salesReturnsShort, L.paymentsInShort)}
             </div>
 
             <table class="lines">
+              <colgroup>
+                <col style="width:9%" />
+                <col style="width:9%" />
+                <col style="width:21%" />
+                <col style="width:12%" />
+                <col style="width:10%" />
+                <col style="width:10%" />
+                <col style="width:10%" />
+                <col style="width:10%" />
+                <col style="width:9%" />
+              </colgroup>
               <thead>
                 <tr>
-                  <th>${escapeHtml(L.date)}</th>
-                  ${isCombined ? `<th>${escapeHtml(L.account)}</th>` : ""}
-                  <th>${escapeHtml(L.type)}</th>
-                  <th>${escapeHtml(L.document)}</th>
-                  <th>${escapeHtml(L.description)}</th>
-                  <th class="num">${escapeHtml(L.debit)}</th>
-                  <th class="num">${escapeHtml(L.credit)}</th>
-                  <th class="num">${escapeHtml(L.fundAmount)}</th>
-                  <th class="num">${escapeHtml(L.balance)}</th>
+                 <th class="col-type">${escapeHtml(L.type)}</th>
+                  <th class="col-date">${escapeHtml(L.date)}</th>
+                  <th class="col-desc">${escapeHtml(L.description)}</th>
+                  <th class="col-doc">${escapeHtml(L.document)}</th>
+                  <th class="col-debit num">${escapeHtml(L.debit)}</th>
+                  <th class="col-dfx num">${escapeHtml(L.fundAmount)}</th>
+                  <th class="col-credit num">${escapeHtml(L.credit)}</th>
+                  <th class="col-cfx num">${escapeHtml(L.fundAmount)}</th>
+                  <th class="col-bal num">${escapeHtml(L.balance)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -887,18 +1057,26 @@ export default function registerPartyHistoryIPC() {
               </tbody>
               <tfoot>
                 <tr class="totals">
-                  <td colspan="${labelSpan}">${escapeHtml(L.totals)}</td>
+                  <td>${escapeHtml(L.totals)}</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                   <td class="num">${fmtMoney(statement.totals.debit)}</td>
+                  <td class="num"></td>
                   <td class="num">${fmtMoney(statement.totals.credit)}</td>
                   <td class="num"></td>
                   <td class="num"></td>
                 </tr>
                 <tr class="closing">
-                  <td colspan="${labelSpan}">${escapeHtml(closingLabel)}</td>
+                 <td>${escapeHtml(closingLabel)}</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
                   <td class="num"></td>
                   <td class="num"></td>
                   <td class="num"></td>
-                  <td class="num">${balanceCell(statement.closing, statement.closingSide)}</td>
+                  <td class="num"></td>
+                  <td class="num">${balanceCell(statement.closing)}</td>
                 </tr>
               </tfoot>
             </table>

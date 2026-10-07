@@ -13,7 +13,8 @@ import { findLegacyContact } from "./contacts";
 const SUPPORTED_TYPES = ["customer", "supplier", "partner"];
 const ACCOUNT_ORDER = { customer: 0, supplier: 1, partner: 2 };
 
-const round2 = (n) => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+export const round2 = (n) =>
+  Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 
 const partyKey = (partyType, partyId) => `${partyType}:${Number(partyId)}`;
 
@@ -213,6 +214,9 @@ export default function buildPartyStatement(
   let balance = broughtForward;
   let totalDebit = 0;
   let totalCredit = 0;
+  let paymentsIn = 0;
+  let paymentsOut = 0;
+  let settlements = 0;
 
   const rows = movements.map((m) => {
     const amount = round2(m.amount);
@@ -224,6 +228,17 @@ export default function buildPartyStatement(
     totalDebit += debit;
     totalCredit += credit;
     balance = round2(balance + debit - credit);
+
+    if (m.record_type === "payment") {
+      if (m.settlement_id) {
+        // one row per side with equal amounts; count one side only
+        if (m.side === "credit") settlements += amount;
+      } else if (m.side === "credit") {
+        paymentsIn += amount;
+      } else {
+        paymentsOut += amount;
+      }
+    }
 
     const account = accountFor(m.party_type, m.party_id);
     account.debit += debit;
@@ -242,6 +257,9 @@ export default function buildPartyStatement(
 
   totalDebit = round2(totalDebit);
   totalCredit = round2(totalCredit);
+  paymentsIn = round2(paymentsIn);
+  paymentsOut = round2(paymentsOut);
+  settlements = round2(settlements);
   const closing = round2(broughtForward + totalDebit - totalCredit);
 
   // Per-account closing — customer side first, then supplier, then partner.
@@ -268,7 +286,13 @@ export default function buildPartyStatement(
     broughtForward,
     broughtForwardSide: balanceSide(broughtForward),
     rows,
-    totals: { debit: totalDebit, credit: totalCredit },
+    totals: {
+      debit: totalDebit,
+      credit: totalCredit,
+      paymentsIn,
+      paymentsOut,
+      settlements,
+    },
     closing,
     closingSide: balanceSide(closing),
     parties: accountSummaries,

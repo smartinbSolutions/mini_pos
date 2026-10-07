@@ -404,7 +404,7 @@ export default function SalesReturnPage() {
         onClose={() => setRefundModalOpen(false)}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice.customer_id}
+        party={invoice.contact_id}
         partyName={invoice.customer_name || t("screens.pos.walkInCustomer")}
         mode="sales_return"
         onSubmit={handleRefundCollected}

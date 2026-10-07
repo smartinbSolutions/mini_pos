@@ -93,6 +93,10 @@ const useAddPayment = ({
   const [useCredit, setUseCredit] = useState(false);
   const [minDate, setMinDate] = useState(null);
 
+  const [collectionDirection, setCollectionDirection] = useState(
+    partyType === "supplier" ? "out" : "in",
+  );
+
   const showDatePicker = !isEmbeddedInCreation && !useCredit;
 
   const handleChange = (key, value) => {
@@ -177,7 +181,7 @@ const useAddPayment = ({
         partner_transaction_type: "income",
         date: invoice?.date ? invoice.date.slice(0, 10) : todayStr(),
       });
-
+      setCollectionDirection(partyType === "supplier" ? "out" : "in");
       setMessage("");
     }
   }, [
@@ -258,8 +262,15 @@ const useAddPayment = ({
     }));
   };
 
-  const allocationDirection =
-    partyType === "customer" ? "in" : partyType === "supplier" ? "out" : null;
+  const isReversibleCollection =
+    isDirectCollection && (isCustomer || isSupplier);
+  const allocationDirection = isReversibleCollection
+    ? collectionDirection
+    : partyType === "customer"
+      ? "in"
+      : partyType === "supplier"
+        ? "out"
+        : null;
 
   const {
     allocationLines,
@@ -378,8 +389,11 @@ const useAddPayment = ({
       }
     }
 
-    const paymentType =
-      isPurchase || isExpense || isSupplier || isSalesReturn
+    const paymentType = isReversibleCollection
+      ? collectionDirection === "in"
+        ? "income"
+        : "expense"
+      : isPurchase || isExpense || isSupplier || isSalesReturn
         ? "expense"
         : isSales || isCustomer || isPurchaseReturn
           ? "income"
@@ -501,6 +515,10 @@ const useAddPayment = ({
     allocationLoading,
     allocationLeftover,
     updateAllocationLine,
+
+    collectionDirection,
+    setCollectionDirection,
+    isReversibleCollection,
   };
 };
 

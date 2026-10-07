@@ -10,6 +10,7 @@ import {
   AlertCircle,
   TrendingUp,
   TrendingDown,
+  ArrowLeftRight,
 } from "lucide-react";
 
 import useFundHistory from "../hooks/useFundHistory";
@@ -20,6 +21,8 @@ import Pagination from "../../../../Global/Pagination";
 import ExportModal from "../../../../Global/ExportModal";
 import BackButton from "../../../../Global/BackButton";
 import fundHistoryRowLabel from "./fundHistoryRowLabel";
+import AddFundPayment from "../../Payment/components/AddFundPayment";
+import FundTransferModal from "./FundTransferModal";
 
 const FundMovementsPage = () => {
   const { t } = useTranslation();
@@ -50,6 +53,8 @@ const FundMovementsPage = () => {
   const finalBalance = history[0]?.running_balance || 0;
   const hasDateFilter = Boolean(dateRange.startDate || dateRange.endDate);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [paymentModal, setPaymentModal] = useState(null); // "in" | "out" | null
+  const [transferOpen, setTransferOpen] = useState(false);
 
   const panelClass =
     "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
@@ -86,6 +91,30 @@ const FundMovementsPage = () => {
                   {t("screens.funds.subtitle")}
                 </p>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPaymentModal("out")}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-600 transition hover:bg-red-100"
+              >
+                <ArrowUpRight size={16} />
+                {t("screens.ledger.paymentOut", "Payment Out")}
+              </button>
+              <button
+                onClick={() => setPaymentModal("in")}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+              >
+                <ArrowDownLeft size={16} />
+                {t("screens.ledger.paymentIn", "Payment In")}
+              </button>
+              <button
+                onClick={() => setTransferOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#dbe4ff] bg-white px-4 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+              >
+                <ArrowLeftRight size={16} />
+                {t("screens.funds.fund_transfer")}
+              </button>
             </div>
           </div>
 
@@ -249,7 +278,7 @@ const FundMovementsPage = () => {
                                 >
                                   {t(
                                     `screens.funds.transactionType.${item.transaction_type}`,
-                                    { defaultValue: item.transaction_type }
+                                    { defaultValue: item.transaction_type },
                                   )}{" "}
                                   #{item.transaction_id}
                                 </GoTo>
@@ -307,6 +336,28 @@ const FundMovementsPage = () => {
           />
         </section>
       </main>
+
+      {paymentModal && (
+        <AddFundPayment
+          isOpen={Boolean(paymentModal)}
+          onClose={() => setPaymentModal(null)}
+          mode={paymentModal}
+          initialFundId={id}
+          refetchList={() => {
+            // refresh this page's list after a payment is posted
+            setPage(1);
+          }}
+        />
+      )}
+
+      <FundTransferModal
+        isOpen={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        refetchList={() => {
+          setPage(1);
+        }}
+        lockedFromFundId={id}
+      />
 
       <ExportModal
         isOpen={showExportModal}

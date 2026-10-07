@@ -75,6 +75,10 @@ export default function AddPayment({
     allocationLoading,
     allocationLeftover,
     updateAllocationLine,
+
+    collectionDirection,
+    setCollectionDirection,
+    isReversibleCollection,
   } = useAddPayment({
     isOpen,
     onClose,
@@ -94,8 +98,8 @@ export default function AddPayment({
   const isOutflow =
     isPurchase ||
     isExpense ||
-    isSupplier ||
     isSalesReturn ||
+    (isReversibleCollection ? collectionDirection === "out" : isSupplier) ||
     (isPartner && form.partner_transaction_type === "expense");
 
   // Direction color stays semantic (red = out, green = in) — everything
@@ -122,10 +126,13 @@ export default function AddPayment({
     if (isPurchase) return t("screens.payments.purchasePayment");
     if (isExpense) return t("screens.payments.expensePayment");
     if (isSales) return t("screens.payments.salesPayment");
-    if (isCustomer) return t("screens.payments.customer_account_collection");
     if (isPurchaseReturn) return t("screens.payments.purchaseReturnPayment");
     if (isSalesReturn) return t("screens.payments.salesReturnPayment");
-    if (isSupplier) return t("screens.payments.supplier_account_collection");
+    if (isReversibleCollection) {
+      return collectionDirection === "in"
+        ? t("screens.ledger.paymentIn", "Payment In")
+        : t("screens.ledger.paymentOut", "Payment Out");
+    }
     if (isPartner) {
       return form.partner_transaction_type === "income"
         ? t("screens.payments.partner_deposit")
@@ -394,6 +401,36 @@ export default function AddPayment({
               </div>
             )}
           </div>
+
+          {/* CUSTOMER/SUPPLIER: received vs paid */}
+          {isReversibleCollection && (
+            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-[#f6f8fd] p-1.5">
+              <button
+                type="button"
+                onClick={() => setCollectionDirection("in")}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition ${
+                  collectionDirection === "in"
+                    ? "bg-white text-emerald-600 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <ArrowDownLeft size={16} />
+                {t("screens.ledger.paymentIn", "Payment In")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCollectionDirection("out")}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold transition ${
+                  collectionDirection === "out"
+                    ? "bg-white text-red-600 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                <ArrowUpRight size={16} />
+                {t("screens.ledger.paymentOut", "Payment Out")}
+              </button>
+            </div>
+          )}
 
           {/* PARTNER: deposit vs withdraw */}
           {isPartner && (

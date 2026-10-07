@@ -396,7 +396,7 @@ const SalesList = () => {
                         </td>
 
                         <td className="px-4 py-3 text-center">
-                          <GoTo type="customer" id={inv.customer_id}>
+                          <GoTo type="customer" id={inv.contact_id}>
                             {inv.customer_name ||
                               t("screens.pos.walkInCustomer")}
                           </GoTo>

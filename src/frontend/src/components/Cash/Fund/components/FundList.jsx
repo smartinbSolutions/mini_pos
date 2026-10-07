@@ -24,6 +24,9 @@ import NumberInput from "../../../../Global/NumberInput";
 const ACTION_BUTTON_BASE =
   "flex h-9 w-9 items-center justify-center rounded-xl transition active:scale-95";
 
+const ACTION_STACK_BASE =
+  "flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 text-[10px] font-bold transition active:scale-95";
+
 const FundList = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -339,10 +342,13 @@ const FundList = () => {
 
                       <button
                         onClick={() => navigate(`/fund/${fund.id}`)}
-                        className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
+                        className={`${ACTION_BUTTON_BASE} gap-1 !w-auto px-2.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700`}
                         title={t("screens.funds.viewMovements")}
                       >
-                        <Eye size={16} />
+                        <Eye size={14} />
+                        <span className="text-[11px] font-bold">
+                          {t("common.view", "View")}
+                        </span>
                       </button>
                     </div>
 
@@ -362,41 +368,48 @@ const FundList = () => {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-1 border-t border-slate-100 pt-3.5">
+                  <div className="mt-4 grid grid-cols-5 gap-1 border-t border-slate-100 pt-3.5">
                     <button
                       onClick={() => handleOpenPayment(fund, "out")}
-                      className={`${ACTION_BUTTON_BASE} text-red-500 hover:bg-red-50`}
-                      title={t("screens.payments.payment_expense")}
+                      className={`${ACTION_STACK_BASE} text-red-500 hover:bg-red-50`}
                     >
                       <ArrowUpRight size={16} />
+                      <span>
+                        {t("screens.ledger.paymentOut", "Payment Out")}
+                      </span>
                     </button>
                     <button
                       onClick={() => handleOpenPayment(fund, "in")}
-                      className={`${ACTION_BUTTON_BASE} text-emerald-600 hover:bg-emerald-50`}
-                      title={t("screens.payments.receipt_deposit")}
+                      className={`${ACTION_STACK_BASE} text-emerald-600 hover:bg-emerald-50`}
                     >
                       <ArrowDownLeft size={16} />
+                      <span>{t("screens.ledger.paymentIn", "Payment In")}</span>
                     </button>
                     <button
                       onClick={() => setOpenTransferModal(fund)}
-                      className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
-                      title={t("screens.funds.fund_transfer")}
+                      className={`${ACTION_STACK_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
                     >
                       <CloudSync size={16} />
+                      <span>
+                        {t(
+                          "screens.funds.transactionType.transfer",
+                          "Transfer",
+                        )}
+                      </span>
                     </button>
                     <button
                       onClick={() => startEdit(fund)}
-                      className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
-                      title={t("common.edit")}
+                      className={`${ACTION_STACK_BASE} text-slate-400 hover:bg-slate-100 hover:text-slate-700`}
                     >
                       <Edit2 size={16} />
+                      <span>{t("common.edit")}</span>
                     </button>
                     <button
                       onClick={() => setDeleteFund(fund)}
-                      className={`${ACTION_BUTTON_BASE} text-slate-400 hover:bg-red-50 hover:text-red-500`}
-                      title={t("common.delete")}
+                      className={`${ACTION_STACK_BASE} text-slate-400 hover:bg-red-50 hover:text-red-500`}
                     >
                       <Trash2 size={16} />
+                      <span>{t("common.delete")}</span>
                     </button>
                   </div>
                 </div>

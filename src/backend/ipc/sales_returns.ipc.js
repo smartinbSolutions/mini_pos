@@ -249,6 +249,19 @@ export default function registerSalesReturnsIpc() {
 
         const returnId = returnResult.lastInsertRowid;
 
+        let invoiceName = data.invoice_name?.trim();
+        if (!invoiceName) {
+          invoiceName = buildDefaultReturnNote(
+            db,
+            "sales_return",
+            returnId,
+            data.sales_invoice_id,
+          );
+          db.prepare(
+            `UPDATE sales_returns SET invoice_name = ? WHERE id = ?`,
+          ).run(invoiceName, returnId);
+        }
+
         // ---- Insert return-level tax rows ----
         const insertReturnTax = db.prepare(`
           INSERT INTO sales_return_taxes
@@ -350,12 +363,7 @@ export default function registerSalesReturnsIpc() {
             movement_type: "decrease",
             amount: netTotal,
             date: fullDateTime,
-            note: buildDefaultReturnNote(
-              db,
-              "sales_return",
-              returnId,
-              data.sales_invoice_id,
-            ),
+            note: invoiceName,
           });
         }
         // ---- Refund out through the same funds the sale came in through —

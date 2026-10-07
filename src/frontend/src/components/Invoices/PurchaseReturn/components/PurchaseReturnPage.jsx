@@ -403,7 +403,7 @@ export default function PurchaseReturnPage() {
         onClose={() => setRefundModalOpen(false)}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice.supplier_id}
+        party={invoice.contact_id}
         partyName={invoice.supplier_name}
         mode="purchase_return"
         onSubmit={handleRefundCollected}
