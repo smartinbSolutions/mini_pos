@@ -587,7 +587,7 @@ const SalesList = () => {
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={selecteInvoice}
-        party={selecteInvoice?.customer_id}
+        party={selecteInvoice?.contact_id}
         partyName={selecteInvoice?.customer_name}
         mode="sales"
         refetchList={refetch}

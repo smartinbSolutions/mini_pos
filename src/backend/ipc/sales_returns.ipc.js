@@ -374,7 +374,7 @@ export default function registerSalesReturnsIpc() {
           const paymentId = createPayment(db, {
             type: p.type || "expense",
             party_type: legacyCustomerId ? "customer" : "walk-in",
-            party_id: legacyCustomerId,
+            party_id: contactId,
             fund_id: p.fund_id,
             amount: p.amount,
             amount_fund_currency: p.amount_fund_currency,

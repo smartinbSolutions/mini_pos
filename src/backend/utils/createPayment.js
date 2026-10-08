@@ -1,9 +1,17 @@
 import createPaymentAllocation from "./createPaymentAllocations";
 import createPartyHistory from "./createPaymentHistory";
-import { ensureLegacyContact } from "./contacts";
+import { ensureContactRole } from "./contacts";
 import { buildDefaultPaymentNote } from "./helpers";
 
 export default function createPayment(db, data) {
+  // data.party_id / data.partyId IS the contact id. Resolve the legacy id
+  // from it for the legacy party_id column; contact_id gets the contact
+  // id directly.
+  const contactId = data.party_id || data.partyId || null;
+  const legacyPartyId = contactId
+    ? ensureContactRole(db, contactId, data.party_type)
+    : null;
+
   const insertPayment = db.prepare(`
     INSERT INTO payments (
       type,
@@ -40,11 +48,12 @@ export default function createPayment(db, data) {
   `);
 
   const paymentDate = data.date;
-  console.log(data, "data");
+  console.log("row data", data);
+  console.log("paymentDate", paymentDate);
   const result = insertPayment.run({
     type: data.type,
     party_type: data.party_type,
-    party_id: data.party_id || data.partyId || null,
+    party_id: legacyPartyId,
     fund_id: data.fund_id,
     amount: Number(data.amount || 0),
     note: data.note || "",
@@ -55,12 +64,7 @@ export default function createPayment(db, data) {
     invoice_type: data.invoice_type || null,
     date: paymentDate,
     created_by: data.created_by,
-    // Derived at the source — callers don't change. Null for partner/other.
-    contact_id: ensureLegacyContact(
-      db,
-      data.party_type,
-      data.party_id || data.partyId,
-    ),
+    contact_id: contactId,
   });
 
   if (data.invoice_id != null) {
@@ -95,21 +99,10 @@ export default function createPayment(db, data) {
       : "decrease";
 
   if (data.party_type !== "walk-in") {
-    console.log("Creating party history for payment:", {
-      party_type: data.party_type,
-      party_id: data.party_id,
-      record_type: "payment",
-      invoice_id: data.invoice_id,
-      invoice_type: "payment",
-      amount: data.amount,
-      movement_type: movementType,
-      note: data.note,
-      payment_id: result.lastInsertRowid,
-      date: paymentDate,
-    });
     createPartyHistory(db, {
       party_type: data.party_type,
-      party_id: data.party_id || data.partyId,
+      party_id: legacyPartyId,
+      contact_id: contactId,
       record_type: "payment",
       invoice_id: data.invoice_id,
       invoice_type: "payment",

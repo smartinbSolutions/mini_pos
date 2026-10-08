@@ -564,7 +564,7 @@ const ExpenseList = () => {
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={selecteInvoice}
-        party={selecteInvoice?.supplier_id}
+        party={selecteInvoice?.contact_id}
         partyName={selecteInvoice?.supplier_name}
         mode="expense"
         refetchList={refetch}

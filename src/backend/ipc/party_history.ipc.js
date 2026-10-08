@@ -570,11 +570,14 @@ export default function registerPartyHistoryIPC() {
     return fetchPartyHistoryLedger(db, params);
   });
   ipcMain.handle("get-customer-credit", (event, customerId) => {
-    return getPartyCredit(db, { partyId: customerId, partyType: "customer" });
+    return getPartyCredit(db, { contactId: customerId, invoiceType: "sales" });
   });
 
   ipcMain.handle("get-supplier-credit", (event, supplierId) => {
-    return getPartyCredit(db, { partyId: supplierId, partyType: "supplier" });
+    return getPartyCredit(db, {
+      contactId: supplierId,
+      invoiceType: "purchase",
+    });
   });
 
   ipcMain.handle("get-party-earliest-date", (event, { partyId, partyType }) => {
@@ -599,7 +602,6 @@ export default function registerPartyHistoryIPC() {
       try {
         const applied = applyPartyCredit(db, {
           partyId,
-          partyType,
           invoiceId,
           invoiceType,
           amount,

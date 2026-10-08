@@ -319,7 +319,7 @@ const SalesReturnList = () => {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-start font-bold text-slate-900">
-                        <GoTo type="customer" id={inv.customer_id}>
+                        <GoTo type="customer" id={inv.contact_id}>
                           {inv.customer_name || "-"}
                         </GoTo>
                       </td>
@@ -458,12 +458,12 @@ const SalesReturnList = () => {
           />
         </section>
       </div>
-
+      {console.log(selectedInvoice, "selectedInvoice")}
       <AddPayment
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={selectedInvoice}
-        party={selectedInvoice?.customer_id}
+        party={selectedInvoice?.contact_id}
         partyName={selectedInvoice?.customer_name}
         mode="sales_return"
         refetchList={refetch}

@@ -259,8 +259,7 @@ export default function registerExpenseIPC() {
 
         if (isPaid && isCredit) {
           creditApplied = applyPartyCredit(db, {
-            partyId: payment.party_id || supplierId,
-            partyType: payment.party_type,
+            contactId: payment.party_id || supplierId,
             invoiceId,
             invoiceType: "expense",
             amount: payment.amount,

@@ -346,7 +346,7 @@ const PurchaseReturnList = () => {
                           </GoTo>
                         </td>
                         <td className="px-4 py-3 text-center font-bold text-slate-900">
-                          <GoTo type="supplier" id={inv.supplier_id}>
+                          <GoTo type="supplier" id={inv.contact_id}>
                             {inv.supplier_name || "-"}
                           </GoTo>
                         </td>
@@ -498,7 +498,7 @@ const PurchaseReturnList = () => {
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={selecteInvoice}
-        party={selecteInvoice?.supplier_id}
+        party={selecteInvoice?.contact_id}
         partyName={selecteInvoice?.supplier_name}
         mode="purchase_return"
         refetchList={refetch}

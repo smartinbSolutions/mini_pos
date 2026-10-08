@@ -1142,7 +1142,7 @@ export default function AddSales() {
         onSubmit={handlePaymentCollected}
         invoice={null}
         totalAmount={netTotal}
-        party={invoice.legacy_customer_id}
+        party={invoice.contact_id}
         partyName={customerName}
         mode="sales"
         confirmLabel={t("screens.invoices.saveInvoice")}

@@ -30,6 +30,13 @@ export default function usePaymentAllocationPreview({
           direction,
           amount: amt,
         });
+        console.log("previewPaymentAllocation result", {
+          partyType,
+          partyId,
+          direction,
+          amount: amt,
+          res,
+        });
         setAllocationLines(res?.success ? res.lines : []);
       } catch {
         setAllocationLines([]);

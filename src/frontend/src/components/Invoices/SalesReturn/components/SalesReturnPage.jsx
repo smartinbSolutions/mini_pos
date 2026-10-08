@@ -398,7 +398,7 @@ export default function SalesReturnPage() {
           </aside>
         </div>
       </div>
-
+      {console.log(invoice, "invoice")}
       <AddPayment
         isOpen={refundModalOpen}
         onClose={() => setRefundModalOpen(false)}

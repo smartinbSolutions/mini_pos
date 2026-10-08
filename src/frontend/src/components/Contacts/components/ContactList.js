@@ -369,12 +369,12 @@ export default function ContactList({ role }) {
         type={role}
         t={t}
       />
-
+      {console.log("selectedContact", selectedContact)}
       <AddPayment
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}
         invoice={null}
-        party={selectedContact?.[legacyKey]}
+        party={selectedContact?.id}
         partyName={selectedContact?.name}
         mode={role}
         refetchList={refetch}

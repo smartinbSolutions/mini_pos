@@ -144,8 +144,8 @@ const PaymentDocumentPage = () => {
       label={isIncome ? t("DOCS.RECEIVED_FROM") : t("DOCS.PAID_TO")}
       meta={t(`ui.${payment.party_type}`)}
     >
-      {payment.party_id ? (
-        <GoTo type={payment.party_type} id={payment.party_id} variant="light">
+      {payment.contact_id ? (
+        <GoTo type={payment.party_type} id={payment.contact_id} variant="light">
           {payment.party_name || t("ui.other")}
         </GoTo>
       ) : (

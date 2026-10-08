@@ -359,8 +359,7 @@ export default function registerSalesInvoiceIPC() {
 
         if (isPaid && isCredit) {
           creditApplied = applyPartyCredit(db, {
-            partyId: payment.party_id || customerId,
-            partyType: payment.party_type,
+            contactId: payment.party_id || customerId,
             invoiceId,
             invoiceType: "sales",
             amount: payment.amount,

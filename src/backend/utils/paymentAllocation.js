@@ -25,7 +25,10 @@ const OPENING_SIDE = { in: "debit", out: "credit" };
 // Accepts a contact id directly, or a legacy customer / supplier id.
 export function resolveContactId(db, { contactId, partyType, partyId }) {
   if (contactId) return Number(contactId);
-  return findLegacyContact(db, partyType, partyId);
+  // partyId from the frontend is a contact id by convention — never a
+  // legacy customer/supplier id.
+  if (partyId) return Number(partyId);
+  return null;
 }
 
 // Open documents of one contact for one direction, oldest first.

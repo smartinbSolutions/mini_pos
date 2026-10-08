@@ -95,8 +95,8 @@ const PaymentFlow = ({ payment, isRtl }) => {
   const isIncome = payment.type === "income";
   const Arrow = isRtl ? ArrowLeft : ArrowRight;
 
-  const partyNode = payment.party_id ? (
-    <GoTo type={payment.party_type} id={payment.party_id} variant="light">
+  const partyNode = payment.contact_id ? (
+    <GoTo type={payment.party_type} id={payment.contact_id} variant="light">
       {payment.party_name || "-"}
     </GoTo>
   ) : (
