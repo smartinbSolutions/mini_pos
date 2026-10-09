@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useListParams from "../../../Global/useListParams";
 
-const LIST_DEFAULTS = { page: 1, limit: 20, search: "" };
+const LIST_DEFAULTS = { page: 1, limit: 10, search: "" };
 
 const usePartnersList = () => {
   const { t } = useTranslation();

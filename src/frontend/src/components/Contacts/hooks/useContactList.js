@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import useListParams from "../../../Global/useListParams";
 
-const LIST_DEFAULTS = { page: 1, limit: 20, balance: "all", search: "" };
+const LIST_DEFAULTS = { page: 1, limit: 10, balance: "all", search: "" };
 
 // role: "customer" | "supplier" — the page decides the role.
 // Rows are contacts; tags, opening balance and the ledger link still use the

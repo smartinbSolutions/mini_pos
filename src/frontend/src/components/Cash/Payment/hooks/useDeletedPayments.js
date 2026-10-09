@@ -10,7 +10,7 @@ const DEFAULT_FILTERS = {
   dateFrom: null,
   dateTo: null,
 };
-const LIST_DEFAULTS = { page: 1, limit: 20, search: "", ...DEFAULT_FILTERS };
+const LIST_DEFAULTS = { page: 1, limit: 10, search: "", ...DEFAULT_FILTERS };
 const FILTER_KEYS = Object.keys(DEFAULT_FILTERS);
 // Separate URL keys from usePayment — both hooks run on the same page
 const PARAMS_OPTIONS = { prefix: "d_" };

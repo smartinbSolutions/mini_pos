@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import useListParams from "../../../../Global/useListParams";
 
 const DEFAULT_FILTERS = { fundId: null, dateFrom: null, dateTo: null };
-const LIST_DEFAULTS = { page: 1, limit: 20, search: "", ...DEFAULT_FILTERS };
+const LIST_DEFAULTS = { page: 1, limit: 10, search: "", ...DEFAULT_FILTERS };
 const FILTER_KEYS = Object.keys(DEFAULT_FILTERS);
 
 const useFundTransfersList = () => {

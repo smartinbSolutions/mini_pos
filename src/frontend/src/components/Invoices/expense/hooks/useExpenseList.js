@@ -4,7 +4,7 @@ import useListParams from "../../../../Global/useListParams";
 
 const LIST_DEFAULTS = {
   page: 1,
-  limit: 20,
+  limit: 10,
   search: "",
   status: null,
   supplier_id: null,

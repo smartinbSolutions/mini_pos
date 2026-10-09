@@ -13,7 +13,7 @@ const emptyFilters = {
   tagIds: [],
 };
 
-const LIST_DEFAULTS = { page: 1, limit: 20, search: "", ...emptyFilters };
+const LIST_DEFAULTS = { page: 1, limit: 10, search: "", ...emptyFilters };
 const FILTER_KEYS = Object.keys(emptyFilters);
 
 export default function useSalesQuotationList() {

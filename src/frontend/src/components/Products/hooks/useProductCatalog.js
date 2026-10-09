@@ -68,7 +68,7 @@ const productPayload = (product) => ({
 
 const LIST_DEFAULTS = {
   page: 1,
-  limit: 20,
+  limit: 10,
   search: "",
   type: null,
   unit_id: null,

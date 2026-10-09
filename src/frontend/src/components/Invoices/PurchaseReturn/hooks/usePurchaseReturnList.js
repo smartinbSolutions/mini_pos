@@ -13,7 +13,7 @@ const DEFAULT_FILTERS = {
   tagIds: [],
 };
 
-const LIST_DEFAULTS = { page: 1, limit: 20, search: "", ...DEFAULT_FILTERS };
+const LIST_DEFAULTS = { page: 1, limit: 10, search: "", ...DEFAULT_FILTERS };
 const FILTER_KEYS = Object.keys(DEFAULT_FILTERS);
 
 const usePurchaseReturnList = () => {
