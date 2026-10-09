@@ -5,12 +5,18 @@ import { createPortal } from "react-dom";
 // by a parent's overflow-hidden (item rows, panels, etc). Position is
 // computed from the trigger's actual bounding box when opened, same
 // approach as HoverTooltip.
+//
+// Options flagged `inline: true` render as icon buttons next to the
+// trigger; everything else goes in the dropdown. If no options are left
+// for the dropdown, the trigger is hidden.
 export default function DropdownMenu({ trigger, options, align = "right" }) {
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState(null);
   const triggerRef = useRef(null);
 
   const visibleOptions = options.filter((o) => o.visible !== false);
+  const inlineOptions = visibleOptions.filter((o) => o.inline);
+  const menuOptions = visibleOptions.filter((o) => !o.inline);
 
   const updatePosition = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
@@ -29,17 +35,37 @@ export default function DropdownMenu({ trigger, options, align = "right" }) {
   if (visibleOptions.length === 0) return null;
 
   return (
-    <>
-      <span
-        ref={triggerRef}
-        className="inline-block"
-        onClick={() => setOpen((v) => !v)}
-      >
-        {trigger}
-      </span>
+    <div className="inline-flex items-center justify-center gap-1">
+      {inlineOptions.map((option) => (
+        <button
+          key={option.key}
+          type="button"
+          title={option.label}
+          aria-label={option.label}
+          onClick={option.onClick}
+          className={`rounded-lg p-1.5 transition ${
+            option.danger
+              ? "text-red-500 hover:bg-red-50"
+              : "text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+          }`}
+        >
+          {option.icon}
+        </button>
+      ))}
+
+      {menuOptions.length > 0 && (
+        <span
+          ref={triggerRef}
+          className="inline-block"
+          onClick={() => setOpen((v) => !v)}
+        >
+          {trigger}
+        </span>
+      )}
 
       {open &&
         coords &&
+        menuOptions.length > 0 &&
         createPortal(
           <>
             <div
@@ -55,7 +81,7 @@ export default function DropdownMenu({ trigger, options, align = "right" }) {
                   coords.align === "right" ? "translateX(-100%)" : "none",
               }}
             >
-              {visibleOptions.map((option) => (
+              {menuOptions.map((option) => (
                 <button
                   key={option.key}
                   type="button"
@@ -71,8 +97,8 @@ export default function DropdownMenu({ trigger, options, align = "right" }) {
               ))}
             </div>
           </>,
-          document.body
+          document.body,
         )}
-    </>
+    </div>
   );
 }

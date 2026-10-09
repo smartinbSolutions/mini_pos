@@ -412,6 +412,7 @@ const SalesReturnList = () => {
                               key: "view",
                               icon: <Eye size={14} />,
                               label: t("common.view"),
+                              inline: true,
                               onClick: () =>
                                 navigate(`/view-sales-return/${inv.id}`),
                             },
@@ -431,6 +432,7 @@ const SalesReturnList = () => {
                               key: "payment",
                               icon: <HandCoins size={14} />,
                               label: t("ui.payment"),
+                              inline: true,
                               onClick: () => {
                                 setSelectedInvoice(inv);
                                 setOpenPaymentModel(true);

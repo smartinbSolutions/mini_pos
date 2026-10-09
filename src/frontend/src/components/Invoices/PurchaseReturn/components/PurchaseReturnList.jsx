@@ -446,6 +446,7 @@ const PurchaseReturnList = () => {
                                 key: "view",
                                 icon: <Eye size={14} />,
                                 label: t("common.view"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(`/view-purchase-return/${inv.id}`),
                               },
@@ -465,6 +466,7 @@ const PurchaseReturnList = () => {
                                 key: "payment",
                                 icon: <HandCoins size={14} />,
                                 label: t("ui.payment"),
+                                inline: true,
                                 onClick: () => {
                                   setSelecteInvoice(inv);
                                   setOpenPaymentModel(true);

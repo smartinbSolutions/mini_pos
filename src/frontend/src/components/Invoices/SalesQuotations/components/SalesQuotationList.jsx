@@ -442,6 +442,7 @@ const SalesQuotationList = () => {
                                 key: "view",
                                 icon: <Eye size={14} />,
                                 label: t("common.view"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(`/view-sales-quotation/${q.id}`),
                               },
@@ -449,6 +450,7 @@ const SalesQuotationList = () => {
                                 key: "edit",
                                 icon: <Edit2 size={14} />,
                                 label: t("common.edit"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(`/edit-sales-quotation/${q.id}`),
                                 visible: canEdit,

@@ -312,7 +312,9 @@ const ExpenseList = () => {
                   <th className="px-5 py-4 text-center">
                     {t("screens.tags.title")}
                   </th>
-                  <th className="px-5 py-4 text-center w-12" />
+                  <th className="px-4 py-3 text-center">
+                    {t("common.actions")}
+                  </th>
                 </tr>
               </thead>
 
@@ -495,6 +497,7 @@ const ExpenseList = () => {
                                 key: "view",
                                 icon: <Eye size={14} />,
                                 label: t("common.view"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(`/view-expense/${exp.id}`),
                               },
@@ -514,6 +517,7 @@ const ExpenseList = () => {
                                 key: "payment",
                                 icon: <Wallet2 size={14} />,
                                 label: t("ui.payment"),
+                                inline: true,
                                 onClick: () => {
                                   setSelecteInvoice(exp);
                                   setOpenPaymentModel(true);
@@ -524,6 +528,7 @@ const ExpenseList = () => {
                                 key: "edit",
                                 icon: <Pencil size={14} />,
                                 label: t("common.edit"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(`/edit-expense/${exp.id}`),
                                 visible: canEditDelete,

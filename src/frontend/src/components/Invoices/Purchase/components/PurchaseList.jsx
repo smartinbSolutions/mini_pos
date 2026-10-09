@@ -464,6 +464,7 @@ const PurchaseList = () => {
                                 key: "view",
                                 icon: <Eye size={14} />,
                                 label: t("common.view"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(`/view-purchase/${inv.id}`),
                               },
@@ -483,6 +484,7 @@ const PurchaseList = () => {
                                 key: "payment",
                                 icon: <HandCoins size={14} />,
                                 label: t("ui.payment"),
+                                inline: true,
                                 onClick: () => {
                                   setSelecteInvoice(inv);
                                   setOpenPaymentModel(true);
@@ -501,6 +503,7 @@ const PurchaseList = () => {
                                 key: "edit",
                                 icon: <Edit2 size={14} />,
                                 label: t("common.edit"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(`/edit-purchase/${inv.id}`),
                                 visible:

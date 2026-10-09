@@ -650,6 +650,7 @@ const PaymentList = () => {
                                 key: "view",
                                 icon: <Eye size={14} />,
                                 label: t("common.view"),
+                                inline: true,
                                 onClick: () =>
                                   navigate(
                                     pay.isSettlement
@@ -677,6 +678,7 @@ const PaymentList = () => {
                                   <Trash2 size={14} className="text-red-500" />
                                 ),
                                 label: t("common.delete"),
+                                inline: true,
                                 onClick: () => setDeletePaymentId(pay),
                               },
                             ]}
