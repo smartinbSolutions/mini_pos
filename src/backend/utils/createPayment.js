@@ -8,9 +8,10 @@ export default function createPayment(db, data) {
   // from it for the legacy party_id column; contact_id gets the contact
   // id directly.
   const contactId = data.party_id || data.partyId || null;
-  const legacyPartyId = contactId
-    ? ensureContactRole(db, contactId, data.party_type)
-    : null;
+  const legacyPartyId =
+    contactId && data.party_type !== "partner"
+      ? ensureContactRole(db, contactId, data.party_type)
+      : null;
 
   const insertPayment = db.prepare(`
     INSERT INTO payments (
@@ -64,7 +65,7 @@ export default function createPayment(db, data) {
     invoice_type: data.invoice_type || null,
     date: paymentDate,
     created_by: data.created_by,
-    contact_id: contactId,
+    contact_id: data.party_type === "partner" ? null : contactId,
   });
 
   if (data.invoice_id != null) {

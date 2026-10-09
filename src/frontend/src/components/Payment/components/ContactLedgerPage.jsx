@@ -588,7 +588,7 @@ export default function ContactLedgerPage() {
                     const description =
                       p.record_type === "payment" ? (
                         p.settlement_id ? (
-                          <GoTo type="settlements" id={p.settlement_id}>
+                          <GoTo type="settlement" id={p.settlement_id}>
                             {label}
                           </GoTo>
                         ) : p.payment_id ? (
@@ -685,14 +685,25 @@ export default function ContactLedgerPage() {
                           </span>
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-end font-bold tabular-nums text-[#1c2340]">
-                          <span dir="ltr">
-                            {sign}
+                        <td className="whitespace-nowrap px-4 py-3 text-end text-sm font-bold tabular-nums text-[#1c2340]">
+                          <span
+                            dir="ltr"
+                            className="inline-flex items-center gap-2"
+                          >
+                            <span
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-black leading-none ${
+                                sign === "+"
+                                  ? "bg-emerald-50 text-emerald-600"
+                                  : "bg-red-50 text-red-500"
+                              }`}
+                            >
+                              {sign}
+                            </span>
                             {money(p.amount)}
                           </span>
                         </td>
 
-                        <td className="whitespace-nowrap px-4 py-3 text-end font-semibold tabular-nums text-slate-500">
+                        <td className="whitespace-nowrap px-4 py-3 text-end text-sm font-medium tabular-nums text-slate-400">
                           <span dir="ltr">{money(p.running_balance)}</span>
                         </td>
                       </tr>

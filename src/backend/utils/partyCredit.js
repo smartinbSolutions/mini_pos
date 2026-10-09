@@ -44,6 +44,7 @@ function unallocatedPayments(db, contactId, paymentType) {
       LEFT JOIN funds f ON f.id = p.fund_id
       WHERE ${scope.clause}
         AND p.type = ?
+        AND p.party_type != 'partner'
       GROUP BY p.id
       HAVING available > 0.001
       ORDER BY p.date ASC
