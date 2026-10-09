@@ -33,8 +33,6 @@ contextBridge.exposeInMainWorld("api", {
   createCustomer: (data) => ipcRenderer.invoke("create-customer", data),
   updateCustomer: (data) => ipcRenderer.invoke("update-customer", data),
   deleteCustomer: (id) => ipcRenderer.invoke("delete-customer", id),
-  getCustomerCredit: (customerId) =>
-    ipcRenderer.invoke("get-customer-credit", customerId),
 
   /* ================= FUND ================= */
   getFunds: () => ipcRenderer.invoke("get-funds"),
@@ -71,6 +69,7 @@ contextBridge.exposeInMainWorld("api", {
     ipcRenderer.invoke("delete-payment", id, { deletedBy }),
   getDeletedPayments: (params) =>
     ipcRenderer.invoke("get-deleted-payments", params),
+  getPartyCredit: (args) => ipcRenderer.invoke("get-party-credit", args),
 
   /* ================= CONTACTS ================= */
   getContacts: (params) => ipcRenderer.invoke("get-contacts", params),
@@ -232,8 +231,6 @@ contextBridge.exposeInMainWorld("api", {
   createSupplier: (data) => ipcRenderer.invoke("create-supplier", data),
   updateSupplier: (data) => ipcRenderer.invoke("update-supplier", data),
   deleteSupplier: (id) => ipcRenderer.invoke("delete-supplier", id),
-  getSupplierCredit: (supplierId) =>
-    ipcRenderer.invoke("get-supplier-credit", supplierId),
 
   /* ================= TAX ================= */
   getTaxes: (params) => ipcRenderer.invoke("get-taxes", params),

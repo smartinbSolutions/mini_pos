@@ -6,6 +6,8 @@ const OPEN_INVOICE_TABLES = {
   sales: { table: "sales_invoices", column: "customer_id" },
   purchase: { table: "purchase_invoices", column: "supplier_id" },
   expense: { table: "expense", column: "supplier_id" },
+  purchase_return: { table: "purchase_returns", column: "supplier_id" },
+  sales_return: { table: "sales_returns", column: "customer_id" },
 };
 
 // Which payment-type bucket backs credit for each invoice type.
@@ -17,6 +19,8 @@ const DIRECTION_FOR_INVOICE = {
   sales: "income",
   purchase: "expense",
   expense: "expense",
+  purchase_return: "income",
+  sales_return: "expense",
 };
 
 function paymentScope(contactId) {
@@ -91,7 +95,10 @@ function getOpenInvoicesForParty(db, { contactId, invoiceType }) {
 // allocated $420 leaves $80 available — usable toward this contact's next
 // purchase/expense, independent of any income-side payments.
 export function getPartyCredit(db, { contactId, invoiceType }) {
+  console.log("contactId", contactId);
+  console.log("invoiceType", invoiceType);
   const dir = DIRECTION_FOR_INVOICE[invoiceType];
+  console.log("dir", invoiceType);
   if (!dir || !contactId) return { totalAvailable: 0, payments: [] };
 
   const payments = unallocatedPayments(db, contactId, dir);

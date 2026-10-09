@@ -569,15 +569,8 @@ export default function registerPartyHistoryIPC() {
   ipcMain.handle("get-party-history-ledger", (event, params) => {
     return fetchPartyHistoryLedger(db, params);
   });
-  ipcMain.handle("get-customer-credit", (event, customerId) => {
-    return getPartyCredit(db, { contactId: customerId, invoiceType: "sales" });
-  });
-
-  ipcMain.handle("get-supplier-credit", (event, supplierId) => {
-    return getPartyCredit(db, {
-      contactId: supplierId,
-      invoiceType: "purchase",
-    });
+  ipcMain.handle("get-party-credit", (event, { contactId, invoiceType }) => {
+    return getPartyCredit(db, { contactId, invoiceType });
   });
 
   ipcMain.handle("get-party-earliest-date", (event, { partyId, partyType }) => {
@@ -601,7 +594,7 @@ export default function registerPartyHistoryIPC() {
     (event, { partyId, partyType, invoiceId, invoiceType, amount }) => {
       try {
         const applied = applyPartyCredit(db, {
-          partyId,
+          contactId: partyId,
           invoiceId,
           invoiceType,
           amount,

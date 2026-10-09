@@ -458,7 +458,7 @@ const SalesReturnList = () => {
           />
         </section>
       </div>
-      {console.log(selectedInvoice, "selectedInvoice")}
+
       <AddPayment
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}

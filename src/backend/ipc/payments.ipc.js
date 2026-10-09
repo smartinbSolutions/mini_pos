@@ -535,7 +535,7 @@ export default function registerPaymentIPC() {
           -- The invoice's full amount, pulled from whichever table its
           -- invoice_type actually points to — same COALESCE-across-conditional-
           -- joins pattern used above for party_name.
-          COALESCE(pi.net_total, si.net_total, ex.net_total, ob.amount) AS invoice_total,
+           COALESCE(pi.net_total, si.net_total, ex.net_total, ob.amount, pr.net_total, sr.net_total) AS invoice_total,
   
           -- How much has been allocated to this SAME (invoice_id, invoice_type)
           -- across ALL payments, not just this one — an invoice can be paid in
@@ -553,6 +553,8 @@ export default function registerPaymentIPC() {
         LEFT JOIN sales_invoices si ON si.id = pa.invoice_id AND pa.invoice_type = 'sales'
         LEFT JOIN expense ex ON ex.id = pa.invoice_id AND pa.invoice_type = 'expense'
         LEFT JOIN party_history ob ON ob.id = pa.invoice_id AND pa.invoice_type = 'opening_balance'
+         LEFT JOIN purchase_returns pr ON pr.id = pa.invoice_id AND pa.invoice_type = 'purchase_return'
+        LEFT JOIN sales_returns sr ON sr.id = pa.invoice_id AND pa.invoice_type = 'sales_return'
         WHERE pa.payment_id = ?
         ORDER BY pa.id ASC
         `,

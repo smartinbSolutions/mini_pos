@@ -120,11 +120,10 @@ const useAddPayment = ({
       return;
     }
     try {
-      const res =
-        partyType === "supplier"
-          ? await api.getSupplierCredit(party)
-          : await api.getCustomerCredit(party);
-
+      const res = await api.getPartyCredit({
+        contactId: party,
+        invoiceType: mode,
+      });
       setAvailableCredit(res?.totalAvailable || 0);
     } catch (err) {
       setAvailableCredit(0);

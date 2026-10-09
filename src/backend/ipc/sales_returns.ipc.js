@@ -357,6 +357,7 @@ export default function registerSalesReturnsIpc() {
           createPartyHistory(db, {
             party_type: "customer",
             party_id: legacyCustomerId,
+            contact_id: contactId,
             invoice_id: returnId,
             invoice_type: "sales_return",
             record_type: "return",
