@@ -183,9 +183,11 @@ export default function AddPurchase() {
 
   const { pick } = useLatinMode();
 
-  // Stable reference — SearchableSelect lists getOptionLabel in its effect deps.
   const productOptionLabel = useCallback(
-    (p) => pick(p.latinName, p.name),
+    (p) => {
+      const name = pick(p.latinName, p.name);
+      return p.code ? `${name} · #${p.code}` : name;
+    },
     [pick],
   );
 
@@ -743,6 +745,7 @@ export default function AddPurchase() {
                               >
                                 <SearchableSelect
                                   placeholder={t("ui.selectProduct")}
+                                  serverFiltered
                                   options={products}
                                   getOptionLabel={productOptionLabel}
                                   selectedValue={item.product_id}

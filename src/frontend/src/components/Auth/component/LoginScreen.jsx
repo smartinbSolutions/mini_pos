@@ -179,7 +179,7 @@ const LoginScreen = () => {
             </p>
           )}
 
-          <div className="grid grid-cols-3 gap-4">
+          <div dir="ltr" className="grid grid-cols-3 gap-4">
             {digits.map((d) => (
               <button
                 key={d}

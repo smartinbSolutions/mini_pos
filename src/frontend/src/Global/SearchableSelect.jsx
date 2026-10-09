@@ -17,6 +17,7 @@ const SearchableSelect = ({
   getOptionLabel = (option) => option.name,
   disableTyping = false,
   onKeyDown,
+  serverFiltered = false, // ← new
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,13 +57,14 @@ const SearchableSelect = ({
   }, [disableTyping]);
 
   const filteredOptions = useMemo(() => {
+    if (serverFiltered) return optionList; // server already filtered
     const query = String(searchQuery || "").toLowerCase();
     return optionList.filter((option) =>
       String(getOptionLabel(option) || "")
         .toLowerCase()
         .includes(query),
     );
-  }, [getOptionLabel, optionList, searchQuery]);
+  }, [getOptionLabel, optionList, searchQuery, serverFiltered]);
 
   useEffect(() => {
     if (isOpen) return;

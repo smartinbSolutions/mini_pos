@@ -175,12 +175,13 @@ export default function AddSalesQuotation() {
 
   const { pick } = useLatinMode();
 
-  // Stable reference — SearchableSelect lists getOptionLabel in its effect deps.
   const productOptionLabel = useCallback(
-    (p) => pick(p.latinName, p.name),
+    (p) => {
+      const name = pick(p.latinName, p.name);
+      return p.code ? `${name} · #${p.code}` : name;
+    },
     [pick],
   );
-
   // Base unit → Latin from the unit table; selling unit → its own Latin name.
   const unitOptionLabel = (item, u) =>
     pick(u.is_base ? item.base_unit_latin_name : u.latin_name, u.unit_name);
@@ -688,6 +689,7 @@ export default function AddSalesQuotation() {
                               >
                                 <SearchableSelect
                                   placeholder={t("ui.productNameOrSelect")}
+                                  serverFiltered
                                   options={products}
                                   getOptionLabel={productOptionLabel}
                                   selectedValue={item.product_id}
