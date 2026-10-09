@@ -80,7 +80,7 @@ const FundTransferList = () => {
 
   return (
     <div className={pageClass}>
-      <div className="mx-auto max-w-6xl space-y-5">
+      <div className="mx-auto max-w-7xl space-y-5">
         {/* HERO */}
         <section className={panelClass}>
           <div className="flex items-center justify-between gap-4 p-7">

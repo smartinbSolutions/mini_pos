@@ -369,7 +369,7 @@ export default function ContactList({ role }) {
         type={role}
         t={t}
       />
-      {console.log("selectedContact", selectedContact)}
+
       <AddPayment
         isOpen={openPaymentModel}
         onClose={() => setOpenPaymentModel(false)}

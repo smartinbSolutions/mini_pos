@@ -46,13 +46,13 @@ const TaxList = () => {
 
   const filteredTaxes = useMemo(() => {
     return taxes.filter((t) =>
-      `${t.name} ${t.rate}`.toLowerCase().includes(search.toLowerCase())
+      `${t.name} ${t.rate}`.toLowerCase().includes(search.toLowerCase()),
     );
   }, [taxes, search]);
 
   return (
     <div className={pageClass}>
-      <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
+      <div className="max-w-7xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
         <div className={`${panelClass} overflow-hidden`}>
           <div className="p-5 border-b flex items-center justify-between">
             <div>
@@ -171,7 +171,7 @@ const TaxList = () => {
                       }`}
                     >
                       {t(
-                        `screens.taxes.categoryOption.${tax.category || "product"}`
+                        `screens.taxes.categoryOption.${tax.category || "product"}`,
                       )}
                     </span>
                   </div>
@@ -191,7 +191,7 @@ const TaxList = () => {
                     </button>
                   </div>
                 </div>
-              )
+              ),
             )}
 
             {filteredTaxes.length === 0 && (

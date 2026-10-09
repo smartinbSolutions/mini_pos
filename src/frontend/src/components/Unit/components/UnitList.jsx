@@ -37,13 +37,13 @@ const UnitList = () => {
     return units.filter((u) =>
       `${u.name} ${u.latinName} ${u.code}`
         .toLowerCase()
-        .includes(search.toLowerCase())
+        .includes(search.toLowerCase()),
     );
   }, [units, search]);
 
   return (
     <div className={pageClass}>
-      <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
+      <div className="max-w-7xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
         <div className={panelClass}>
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -165,7 +165,7 @@ const UnitList = () => {
                     </button>
                   </div>
                 </div>
-              )
+              ),
             )}
 
             {filteredUnits.length === 0 && (

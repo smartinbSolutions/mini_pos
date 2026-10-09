@@ -99,7 +99,7 @@ const FundList = () => {
   }, [funds]);
   return (
     <div className={pageClass}>
-      <div className="mx-auto max-w-6xl space-y-5">
+      <div className="mx-auto max-w-7xl space-y-5">
         {/* HERO / CREATE */}
         <section className={panelClass}>
           <FundListHeader

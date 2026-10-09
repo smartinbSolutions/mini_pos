@@ -102,7 +102,7 @@ export default function SalesReturnPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f8fd] p-5 text-slate-900">
-      <div className="mx-auto max-w-6xl space-y-4">
+      <div className="mx-auto max-w-7xl space-y-4">
         <section className="flex flex-col gap-3 rounded-2xl border border-[#e9edfb] bg-white px-5 py-3.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500 text-white shadow-md shadow-rose-500/25">

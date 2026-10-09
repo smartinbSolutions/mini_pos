@@ -78,10 +78,10 @@ const useAddPayment = ({
 
   const [form, setForm] = useState({
     fund_id: "",
-    fund_exchangeRate: 1, // reference rate snapshot: 1 base = X fund
-    rate: "", // rate actually used — editable, defaults to reference
-    collected_amount: "", // amount in FUND currency
-    amount_in_base: 0, // only typed directly when paying from credit
+    fund_exchangeRate: 1,
+    rate: "",
+    collected_amount: "",
+    amount_in_base: 0,
     currency_code: "",
     currency_symbol: "",
     note: "",
@@ -124,7 +124,7 @@ const useAddPayment = ({
         partyType === "supplier"
           ? await api.getSupplierCredit(party)
           : await api.getCustomerCredit(party);
-      console.log("credit result", { party, partyType, res });
+
       setAvailableCredit(res?.totalAvailable || 0);
     } catch (err) {
       setAvailableCredit(0);
@@ -417,7 +417,7 @@ const useAddPayment = ({
       created_by: user.id,
       date: showDatePicker ? form.date : undefined,
     };
-    console.log("paymentData", paymentData);
+
     if (isDirectCollection && allocationTotal > 0) {
       paymentData.allocations = allocationLines
         .filter((l) => Number(l.allocate) > 0)

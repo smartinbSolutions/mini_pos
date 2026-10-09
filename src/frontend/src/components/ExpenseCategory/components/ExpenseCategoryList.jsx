@@ -63,7 +63,7 @@ const ExpenseCategoryList = () => {
     if (!term) return expenseCategory || [];
 
     return (expenseCategory || []).filter((c) =>
-      `${c.name}`.toLowerCase().includes(term)
+      `${c.name}`.toLowerCase().includes(term),
     );
   }, [expenseCategory, search]);
 
@@ -71,25 +71,25 @@ const ExpenseCategoryList = () => {
     () =>
       (expenseCategory || []).reduce(
         (sum, c) => sum + Number(c.total_spent || 0),
-        0
+        0,
       ),
-    [expenseCategory]
+    [expenseCategory],
   );
 
   const maxSpent = useMemo(
     () =>
       Math.max(
         1,
-        ...(expenseCategory || []).map((c) => Number(c.total_spent || 0))
+        ...(expenseCategory || []).map((c) => Number(c.total_spent || 0)),
       ),
-    [expenseCategory]
+    [expenseCategory],
   );
 
   const hasDateFilter = Boolean(dateRange.startDate || dateRange.endDate);
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
-      <div className="mx-auto grid max-w-6xl gap-5 xl:grid-cols-[1fr_320px]">
+      <div className="mx-auto grid max-w-7xl gap-5 xl:grid-cols-[1fr_320px]">
         {/* LIST PANEL */}
         <div className={panelClass}>
           {/* HERO */}

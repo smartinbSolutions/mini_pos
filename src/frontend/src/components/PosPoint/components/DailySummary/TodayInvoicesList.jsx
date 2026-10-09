@@ -169,7 +169,7 @@ export default function TodayInvoicesList({
                                 {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
-                                }
+                                },
                               )}{" "}
                               {fund.currency_symbol || fund.currency_code}
                             </span>
@@ -214,7 +214,7 @@ export default function TodayInvoicesList({
                                 {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 2,
-                                }
+                                },
                               )}{" "}
                               {fund.currency_symbol || fund.currency_code}
                             </span>
@@ -278,7 +278,7 @@ export default function TodayInvoicesList({
           the columns line up across rows like a table would — without
           actually becoming one. */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
-        <div className="mx-auto max-w-6xl space-y-3">
+        <div className="mx-auto max-w-7xl space-y-3">
           {filteredInvoices.length > 0 ? (
             filteredInvoices.map((invoice) => {
               const isReturn = invoice.type === "return";
@@ -373,7 +373,7 @@ export default function TodayInvoicesList({
                                   {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 2,
-                                  }
+                                  },
                                 )}{" "}
                                 {alloc.currency_symbol || alloc.currency_code}
                               </span>

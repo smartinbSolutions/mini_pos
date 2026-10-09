@@ -61,7 +61,7 @@ const UsersList = () => {
 
   return (
     <div className={pageClass}>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div
           className={`${panelClass} mb-5 flex items-center justify-between p-6 `}
         >

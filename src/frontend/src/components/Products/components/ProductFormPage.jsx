@@ -397,7 +397,7 @@ export default function ProductFormPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f8fd] text-slate-900">
-      <form onSubmit={handleSubmit} className="mx-auto flex max-w-6xl flex-col">
+      <form onSubmit={handleSubmit} className="mx-auto flex max-w-7xl flex-col">
         {/* Sticky top action bar */}
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#e9edfb] bg-white/90 px-5 py-3 backdrop-blur-md">
           <div className="flex min-w-0 items-center gap-3">

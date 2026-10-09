@@ -288,7 +288,7 @@ const PaymentList = () => {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
-      <div className="mx-auto max-w-6xl space-y-5">
+      <div className="mx-auto max-w-7xl space-y-5">
         {/* HERO */}
         <section className={panelClass}>
           <div className="grid gap-6 p-7 lg:grid-cols-[1fr_360px]">

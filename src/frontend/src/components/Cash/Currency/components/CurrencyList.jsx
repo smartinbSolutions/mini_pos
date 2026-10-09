@@ -35,7 +35,7 @@ const CurrencyList = () => {
 
   return (
     <div className={pageClass}>
-      <div className="max-w-6xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
+      <div className="max-w-7xl mx-auto grid xl:grid-cols-[1fr_300px] gap-6">
         <div className="space-y-5">
           <div className={`${panelClass} flex items-center justify-between`}>
             <div>
@@ -144,7 +144,7 @@ const CurrencyList = () => {
                         className={inputClass}
                         placeholder={t(
                           "screens.currency.minorNamePlaceholder",
-                          "Minor unit name"
+                          "Minor unit name",
                         )}
                       />
                       <input
@@ -158,7 +158,7 @@ const CurrencyList = () => {
                         className={inputClass}
                         placeholder={t(
                           "screens.currency.minorLatinPlaceholder",
-                          "Minor unit (Latin)"
+                          "Minor unit (Latin)",
                         )}
                       />
                     </div>
@@ -226,7 +226,7 @@ const CurrencyList = () => {
                       )}
                     </div>
                   </div>
-                )
+                ),
               )}
 
               {currencies.length === 0 && (
@@ -299,7 +299,7 @@ const CurrencyList = () => {
                 className={inputClass}
                 placeholder={t(
                   "screens.currency.minorNamePlaceholder",
-                  "Minor unit name"
+                  "Minor unit name",
                 )}
               />
               <input
@@ -310,7 +310,7 @@ const CurrencyList = () => {
                 className={inputClass}
                 placeholder={t(
                   "screens.currency.minorLatinPlaceholder",
-                  "Minor unit (Latin)"
+                  "Minor unit (Latin)",
                 )}
               />
             </div>
