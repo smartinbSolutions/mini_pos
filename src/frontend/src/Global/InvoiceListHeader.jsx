@@ -54,6 +54,7 @@ export default function InvoiceListHeader({
   onClearFilters,
   filterFields = [],
   clearLabel,
+  extraActions,
 }) {
   const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(false);
@@ -203,7 +204,7 @@ export default function InvoiceListHeader({
             )}
           </button>
         )}
-
+        {extraActions}
         <button
           onClick={onRefresh}
           className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#dbe4ff] bg-white px-3 text-xs font-bold text-slate-600 transition hover:border-[#cbd7ff] hover:bg-[#eef3ff] hover:text-[#4663ff]"
