@@ -22,6 +22,9 @@ import GoTo from "../../../../Global/GoTo";
 import usePurchaseReturnList from "../hooks/usePurchaseReturnList";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import TagList from "../../../Tags/components/TagList";
+import DataTable from "../../../../Global/DataTable";
+import ColumnPicker from "../../../../Global/ColumnPicker";
+import useColumnVisibility from "../../../../Global/useColumnVisibility";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -50,23 +53,32 @@ function BreakdownTooltip({ trigger, rows }) {
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
-    paid: { label: t("ui.paid"), classes: "bg-emerald-50 text-emerald-600" },
+    paid: {
+      label: t("ui.paid"),
+      classes: "bg-emerald-50 text-emerald-600",
+      dot: "bg-emerald-500",
+    },
     partial: {
       label: t("ui.partial"),
       classes: "bg-amber-50 text-amber-600",
+      dot: "bg-amber-500",
     },
-    unpaid: { label: t("ui.unpaid"), classes: "bg-slate-100 text-slate-500" },
+    unpaid: {
+      label: t("ui.unpaid"),
+      classes: "bg-slate-100 text-slate-500",
+      dot: "bg-slate-400",
+    },
   };
   const current = config[status] || config.unpaid;
 
   const badge = (
     <span
-      className={`inline-flex items-center rounded-lg px-2 py-1 text-[10px] font-bold uppercase ${current.classes}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${current.classes}`}
     >
+      <span className={`h-1.5 w-1.5 rounded-full ${current.dot}`} />
       {current.label}
     </span>
   );
-
   if (status !== "partial") return badge;
 
   return (
@@ -132,6 +144,219 @@ const PurchaseReturnList = () => {
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
+
+  const isRtl = i18n.dir() === "rtl";
+
+  const getAmounts = (inv) => {
+    const itemTax = Number(inv.item_tax_total || 0);
+    const invoiceTax = Number(inv.taxValue || 0);
+    const itemDiscount = Number(inv.item_discount_total || 0);
+    const invoiceDiscount = Number(inv.discount || 0);
+    return {
+      itemTax,
+      totalTax: Number(inv.total_tax_value ?? itemTax + invoiceTax),
+      itemDiscount,
+      invoiceDiscount,
+      totalDiscount: Number(
+        inv.total_discount_value ?? itemDiscount + invoiceDiscount,
+      ),
+    };
+  };
+
+  const columns = [
+    {
+      key: "returnId",
+      label: t("ui.returnId"),
+      locked: true,
+      render: (inv) => (
+        <span className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-[11px] font-bold text-[#4663ff]">
+          #{inv.id}
+        </span>
+      ),
+    },
+    {
+      key: "originalInvoice",
+      label: t("ui.originalInvoice"),
+      cellClassName: "font-medium text-slate-600",
+      render: (inv) => (
+        <GoTo type="purchase" id={inv.purchase_invoice_id}>
+          {inv.purchase_invoice_name || `#${inv.purchase_invoice_id}`}
+        </GoTo>
+      ),
+    },
+    {
+      key: "supplier",
+      label: t("ui.supplier"),
+      align: "start",
+      cellClassName: "max-w-[200px] truncate font-bold text-slate-900",
+      render: (inv) => (
+        <GoTo type="supplier" id={inv.contact_id}>
+          {inv.supplier_name || "-"}
+        </GoTo>
+      ),
+    },
+    {
+      key: "date",
+      label: t("ui.date"),
+      cellClassName: "text-slate-500",
+      render: (inv) => <FormattedDate value={inv.date} />,
+    },
+    {
+      key: "subtotal",
+      label: t("ui.subtotal"),
+      align: "end",
+      defaultVisible: false,
+      cellClassName: "font-semibold tabular-nums text-slate-700",
+      render: (inv) => money(inv.subtotal || 0),
+    },
+    {
+      key: "discount",
+      label: t("ui.discount"),
+      align: "end",
+      cellClassName: "tabular-nums",
+      render: (inv) => {
+        const a = getAmounts(inv);
+        if (a.totalDiscount <= 0)
+          return <span className="text-slate-300">—</span>;
+        return (
+          <BreakdownTooltip
+            trigger={
+              <span className="font-bold text-red-500">
+                -{money(a.totalDiscount)}
+              </span>
+            }
+            rows={[
+              {
+                label: t("screens.invoices.itemDiscount"),
+                value: a.itemDiscount,
+                display: `-${money(a.itemDiscount)}`,
+                className: "text-red-500",
+              },
+              {
+                label: t("screens.invoices.invoiceDiscount"),
+                value: a.invoiceDiscount,
+                display: `-${money(a.invoiceDiscount)}`,
+                className: "text-red-500",
+              },
+            ]}
+          />
+        );
+      },
+    },
+    {
+      key: "tax",
+      label: t("ui.tax"),
+      align: "end",
+      cellClassName: "tabular-nums",
+      render: (inv) => {
+        const a = getAmounts(inv);
+        if (a.totalTax <= 0) return <span className="text-slate-300">—</span>;
+        return (
+          <BreakdownTooltip
+            trigger={
+              <span className="font-bold text-emerald-600">
+                +{money(a.totalTax)}
+              </span>
+            }
+            rows={[
+              {
+                label: t("screens.invoices.itemTax"),
+                value: a.itemTax,
+                display: `+${money(a.itemTax)}`,
+                className: "text-emerald-600",
+              },
+              ...(inv.taxes || []).map((tax) => ({
+                label: `${tax.name} (${tax.rate}%)`,
+                value: tax.value,
+                display: `+${money(tax.value)}`,
+                className: "text-emerald-600",
+              })),
+            ]}
+          />
+        );
+      },
+    },
+    {
+      key: "net",
+      label: t("ui.net"),
+      align: "end",
+      cellClassName: "font-bold tabular-nums text-amber-700",
+      render: (inv) => money(inv.net_total || 0),
+    },
+    {
+      key: "status",
+      label: t("ui.status"),
+      render: (inv) => (
+        <StatusBadge
+          status={inv.status}
+          paidAmount={inv.refunded_amount}
+          remainingAmount={inv.remaining_amount}
+          money={money}
+          t={t}
+        />
+      ),
+    },
+    {
+      key: "tags",
+      label: t("screens.tags.title"),
+      defaultVisible: false,
+      render: (inv) => <TagList tags={tagsByReturn[inv.id] || []} limit={2} />,
+    },
+    {
+      key: "actions",
+      label: t("common.actions"),
+      locked: true,
+      sticky: true,
+      width: 110,
+      render: (inv) => (
+        <DropdownMenu
+          trigger={
+            <button className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
+              <MoreVertical size={16} />
+            </button>
+          }
+          align={isRtl ? "left" : "right"}
+          options={[
+            {
+              key: "view",
+              icon: <Eye size={14} />,
+              label: t("common.view"),
+              inline: true,
+              onClick: () => navigate(`/view-purchase-return/${inv.id}`),
+            },
+            {
+              key: "payment",
+              icon: <HandCoins size={14} />,
+              label: t("ui.payment"),
+              inline: true,
+              onClick: () => {
+                setSelecteInvoice(inv);
+                setOpenPaymentModel(true);
+              },
+              visible: inv.status !== "paid",
+            },
+            {
+              key: "savePdf",
+              icon: <Download size={14} />,
+              label: t("common.savePdf"),
+              onClick: () => handleSavePdf(inv.id),
+            },
+            {
+              key: "print",
+              icon: <Printer size={14} />,
+              label: t("common.print"),
+              onClick: () => handlePrint(inv.id),
+            },
+          ]}
+        />
+      ),
+    },
+  ];
+
+  const { visibleColumns, isVisible, toggle, reset } = useColumnVisibility(
+    "purchase-return-list",
+    columns,
+  );
 
   const purchaseReturnFilterFields = [
     { name: "dateFrom", type: "date", label: t("filters.dateFrom") },
@@ -268,6 +493,15 @@ const PurchaseReturnList = () => {
           onClearFilters={clearFilters}
           filterFields={purchaseReturnFilterFields}
           clearLabel={t("common.clear")}
+          extraActions={
+            <ColumnPicker
+              columns={columns}
+              isVisible={isVisible}
+              onToggle={toggle}
+              onReset={reset}
+              align={isRtl ? "left" : "right"}
+            />
+          }
         />
 
         {(error || actionError) && (
@@ -276,222 +510,21 @@ const PurchaseReturnList = () => {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-left text-sm">
-              <thead className="bg-[#f8faff] text-xs font-bold uppercase text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 text-center">{t("ui.returnId")}</th>
-                  <th className="px-4 py-3 text-center">
-                    {t("ui.originalInvoice")}
-                  </th>
-                  <th className="px-4 py-3 text-center">{t("ui.supplier")}</th>
-                  <th className="px-4 py-3 text-center">{t("ui.date")}</th>
-                  <th className="px-4 py-3 text-center">{t("ui.subtotal")}</th>
-                  <th className="px-4 py-3 text-center">{t("ui.discount")}</th>
-                  <th className="px-4 py-3 text-center">{t("ui.tax")}</th>
-                  <th className="px-4 py-3 text-center">{t("ui.net")}</th>
-                  <th className="px-4 py-3 text-center">{t("ui.status")}</th>
-                  <th className="px-4 py-3 text-center">
-                    {t("screens.tags.title")}
-                  </th>
-                  <th className="px-4 py-3 text-center">
-                    {t("common.actions")}
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-[#e5ebff]">
-                {loading ? (
-                  <tr>
-                    <td colSpan="10" className="p-8 text-center text-slate-500">
-                      {t("common.loading")}
-                    </td>
-                  </tr>
-                ) : filtered?.length === 0 ? (
-                  <tr>
-                    <td colSpan="10" className="p-8 text-center text-slate-500">
-                      {t("screens.invoices.empty")}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered?.map((inv) => {
-                    const itemTax = Number(inv.item_tax_total || 0);
-                    const invoiceTax = Number(inv.taxValue || 0);
-                    const totalTaxValue = Number(
-                      inv.total_tax_value ?? itemTax + invoiceTax,
-                    );
-
-                    const itemDiscount = Number(inv.item_discount_total || 0);
-                    const invoiceDiscount = Number(inv.discount || 0);
-                    const totalDiscountValue = Number(
-                      inv.total_discount_value ??
-                        itemDiscount + invoiceDiscount,
-                    );
-
-                    return (
-                      <tr
-                        key={inv.id}
-                        className="transition hover:bg-[#f8faff]"
-                      >
-                        <td className="px-4 py-3 text-center">
-                          <span className="rounded-lg bg-[#eef3ff] px-2.5 py-1 text-xs font-bold text-[#4663ff]">
-                            #{inv.id}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3  text-center font-medium text-slate-600">
-                          <GoTo type="purchase" id={inv.purchase_invoice_id}>
-                            {inv.purchase_invoice_name ||
-                              `#${inv.purchase_invoice_id}`}
-                          </GoTo>
-                        </td>
-                        <td className="px-4 py-3 text-center font-bold text-slate-900">
-                          <GoTo type="supplier" id={inv.contact_id}>
-                            {inv.supplier_name || "-"}
-                          </GoTo>
-                        </td>
-                        <td className="px-4 py-3  text-center text-slate-500">
-                          <FormattedDate value={inv.date} />
-                        </td>
-                        <td className="px-4 py-3 text-center font-semibold tabular-nums text-slate-700">
-                          {money(inv.subtotal || 0)}
-                        </td>
-
-                        <td className="px-4 py-3 text-center tabular-nums">
-                          {totalDiscountValue > 0 ? (
-                            <BreakdownTooltip
-                              trigger={
-                                <span className="font-bold text-red-500">
-                                  -{money(totalDiscountValue)}
-                                </span>
-                              }
-                              rows={[
-                                {
-                                  label: t("screens.invoices.itemDiscount"),
-                                  value: itemDiscount,
-                                  display: `-${money(itemDiscount)}`,
-                                  className: "text-red-500",
-                                },
-                                {
-                                  label: t("screens.invoices.invoiceDiscount"),
-                                  value: invoiceDiscount,
-                                  display: `-${money(invoiceDiscount)}`,
-                                  className: "text-red-500",
-                                },
-                              ]}
-                            />
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3 text-center tabular-nums">
-                          {totalTaxValue > 0 ? (
-                            <BreakdownTooltip
-                              trigger={
-                                <span className="font-bold text-emerald-600">
-                                  +{money(totalTaxValue)}
-                                </span>
-                              }
-                              rows={[
-                                {
-                                  label: t("screens.invoices.itemTax"),
-                                  value: itemTax,
-                                  display: `+${money(itemTax)}`,
-                                  className: "text-emerald-600",
-                                },
-                                ...(inv.taxes || []).map((tax) => ({
-                                  label: `${tax.name} (${tax.rate}%)`,
-                                  value: tax.value,
-                                  display: `+${money(tax.value)}`,
-                                  className: "text-emerald-600",
-                                })),
-                              ]}
-                            />
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-4 py-3 text-center font-bold tabular-nums text-amber-700">
-                          {money(inv.net_total || 0)}
-                        </td>
-
-                        <td className="px-4 py-3 text-center">
-                          <StatusBadge
-                            status={inv.status}
-                            paidAmount={inv.refunded_amount}
-                            remainingAmount={inv.remaining_amount}
-                            money={money}
-                            t={t}
-                          />
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <TagList
-                            tags={tagsByReturn[inv.id] || []}
-                            limit={2}
-                          />
-                        </td>
-
-                        <td className="px-4 py-3 text-center">
-                          <DropdownMenu
-                            trigger={
-                              <button className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
-                                <MoreVertical size={16} />
-                              </button>
-                            }
-                            align={i18n.dir() === "rtl" ? "left" : "cetner"}
-                            options={[
-                              {
-                                key: "view",
-                                icon: <Eye size={14} />,
-                                label: t("common.view"),
-                                inline: true,
-                                onClick: () =>
-                                  navigate(`/view-purchase-return/${inv.id}`),
-                              },
-                              {
-                                key: "savePdf",
-                                icon: <Download size={14} />,
-                                label: t("common.savePdf"),
-                                onClick: () => handleSavePdf(inv.id),
-                              },
-                              {
-                                key: "print",
-                                icon: <Printer size={14} />,
-                                label: t("common.print"),
-                                onClick: () => handlePrint(inv.id),
-                              },
-                              {
-                                key: "payment",
-                                icon: <HandCoins size={14} />,
-                                label: t("ui.payment"),
-                                inline: true,
-                                onClick: () => {
-                                  setSelecteInvoice(inv);
-                                  setOpenPaymentModel(true);
-                                },
-                                visible: inv.status !== "paid",
-                              },
-                            ]}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+        <section className="overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <DataTable
+            columns={visibleColumns}
+            rows={filtered || []}
+            loading={loading}
+            emptyText={t("screens.invoices.empty")}
+            minWidth={900}
+          />
           <Pagination
             page={page}
             totalPages={totalPages}
             total={total}
             limit={limit}
             onPageChange={setPage}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit);
-            }}
+            onLimitChange={setLimit}
           />
         </section>
       </div>

@@ -27,6 +27,9 @@ import HoverTooltip from "../../../../Global/HoverTooltip";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import GoTo from "../../../../Global/GoTo";
 import TagList from "../../../Tags/components/TagList";
+import DataTable from "../../../../Global/DataTable";
+import ColumnPicker from "../../../../Global/ColumnPicker";
+import useColumnVisibility from "../../../../Global/useColumnVisibility";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -55,26 +58,40 @@ function BreakdownTooltip({ trigger, rows }) {
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
-    paid: { label: t("ui.paid"), className: "bg-emerald-50 text-emerald-600" },
+    paid: {
+      label: t("ui.paid"),
+      classes: "bg-emerald-50 text-emerald-600",
+      dot: "bg-emerald-500",
+    },
     partial: {
       label: t("ui.partial"),
-      className: "bg-amber-50 text-amber-600",
+      classes: "bg-amber-50 text-amber-600",
+      dot: "bg-amber-500",
     },
-    unpaid: { label: t("ui.unpaid"), className: "bg-red-50 text-red-500" },
+    unpaid: {
+      label: t("ui.unpaid"),
+      classes: "bg-red-50 text-red-500",
+      dot: "bg-red-400",
+    },
   };
+  const current = config[status] || config.unpaid;
 
-  const { label, className } = config[status] || config.unpaid;
+  const badge = (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${current.classes}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${current.dot}`} />
+      {current.label}
+    </span>
+  );
+
+  if (status !== "partial") return badge;
 
   return (
-    <div className="group relative inline-block">
-      <span
-        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] font-bold uppercase  ${className}`}
-      >
-        {label}
-      </span>
-
-      {status === "partial" && (
-        <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
+    <HoverTooltip
+      trigger={badge}
+      content={
+        <>
           <div className="flex justify-between">
             <span>{t("ui.paid")}</span>
             <span className="font-bold text-emerald-600">
@@ -87,9 +104,9 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
               {money(remainingAmount)}
             </span>
           </div>
-        </div>
-      )}
-    </div>
+        </>
+      }
+    />
   );
 };
 
@@ -145,6 +162,273 @@ const ExpenseList = () => {
   } = useExpenseList();
 
   const { money } = usePrimaryCurrency();
+
+  const isRtl = i18n.dir() === "rtl";
+
+  const getAmounts = (exp) => {
+    const itemTax = Number(exp.item_tax_total || 0);
+    const invoiceTax = Number(exp.taxValue || 0);
+    const itemDiscount = Number(exp.item_discount_total || 0);
+    const invoiceDiscount = Number(exp.discount || 0);
+    return {
+      itemTax,
+      totalTax: Number(exp.total_tax_value ?? itemTax + invoiceTax),
+      itemDiscount,
+      invoiceDiscount,
+      totalDiscount: Number(
+        exp.total_discount_value ?? itemDiscount + invoiceDiscount,
+      ),
+    };
+  };
+
+  const columns = [
+    {
+      key: "id",
+      label: t("ui.invoice"),
+      locked: true,
+      render: (exp) => (
+        <span className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-[11px] font-black text-[#4663ff]">
+          #{exp.id}
+        </span>
+      ),
+    },
+    {
+      key: "name",
+      label: t("ui.name"),
+      align: "start",
+      cellClassName: "max-w-[220px]",
+      render: (exp) => {
+        const name = (
+          <span className="block truncate font-bold text-slate-900">
+            {exp.invoice_name || "-"}
+          </span>
+        );
+        if (!exp.description) return name;
+        return (
+          <span className="flex items-center gap-1.5">
+            {name}
+            <HoverTooltip
+              trigger={
+                <Info
+                  size={13}
+                  className="shrink-0 cursor-help text-slate-400 hover:text-[#4663ff]"
+                />
+              }
+              content={<div className="max-w-[220px]">{exp.description}</div>}
+            />
+          </span>
+        );
+      },
+    },
+    {
+      key: "supplier",
+      label: t("ui.supplier"),
+      align: "start",
+      cellClassName: "max-w-[180px] truncate font-bold text-slate-900",
+      render: (exp) => (
+        <GoTo id={exp.contact_id} type="supplier">
+          {exp.supplier_name || "-"}
+        </GoTo>
+      ),
+    },
+    {
+      key: "category",
+      label: t("ui.category"),
+      render: (exp) => <CategoryTags names={exp.category_names} />,
+    },
+    {
+      key: "date",
+      label: t("ui.date"),
+      cellClassName: "text-slate-500",
+      render: (exp) => {
+        const { dateLabel, fullLabel } = splitDateTime(exp.date);
+        return (
+          <HoverTooltip
+            trigger={
+              <span className="inline-flex cursor-help items-center gap-1.5">
+                {dateLabel}
+                <Clock size={12} className="text-slate-300" />
+              </span>
+            }
+            content={<div>{fullLabel}</div>}
+          />
+        );
+      },
+    },
+    {
+      key: "subtotal",
+      label: t("ui.subtotal"),
+      align: "end",
+      defaultVisible: false,
+      cellClassName: "font-semibold tabular-nums text-slate-700",
+      render: (exp) => money(exp.subtotal || 0),
+    },
+    {
+      key: "discount",
+      label: t("ui.discount"),
+      align: "end",
+      cellClassName: "tabular-nums",
+      render: (exp) => {
+        const a = getAmounts(exp);
+        if (a.totalDiscount <= 0)
+          return <span className="text-slate-300">—</span>;
+        return (
+          <BreakdownTooltip
+            trigger={
+              <span className="font-bold text-red-500">
+                -{money(a.totalDiscount)}
+              </span>
+            }
+            rows={[
+              {
+                label: t("screens.invoices.itemDiscount"),
+                value: a.itemDiscount,
+                display: `-${money(a.itemDiscount)}`,
+                className: "text-red-500",
+              },
+              {
+                label: t("screens.invoices.invoiceDiscount"),
+                value: a.invoiceDiscount,
+                display: `-${money(a.invoiceDiscount)}`,
+                className: "text-red-500",
+              },
+            ]}
+          />
+        );
+      },
+    },
+    {
+      key: "tax",
+      label: t("ui.tax"),
+      align: "end",
+      cellClassName: "tabular-nums",
+      render: (exp) => {
+        const a = getAmounts(exp);
+        if (a.totalTax <= 0) return <span className="text-slate-300">—</span>;
+        return (
+          <BreakdownTooltip
+            trigger={
+              <span className="font-bold text-emerald-600">
+                +{money(a.totalTax)}
+              </span>
+            }
+            rows={[
+              {
+                label: t("screens.invoices.itemTax"),
+                value: a.itemTax,
+                display: `+${money(a.itemTax)}`,
+                className: "text-emerald-600",
+              },
+              ...(exp.taxes || []).map((tax) => ({
+                label: `${tax.name} (${tax.rate}%)`,
+                value: tax.value,
+                display: `+${money(tax.value)}`,
+                className: "text-emerald-600",
+              })),
+            ]}
+          />
+        );
+      },
+    },
+    {
+      key: "net",
+      label: t("ui.net"),
+      align: "end",
+      cellClassName: "font-bold tabular-nums text-emerald-700",
+      render: (exp) => money(exp.net_total || 0),
+    },
+    {
+      key: "status",
+      label: t("ui.status"),
+      render: (exp) => (
+        <StatusBadge
+          status={exp.status}
+          paidAmount={exp.paid_amount}
+          remainingAmount={exp.remaining_amount}
+          money={money}
+          t={t}
+        />
+      ),
+    },
+    {
+      key: "tags",
+      label: t("screens.tags.title"),
+      defaultVisible: false,
+      render: (exp) => <TagList tags={tagsByExpense[exp.id] || []} limit={2} />,
+    },
+    {
+      key: "actions",
+      label: t("common.actions"),
+      locked: true,
+      sticky: true,
+      width: 140,
+      render: (exp) => {
+        const canEditDelete = exp.status === "unpaid";
+        return (
+          <DropdownMenu
+            trigger={
+              <button className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]">
+                <MoreVertical size={16} />
+              </button>
+            }
+            align={isRtl ? "left" : "right"}
+            options={[
+              {
+                key: "view",
+                icon: <Eye size={14} />,
+                label: t("common.view"),
+                inline: true,
+                onClick: () => navigate(`/view-expense/${exp.id}`),
+              },
+              {
+                key: "edit",
+                icon: <Pencil size={14} />,
+                label: t("common.edit"),
+                inline: true,
+                onClick: () => navigate(`/edit-expense/${exp.id}`),
+                visible: canEditDelete,
+              },
+              {
+                key: "payment",
+                icon: <Wallet2 size={14} />,
+                label: t("ui.payment"),
+                inline: true,
+                onClick: () => {
+                  setSelecteInvoice(exp);
+                  setOpenPaymentModel(true);
+                },
+                visible: exp.status !== "paid",
+              },
+              {
+                key: "savePdf",
+                icon: <Download size={14} />,
+                label: t("common.savePdf"),
+                onClick: () => handleSavePdf(exp.id),
+              },
+              {
+                key: "print",
+                icon: <Printer size={14} />,
+                label: t("common.print"),
+                onClick: () => handlePrint(exp.id),
+              },
+              {
+                key: "delete",
+                icon: <Trash2 size={14} className="text-red-500" />,
+                label: t("common.delete"),
+                onClick: () => setDeleteExpense(exp),
+                visible: canEditDelete,
+              },
+            ]}
+          />
+        );
+      },
+    },
+  ];
+
+  const { visibleColumns, isVisible, toggle, reset } = useColumnVisibility(
+    "expense-list",
+    columns,
+  );
 
   const [actionError, setActionError] = useState("");
   const [deleteExpense, setDeleteExpense] = useState(null);
@@ -286,6 +570,15 @@ const ExpenseList = () => {
             { type: "number", name: "minTotal", label: t("filters.minTotal") },
             { type: "number", name: "maxTotal", label: t("filters.maxTotal") },
           ]}
+          extraActions={
+            <ColumnPicker
+              columns={columns}
+              isVisible={isVisible}
+              onToggle={toggle}
+              onReset={reset}
+              align={isRtl ? "left" : "right"}
+            />
+          }
         />
 
         {(error || actionError || deleteError) && (
@@ -294,273 +587,21 @@ const ExpenseList = () => {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1150px] text-sm">
-              <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                <tr>
-                  <th className="px-5 py-4 text-center">{t("ui.invoice")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.name")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.supplier")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.category")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.subtotal")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.discount")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.tax")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-center">{t("ui.status")}</th>
-                  <th className="px-5 py-4 text-center">
-                    {t("screens.tags.title")}
-                  </th>
-                  <th className="px-4 py-3 text-center">
-                    {t("common.actions")}
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-[#e5ebff]">
-                {loading ? (
-                  <tr>
-                    <td colSpan="11" className="p-8 text-center text-slate-500">
-                      {t("common.loading")}
-                    </td>
-                  </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan="11" className="p-8 text-center text-slate-500">
-                      {t("screens.invoices.empty")}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((exp) => {
-                    const { dateLabel, fullLabel } = splitDateTime(exp.date);
-
-                    const itemTax = Number(exp.item_tax_total || 0);
-                    const invoiceTax = Number(exp.taxValue || 0);
-                    const totalTaxValue = Number(
-                      exp.total_tax_value ?? itemTax + invoiceTax,
-                    );
-
-                    const itemDiscount = Number(exp.item_discount_total || 0);
-                    const invoiceDiscount = Number(exp.discount || 0);
-                    const totalDiscountValue = Number(
-                      exp.total_discount_value ??
-                        itemDiscount + invoiceDiscount,
-                    );
-
-                    const canEditDelete = exp.status === "unpaid";
-
-                    return (
-                      <tr
-                        key={exp.id}
-                        className="transition hover:bg-[#f8faff]"
-                      >
-                        <td className="px-5 py-4 text-center">
-                          <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-black text-[#4663ff]">
-                            #{exp.id}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4 text-center">
-                          <div className="group relative flex items-center gap-1.5">
-                            <span className="font-bold text-slate-900">
-                              {exp.invoice_name || "-"}
-                            </span>
-                            {exp.description && (
-                              <>
-                                <Info
-                                  size={14}
-                                  className="cursor-help text-slate-400 hover:text-[#4663ff]"
-                                />
-                                <span className="pointer-events-none absolute bottom-full left-0 z-10 mb-1.5 max-w-[220px] whitespace-normal rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-medium leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                                  {exp.description}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="px-5 py-4 text-center font-bold text-slate-900">
-                          <GoTo id={exp.contact_id} type={"supplier"}>
-                            {exp.supplier_name || "-"}
-                          </GoTo>
-                        </td>
-
-                        <td className="px-5 py-4 text-center">
-                          <CategoryTags names={exp.category_names} />
-                        </td>
-
-                        <td className="px-5 py-4 text-center text-slate-500">
-                          <span className="group relative inline-flex cursor-help items-center gap-1.5">
-                            {dateLabel}
-                            <Clock
-                              size={12}
-                              className="text-slate-300 group-hover:text-[#4663ff]"
-                            />
-                            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                              {fullLabel}
-                            </span>
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4 text-center font-semibold tabular-nums text-slate-700">
-                          {money(exp.subtotal || 0)}
-                        </td>
-
-                        <td className="px-5 py-4 text-center tabular-nums">
-                          {totalDiscountValue > 0 ? (
-                            <BreakdownTooltip
-                              trigger={
-                                <span className="font-bold text-red-500">
-                                  -{money(totalDiscountValue)}
-                                </span>
-                              }
-                              rows={[
-                                {
-                                  label: t("screens.invoices.itemDiscount"),
-                                  value: itemDiscount,
-                                  display: `-${money(itemDiscount)}`,
-                                  className: "text-red-500",
-                                },
-                                {
-                                  label: t("screens.invoices.invoiceDiscount"),
-                                  value: invoiceDiscount,
-                                  display: `-${money(invoiceDiscount)}`,
-                                  className: "text-red-500",
-                                },
-                              ]}
-                            />
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4 text-center tabular-nums">
-                          {totalTaxValue > 0 ? (
-                            <BreakdownTooltip
-                              trigger={
-                                <span className="font-bold text-emerald-600">
-                                  +{money(totalTaxValue)}
-                                </span>
-                              }
-                              rows={[
-                                {
-                                  label: t("screens.invoices.itemTax"),
-                                  value: itemTax,
-                                  display: `+${money(itemTax)}`,
-                                  className: "text-emerald-600",
-                                },
-                                ...(exp.taxes || []).map((tax) => ({
-                                  label: `${tax.name} (${tax.rate}%)`,
-                                  value: tax.value,
-                                  display: `+${money(tax.value)}`,
-                                  className: "text-emerald-600",
-                                })),
-                              ]}
-                            />
-                          ) : (
-                            <span className="text-slate-300">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4 text-center tabular-nums text-emerald-700 font-semibold">
-                          {money(exp.net_total || 0)}
-                        </td>
-
-                        <td className="px-5 py-4 text-center">
-                          <StatusBadge
-                            status={exp.status}
-                            paidAmount={exp.paid_amount}
-                            remainingAmount={exp.remaining_amount}
-                            money={money}
-                            t={t}
-                          />
-                        </td>
-
-                        <td className="px-5 py-4 text-center">
-                          <TagList
-                            tags={tagsByExpense[exp.id] || []}
-                            limit={2}
-                          />
-                        </td>
-
-                        <td className="px-5 py-4 text-center">
-                          <DropdownMenu
-                            trigger={
-                              <button className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
-                                <MoreVertical size={16} />
-                              </button>
-                            }
-                            align={i18n.dir() === "rtl" ? "left" : "right"}
-                            options={[
-                              {
-                                key: "view",
-                                icon: <Eye size={14} />,
-                                label: t("common.view"),
-                                inline: true,
-                                onClick: () =>
-                                  navigate(`/view-expense/${exp.id}`),
-                              },
-                              {
-                                key: "savePdf",
-                                icon: <Download size={14} />,
-                                label: t("common.savePdf"),
-                                onClick: () => handleSavePdf(exp.id),
-                              },
-                              {
-                                key: "print",
-                                icon: <Printer size={14} />,
-                                label: t("common.print"),
-                                onClick: () => handlePrint(exp.id),
-                              },
-                              {
-                                key: "payment",
-                                icon: <Wallet2 size={14} />,
-                                label: t("ui.payment"),
-                                inline: true,
-                                onClick: () => {
-                                  setSelecteInvoice(exp);
-                                  setOpenPaymentModel(true);
-                                },
-                                visible: exp.status !== "paid",
-                              },
-                              {
-                                key: "edit",
-                                icon: <Pencil size={14} />,
-                                label: t("common.edit"),
-                                inline: true,
-                                onClick: () =>
-                                  navigate(`/edit-expense/${exp.id}`),
-                                visible: canEditDelete,
-                              },
-                              {
-                                key: "delete",
-                                icon: (
-                                  <Trash2 size={14} className="text-red-500" />
-                                ),
-                                label: t("common.delete"),
-                                onClick: () => setDeleteExpense(exp),
-                                visible: canEditDelete,
-                              },
-                            ]}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+        <section className="overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <DataTable
+            columns={visibleColumns}
+            rows={filtered}
+            loading={loading}
+            emptyText={t("screens.invoices.empty")}
+            minWidth={1000}
+          />
           <Pagination
             page={page}
             totalPages={totalPages}
             total={total}
             limit={limit}
             onPageChange={setPage}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit);
-            }}
+            onLimitChange={setLimit}
           />
         </section>
       </div>

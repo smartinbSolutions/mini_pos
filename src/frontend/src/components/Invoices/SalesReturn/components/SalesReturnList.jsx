@@ -22,28 +22,46 @@ import FormattedDate from "../../../../Global/FormattedDate";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import DropdownMenu from "../../../../Global/DropdownMenu";
 import TagList from "../../../Tags/components/TagList";
+import DataTable from "../../../../Global/DataTable";
+import ColumnPicker from "../../../../Global/ColumnPicker";
+import useColumnVisibility from "../../../../Global/useColumnVisibility";
 
 const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
-    paid: { label: t("ui.paid"), classes: "bg-emerald-50 text-emerald-600" },
+    paid: {
+      label: t("ui.paid"),
+      classes: "bg-emerald-50 text-emerald-600",
+      dot: "bg-emerald-500",
+    },
     partial: {
       label: t("ui.partial"),
       classes: "bg-amber-50 text-amber-600",
+      dot: "bg-amber-500",
     },
-    unpaid: { label: t("ui.unpaid"), classes: "bg-slate-100 text-slate-500" },
+    unpaid: {
+      label: t("ui.unpaid"),
+      classes: "bg-slate-100 text-slate-500",
+      dot: "bg-slate-400",
+    },
   };
   const current = config[status] || config.unpaid;
 
-  return (
-    <div className="group relative inline-block">
-      <span
-        className={`inline-flex items-center rounded-lg px-2.5 py-1 text-[11px] uppercase  ${current.classes}`}
-      >
-        {current.label}
-      </span>
+  const badge = (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${current.classes}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${current.dot}`} />
+      {current.label}
+    </span>
+  );
 
-      {status === "partial" && (
-        <div className="pointer-events-none absolute left-1/2 top-full z-10 mt-2 w-48 -translate-x-1/2 rounded-xl border border-[#e5ebff] bg-white p-3 text-xs font-semibold text-slate-600 opacity-0 shadow-lg transition group-hover:opacity-100">
+  if (status !== "partial") return badge;
+
+  return (
+    <HoverTooltip
+      trigger={badge}
+      content={
+        <>
           <div className="flex justify-between">
             <span>{t("ui.refunded")}</span>
             <span className="font-bold text-emerald-600">
@@ -56,9 +74,9 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
               {money(remainingAmount)}
             </span>
           </div>
-        </div>
-      )}
-    </div>
+        </>
+      }
+    />
   );
 };
 
@@ -99,6 +117,212 @@ const SalesReturnList = () => {
   const [actionError, setActionError] = useState("");
   const [deleteInvoice, setDeleteInvoice] = useState(null);
   const { money } = usePrimaryCurrency();
+
+  const taxOf = (inv) => Number(inv.total_tax_value ?? inv.taxValue ?? 0);
+
+  const columns = [
+    {
+      key: "returnId",
+      label: t("ui.returnId"),
+      locked: true,
+      render: (inv) => (
+        <span className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-[11px] font-bold text-[#4663ff]">
+          #{inv.id}
+        </span>
+      ),
+    },
+    {
+      key: "channel",
+      label: t("filters.channel"),
+      render: (inv) => (
+        <span
+          className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase ${
+            inv.channel === "pos"
+              ? "bg-violet-50 text-violet-600"
+              : "bg-slate-100 text-slate-500"
+          }`}
+        >
+          {inv.channel === "pos"
+            ? t("screens.invoices.pos")
+            : t("screens.invoices.manual")}
+        </span>
+      ),
+    },
+    {
+      key: "originalInvoice",
+      label: t("ui.originalInvoice"),
+      cellClassName: "font-medium text-slate-600",
+      render: (inv) => (
+        <>
+          {inv.original_invoice_name ? `${inv.original_invoice_name} ` : ""}
+          <span className="text-[11px] font-normal text-slate-400">
+            (#{inv.sales_invoice_id})
+          </span>
+        </>
+      ),
+    },
+    {
+      key: "customer",
+      label: t("ui.customer"),
+      align: "start",
+      cellClassName: "max-w-[200px] truncate font-bold text-slate-900",
+      render: (inv) => (
+        <GoTo type="customer" id={inv.contact_id}>
+          {inv.customer_name || "-"}
+        </GoTo>
+      ),
+    },
+    {
+      key: "date",
+      label: t("ui.date"),
+      cellClassName: "text-slate-500",
+      render: (inv) => <FormattedDate value={inv.date} />,
+    },
+    {
+      key: "subtotal",
+      label: t("ui.subtotal"),
+      align: "end",
+      defaultVisible: false,
+      cellClassName: "font-semibold tabular-nums text-slate-700",
+      render: (inv) => money(inv.subtotal || 0),
+    },
+    {
+      key: "discount",
+      label: t("ui.discount"),
+      align: "end",
+      cellClassName: "tabular-nums",
+      render: (inv) =>
+        Number(inv.total_discount_value || 0) > 0 ? (
+          <span className="font-bold text-red-500">
+            -{money(inv.total_discount_value)}
+          </span>
+        ) : (
+          <span className="text-slate-300">—</span>
+        ),
+    },
+    {
+      key: "tax",
+      label: t("ui.tax"),
+      align: "end",
+      cellClassName: "tabular-nums",
+      render: (inv) => {
+        if (taxOf(inv) <= 0) return <span className="text-slate-300">—</span>;
+        return (
+          <HoverTooltip
+            trigger={
+              <span className="cursor-default font-bold text-emerald-600">
+                +{money(taxOf(inv))}
+              </span>
+            }
+            content={
+              (inv.taxes || []).length > 0 ? (
+                (inv.taxes || []).map((tax, i) => (
+                  <div
+                    key={tax.tax_id ?? i}
+                    className={`flex justify-between ${i > 0 ? "mt-1" : ""}`}
+                  >
+                    <span>
+                      {tax.name} ({tax.rate}%)
+                    </span>
+                    <span className="font-bold text-emerald-600">
+                      +{money(tax.value)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="flex justify-between">
+                  <span>{t("ui.tax")}</span>
+                  <span className="font-bold text-emerald-600">
+                    +{money(inv.taxValue)}
+                  </span>
+                </div>
+              )
+            }
+          />
+        );
+      },
+    },
+    {
+      key: "net",
+      label: t("ui.net"),
+      align: "end",
+      cellClassName: "font-bold tabular-nums text-emerald-700",
+      render: (inv) => money(inv.net_total || 0),
+    },
+    {
+      key: "status",
+      label: t("ui.status"),
+      render: (inv) => (
+        <StatusBadge
+          status={inv.status}
+          paidAmount={inv.refunded_amount}
+          remainingAmount={inv.remaining_amount}
+          money={money}
+          t={t}
+        />
+      ),
+    },
+    {
+      key: "tags",
+      label: t("screens.tags.title"),
+      defaultVisible: false,
+      render: (inv) => <TagList tags={tagsByReturn[inv.id] || []} limit={2} />,
+    },
+    {
+      key: "actions",
+      label: t("common.actions"),
+      locked: true,
+      sticky: true,
+      width: 110,
+      render: (inv) => (
+        <DropdownMenu
+          trigger={
+            <button className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]">
+              <MoreVertical size={16} />
+            </button>
+          }
+          align={isRtl ? "left" : "right"}
+          options={[
+            {
+              key: "view",
+              icon: <Eye size={14} />,
+              label: t("common.view"),
+              inline: true,
+              onClick: () => navigate(`/view-sales-return/${inv.id}`),
+            },
+            {
+              key: "payment",
+              icon: <HandCoins size={14} />,
+              label: t("ui.payment"),
+              inline: true,
+              onClick: () => {
+                setSelectedInvoice(inv);
+                setOpenPaymentModel(true);
+              },
+              visible: inv.status !== "paid",
+            },
+            {
+              key: "savePdf",
+              icon: <Download size={14} />,
+              label: t("common.savePdf"),
+              onClick: () => handleSavePdf(inv.id),
+            },
+            {
+              key: "print",
+              icon: <Printer size={14} />,
+              label: t("common.print"),
+              onClick: () => handlePrint(inv.id),
+            },
+          ]}
+        />
+      ),
+    },
+  ];
+
+  const { visibleColumns, isVisible, toggle, reset } = useColumnVisibility(
+    "sales-return-list",
+    columns,
+  );
 
   const salesReturnFilterFields = [
     { name: "dateFrom", type: "date", label: t("filters.dateFrom") },
@@ -244,6 +468,15 @@ const SalesReturnList = () => {
           onClearFilters={clearFilters}
           filterFields={salesReturnFilterFields}
           clearLabel={t("common.clear")}
+          extraActions={
+            <ColumnPicker
+              columns={columns}
+              isVisible={isVisible}
+              onToggle={toggle}
+              onReset={reset}
+              align={isRtl ? "left" : "right"}
+            />
+          }
         />
 
         {(error || actionError) && (
@@ -252,211 +485,21 @@ const SalesReturnList = () => {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-[28px] border border-white/80 bg-white/85 shadow-[0_18px_60px_rgba(70,99,255,0.10)]">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1050px] text-sm">
-              <thead className="bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                <tr>
-                  <th className="px-5 py-4 text-start">{t("ui.returnId")}</th>
-                  <th className="px-5 py-4 text-start">
-                    {t("ui.originalInvoice")}
-                  </th>
-                  <th className="px-5 py-4 text-start">{t("ui.customer")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.date")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.subtotal")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.tax")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.net")}</th>
-                  <th className="px-5 py-4 text-start">{t("ui.status")}</th>
-                  <th className="px-5 py-4 text-start">
-                    {t("screens.tags.title")}
-                  </th>
-                  <th className="px-5 py-4 text-start">
-                    {t("common.actions")}
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-[#e5ebff]">
-                {loading ? (
-                  <tr>
-                    <td colSpan="9" className="p-8 text-start text-slate-500">
-                      {t("common.loading")}
-                    </td>
-                  </tr>
-                ) : filtered?.length === 0 ? (
-                  <tr>
-                    <td colSpan="9" className="p-8 text-start text-slate-500">
-                      {t("screens.invoices.empty")}
-                    </td>
-                  </tr>
-                ) : (
-                  filtered?.map((inv) => (
-                    <tr key={inv.id} className="transition hover:bg-[#f8faff]">
-                      <td className="px-5 py-4 text-start">
-                        <div className="flex flex-col items-start gap-1">
-                          <span className="rounded-xl bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4663ff]">
-                            #{inv.id}
-                          </span>
-                          <span
-                            className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase ${
-                              inv.channel === "pos"
-                                ? "bg-violet-50 text-violet-600"
-                                : "bg-slate-100 text-slate-500"
-                            }`}
-                          >
-                            {inv.channel === "pos"
-                              ? t("screens.invoices.pos")
-                              : t("screens.invoices.manual")}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-start text-slate-600 font-medium">
-                        {inv.original_invoice_name
-                          ? `${inv.original_invoice_name} `
-                          : ""}
-                        <span className="text-xs text-slate-400 font-normal">
-                          (#{inv.sales_invoice_id})
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-start font-bold text-slate-900">
-                        <GoTo type="customer" id={inv.contact_id}>
-                          {inv.customer_name || "-"}
-                        </GoTo>
-                      </td>
-                      <td className="px-5 py-4 text-start text-slate-500">
-                        <FormattedDate value={inv.date} />
-                      </td>
-                      <td className="px-5 py-4 text-start">
-                        <div className="font-semibold tabular-nums text-slate-700">
-                          {money(inv.subtotal || 0)}
-                        </div>
-                        {Number(inv.total_discount_value || 0) > 0 && (
-                          <div className="mt-0.5 inline-flex items-center rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-500">
-                            -{money(inv.total_discount_value)}{" "}
-                            {t("ui.discount")}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-start tabular-nums">
-                        {Number(inv.total_tax_value ?? inv.taxValue ?? 0) >
-                        0 ? (
-                          <HoverTooltip
-                            trigger={
-                              <div className="cursor-default">
-                                <div className="font-bold text-slate-700">
-                                  + {money(inv.total_tax_value ?? inv.taxValue)}
-                                </div>
-                                <div className="text-[11px] font-semibold text-slate-400">
-                                  {(inv.taxes || [])
-                                    .map((tax) => `${tax.rate}%`)
-                                    .join(" + ") || `${inv.taxRate}%`}
-                                </div>
-                              </div>
-                            }
-                            content={
-                              (inv.taxes || []).length > 0 ? (
-                                (inv.taxes || []).map((tax, i) => (
-                                  <div
-                                    key={tax.tax_id ?? i}
-                                    className={`flex justify-between ${i > 0 ? "mt-1" : ""}`}
-                                  >
-                                    <span>
-                                      {tax.name} ({tax.rate}%)
-                                    </span>
-                                    <span className="font-bold text-emerald-600">
-                                      +{money(tax.value)}
-                                    </span>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="flex justify-between">
-                                  <span>{t("ui.tax")}</span>
-                                  <span className="font-bold text-emerald-600">
-                                    +{money(inv.taxValue)}
-                                  </span>
-                                </div>
-                              )
-                            }
-                          />
-                        ) : (
-                          <span className="text-slate-400">{money(0)}</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-4 text-start tabular-nums text-emerald-700 font-semibold">
-                        {money(inv.net_total || 0)}
-                      </td>
-
-                      <td className="px-5 py-4 text-center">
-                        <StatusBadge
-                          status={inv.status}
-                          paidAmount={inv.refunded_amount}
-                          remainingAmount={inv.remaining_amount}
-                          money={money}
-                          t={t}
-                        />
-                      </td>
-
-                      <td className="px-5 py-4 text-center">
-                        <TagList tags={tagsByReturn[inv.id] || []} limit={2} />
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <DropdownMenu
-                          trigger={
-                            <button className="rounded-xl p-2 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
-                              <MoreVertical size={16} />
-                            </button>
-                          }
-                          align={i18n.dir() === "rtl" ? "left" : "right"}
-                          options={[
-                            {
-                              key: "view",
-                              icon: <Eye size={14} />,
-                              label: t("common.view"),
-                              inline: true,
-                              onClick: () =>
-                                navigate(`/view-sales-return/${inv.id}`),
-                            },
-                            {
-                              key: "savePdf",
-                              icon: <Download size={14} />,
-                              label: t("common.savePdf"),
-                              onClick: () => handleSavePdf(inv.id),
-                            },
-                            {
-                              key: "print",
-                              icon: <Printer size={14} />,
-                              label: t("common.print"),
-                              onClick: () => handlePrint(inv.id),
-                            },
-                            {
-                              key: "payment",
-                              icon: <HandCoins size={14} />,
-                              label: t("ui.payment"),
-                              inline: true,
-                              onClick: () => {
-                                setSelectedInvoice(inv);
-                                setOpenPaymentModel(true);
-                              },
-                              visible: inv.status !== "paid",
-                            },
-                          ]}
-                        />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <section className="overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <DataTable
+            columns={visibleColumns}
+            rows={filtered || []}
+            loading={loading}
+            emptyText={t("screens.invoices.empty")}
+            minWidth={900}
+          />
           <Pagination
             page={page}
             totalPages={totalPages}
             total={total}
             limit={limit}
             onPageChange={setPage}
-            onLimitChange={(newLimit) => {
-              setLimit(newLimit);
-            }}
+            onLimitChange={setLimit}
           />
         </section>
       </div>

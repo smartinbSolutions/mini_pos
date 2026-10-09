@@ -172,7 +172,7 @@ const PurchaseList = () => {
       key: "invoice",
       label: t("ui.invoice"),
       locked: true,
-      render: (inv) => <InvoiceIdBadge id={inv.id} name={inv.invoice_name} />,
+      render: (inv) => <InvoiceIdBadge id={inv.id} />,
     },
     {
       key: "supplier",
