@@ -30,7 +30,11 @@ import useLatinMode from "../../../../Global/useLatinMode";
 import useProductCatalog from "../../../Products/hooks/useProductCatalog";
 import ProductQuickAddModal from "../../../Products/components/ProductQuickAddModal";
 import ContactFormModal from "../../../../Global/ContactFormModal";
-
+import {
+  compactInputClass,
+  InvoiceItemRow,
+  InvoiceItemsHeader,
+} from "../../../../Global/InvoiceItemRow";
 // ---- Shared, module-level so re-renders never remount them ----
 
 const inputClass =
@@ -413,321 +417,360 @@ export default function AddSalesQuotation() {
                   </button>
                 </div>
               ) : (
-                <div className="divide-y divide-[#eef1ff]">
-                  {items.map((item, index) => {
-                    const afterDiscount =
-                      (item.total || 0) - (item.discount || 0);
-                    const lineTotal = afterDiscount + (item.taxValue || 0);
-                    const hasProduct = Boolean(
-                      item.product_id || item.product_name?.trim(),
-                    );
-                    const hasTax = hasProduct && item.tax_capable;
-                    const isNonBaseUnit =
-                      item.unit_conversion_factor &&
-                      item.unit_conversion_factor !== 1;
-                    const discountRevealed = revealedItemDiscounts.has(index);
+                <>
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[680px]">
+                      <InvoiceItemsHeader
+                        labels={[
+                          t("ui.product"),
+                          t("ui.qty"),
+                          t("ui.price"),
+                          t("ui.unit"),
+                          t("ui.total"),
+                          "",
+                        ]}
+                      />
 
-                    return (
-                      <div
-                        key={index}
-                        className="space-y-2.5 p-3.5 transition hover:bg-[#fafbff]"
-                      >
-                        <div className="flex items-start gap-2">
-                          <div className="flex-1">
-                            {/* Combo: pick a real catalog product, or type any
-                                name — product_id stays null if it's not a
-                                catalog match, matching the nullable schema. */}
-                            <SearchableSelect
-                              placeholder={t("ui.productNameOrSelect")}
-                              options={products}
-                              getOptionLabel={productOptionLabel}
-                              selectedValue={item.product_id}
-                              selectedLabel={pick(
-                                item.latin_name,
-                                item.product_name,
-                              )}
-                              onChange={(e) => {
-                                updateItem(index, "product_id", e.id);
-                              }}
-                              onInputChange={async (value) => {
-                                updateItem(index, "product_name", value);
+                      <div className="divide-y divide-[#eef1ff]">
+                        {items.map((item, index) => {
+                          const afterDiscount =
+                            (item.total || 0) - (item.discount || 0);
+                          const lineTotal =
+                            afterDiscount + (item.taxValue || 0);
+                          const hasProduct = Boolean(
+                            item.product_id || item.product_name?.trim(),
+                          );
+                          const hasTax = hasProduct && item.tax_capable;
+                          const isNonBaseUnit =
+                            item.unit_conversion_factor &&
+                            item.unit_conversion_factor !== 1;
+                          const discountRevealed =
+                            revealedItemDiscounts.has(index);
+                          const noteRevealed = revealedItemNotes.has(index);
 
-                                try {
-                                  const res = await api.getProducts({
-                                    page: 1,
-                                    limit: 50,
-                                    search: value.trim() || undefined,
-                                  });
+                          const hasExtras =
+                            isNonBaseUnit ||
+                            hasTax ||
+                            discountRevealed ||
+                            noteRevealed;
 
-                                  setProducts(res?.data || []);
-                                } catch (err) {
-                                  console.error(err);
-                                }
-                              }}
-                            />
-                            {item.product_code && (
-                              <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
-                                #{item.product_code}
-                              </p>
-                            )}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => setDeleteItemIndex(index)}
-                            disabled={items.length === 1}
-                            title={
-                              items.length === 1
-                                ? t("screens.invoices.keepOneItem")
-                                : undefined
-                            }
-                            className="mt-0.5 rounded-lg p-2 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-                          <div>
-                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
-                              {t("ui.qty")}
-                            </label>
-                            <NumberInput
-                              className={inputClass}
-                              value={item.entered_quantity}
-                              onChange={(val) =>
-                                updateItem(index, "entered_quantity", val)
+                          return (
+                            <InvoiceItemRow
+                              key={index}
+                              actions={
+                                <>
+                                  {hasProduct && (
+                                    <AddOptionsMenu
+                                      align="right"
+                                      options={[
+                                        {
+                                          key: "tax",
+                                          label: t("screens.invoices.addTax"),
+                                          icon: (
+                                            <Receipt
+                                              size={13}
+                                              className="text-emerald-600"
+                                            />
+                                          ),
+                                          visible: !item.tax_capable,
+                                          onClick: () => enableItemTax(index),
+                                        },
+                                        {
+                                          key: "discount",
+                                          label: t(
+                                            "screens.invoices.addDiscount",
+                                          ),
+                                          icon: (
+                                            <Percent
+                                              size={13}
+                                              className="text-red-500"
+                                            />
+                                          ),
+                                          visible: !discountRevealed,
+                                          onClick: () =>
+                                            toggleItemDiscount(index, false),
+                                        },
+                                        {
+                                          key: "note",
+                                          label: t("screens.invoices.addNote"),
+                                          icon: (
+                                            <StickyNote
+                                              size={13}
+                                              className="text-amber-500"
+                                            />
+                                          ),
+                                          visible: !noteRevealed,
+                                          onClick: () =>
+                                            toggleItemNote(index, false),
+                                        },
+                                      ]}
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setDeleteItemIndex(index)}
+                                    disabled={items.length === 1}
+                                    title={
+                                      items.length === 1
+                                        ? t("screens.invoices.keepOneItem")
+                                        : undefined
+                                    }
+                                    className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </>
                               }
-                            />
-                          </div>
+                              extras={
+                                hasExtras ? (
+                                  <>
+                                    {isNonBaseUnit && (
+                                      <p className="flex items-center gap-1.5 rounded-lg bg-[#f6f8fd] px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                        <Tag
+                                          size={11}
+                                          className="shrink-0 text-slate-400"
+                                        />
+                                        {t(
+                                          "screens.invoices.unitConversionDetail",
+                                          {
+                                            enteredQty: item.entered_quantity,
+                                            unitName: selectedUnitLabel(item),
+                                            factor: item.unit_conversion_factor,
+                                            baseQty: item.quantity,
+                                          },
+                                        )}
+                                      </p>
+                                    )}
 
-                          <div>
-                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
-                              {t("ui.price")}
-                            </label>
-                            <NumberInput
-                              className={inputClass}
-                              value={item.entered_price}
-                              onChange={(val) =>
-                                updateItem(index, "entered_price", val)
+                                    {(hasTax || discountRevealed) && (
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        {hasTax && (
+                                          <AdjustmentChip
+                                            icon={
+                                              <Receipt
+                                                size={12}
+                                                className="shrink-0 text-emerald-600"
+                                              />
+                                            }
+                                            tone="success"
+                                            onRemove={() =>
+                                              disableItemTax(index)
+                                            }
+                                          >
+                                            <select
+                                              className="h-6 border-none bg-transparent text-xs font-bold text-emerald-700 outline-none"
+                                              value={item.tax_id || ""}
+                                              onChange={(e) => {
+                                                const newTaxId = e.target.value
+                                                  ? Number(e.target.value)
+                                                  : null;
+                                                const selectedTax = taxes?.find(
+                                                  (tx) => tx.id === newTaxId,
+                                                );
+                                                updateItemTax(
+                                                  index,
+                                                  newTaxId,
+                                                  selectedTax?.rate || 0,
+                                                );
+                                              }}
+                                            >
+                                              <option value="">
+                                                {t(
+                                                  "screens.products.noTaxOption",
+                                                )}
+                                              </option>
+                                              {taxes
+                                                ?.filter(
+                                                  (tax) =>
+                                                    tax.category ===
+                                                      "product" ||
+                                                    tax.category === "both",
+                                                )
+                                                .map((tax) => (
+                                                  <option
+                                                    key={tax.id}
+                                                    value={tax.id}
+                                                  >
+                                                    {tax.name} ({tax.rate}%)
+                                                  </option>
+                                                ))}
+                                            </select>
+                                          </AdjustmentChip>
+                                        )}
+
+                                        {discountRevealed && (
+                                          <AdjustmentChip
+                                            icon={
+                                              <Percent
+                                                size={12}
+                                                className="shrink-0 text-red-500"
+                                              />
+                                            }
+                                            tone="danger"
+                                            onRemove={() =>
+                                              toggleItemDiscount(index, true)
+                                            }
+                                          >
+                                            <NumberInput
+                                              className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                              value={item.discount_rate || ""}
+                                              onChange={(val) =>
+                                                updateItemDiscountRate(
+                                                  index,
+                                                  val,
+                                                )
+                                              }
+                                              max={100}
+                                              placeholder="0"
+                                            />
+                                            <span className="text-[10px] text-red-400">
+                                              % =
+                                            </span>
+                                            <NumberInput
+                                              className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                              value={item.discount || ""}
+                                              onChange={(val) =>
+                                                updateItemDiscountAmount(
+                                                  index,
+                                                  val,
+                                                )
+                                              }
+                                              placeholder="0"
+                                            />
+                                          </AdjustmentChip>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {noteRevealed && (
+                                      <div className="flex w-full items-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50/60 px-2.5 py-1">
+                                        <StickyNote
+                                          size={12}
+                                          className="shrink-0 text-amber-500"
+                                        />
+                                        <input
+                                          type="text"
+                                          className="h-6 w-full min-w-0 flex-1 border-none bg-transparent text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400"
+                                          value={item.description || ""}
+                                          onChange={(e) =>
+                                            updateItemDescription(
+                                              index,
+                                              e.target.value,
+                                            )
+                                          }
+                                          placeholder={t(
+                                            "screens.invoices.notePlaceholder",
+                                          )}
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            toggleItemNote(index, true)
+                                          }
+                                          className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
+                                        >
+                                          <X size={13} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </>
+                                ) : null
                               }
-                            />
-                          </div>
-
-                          <div>
-                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
-                              {t("ui.unit")}
-                            </label>
-                            {item.available_units?.length > 0 ? (
-                              <select
-                                className={inputClass}
-                                value={item.unit_id || ""}
-                                onChange={(e) =>
-                                  updateItemUnit(index, e.target.value)
-                                }
-                              >
-                                {item.available_units.map((u) => (
-                                  <option key={u.id} value={u.id}>
-                                    {unitOptionLabel(item, u)}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <input
-                                type="text"
-                                className={inputClass}
-                                value={item.unit_name || ""}
-                                onChange={(e) =>
-                                  updateItem(index, "unit_name", e.target.value)
-                                }
-                                placeholder="—"
-                              />
-                            )}
-                          </div>
-
-                          <div>
-                            <label className="mb-1 block text-[11px] font-bold text-slate-400">
-                              {t("ui.total")}
-                            </label>
-                            <div className="flex h-9 items-center rounded-xl bg-[#f6f8fd] px-3 text-sm font-black tabular-nums text-[#4663ff]">
-                              {money(lineTotal)}
-                            </div>
-                          </div>
-
-                          {hasProduct && (
-                            <div className="flex items-end">
-                              <AddOptionsMenu
-                                align="right"
-                                options={[
-                                  {
-                                    key: "tax",
-                                    label: t("screens.invoices.addTax"),
-                                    icon: (
-                                      <Receipt
-                                        size={13}
-                                        className="text-emerald-600"
-                                      />
-                                    ),
-                                    visible: !item.tax_capable,
-                                    onClick: () => enableItemTax(index),
-                                  },
-                                  {
-                                    key: "discount",
-                                    label: t("screens.invoices.addDiscount"),
-                                    icon: (
-                                      <Percent
-                                        size={13}
-                                        className="text-red-500"
-                                      />
-                                    ),
-                                    visible: !discountRevealed,
-                                    onClick: () =>
-                                      toggleItemDiscount(index, false),
-                                  },
-                                  {
-                                    key: "note",
-                                    label: t("screens.invoices.addNote"),
-                                    icon: (
-                                      <StickyNote
-                                        size={13}
-                                        className="text-amber-500"
-                                      />
-                                    ),
-                                    visible: !revealedItemNotes.has(index),
-                                    onClick: () => toggleItemNote(index, false),
-                                  },
-                                ]}
-                              />
-                            </div>
-                          )}
-                        </div>
-
-                        {isNonBaseUnit && (
-                          <p className="flex items-center gap-1.5 rounded-lg bg-[#f6f8fd] px-2.5 py-1.5 text-[11px] font-semibold text-slate-500">
-                            <Tag
-                              size={11}
-                              className="shrink-0 text-slate-400"
-                            />
-                            {t("screens.invoices.unitConversionDetail", {
-                              enteredQty: item.entered_quantity,
-                              unitName: selectedUnitLabel(item),
-                              factor: item.unit_conversion_factor,
-                              baseQty: item.quantity,
-                            })}
-                          </p>
-                        )}
-
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {hasTax && (
-                            <AdjustmentChip
-                              icon={
-                                <Receipt
-                                  size={12}
-                                  className="shrink-0 text-emerald-600"
-                                />
-                              }
-                              tone="success"
-                              onRemove={() => disableItemTax(index)}
                             >
-                              <select
-                                className="h-6 border-none bg-transparent text-xs font-bold text-emerald-700 outline-none"
-                                value={item.tax_id || ""}
-                                onChange={(e) => {
-                                  const newTaxId = e.target.value
-                                    ? Number(e.target.value)
-                                    : null;
-                                  const selectedTax = taxes?.find(
-                                    (tx) => tx.id === newTaxId,
-                                  );
-                                  updateItemTax(
-                                    index,
-                                    newTaxId,
-                                    selectedTax?.rate || 0,
-                                  );
-                                }}
+                              {/* Combo: pick a catalog product or type any name —
+                    product_id stays null if it's not a catalog match. */}
+                              <div
+                                title={
+                                  item.product_code
+                                    ? `#${item.product_code}`
+                                    : undefined
+                                }
                               >
-                                <option value="">
-                                  {t("screens.products.noTaxOption")}
-                                </option>
-                                {taxes
-                                  ?.filter(
-                                    (tax) =>
-                                      tax.category === "product" ||
-                                      tax.category === "both",
-                                  )
-                                  .map((tax) => (
-                                    <option key={tax.id} value={tax.id}>
-                                      {tax.name} ({tax.rate}%)
+                                <SearchableSelect
+                                  placeholder={t("ui.productNameOrSelect")}
+                                  options={products}
+                                  getOptionLabel={productOptionLabel}
+                                  selectedValue={item.product_id}
+                                  selectedLabel={pick(
+                                    item.latin_name,
+                                    item.product_name,
+                                  )}
+                                  onChange={(e) =>
+                                    updateItem(index, "product_id", e.id)
+                                  }
+                                  onInputChange={async (value) => {
+                                    updateItem(index, "product_name", value);
+
+                                    try {
+                                      const res = await api.getProducts({
+                                        page: 1,
+                                        limit: 50,
+                                        search: value.trim() || undefined,
+                                      });
+                                      setProducts(res?.data || []);
+                                    } catch (err) {
+                                      console.error(err);
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              <NumberInput
+                                className={compactInputClass}
+                                value={item.entered_quantity}
+                                onChange={(val) =>
+                                  updateItem(index, "entered_quantity", val)
+                                }
+                              />
+
+                              <NumberInput
+                                className={compactInputClass}
+                                value={item.entered_price}
+                                onChange={(val) =>
+                                  updateItem(index, "entered_price", val)
+                                }
+                              />
+
+                              {item.available_units?.length > 0 ? (
+                                <select
+                                  className={compactInputClass}
+                                  value={item.unit_id || ""}
+                                  onChange={(e) =>
+                                    updateItemUnit(index, e.target.value)
+                                  }
+                                >
+                                  {item.available_units.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                      {unitOptionLabel(item, u)}
                                     </option>
                                   ))}
-                              </select>
-                            </AdjustmentChip>
-                          )}
-
-                          {discountRevealed && (
-                            <AdjustmentChip
-                              icon={
-                                <Percent
-                                  size={12}
-                                  className="shrink-0 text-red-500"
+                                </select>
+                              ) : (
+                                <input
+                                  type="text"
+                                  className={compactInputClass}
+                                  value={item.unit_name || ""}
+                                  onChange={(e) =>
+                                    updateItem(
+                                      index,
+                                      "unit_name",
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder="—"
                                 />
-                              }
-                              tone="danger"
-                              onRemove={() => toggleItemDiscount(index, true)}
-                            >
-                              <NumberInput
-                                className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
-                                value={item.discount_rate || ""}
-                                onChange={(val) =>
-                                  updateItemDiscountRate(index, val)
-                                }
-                                max={100}
-                                placeholder="0"
-                              />
-                              <span className="text-[10px] text-red-400">
-                                % =
-                              </span>
-                              <NumberInput
-                                className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
-                                value={item.discount || ""}
-                                onChange={(val) =>
-                                  updateItemDiscountAmount(index, val)
-                                }
-                                placeholder="0"
-                              />
-                            </AdjustmentChip>
-                          )}
-                        </div>
-
-                        {revealedItemNotes.has(index) && (
-                          <div className="flex w-full items-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50/60 px-2.5 py-1.5">
-                            <StickyNote
-                              size={12}
-                              className="shrink-0 text-amber-500"
-                            />
-                            <input
-                              type="text"
-                              className="h-6 w-full min-w-0 flex-1 border-none bg-transparent text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400"
-                              value={item.description || ""}
-                              onChange={(e) =>
-                                updateItemDescription(index, e.target.value)
-                              }
-                              placeholder={t(
-                                "screens.invoices.notePlaceholder",
                               )}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => toggleItemNote(index, true)}
-                              className="shrink-0 rounded p-0.5 text-slate-400 transition hover:bg-white hover:text-red-600"
-                            >
-                              <X size={13} />
-                            </button>
-                          </div>
-                        )}
+
+                              <div className="flex h-8 items-center justify-center rounded-lg bg-[#f6f8fd] px-2 text-xs font-black tabular-nums text-[#4663ff]">
+                                {money(lineTotal)}
+                              </div>
+                            </InvoiceItemRow>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </div>
+                  </div>
+
                   <div className="p-3.5">
                     <button
                       type="button"
@@ -738,7 +781,7 @@ export default function AddSalesQuotation() {
                       {t("screens.invoices.addItem")}
                     </button>
                   </div>
-                </div>
+                </>
               )}
             </section>
           </main>
