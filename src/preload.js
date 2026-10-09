@@ -274,9 +274,10 @@ contextBridge.exposeInMainWorld("api", {
   deleteExpenseCategory: (id) =>
     ipcRenderer.invoke("delete-expence_category", id),
   /* ================= DOCUMENT PRINTING ================= */
-  saveDocumentPdf: (route, fileName) =>
-    ipcRenderer.invoke("save-document-pdf", { route, fileName }),
-  printDocument: (route) => ipcRenderer.invoke("print-document", { route }),
+  saveDocumentPdf: (route, fileName, lang) =>
+    ipcRenderer.invoke("save-document-pdf", { route, fileName, lang }),
+  printDocument: (route, lang) =>
+    ipcRenderer.invoke("print-document", { route, lang }),
   /* ================= CUSTOMER DISPLAY ================= */
   openCustomerDisplay: () => ipcRenderer.invoke("customer-display:open"),
   closeCustomerDisplay: () => ipcRenderer.invoke("customer-display:close"),

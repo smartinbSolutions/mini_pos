@@ -438,7 +438,10 @@ const ExpenseList = () => {
   const handlePrint = async (expenseId) => {
     try {
       setIsPrinting(true);
-      const res = await window.api.printDocument(`/print-expense/${expenseId}`);
+      const res = await window.api.printDocument(
+        `/print-expense/${expenseId}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER") {
         setActionError(t("screens.invoices.noPrinter", "No printer found."));
       }
@@ -455,6 +458,7 @@ const ExpenseList = () => {
       const res = await window.api.saveDocumentPdf(
         `/print-expense/${expenseId}`,
         `expense-${expenseId}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         setActionError(t("screens.invoices.pdfFailed", "Failed to save PDF."));

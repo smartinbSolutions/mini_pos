@@ -34,7 +34,7 @@ function AccentRule({ colorClass }) {
 }
 
 export default function PurchaseInvoiceView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -113,7 +113,10 @@ export default function PurchaseInvoiceView() {
   const handlePrint = async () => {
     try {
       setIsPrinting(true);
-      const res = await window.api.printDocument(`/print-purchase/${id}`);
+      const res = await window.api.printDocument(
+        `/print-purchase/${id}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER")
         console.error("No printer found");
     } catch (err) {
@@ -129,6 +132,7 @@ export default function PurchaseInvoiceView() {
       const res = await window.api.saveDocumentPdf(
         `/print-purchase/${id}`,
         `purchase-${id}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") console.error(res.error);
     } catch (err) {

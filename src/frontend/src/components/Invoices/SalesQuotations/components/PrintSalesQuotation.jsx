@@ -17,8 +17,9 @@ export default function PrintSalesQuotation() {
       doc={doc}
       company={company}
       pick={pick}
+      title={t("screens.quotations.quotation")}
       numberLabel={t("DOCS.QUOTATION_NO")}
-      number={doc.quotation_name}
+      number={`#${doc.id}`}
       badge={
         doc.status
           ? t(`DOCS.QUOTATION_STATUS_${doc.status.toUpperCase()}`)

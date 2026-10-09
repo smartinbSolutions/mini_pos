@@ -28,7 +28,7 @@ const STATUS_STYLE = {
 };
 
 export default function SalesQuotationView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
 
   const [quotation, setQuotation] = useState(null);
@@ -44,7 +44,10 @@ export default function SalesQuotationView() {
   const handlePrint = async () => {
     try {
       setIsPrinting(true);
-      const res = await api.printDocument(`/print-sales-quotation/${id}`);
+      const res = await api.printDocument(
+        `/print-sales-quotation/${id}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER") {
         console.error("No printer found");
       }
@@ -61,6 +64,7 @@ export default function SalesQuotationView() {
       const res = await api.saveDocumentPdf(
         `/print-sales-quotation/${id}`,
         `quotation-${id}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         console.error(res.error);

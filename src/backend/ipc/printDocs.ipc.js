@@ -33,6 +33,11 @@ const PRINT_FIX_CSS = `
   tr, img { break-inside: avoid; page-break-inside: avoid; }
 `;
 
+function withLang(route, lang) {
+  if (!lang) return route;
+  return `${route}${route.includes("?") ? "&" : "?"}lang=${encodeURIComponent(lang)}`;
+}
+
 function openHiddenDocumentWindow() {
   return new BrowserWindow({
     width: 900,
@@ -65,69 +70,74 @@ export default function registerPrintDocsIPC() {
   // payload: { route, fileName }
   //   route    -> renderer path to load, e.g. "/print-sales/42"
   //   fileName -> suggested default filename, e.g. "invoice-42.pdf"
-  ipcMain.handle("save-document-pdf", async (event, { route, fileName }) => {
-    let win = openHiddenDocumentWindow();
+  // SAVE AS PDF
+  ipcMain.handle(
+    "save-document-pdf",
+    async (event, { route, fileName, lang }) => {
+      let win = openHiddenDocumentWindow();
 
-    return new Promise((resolve) => {
-      win.webContents.on("did-finish-load", async () => {
-        if (!win) return;
-        try {
-          const ready = await waitForPrintReady(win);
-          if (!ready) throw new Error("PRINT_NOT_READY");
+      return new Promise((resolve) => {
+        win.webContents.on("did-finish-load", async () => {
+          if (!win) return;
+          try {
+            const ready = await waitForPrintReady(win);
+            if (!ready) throw new Error("PRINT_NOT_READY");
 
-          await win.webContents.insertCSS(PRINT_FIX_CSS);
+            await win.webContents.insertCSS(PRINT_FIX_CSS);
 
-          const pdfBuffer = await win.webContents.printToPDF({
-            printBackground: true,
-            pageSize: "A4",
-            margins: { top: 0, bottom: 0.5, left: 0, right: 0 }, // inches
-            displayHeaderFooter: true,
-            headerTemplate: "<div></div>",
-            footerTemplate: `
+            const pdfBuffer = await win.webContents.printToPDF({
+              printBackground: true,
+              pageSize: "A4",
+              margins: { top: 0, bottom: 0.5, left: 0, right: 0 }, // inches
+              displayHeaderFooter: true,
+              headerTemplate: "<div></div>",
+              footerTemplate: `
     <div style="width:100%; font-size:9px; color:#64748b; text-align:center; font-family:Arial, sans-serif;">
       <span class="pageNumber"></span> / <span class="totalPages"></span>
     </div>`,
-          });
+            });
 
-          const { filePath, canceled } = await dialog.showSaveDialog({
-            title: "Save PDF",
-            defaultPath: fileName || "document.pdf",
-            filters: [{ name: "PDF", extensions: ["pdf"] }],
-          });
+            const { filePath, canceled } = await dialog.showSaveDialog({
+              title: "Save PDF",
+              defaultPath: fileName || "document.pdf",
+              filters: [{ name: "PDF", extensions: ["pdf"] }],
+            });
 
-          if (canceled || !filePath) {
-            resolve({ success: false, error: "CANCELED" });
-            return;
+            if (canceled || !filePath) {
+              resolve({ success: false, error: "CANCELED" });
+              return;
+            }
+
+            fs.writeFileSync(filePath, pdfBuffer);
+            resolve({ success: true, filePath });
+          } catch (err) {
+            console.error("PDF generation failed:", err);
+            resolve({ success: false, error: err.message || String(err) });
+          } finally {
+            if (win) {
+              win.destroy();
+              win = null;
+            }
           }
+        });
 
-          fs.writeFileSync(filePath, pdfBuffer);
-          resolve({ success: true, filePath });
-        } catch (err) {
-          console.error("PDF generation failed:", err);
-          resolve({ success: false, error: err.message || String(err) });
-        } finally {
+        win.webContents.on("did-fail-load", () => {
           if (win) {
             win.destroy();
             win = null;
           }
-        }
-      });
+          resolve({ success: false, error: "Failed to load print route" });
+        });
 
-      win.webContents.on("did-fail-load", () => {
-        if (win) {
-          win.destroy();
-          win = null;
-        }
-        resolve({ success: false, error: "Failed to load print route" });
+        loadRendererRoute(win, withLang(route, lang));
       });
-
-      loadRendererRoute(win, route);
-    });
-  });
+    },
+  );
 
   // PRINT
   // payload: { route }
-  ipcMain.handle("print-document", async (event, { route }) => {
+  // PRINT
+  ipcMain.handle("print-document", async (event, { route, lang }) => {
     let win = openHiddenDocumentWindow();
 
     return new Promise((resolve) => {
@@ -204,7 +214,7 @@ export default function registerPrintDocsIPC() {
         resolve({ success: false, error: "Failed to load print route" });
       });
 
-      loadRendererRoute(win, route);
+      loadRendererRoute(win, withLang(route, lang));
     });
   });
 }

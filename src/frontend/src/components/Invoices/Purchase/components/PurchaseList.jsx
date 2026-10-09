@@ -429,7 +429,10 @@ const PurchaseList = () => {
   const handlePrint = async (id) => {
     try {
       setIsPrinting(true);
-      const res = await window.api.printDocument(`/print-purchase/${id}`);
+      const res = await window.api.printDocument(
+        `/print-purchase/${id}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER")
         console.error("No printer found");
     } catch (err) {
@@ -445,6 +448,7 @@ const PurchaseList = () => {
       const res = await window.api.saveDocumentPdf(
         `/print-purchase/${id}`,
         `purchase-${id}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") console.error(res.error);
     } catch (err) {

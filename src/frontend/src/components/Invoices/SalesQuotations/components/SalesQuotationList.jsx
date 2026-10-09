@@ -323,6 +323,7 @@ const SalesQuotationList = () => {
       setIsPrinting(true);
       const res = await api.printDocument(
         `/print-sales-quotation/${quotationId}`,
+        i18n.language,
       );
       if (!res.success && res.error === "NO_PRINTER") {
         console.error("No printer found");
@@ -340,6 +341,7 @@ const SalesQuotationList = () => {
       const res = await api.saveDocumentPdf(
         `/print-sales-quotation/${quotationId}`,
         `quotation-${quotationId}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         console.error(res.error);

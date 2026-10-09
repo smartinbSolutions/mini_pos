@@ -18,8 +18,9 @@ export default function PrintSalesInvoice() {
       doc={doc}
       company={company}
       pick={pick}
+      title={t("DOCS.INVOICE_TYPE_SALES")}
       numberLabel={t("DOCS.INVOICE_NO")}
-      number={doc.invoice_name}
+      number={`#${doc.id}`}
       badge={doc.channel === "pos" ? t("DOCS.POS_BADGE") : null}
       meta={[{ label: t("DOCS.INVOICE_DATE"), value: doc.date }]}
       party={{

@@ -32,7 +32,7 @@ function AccentRule({ colorClass }) {
 }
 
 export default function SalesReturnView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
 
   const [returnInvoice, setReturnInvoice] = useState(null);
@@ -109,7 +109,10 @@ export default function SalesReturnView() {
   const handlePrint = async () => {
     try {
       setIsPrinting(true);
-      const res = await window.api.printDocument(`/print-sales-return/${id}`);
+      const res = await window.api.printDocument(
+        `/print-sales-return/${id}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER")
         console.error("No printer found");
     } catch (err) {
@@ -125,6 +128,7 @@ export default function SalesReturnView() {
       const res = await window.api.saveDocumentPdf(
         `/print-sales-return/${id}`,
         `sales-return-${id}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") console.error(res.error);
     } catch (err) {

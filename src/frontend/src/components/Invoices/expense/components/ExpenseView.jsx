@@ -24,7 +24,7 @@ const STATUS_CONFIG = {
 };
 
 export default function ExpenseView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
 
   const api = window.api;
@@ -42,7 +42,10 @@ export default function ExpenseView() {
   const handlePrint = async () => {
     try {
       setIsPrinting(true);
-      const res = await window.api.printDocument(`/print-expense/${id}`);
+      const res = await window.api.printDocument(
+        `/print-expense/${id}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER")
         console.error("No printer found");
     } catch (err) {
@@ -58,6 +61,7 @@ export default function ExpenseView() {
       const res = await window.api.saveDocumentPdf(
         `/print-expense/${id}`,
         `expense-${id}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") console.error(res.error);
     } catch (err) {

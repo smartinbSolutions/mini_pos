@@ -17,9 +17,10 @@ export default function PrintExpense() {
       doc={doc}
       company={company}
       pick={pick}
+      title={t("DOCS.INVOICE_TYPE_EXPENSE")}
       variant="expense"
       numberLabel={t("DOCS.INVOICE_NO")}
-      number={doc.invoice_name || `#${doc.id}`}
+      number={`#${doc.id}`}
       meta={[{ label: t("DOCS.INVOICE_DATE"), value: doc.date }]}
       party={{
         label: t("DOCS.ISSUED_FROM"),

@@ -18,13 +18,14 @@ export default function PrintPurchaseReturn() {
       doc={doc}
       company={company}
       pick={pick}
+      title={t("DOCS.INVOICE_TYPE_PURCHASE_RETURN")}
       numberLabel={t("DOCS.RETURN_NO")}
       number={`#${doc.id}`}
       meta={[
         { label: t("DOCS.RETURN_DATE"), value: doc.date },
         {
           label: t("DOCS.ORIGINAL_INVOICE"),
-          value: doc.purchase_invoice_name || `#${doc.purchase_invoice_id}`,
+          value: `#${doc.purchase_invoice_id}`,
         },
       ]}
       party={{ label: t("DOCS.ISSUED_FROM"), name: doc.supplier_name }}

@@ -242,7 +242,10 @@ const PaymentList = () => {
 
   const handlePrint = async (paymentId) => {
     try {
-      const res = await api.printDocument(`/print-payment/${paymentId}`);
+      const res = await api.printDocument(
+        `/print-payment/${paymentId}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER") {
         console.error("No printer found");
       }
@@ -257,6 +260,7 @@ const PaymentList = () => {
       const res = await api.saveDocumentPdf(
         `/print-payment/${paymentId}`,
         `payment-${paymentId}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         console.error(res.error);

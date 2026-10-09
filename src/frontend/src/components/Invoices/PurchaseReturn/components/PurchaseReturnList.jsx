@@ -411,6 +411,7 @@ const PurchaseReturnList = () => {
       setIsPrinting(true);
       const res = await window.api.printDocument(
         `/print-purchase-return/${returnId}`,
+        i18n.language,
       );
       if (!res.success && res.error === "NO_PRINTER") {
         setActionError(t("screens.invoices.noPrinter", "No printer found."));
@@ -428,6 +429,7 @@ const PurchaseReturnList = () => {
       const res = await window.api.saveDocumentPdf(
         `/print-purchase-return/${returnId}`,
         `purchase-return-${returnId}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         setActionError(t("screens.invoices.pdfFailed", "Failed to save PDF."));

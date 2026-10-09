@@ -26,6 +26,7 @@ export default function PrintDocument({
   doc,
   company,
   pick,
+  title,
   numberLabel,
   number,
   badge,
@@ -132,6 +133,11 @@ export default function PrintDocument({
                     </p>
                   </div>
                   <div className="w-2/5 text-start">
+                    {title && (
+                      <h1 className="mb-2 text-xl font-black uppercase tracking-wide text-[#33363D]">
+                        {title}
+                      </h1>
+                    )}
                     <h3 className="text-[11px] uppercase tracking-wide text-[#6B6F76] mb-1">
                       {numberLabel}
                       {badge && (

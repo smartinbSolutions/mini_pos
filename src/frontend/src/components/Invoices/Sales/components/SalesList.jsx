@@ -468,7 +468,10 @@ const SalesList = () => {
   const handlePrint = async (invoiceId) => {
     try {
       setIsPrinting(true);
-      const res = await api.printDocument(`/print-sales/${invoiceId}`);
+      const res = await api.printDocument(
+        `/print-sales/${invoiceId}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER") {
         setActionError(t("screens.invoices.noPrinter", "No printer found."));
       }
@@ -485,6 +488,7 @@ const SalesList = () => {
       const res = await api.saveDocumentPdf(
         `/print-sales/${invoiceId}`,
         `invoice-${invoiceId}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         setActionError(t("screens.invoices.pdfFailed", "Failed to save PDF."));

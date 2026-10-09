@@ -27,7 +27,7 @@ function AccentRule({ colorClass }) {
 }
 
 export default function SalesInvoiceView() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -86,7 +86,10 @@ export default function SalesInvoiceView() {
   const handlePrint = async (invoiceId) => {
     try {
       setIsPrinting(true);
-      const res = await api.printDocument(`/print-sales/${invoiceId}`);
+      const res = await api.printDocument(
+        `/print-sales/${invoiceId}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER") {
         console.error("No printer found");
       }
@@ -103,6 +106,7 @@ export default function SalesInvoiceView() {
       const res = await api.saveDocumentPdf(
         `/print-sales/${invoiceId}`,
         `invoice-${invoiceId}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         console.error(res.error);

@@ -59,7 +59,10 @@ const PaymentDocumentPage = () => {
   const handlePrint = async () => {
     try {
       setIsPrinting(true);
-      const res = await api.printDocument(`/print-payment/${id}`);
+      const res = await api.printDocument(
+        `/print-payment/${id}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER") {
         toast.error(t("screens.invoices.noPrinter", "No printer found."));
       }
@@ -76,6 +79,7 @@ const PaymentDocumentPage = () => {
       const res = await api.saveDocumentPdf(
         `/print-payment/${id}`,
         `payment-${id}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         toast.error(t("screens.invoices.pdfFailed", "Failed to save PDF."));

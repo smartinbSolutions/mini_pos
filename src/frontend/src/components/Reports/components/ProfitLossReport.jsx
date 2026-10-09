@@ -104,7 +104,7 @@ const TrendChart = ({ series, groupBy, formatBucketLabel, money, t }) => {
   const buildPath = (key) =>
     series
       .map(
-        (row, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(row[key])}`
+        (row, i) => `${i === 0 ? "M" : "L"} ${scaleX(i)} ${scaleY(row[key])}`,
       )
       .join(" ");
 
@@ -210,7 +210,7 @@ const TrendChart = ({ series, groupBy, formatBucketLabel, money, t }) => {
             >
               <title>
                 {`${formatBucketLabel(row.bucket, groupBy)} — ${t(
-                  `dashboard.${key === "sales" ? "revenue" : key === "expense" ? "expenses" : "net_profit"}`
+                  `dashboard.${key === "sales" ? "revenue" : key === "expense" ? "expenses" : "net_profit"}`,
                 )}: ${money(row[key])}`}
               </title>
             </circle>
@@ -285,7 +285,7 @@ export default function ProfitLossReport() {
       setSavingPdf(true);
       await window.api.saveDocumentPdf(
         printRoute,
-        `profit-loss-${startDate}-to-${endDate}.pdf`
+        `profit-loss-${startDate}-to-${endDate}.pdf`,
       );
     } catch (err) {
       console.error(err);
@@ -318,13 +318,13 @@ export default function ProfitLossReport() {
   // comparable to each other instead of each metric using its own scale.
   const maxTrendValue = Math.max(
     1,
-    ...trendSeries.map((row) => Math.max(row.sales, row.expense, row.cogs))
+    ...trendSeries.map((row) => Math.max(row.sales, row.expense, row.cogs)),
   );
 
   const expenseBreakdown = data?.expenseBreakdown || [];
   const maxExpenseCategory = Math.max(
     1,
-    ...expenseBreakdown.map((row) => Number(row.total_spent || 0))
+    ...expenseBreakdown.map((row) => Number(row.total_spent || 0)),
   );
 
   return (
@@ -341,7 +341,7 @@ export default function ProfitLossReport() {
           <p className="mt-1 text-sm text-slate-500">
             {t(
               "reports.profitLossSubtitle",
-              "Revenue, cost, and profit for the period you choose, compared to the period before it."
+              "Revenue, cost, and profit for the period you choose, compared to the period before it.",
             )}
           </p>
         </div>
@@ -409,7 +409,7 @@ export default function ProfitLossReport() {
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
             {t(
               "reports.invalidRange",
-              "The end date must be on or after the start date."
+              "The end date must be on or after the start date.",
             )}
           </div>
         )}
@@ -418,7 +418,7 @@ export default function ProfitLossReport() {
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {t(
               `errors.${error}`,
-              t("reports.loadFailed", "Couldn't load the report.")
+              t("reports.loadFailed", "Couldn't load the report."),
             )}
           </div>
         )}

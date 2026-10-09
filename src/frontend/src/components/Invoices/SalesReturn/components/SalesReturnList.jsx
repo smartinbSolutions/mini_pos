@@ -385,7 +385,10 @@ const SalesReturnList = () => {
   const handlePrint = async (id) => {
     try {
       setIsPrinting(true);
-      const res = await window.api.printDocument(`/print-sales-return/${id}`);
+      const res = await window.api.printDocument(
+        `/print-sales-return/${id}`,
+        i18n.language,
+      );
       if (!res.success && res.error === "NO_PRINTER") {
         console.error("No printer found");
       }
@@ -402,6 +405,7 @@ const SalesReturnList = () => {
       const res = await window.api.saveDocumentPdf(
         `/print-sales-return/${id}`,
         `sales-return-${id}.pdf`,
+        i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
         console.error(res.error);
