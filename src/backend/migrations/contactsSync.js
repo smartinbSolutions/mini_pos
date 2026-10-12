@@ -44,21 +44,8 @@ export function syncContacts(db, { dbPath }) {
         INSERT INTO contacts
           (name, phone, address, is_customer, is_supplier,
            legacy_customer_id, legacy_supplier_id, createdAt)
-        SELECT
-          COALESCE(c.name, ''),
-          COALESCE(NULLIF(c.phone, ''), s.phone),
-          COALESCE(NULLIF(c.address, ''), s.address),
-          1,
-          CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END,
-          c.id,
-          s.id,
-          c.createdAt
+        SELECT COALESCE(c.name, ''), c.phone, c.address, 1, 0, c.id, NULL, c.createdAt
         FROM customers c
-        LEFT JOIN suppliers s
-          ON s.id = c.linked_supplier_id
-         AND NOT EXISTS (
-           SELECT 1 FROM contacts x WHERE x.legacy_supplier_id = s.id
-         )
         WHERE NOT EXISTS (
           SELECT 1 FROM contacts x WHERE x.legacy_customer_id = c.id
         )

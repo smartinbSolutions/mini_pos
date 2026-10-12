@@ -8,6 +8,7 @@ fs.mkdirSync(userDataPath, { recursive: true });
 
 const dbPath = path.join(userDataPath, "pos.db");
 const db = new Database(dbPath);
+import { syncContacts } from "./utils/syncContacts";
 
 db.pragma("foreign_keys = ON");
 
@@ -1301,6 +1302,7 @@ db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_payments_settlement ON payments(settlement_id)`,
 ).run();
 ensurePaymentAllocationsSettlementSupport();
+syncContacts(db, { dbPath });
 
 /* ============================================================
    INDEXES
