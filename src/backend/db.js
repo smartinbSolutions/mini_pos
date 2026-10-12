@@ -1,3 +1,5 @@
+import { syncContacts } from "./migrations/contactsSync";
+
 const path = require("path");
 const fs = require("fs");
 const { app } = require("electron");
@@ -8,7 +10,6 @@ fs.mkdirSync(userDataPath, { recursive: true });
 
 const dbPath = path.join(userDataPath, "pos.db");
 const db = new Database(dbPath);
-import { syncContacts } from "./utils/syncContacts";
 
 db.pragma("foreign_keys = ON");
 
