@@ -379,10 +379,7 @@ const SalesList = () => {
               icon: <Trash2 size={14} className="text-red-500" />,
               label: t("common.delete"),
               onClick: () => setDeleteInvoice(inv),
-              visible:
-                inv.status === "unpaid" &&
-                inv.return_status === "none" &&
-                inv.channel !== "pos",
+              visible: inv.status === "unpaid" && inv.return_status === "none",
             },
           ]}
         />

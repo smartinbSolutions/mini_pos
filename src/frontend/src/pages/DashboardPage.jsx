@@ -176,8 +176,8 @@ export default function Dashboard() {
   const topProductMax = Math.max(
     1,
     ...topProductsList.map((p) =>
-      Number(productView === "byQuantity" ? p.quantity : p.revenue || 0)
-    )
+      Number(productView === "byQuantity" ? p.quantity : p.revenue || 0),
+    ),
   );
 
   const totalFundBalancePrimary = useMemo(
@@ -187,7 +187,7 @@ export default function Dashboard() {
         const balanceInPrimary = Number(f.balance || 0) / rate;
         return sum + balanceInPrimary;
       }, 0),
-    [data.fundBalances]
+    [data.fundBalances],
   );
 
   if (loading) {
@@ -220,7 +220,7 @@ export default function Dashboard() {
             </div>
             <Num
               className={`text-xl font-black ${
-                data.profitLoss.netProfit >= 0
+                data.profitLoss.profitLoss.netProfit >= 0
                   ? "text-emerald-700"
                   : "text-rose-600"
               }`}
@@ -270,7 +270,7 @@ export default function Dashboard() {
                 {t(
                   "dashboard.inventoryBelowThreshold",
                   "Below your {{threshold}} threshold",
-                  { threshold: money(data.minimumStock) }
+                  { threshold: money(data.minimumStock) },
                 )}
               </p>
             )}
@@ -307,11 +307,11 @@ export default function Dashboard() {
             const Icon = meta.icon;
             const statusTotal = Math.max(
               1,
-              stat.paid + stat.partial + stat.unpaid
+              stat.paid + stat.partial + stat.unpaid,
             );
             const maxTrend = Math.max(
               1,
-              ...stat.trend.map((d) => Number(d.total || 0))
+              ...stat.trend.map((d) => Number(d.total || 0)),
             );
             const displayTotal = stat.returns ? stat.netTotal : stat.total;
             const hasReturns = stat.returns && stat.returns.total > 0;
@@ -458,7 +458,7 @@ export default function Dashboard() {
                   <span className="text-slate-400">
                     {t(
                       "dashboard.cogs_note",
-                      "تكلفة البضائع التي رجعت للمخزون تم خصمها تلقائيًا"
+                      "تكلفة البضائع التي رجعت للمخزون تم خصمها تلقائيًا",
                     )}
                   </span>
                 </div>
@@ -592,7 +592,7 @@ export default function Dashboard() {
                     {formatMoney(
                       fund.balance,
                       fund.currency_code,
-                      fund.currency_symbol
+                      fund.currency_symbol,
                     )}
                   </Num>
                 </div>
@@ -677,8 +677,8 @@ export default function Dashboard() {
                   const maxSpent = Math.max(
                     1,
                     ...data.topExpenseCategories.map((c) =>
-                      Number(c.total_spent || 0)
-                    )
+                      Number(c.total_spent || 0),
+                    ),
                   );
                   return data.topExpenseCategories.map((cat) => (
                     <div key={cat.category_id}>

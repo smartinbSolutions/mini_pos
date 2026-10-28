@@ -1385,7 +1385,12 @@ export default function registerSalesInvoiceIPC() {
         `);
 
         for (const item of items) {
-          reverseStock.run(item.quantity || 0, item.product_id);
+          const productRow = db
+            .prepare(`SELECT type FROM products WHERE id = ?`)
+            .get(item.product_id);
+          if (productRow?.type !== "service") {
+            reverseStock.run(item.quantity || 0, item.product_id);
+          }
           const now = new Date();
 
           const date =
@@ -1413,6 +1418,9 @@ export default function registerSalesInvoiceIPC() {
         }
 
         db.prepare(`DELETE FROM sales_invoice_items WHERE invoice_id = ?`).run(
+          id,
+        );
+        db.prepare(`DELETE FROM sales_invoice_taxes WHERE invoice_id = ?`).run(
           id,
         );
         db.prepare(
