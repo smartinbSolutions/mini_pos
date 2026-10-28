@@ -778,7 +778,7 @@ export default function registerPaymentIPC() {
         )
         .all(id);
 
-      if (history.length === 0) {
+      if (history.length === 0 && payment.party_id) {
         throw new Error("PAYMENT_HISTORY_NOT_FOUND");
       }
 
