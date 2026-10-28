@@ -1303,7 +1303,7 @@ db.prepare(
   `CREATE INDEX IF NOT EXISTS idx_payments_settlement ON payments(settlement_id)`,
 ).run();
 ensurePaymentAllocationsSettlementSupport();
-syncContacts(db, { dbPath });
+// syncContacts(db, { dbPath });
 
 /* ============================================================
    INDEXES
