@@ -1,6 +1,5 @@
-import { Minus, Plus, Trash2, Percent, Tag, StickyNote } from "lucide-react";
+import { Minus, Plus, Trash2, Percent, Tag, StickyNote, Pencil } from "lucide-react";
 import HoverTooltip from "../../../Global/HoverTooltip";
-import { normalizeDigits } from "../../../Global/FormatNumber";
 import NumberInput from "../../../Global/NumberInput";
 
 export default function POSCartItem({
@@ -34,110 +33,112 @@ export default function POSCartItem({
   const lineTotal = Number(item.lineTotal || 0);
 
   return (
-    <div
-      className="rounded-2xl border border-stone-200 bg-white p-3.5 cursor-pointer shadow-sm hover:border-blue-200 hover:shadow-md transition duration-150"
-      onClick={() => onOpenPriceModal(item)}
-    >
+    <div className="rounded-2xl border-2 border-slate-200 bg-white p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-black text-stone-950">
+          <h3 className="line-clamp-2 text-base font-bold leading-snug text-ink">
             {item.name}
           </h3>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5">
-            {!item.is_base && item.unit_name && (
-              <span className="flex items-center gap-1 rounded-md bg-stone-100 px-1.5 py-0.5 text-[10px] font-bold text-stone-500">
-                <Tag size={10} className="text-blue-600" />
-                {item.unit_name}
-              </span>
-            )}
-            {hasTax && (
-              <span className="flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
-                <Percent size={10} />
-                {t("screens.pos.taxIncluded", "incl. {{rate}}% tax", {
-                  rate: taxRate,
-                })}
-              </span>
-            )}
-            {hasDiscount && (
-              <span className="flex items-center gap-1 rounded-md bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">
-                <Percent size={10} />
-                {t("screens.pos.discountApplied", "{{rate}}% off", {
-                  rate: discountRate.toFixed(2),
-                })}
-              </span>
-            )}
-            {hasNote && (
-              <HoverTooltip
-                placement="top"
-                trigger={
-                  <span className="flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
-                    <StickyNote size={10} />
-                  </span>
-                }
-                content={item.description}
-              />
-            )}
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(item.id);
-          }}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition hover:bg-rose-100 active:scale-90"
-          aria-label={t("screens.pos.clear")}
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
-
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <div className="flex h-11 items-center overflow-hidden rounded-xl border border-stone-200 bg-white">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onUpdateQuantity(item.id, item.qty === 1 ? -1 : item.qty - 1);
-            }}
-            className="flex h-11 w-11 items-center justify-center text-stone-700 transition hover:bg-stone-100 active:scale-90"
-          >
-            <Minus size={15} />
-          </button>
-
-          <NumberInput
-            value={item.qty}
-            onClick={(e) => e.stopPropagation()}
-            onChange={(val) => onUpdateQuantity(item.id, val)}
-            className="h-11 w-14 bg-transparent text-center text-base font-black text-stone-950 outline-none"
-          />
-
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onUpdateQuantity(item.id, item.qty + 1);
-            }}
-            className="flex h-11 w-11 items-center justify-center text-stone-700 transition hover:bg-stone-100 active:scale-90"
-          >
-            <Plus size={15} />
-          </button>
+          <p className="mt-0.5 text-sm font-semibold text-ink-muted">
+            {t("simple.pos.priceEach", {
+              price: money(originalUnitPrice),
+            })}
+          </p>
+          {(hasDiscount || hasNote || (!item.is_base && item.unit_name)) && (
+            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              {!item.is_base && item.unit_name && (
+                <span className="flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-bold text-ink-muted">
+                  <Tag size={12} className="text-brand" />
+                  {item.unit_name}
+                </span>
+              )}
+              {hasDiscount && (
+                <span className="flex items-center gap-1 rounded-md bg-danger-50 px-1.5 py-0.5 text-xs font-bold text-danger-700">
+                  <Percent size={12} />
+                  {t("screens.pos.discountApplied", "{{rate}}% off", {
+                    rate: discountRate.toFixed(2),
+                  })}
+                </span>
+              )}
+              {hasNote && (
+                <HoverTooltip
+                  placement="top"
+                  trigger={
+                    <span className="flex items-center gap-1 rounded-md bg-warn-50 px-1.5 py-0.5 text-xs font-bold text-warn-700">
+                      <StickyNote size={12} />
+                    </span>
+                  }
+                  content={item.description}
+                />
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="text-end">
-          <p className="text-[10px] text-stone-500">{t("ui.subtotal")}</p>
+        <div className="shrink-0 text-end">
           {hasDiscount && (
             <p
               dir="ltr"
-              className="text-[10px] font-semibold text-stone-400 line-through"
+              className="text-sm font-semibold text-ink-muted line-through"
             >
               {money(originalUnitPrice * item.qty)}
             </p>
           )}
-          <h3 dir="ltr" className="text-base font-black text-blue-700">
+          <p dir="ltr" className="text-xl font-black text-ink">
             {money(lineTotal)}
-          </h3>
+          </p>
         </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2">
+        {/* QUANTITY: − [qty] + */}
+        <div className="flex h-12 items-center overflow-hidden rounded-xl border-2 border-slate-200 bg-white">
+          <button
+            type="button"
+            onClick={() =>
+              onUpdateQuantity(item.id, item.qty === 1 ? -1 : item.qty - 1)
+            }
+            className="flex h-12 w-12 items-center justify-center text-ink transition hover:bg-slate-100 active:scale-90"
+            aria-label={t("simple.pos.decrease")}
+          >
+            <Minus size={20} strokeWidth={3} />
+          </button>
+
+          <NumberInput
+            value={item.qty}
+            onChange={(val) => onUpdateQuantity(item.id, val)}
+            className="h-12 w-14 border-x-2 border-slate-200 bg-transparent text-center text-lg font-black text-ink outline-none"
+            aria-label={t("ui.quantity")}
+          />
+
+          <button
+            type="button"
+            onClick={() => onUpdateQuantity(item.id, item.qty + 1)}
+            className="flex h-12 w-12 items-center justify-center text-ink transition hover:bg-slate-100 active:scale-90"
+            aria-label={t("simple.pos.increase")}
+          >
+            <Plus size={20} strokeWidth={3} />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => onOpenPriceModal(item)}
+          className="flex h-12 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border-2 border-slate-200 px-2 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
+        >
+          <Pencil size={16} className="shrink-0" />
+          <span className="truncate">{t("simple.pos.priceShort")}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onRemove(item.id)}
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-danger-50 text-danger-700 transition hover:bg-danger-100 active:scale-90"
+          aria-label={t("simple.pos.remove")}
+          title={t("simple.pos.remove")}
+        >
+          <Trash2 size={20} />
+        </button>
       </div>
     </div>
   );

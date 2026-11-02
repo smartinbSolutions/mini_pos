@@ -95,6 +95,7 @@ import PrintSalesQuotation from "./components/Invoices/SalesQuotations/component
 import SalesQuotationView from "./components/Invoices/SalesQuotations/components/SalesQuotationView";
 import ProfitLossReport from "./components/Reports/components/ProfitLossReport";
 import SalesReport from "./components/Reports/components/SalesReport";
+import SimpleSummary from "./components/Reports/components/SimpleSummary";
 import PrintProfitLossReport from "./components/Reports/components/PrintProfitLossReport";
 import PrintSalesByProduct from "./components/Reports/components/PrintSalesByProduct";
 import PrintSalesByCustomer from "./components/Reports/components/PrintSalesByCustomer";
@@ -383,6 +384,7 @@ export default function App() {
                   element={<ProfitLossReport />}
                 />
                 <Route path="/reports/sales" element={<SalesReport />} />
+                <Route path="/reports/summary" element={<SimpleSummary />} />
 
                 {/* ================= SETTINGS ================= */}
                 <Route path="unit" element={<UnitList />} />

@@ -1,10 +1,15 @@
-import { Package2, Percent, Tag } from "lucide-react";
+import { Package2, Plus, ShoppingBasket } from "lucide-react";
 import { getAssetUrl } from "../../../Global/assetUrl";
 import { pickLatin } from "../../../Global/useLatinMode";
+import StockBadge from "../../../Global/ui/StockBadge";
 
 export default function POSProductTile({
   product,
   outOfStock,
+  stockStatus,
+  inCartQty = 0,
+  // smaller text for 5-6 products per row
+  compact = false,
   onClick,
   money,
   isLatin,
@@ -41,89 +46,107 @@ export default function POSProductTile({
       })
     : null;
 
+  const isService = product.type === "service";
+
   return (
     <button
       type="button"
       disabled={outOfStock}
       onClick={onClick}
-      className={`group overflow-hidden rounded-2xl border border-stone-200 bg-white text-start shadow-sm shadow-stone-200/70 transition ${
+      className={`group relative block h-full w-full overflow-hidden rounded-3xl border-2 bg-white text-start shadow-sm transition focus:outline-none focus-visible:ring-4 focus-visible:ring-brand-100 ${
+        inCartQty > 0 ? "border-ok" : "border-slate-200"
+      } ${
         outOfStock
-          ? "cursor-not-allowed opacity-50"
-          : "hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-100 active:scale-[0.97]"
+          ? "cursor-not-allowed opacity-60"
+          : "hover:border-brand hover:shadow-md active:scale-[0.97]"
       }`}
     >
+      {/* Explicit full-width column: Chromium does not reliably stretch
+          the children of a flex <button>. */}
+      <span className="flex h-full w-full flex-col">
       {/* IMAGE */}
-      <div className="relative aspect-[4/3] bg-stone-100">
+      <div className="relative aspect-[3/2] w-full bg-slate-100">
         {product.logo ? (
           <img
             src={getAssetUrl(product.logo)}
-            alt={displayName || t("ui.product")}
+            alt=""
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-blue-600">
-            <Package2 size={30} />
+          <div className="flex h-full items-center justify-center text-slate-400">
+            <Package2 size={40} />
           </div>
         )}
 
-        {!product.is_base && (
-          <div className="absolute start-2 top-2 flex items-center gap-1 rounded-lg bg-white/95 px-2 py-1 text-[11px] font-black text-stone-700 shadow-sm backdrop-blur">
-            <Tag size={11} className="text-blue-600" />
-            {unitLabel && (
-              <p className="mt-1.5 truncate text-start text-[11px] font-semibold text-stone-400">
-                {t(
-                  "screens.pos.unitEquals",
-                  "{{unitLabel}} = {{factor}} {{baseUnit}}",
-                  {
-                    unitLabel,
-                    factor: formatNumber(product.conversion_factor || 1, 0),
-                    baseUnit: baseUnitName,
-                  },
-                )}
-              </p>
-            )}
-          </div>
+        {inCartQty > 0 && (
+          <span className="absolute end-2 top-2 inline-flex items-center gap-1 rounded-full bg-ok px-2.5 py-1 text-sm font-black text-white shadow">
+            <ShoppingBasket size={15} />
+            <span dir="ltr">{formatNumber(inCartQty, 2)}</span>
+          </span>
         )}
 
-        {outOfStock && (
-          <div className="absolute inset-x-0 bottom-0 bg-rose-600/90 px-2 py-1 text-center text-[11px] font-black text-white">
-            {t("screens.pos.outOfStock", "Out of stock")}
-          </div>
+        {!isService && stockStatus && stockStatus !== "available" && (
+          <StockBadge
+            status={stockStatus}
+            size="sm"
+            className="absolute bottom-2 start-2 shadow"
+          />
         )}
       </div>
 
       {/* BODY */}
-      <div className="p-3">
-        <h3 className="truncate text-sm font-black text-stone-950">
+      <div className={`flex w-full flex-1 flex-col ${compact ? "p-2" : "p-3"}`}>
+        <h3
+          className={`line-clamp-2 font-bold leading-snug text-ink ${compact ? "text-sm" : "text-base"}`}
+        >
           {displayName || t("ui.unnamedProduct")}
         </h3>
 
-        {/* PRICE — the only element that needs forced LTR, since it's a
-            currency symbol + digits, not a sentence */}
-        <div className="mt-1.5 flex items-baseline gap-1.5">
-          <span
-            dir="ltr"
-            className="text-xl font-black leading-none text-blue-700"
-          >
-            {money(priceWithTax)}
-          </span>
-          {hasTax && (
-            <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-600">
-              <Percent size={10} />
-              {t("screens.pos.taxIncluded", "incl. {{rate}}% tax", {
-                rate: taxRate,
-              })}
+        {unitLabel && (
+          <p className="mt-0.5 truncate text-sm font-semibold text-ink-muted">
+            {t(
+              "screens.pos.unitEquals",
+              "{{unitLabel}} = {{factor}} {{baseUnit}}",
+              {
+                unitLabel,
+                factor: formatNumber(product.conversion_factor || 1, 0),
+                baseUnit: baseUnitName,
+              },
+            )}
+          </p>
+        )}
+
+        <div className="mt-auto flex items-end justify-between gap-2 pt-2">
+          <div className="min-w-0">
+            {/* PRICE — forced LTR: currency symbol + digits, not a sentence */}
+            <p
+              className={`font-black leading-none text-ink ${compact ? "text-lg" : "text-2xl"}`}
+            >
+              <span dir="ltr" className="whitespace-nowrap">
+                {money(priceWithTax)}
+              </span>
+            </p>
+            {!isService && (
+              <p className="mt-1 text-sm font-semibold text-ink-muted">
+                {t("simple.stock.left", {
+                  count: formatNumber(product.quantity || 0, 2),
+                })}
+              </p>
+            )}
+          </div>
+
+          {/* small hint that tapping the card adds it */}
+          {!outOfStock && !compact && (
+            <span
+              aria-hidden="true"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand text-white transition group-hover:bg-brand-600"
+            >
+              <Plus size={24} strokeWidth={3} />
             </span>
           )}
         </div>
-
-        <div className="mt-2 truncate rounded-lg bg-stone-50 px-2 py-1.5 text-start text-[11px] font-semibold text-stone-500">
-          {t("screens.pos.availableCount", "{{label}}: {{count}}", {
-            label: unitLabel || t("ui.available", "Available"),
-            count: formatNumber(product.quantity || 0, 2),
-          })}
-        </div>
       </div>
+      </span>
     </button>
   );
 }

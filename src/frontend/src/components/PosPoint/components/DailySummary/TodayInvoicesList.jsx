@@ -10,10 +10,21 @@ import {
   TrendingDown,
   TrendingUp,
   ChevronDown,
+  Search,
+  X,
+  CalendarDays,
+  Package,
 } from "lucide-react";
 import Pagination from "../../../../Global/Pagination";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import ReturnStatusBadge from "../../../../Global/ReturnStatusBadge";
+import { toLocalDate } from "../../../../Global/useSalesSummary";
+
+const yesterday = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return toLocalDate(d);
+};
 
 export default function TodayInvoicesList({
   loading,
@@ -22,6 +33,11 @@ export default function TodayInvoicesList({
   stats,
   filter,
   setFilter,
+  date,
+  setDate,
+  search,
+  setSearch,
+  filtering,
   onSelectInvoice,
   money,
   t,
@@ -37,10 +53,19 @@ export default function TodayInvoicesList({
   const { primaryCurrency } = usePrimaryCurrency();
   const [fundsOpen, setFundsOpen] = useState(false);
 
+  // search is applied by the database (it looks inside the products);
+  // only the sale/return switch is applied here
   const filteredInvoices =
     filter === "all"
       ? invoices
       : invoices.filter((invoice) => invoice.type === filter);
+  const today = toLocalDate();
+  const dayChip = (active) =>
+    `flex h-11 shrink-0 items-center gap-1.5 rounded-2xl px-4 text-base font-bold transition active:scale-95 ${
+      active
+        ? "bg-stone-900 text-white"
+        : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+    }`;
 
   const salesCount = stats?.salesCount ?? 0;
   const salesTotal = stats?.salesTotal ?? 0;
@@ -52,25 +77,6 @@ export default function TodayInvoicesList({
   const fundIn = stats?.fundIn ?? [];
   const fundOut = stats?.fundOut ?? [];
   const hasFundData = fundIn.length > 0 || fundOut.length > 0;
-
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        <p className="mt-3 text-xs font-semibold text-stone-500">
-          {t("screens.pos.loading", "جاري التحميل...")}
-        </p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="m-6 rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
-        <p className="text-sm font-semibold text-rose-700">{error}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[#f7f3ee]">
@@ -114,7 +120,7 @@ export default function TodayInvoicesList({
               <TrendingDown size={14} className="text-stone-600" />
             )}
             <span className="text-xs font-bold text-stone-500">
-              {t("screens.pos.netCollected", "الصافي")}
+              {t("simple.daily.net")}
             </span>
             <span className="text-sm font-black text-stone-950">
               {money(netCollected)}
@@ -125,10 +131,10 @@ export default function TodayInvoicesList({
             <button
               type="button"
               onClick={() => setFundsOpen((prev) => !prev)}
-              className="ml-auto flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-stone-500 transition hover:bg-stone-100 active:scale-95"
+              className="ms-auto flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-bold text-stone-600 transition hover:bg-stone-100 active:scale-95"
             >
               <Wallet size={14} />
-              {t("screens.pos.fundBreakdown", "تفاصيل الصندوق")}
+              {t("simple.daily.fundBreakdown")}
               <ChevronDown
                 size={14}
                 className={`transition-transform ${fundsOpen ? "rotate-180" : ""}`}
@@ -143,7 +149,7 @@ export default function TodayInvoicesList({
             <div className="rounded-2xl border border-stone-200 bg-white p-3.5">
               <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-stone-500">
                 <Wallet size={13} />
-                {t("screens.pos.fundIn", "دخول للصندوق")}
+                {t("simple.daily.fundIn")}
               </div>
 
               {fundIn.length > 0 ? (
@@ -181,7 +187,7 @@ export default function TodayInvoicesList({
                 </div>
               ) : (
                 <p className="text-xs text-stone-400">
-                  {t("common.noData", "لا توجد بيانات")}
+                  {t("simple.daily.nothing")}
                 </p>
               )}
             </div>
@@ -189,7 +195,7 @@ export default function TodayInvoicesList({
             <div className="rounded-2xl border border-stone-200 bg-white p-3.5">
               <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-stone-500">
                 <Wallet size={13} />
-                {t("screens.pos.fundOut", "خروج من الصندوق")}
+                {t("simple.daily.fundOut")}
               </div>
               {fundOut.length > 0 ? (
                 <div className="space-y-1.5">
@@ -226,7 +232,7 @@ export default function TodayInvoicesList({
                 </div>
               ) : (
                 <p className="text-xs text-stone-400">
-                  {t("common.noData", "لا توجد بيانات")}
+                  {t("simple.daily.nothing")}
                 </p>
               )}
             </div>
@@ -234,7 +240,64 @@ export default function TodayInvoicesList({
         )}
       </div>
 
-      {/* FILTER CHIPS */}
+      {/* DAY + SEARCH */}
+      <div className="shrink-0 flex flex-wrap items-center gap-2 border-b border-stone-200 bg-white px-3 pt-3">
+        <button
+          type="button"
+          onClick={() => setDate(today)}
+          aria-pressed={date === today}
+          className={dayChip(date === today)}
+        >
+          {t("simple.daily.today")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setDate(yesterday())}
+          aria-pressed={date === yesterday()}
+          className={dayChip(date === yesterday())}
+        >
+          {t("simple.daily.yesterday")}
+        </button>
+        <label
+          className={`${dayChip(date !== today && date !== yesterday())} cursor-pointer`}
+        >
+          <CalendarDays size={18} />
+          <input
+            type="date"
+            value={date}
+            max={today}
+            onChange={(e) => e.target.value && setDate(e.target.value)}
+            className="cursor-pointer bg-transparent text-base font-bold outline-none"
+            aria-label={t("simple.daily.pickDay")}
+          />
+        </label>
+
+        <div className="relative min-w-[240px] flex-1">
+          <Search
+            size={20}
+            className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 text-stone-400"
+          />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("simple.daily.search")}
+            aria-label={t("simple.daily.search")}
+            className="h-11 w-full rounded-2xl border-2 border-stone-200 bg-stone-50 pe-11 ps-11 text-base font-semibold text-stone-900 outline-none transition placeholder:font-normal placeholder:text-stone-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute end-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-stone-400 hover:bg-stone-200 hover:text-stone-700"
+              aria-label={t("simple.daily.clearSearch")}
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* TYPE CHIPS */}
       <div className="shrink-0 flex gap-2 border-b border-stone-200 bg-white p-3">
         <button
           onClick={() => setFilter("all")}
@@ -244,7 +307,7 @@ export default function TodayInvoicesList({
               : "bg-stone-100 text-stone-600 hover:bg-stone-200"
           }`}
         >
-          {t("common.all", "الكل")}
+          {t("simple.pos.all")}
         </button>
 
         <button
@@ -256,7 +319,7 @@ export default function TodayInvoicesList({
           }`}
         >
           <Receipt size={15} />
-          {t("screens.pos.sales", "المبيعات")}
+          {t("simple.daily.sales")}
         </button>
 
         <button
@@ -268,7 +331,7 @@ export default function TodayInvoicesList({
           }`}
         >
           <RotateCcw size={15} />
-          {t("ui.returns", "المرتجع")}
+          {t("simple.daily.returns")}
         </button>
       </div>
 
@@ -279,7 +342,18 @@ export default function TodayInvoicesList({
           actually becoming one. */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4">
         <div className="mx-auto max-w-7xl space-y-3">
-          {filteredInvoices.length > 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <p className="mt-3 text-sm font-semibold text-stone-500">
+                {t("screens.pos.loading")}
+              </p>
+            </div>
+          ) : error ? (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
+              <p className="text-base font-semibold text-rose-700">{error}</p>
+            </div>
+          ) : filteredInvoices.length > 0 ? (
             filteredInvoices.map((invoice) => {
               const isReturn = invoice.type === "return";
               const fullyRefunded = invoice.return_status === "full";
@@ -325,7 +399,7 @@ export default function TodayInvoicesList({
 
                         {isReturn && invoice.sales_invoice_id && (
                           <span className="text-[11px] font-semibold text-stone-400">
-                            {t("screens.pos.fromInvoice", "من فاتورة")} #
+                            {t("simple.daily.fromInvoice")} #
                             {invoice.sales_invoice_id}
                           </span>
                         )}
@@ -342,6 +416,19 @@ export default function TodayInvoicesList({
                         <User size={12} />
                         {t("screens.pos.walkInCustomer", "زبون سفري")}
                       </p>
+
+                      {invoice.matched_items && (
+                        <p className="mt-1.5 flex items-start gap-1.5 text-sm font-semibold text-emerald-700">
+                          <Package size={15} className="mt-0.5 shrink-0" />
+                          <span className="line-clamp-2">
+                            {t("simple.daily.contains", {
+                              items: invoice.matched_items
+                                .split(",")
+                                .join(t("simple.daily.listSep")),
+                            })}
+                          </span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -388,9 +475,9 @@ export default function TodayInvoicesList({
                   </div>
 
                   {/* COLUMN 3 — net total */}
-                  <div className="text-right">
+                  <div className="text-end">
                     <p className="text-[10px] font-semibold uppercase text-stone-500">
-                      {t("ui.netTotal", "الصافي")}
+                      {t("simple.daily.netTotal")}
                     </p>
                     <b className="text-sm text-stone-950">
                       {money(invoice.net_total || 0)}
@@ -423,25 +510,50 @@ export default function TodayInvoicesList({
               );
             })
           ) : (
-            <div className="py-12 text-center text-sm font-semibold text-stone-400">
-              {t("common.noData", "لا توجد بيانات متاحة اليوم")}
+            <div className="flex flex-col items-center gap-4 py-12 text-center">
+              <p className="text-lg font-bold text-stone-500">
+                {filtering
+                  ? t("simple.daily.noResults")
+                  : t("simple.daily.noSalesDay")}
+              </p>
+              {filtering && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setFilter("all");
+                  }}
+                  className="h-11 rounded-2xl border-2 border-stone-200 bg-white px-5 text-base font-bold text-stone-700 hover:bg-stone-50"
+                >
+                  {t("simple.daily.clearFilters")}
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* PAGINATION */}
-      <Pagination
-        page={page}
-        totalPages={totalPages}
-        total={total}
-        limit={limit}
-        onPageChange={setPage}
-        onLimitChange={(newLimit) => {
-          setLimit(newLimit);
-          setPage(1);
-        }}
-      />
+      {/* PAGINATION — a filter loads the whole day, so no pages then */}
+      {filtering ? (
+        <p className="shrink-0 border-t border-stone-200 bg-white px-4 py-3 text-sm font-semibold text-stone-500">
+          {t("simple.daily.showing", {
+            count: filteredInvoices.length,
+            total: invoices.length,
+          })}
+        </p>
+      ) : (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
+      )}
     </div>
   );
 }

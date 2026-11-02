@@ -454,7 +454,7 @@ export default function InvoiceReturnModal({
           which fund(s) pay the refund out, same as picking which fund(s)
           collect a sale. */}
       {isRefundModalOpen && (
-        <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex flex-col bg-white">
           <div className="shrink-0 flex items-center justify-between border-b border-stone-200 px-6 py-4">
             <div>
               <h2 className="text-lg font-black text-stone-950">
