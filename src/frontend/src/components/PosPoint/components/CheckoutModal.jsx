@@ -1,4 +1,4 @@
-import { Wallet, CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Wallet, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { normalizeDigits } from "../../../Global/FormatNumber";
@@ -172,15 +172,13 @@ export default function CheckoutModal({
       return;
     }
 
-    try {
-      await onCheckout({
-        payments,
-        received: allocatedTotal,
-      });
-      onClose();
-    } catch (err) {
-      console.error("Checkout failed:", err);
-      setError(err?.message || t("screens.checkout.failed"));
+    const result = await onCheckout({
+      payments,
+      received: allocatedTotal,
+    });
+
+    if (result && result.ok === false) {
+      setError(result.message || t("simple.done.failed"));
     }
   };
 
@@ -379,24 +377,24 @@ export default function CheckoutModal({
         </div>
       </div>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-stone-200 bg-white px-5 py-4 sm:flex-row sm:justify-end">
+      <div className="grid grid-cols-[auto_1fr] gap-3 border-t-2 border-slate-200 bg-white px-5 py-4 sm:flex sm:justify-end">
         <button
           type="button"
           onClick={onClose}
-          className="h-11 rounded-xl border border-stone-300 px-5 font-bold text-stone-700 transition hover:bg-stone-50"
+          className="ui-btn ui-btn-soft ui-btn-lg"
         >
-          {t("common.cancel")}
+          {t("simple.checkout.back")}
         </button>
 
         <button
           type="submit"
           disabled={checkingOut || !funds.length || !isFullyAllocated}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 font-black text-white shadow-lg shadow-teal-200 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="ui-btn ui-btn-ok ui-btn-lg text-xl sm:min-w-[260px]"
         >
-          <CreditCard size={18} />
+          <CheckCircle2 size={26} />
           {checkingOut
-            ? t("common.saving")
-            : t("screens.checkout.completeSale")}
+            ? t("simple.checkout.saving")
+            : t("simple.checkout.confirm")}
         </button>
       </div>
     </form>

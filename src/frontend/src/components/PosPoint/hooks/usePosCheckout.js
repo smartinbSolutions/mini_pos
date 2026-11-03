@@ -38,6 +38,12 @@ function recalcCartItem(item) {
   };
 }
 
+export const PAGE_SIZE_OPTIONS = [20, 50, 100];
+const DEFAULT_PAGE_SIZE = 50;
+// same key as the old "how many to show" setting, so a saved 20/50/100
+// carries over; a saved "all" is no longer valid and falls back to default
+const PAGE_SIZE_KEY = "pos:productLimit";
+
 export default function usePosCheckout({ weight } = {}) {
   const { t, i18n } = useTranslation();
   const [products, setProducts] = useState([]);
@@ -66,6 +72,29 @@ export default function usePosCheckout({ weight } = {}) {
   const [allTags, setAllTags] = useState([]);
   const [selectedTagIds, setSelectedTagIds] = useState([]);
 
+  // Products per page — chosen by the user and remembered on this computer.
+  const [pageSize, setPageSizeState] = useState(() => {
+    try {
+      const value = Number(localStorage.getItem(PAGE_SIZE_KEY));
+      return PAGE_SIZE_OPTIONS.includes(value) ? value : DEFAULT_PAGE_SIZE;
+    } catch {
+      return DEFAULT_PAGE_SIZE;
+    }
+  });
+  const [page, setPage] = useState(1);
+  const [productsTotal, setProductsTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const setPageSize = (value) => {
+    setPageSizeState(value);
+    setPage(1);
+    try {
+      localStorage.setItem(PAGE_SIZE_KEY, String(value));
+    } catch {
+      /* storage unavailable — keep it for this session only */
+    }
+  };
+
   const weightRef = useRef(weight);
   const now = new Date();
   const { user } = useAuth();
@@ -87,6 +116,12 @@ export default function usePosCheckout({ weight } = {}) {
   useEffect(() => {
     weightRef.current = weight;
   }, [weight]);
+
+  // Read by the global barcode listener, which is registered once.
+  const productsRef = useRef([]);
+  const allowNegativeStockRef = useRef(false);
+  productsRef.current = products;
+  allowNegativeStockRef.current = allowNegativeStock;
 
   const loadInitialData = useCallback(async () => {
     if (!api) {
@@ -201,31 +236,50 @@ export default function usePosCheckout({ weight } = {}) {
     try {
       setProductsLoading(true);
       const res = await api.getPosProducts({
-        page: 1,
-        limit: 50,
+        page,
+        limit: pageSize,
         search,
         tagIds: selectedTagIds,
       });
       setProducts(res?.data || []);
+      setProductsTotal(Number(res?.total) || 0);
+      setTotalPages(Math.max(1, Number(res?.totalPages) || 1));
     } catch (err) {
       console.error("Failed to load products:", err);
       setError(err?.message || t("errors.loadError"));
     } finally {
       setProductsLoading(false);
     }
-  }, [api, search, selectedTagIds, t]);
+  }, [api, search, selectedTagIds, page, pageSize, t]);
 
   const searchTimeout = useRef(null);
 
+  // a new search or category starts again from page 1
   useEffect(() => {
-    clearTimeout(searchTimeout.current);
+    setPage(1);
+  }, [search, selectedTagIds]);
 
-    searchTimeout.current = setTimeout(() => {
-      loadProducts();
-    }, 300);
+  // if the page count shrinks (e.g. a product was deleted), step back
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  // typing waits a moment so every keystroke isn't a query; turning a
+  // page or changing the page size loads straight away
+  const lastFilterKey = useRef("");
+  useEffect(() => {
+    const filterKey = `${search}|${selectedTagIds.join(",")}`;
+    const filterChanged = filterKey !== lastFilterKey.current;
+    lastFilterKey.current = filterKey;
+
+    clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(
+      () => loadProducts(),
+      filterChanged ? 300 : 0,
+    );
 
     return () => clearTimeout(searchTimeout.current);
-  }, [search, selectedTagIds]);
+  }, [search, selectedTagIds, page, pageSize]);
 
   useEffect(() => {
     loadInitialData();
@@ -243,6 +297,17 @@ export default function usePosCheckout({ weight } = {}) {
         : [...current, tagId],
     );
   };
+
+  // The sales screen shows one category at a time: choosing a category
+  // replaces the previous one, choosing it again goes back to everything.
+  // (Several at once would only list products that are in ALL of them.)
+  const selectTag = (tagId) => {
+    setSelectedTagIds((current) =>
+      current.length === 1 && current[0] === tagId ? [] : [tagId],
+    );
+  };
+
+  const clearTags = () => setSelectedTagIds([]);
 
   // ---- Cart mutations ----
 
@@ -557,21 +622,53 @@ export default function usePosCheckout({ weight } = {}) {
         created_by: user.id,
       });
 
+      // pos-checkout reports failures as { success: false } rather than
+      // throwing — the sale was NOT saved, so keep the cart as it is.
+      if (!sales || sales.success === false) {
+        const raw = String(sales?.error || "");
+        const message = raw.startsWith("INSUFFICIENT_STOCK:")
+          ? t("simple.done.notEnoughStock", {
+              name: raw.slice("INSUFFICIENT_STOCK:".length),
+            })
+          : t("simple.done.failed");
+        console.error("POS checkout failed:", raw);
+        setError(message);
+        return { ok: false, message };
+      }
+
       payload.id = sales.invoiceId;
       payload.invoice_name = sales.invoiceName;
 
-      const res = await api.printReceipt(payload);
+      // The sale is saved — clear the cart before printing so a printer
+      // problem can never lead the cashier into selling it twice.
       setCart([]);
       setSelectedCustomerId("");
       setInvoiceDiscountRate(0);
-      setInvoiceTaxes([]);
+      if (posTaxMode !== "fixed") setInvoiceTaxes([]);
       setInvoiceNote("");
+      setError("");
       refetch();
+
+      const printed = await printReceipt(payload);
+
+      return { ok: true, receipt: payload, printed };
     } catch (err) {
       console.error(err);
-      setError(err?.message || t("errors.saveError"));
+      const message = t("simple.done.failed");
+      setError(message);
+      return { ok: false, message };
     } finally {
       setCheckingOut(false);
+    }
+  };
+
+  const printReceipt = async (receipt) => {
+    try {
+      const res = await api.printReceipt(receipt);
+      return res?.success !== false;
+    } catch (err) {
+      console.error("Receipt print failed:", err);
+      return false;
     }
   };
 
@@ -579,17 +676,46 @@ export default function usePosCheckout({ weight } = {}) {
     let barcode = "";
 
     const handleKeyDown = async (e) => {
+      // Typing inside a dialog (payment amount, price editor…) is never
+      // a barcode scan.
+      if (e.target?.closest?.('[role="dialog"], [data-no-barcode]')) {
+        barcode = "";
+        return;
+      }
+
       if (e.key === "Enter") {
         if (!barcode) return;
+        const code = barcode.trim();
+        barcode = "";
+        const fromSearchBox = Boolean(e.target?.closest?.("[data-pos-search]"));
 
         try {
-          const product = await api.getProductByBarcode(barcode);
+          const product = await api.getProductByBarcode(code);
 
           if (!product) {
-            setError(t("errors.productNotFound"));
-            barcode = "";
+            // In the search box the typed text is usually a name: when
+            // exactly one product matches, Enter adds it; otherwise the
+            // filtered list already answers the search, so no error.
+            if (!fromSearchBox) {
+              setError(t("simple.pos.notFoundBarcode"));
+              return;
+            }
+            const matches = productsRef.current;
+            const only = matches.length === 1 ? matches[0] : null;
+            const sellable =
+              only &&
+              (only.type === "service" ||
+                allowNegativeStockRef.current ||
+                Number(only.quantity) > 0);
+            if (sellable) {
+              addToCart(only, Math.max(0, toNumber(weightRef.current)) || 1);
+              setSearch("");
+              setError("");
+            }
             return;
           }
+
+          setSearch((current) => (current.trim() === code ? "" : current));
 
           const scannedQuantity = Math.max(0, toNumber(weightRef.current)) || 1;
 
@@ -602,11 +728,15 @@ export default function usePosCheckout({ weight } = {}) {
           addToCart(product, scannedQuantity, false);
 
           setError("");
-          barcode = "";
         } catch (err) {
           console.log(err);
         }
-      } else {
+      } else if (e.key === "Backspace") {
+        barcode = barcode.slice(0, -1);
+      } else if (e.key === "Escape") {
+        barcode = "";
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        // only printable characters — never "Shift", "Tab", arrows, etc.
         barcode += e.key;
       }
     };
@@ -659,6 +789,8 @@ export default function usePosCheckout({ weight } = {}) {
     removeFromCart,
     clearCart,
     checkout,
+    printReceipt,
+    clearError: () => setError(""),
     currencies,
     allowNegativeStock,
     itemTaxSummary,
@@ -668,5 +800,14 @@ export default function usePosCheckout({ weight } = {}) {
     allTags,
     selectedTagIds,
     toggleTagFilter,
+    selectTag,
+    clearTags,
+
+    pageSize,
+    setPageSize,
+    page,
+    setPage,
+    totalPages,
+    productsTotal,
   };
 }

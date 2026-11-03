@@ -1,10 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { X, ArrowRight, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 import TodayInvoicesList from "./TodayInvoicesList";
 import InvoiceDetailsModal from "./InvoiceDetailsModal";
 import InvoiceReturnModal from "./InvoiceReturnModal";
 import ReturnInvoiceDetails from "./ReturnInvoiceDetails";
+import { toLocalDate } from "../../../../Global/useSalesSummary";
+import { normalizeDigits } from "../../../../Global/FormatNumber";
+
+// Upper bound when a filter needs the full day at once (a single
+// shop-day of POS invoices stays far below this).
+const WHOLE_DAY_LIMIT = 1000;
+
+// Arabic digits → 0-9; for a number-like query ("#1,250") also drop the
+// "#" and separators. Product names are passed through as typed.
+function cleanQuery(query) {
+  const q = normalizeDigits(query.trim());
+  return /^[#\d.,\s]+$/.test(q) ? q.replace(/[#,\s]/g, "") : q;
+}
 
 export default function DailySummaryModal({
   isOpen,
@@ -14,6 +28,7 @@ export default function DailySummaryModal({
   funds,
 }) {
   const api = window.api;
+  const { i18n } = useTranslation();
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [invoiceMode, setInvoiceMode] = useState("view");
@@ -23,6 +38,8 @@ export default function DailySummaryModal({
   const [stats, setStats] = useState(null);
 
   const [filter, setFilter] = useState("all"); // all | sale | return
+  const [date, setDate] = useState(() => toLocalDate());
+  const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -31,6 +48,19 @@ export default function DailySummaryModal({
   const [limit, setLimit] = useState(15);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // The report API only filters by day, so type/search filtering happens
+  // here — load the whole day while one is active, otherwise matches on
+  // other pages would be missed.
+  const filtering = filter !== "all" || search.trim() !== "";
+
+  // Search runs in the database (products aren't in the list rows), so
+  // wait until typing pauses before asking.
+  const [appliedSearch, setAppliedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setAppliedSearch(cleanQuery(search)), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const refetch = useCallback(async () => {
     if (!api) {
@@ -42,12 +72,11 @@ export default function DailySummaryModal({
       setLoading(true);
       setError("");
 
-      const todayStr = new Date().toLocaleDateString("en-CA");
-
       const res = await api.getDailyPosReport({
-        date: todayStr,
-        page,
-        limit,
+        date,
+        search: appliedSearch,
+        page: filtering ? 1 : page,
+        limit: filtering ? WHOLE_DAY_LIMIT : limit,
       });
 
       setTotal(res?.total || 0);
@@ -60,7 +89,7 @@ export default function DailySummaryModal({
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, t]);
+  }, [api, date, appliedSearch, filtering, page, limit, t]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -70,6 +99,8 @@ export default function DailySummaryModal({
       setInvoices([]);
       setStats(null);
       setFilter("all");
+      setDate(toLocalDate());
+      setSearch("");
       setPage(1);
       setTotal(0);
       setTotalPages(1);
@@ -123,8 +154,13 @@ export default function DailySummaryModal({
 
   if (!isOpen) return null;
 
+  const dayLabel = new Date(`${date}T00:00:00`).toLocaleDateString(
+    i18n.language,
+    { weekday: "long", month: "short", day: "numeric" },
+  );
+
   return (
-    <div className="fixed inset-0 z-50 bg-white animate-fade-in">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 bg-white animate-fade-in">
       <div className="flex h-screen w-full flex-col overflow-hidden">
         {/* HEADER */}
         <div className="shrink-0 flex items-center justify-between border-b border-stone-200 px-6 py-4">
@@ -146,16 +182,12 @@ export default function DailySummaryModal({
                     : invoiceMode === "return"
                       ? `${t("screens.pos.invoiceReturnProcess", "إرجاع من الفاتورة")} #${selectedInvoice.id || selectedInvoice.invoice_number}`
                       : `${t("screens.pos.invoiceDetails", "تفاصيل الفاتورة")} #${selectedInvoice.id || selectedInvoice.invoice_number}`
-                  : t("screens.pos.dailyInvoices", "فواتير اليوم")}
+                  : date === toLocalDate()
+                    ? t("simple.daily.title")
+                    : t("simple.daily.titleOn", { date: dayLabel })}
               </h2>
 
-              <p className="text-xs text-stone-500">
-                {new Date().toLocaleDateString(undefined, {
-                  weekday: "long",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </p>
+              <p className="text-sm text-stone-500">{dayLabel}</p>
             </div>
           </div>
 
@@ -178,6 +210,14 @@ export default function DailySummaryModal({
               stats={stats}
               filter={filter}
               setFilter={setFilter}
+              date={date}
+              setDate={(next) => {
+                setDate(next);
+                setPage(1);
+              }}
+              search={search}
+              setSearch={setSearch}
+              filtering={filtering}
               onSelectInvoice={handleSelectSalesInvoice}
               money={money}
               t={t}

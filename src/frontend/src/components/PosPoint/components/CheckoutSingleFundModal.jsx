@@ -1,17 +1,18 @@
 import {
-  CreditCard,
   Wallet,
   X,
   Check,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   Banknote,
+  HandCoins,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import { normalizeDigits } from "../../../Global/FormatNumber";
+import { formatMoney, formatNumber } from "../../../Global/FormatNumber";
 import NumberInput from "../../../Global/NumberInput";
 
 const toNumber = (value) => {
@@ -20,6 +21,20 @@ const toNumber = (value) => {
 };
 
 const cents = (value) => Math.round(toNumber(value) * 100) / 100;
+
+// Banknote-style round-ups above the amount due ("customer gave 5,000").
+function quickCashAmounts(due) {
+  if (!(due > 0)) return [];
+  const steps = [1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000, 100000];
+  const out = [];
+  for (const step of steps) {
+    if (step < due / 20) continue; // too small to matter
+    const value = Math.ceil(due / step) * step;
+    if (value > due && !out.includes(value)) out.push(value);
+    if (out.length === 3) break;
+  }
+  return out;
+}
 
 export default function CheckoutSingleFundModal({
   funds,
@@ -32,9 +47,18 @@ export default function CheckoutSingleFundModal({
 
   const { money } = usePrimaryCurrency();
 
-  const [fundId, setFundId] = useState("");
+  // Seeded on first render (not only in the effect below) because the
+  // amount box is auto-focused, and NumberInput ignores outside value
+  // changes while it has focus.
+  const [fundId, setFundId] = useState(() =>
+    funds.length ? String(funds[0].id) : "",
+  );
 
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(() =>
+    funds.length
+      ? cents(total * (toNumber(funds[0].currency_exchangeRate || 1) || 1))
+      : "",
+  );
 
   const [error, setError] = useState("");
 
@@ -88,6 +112,16 @@ export default function CheckoutSingleFundModal({
     return Math.max(0, cents(total - amountInFundCurrency));
   }, [isForeignFund, amountInFundCurrency, total]);
 
+  const dueInFund = cents(total * listedRate);
+  const fundMoney = (value) =>
+    isForeignFund
+      ? formatMoney(value, selectedFund?.currency_symbol || selectedFund?.currency_code, {
+          maximumFractionDigits: 2,
+        })
+      : money(value);
+
+  const quickAmounts = useMemo(() => quickCashAmounts(dueInFund), [dueInFund]);
+
   const selectFund = (fund) => {
     setFundId(String(fund.id));
 
@@ -97,7 +131,7 @@ export default function CheckoutSingleFundModal({
   };
 
   const applyAmount = (value) => {
-    setAmount(cents(value));
+    setAmount(value === "" ? "" : cents(value));
     setError("");
   };
 
@@ -110,131 +144,133 @@ export default function CheckoutSingleFundModal({
     }
 
     if (amountInFundCurrency <= 0) {
-      const msg = t("screens.checkout.amountRequired");
+      const msg = t("simple.checkout.enterAmount");
       setError(msg);
       toast.error(msg);
       return;
     }
 
     if (!isForeignFund && shortfall > 0) {
-      const msg = t("screens.checkout.remainingMustBeZero");
+      const msg = t("simple.checkout.notEnough");
       setError(msg);
       toast.error(msg);
       return;
     }
 
-    try {
-      await onCheckout({
-        payments: [
-          {
-            fundId: Number(selectedFund.id),
-            amount: total,
-            // for a primary-currency fund only the invoice total is applied
-            // to the fund - any excess is change handed back, not revenue.
-            // for a foreign fund the full typed amount is what settled it.
-            amount_fund_currency: isForeignFund ? amountInFundCurrency : total,
-            currency_code: selectedFund.currency_code,
-            exchange_rate: isForeignFund ? effectiveRate : 1,
-          },
-        ],
+    const result = await onCheckout({
+      payments: [
+        {
+          fundId: Number(selectedFund.id),
+          amount: total,
+          // for a primary-currency fund only the invoice total is applied
+          // to the fund - any excess is change handed back, not revenue.
+          // for a foreign fund the full typed amount is what settled it.
+          amount_fund_currency: isForeignFund ? amountInFundCurrency : total,
+          currency_code: selectedFund.currency_code,
+          exchange_rate: isForeignFund ? effectiveRate : 1,
+        },
+      ],
 
-        received: amountInFundCurrency,
-        receivedFundTotal: amountInFundCurrency,
-        change,
-        changeFundId: selectedFund.id,
-      });
+      received: amountInFundCurrency,
+      receivedFundTotal: amountInFundCurrency,
+      change,
+      changeFundId: selectedFund.id,
+    });
 
-      onClose();
-    } catch (err) {
-      console.error("Checkout failed", err);
-
-      setError(err?.message || t("screens.checkout.failed"));
+    if (result && result.ok === false) {
+      setError(result.message || t("simple.done.failed"));
     }
   };
+
+  const canConfirm =
+    !checkingOut &&
+    funds.length > 0 &&
+    amountInFundCurrency > 0 &&
+    (isForeignFund || shortfall === 0);
 
   return (
     <form
       onSubmit={submit}
       className="flex min-h-0 flex-1 flex-col overflow-hidden"
     >
-      <div className="min-h-0 flex-1 overflow-auto p-5 space-y-5">
-        <div className="flex items-center justify-between rounded-xl bg-stone-100 px-4 py-2.5">
-          <span className="text-xs font-bold uppercase  text-stone-500">
-            {t("screens.checkout.totalDue")}
-          </span>
-
-          <span className="text-lg font-black text-stone-800">
-            {money(total)}
-          </span>
+      <div className="min-h-0 flex-1 space-y-5 overflow-auto p-5">
+        {/* 1 — WHAT THE CUSTOMER MUST PAY */}
+        <div className="rounded-3xl bg-ink p-5 text-white">
+          <p className="text-lg font-bold text-slate-300">
+            {t("simple.checkout.toPay")}
+          </p>
+          <p className="mt-1 truncate text-5xl font-black tabular-nums">
+            <span dir="ltr">{money(total)}</span>
+          </p>
+          {isForeignFund && (
+            <p className="mt-1 text-lg font-bold text-slate-300">
+              <span dir="ltr">= {fundMoney(dueInFund)}</span>
+            </p>
+          )}
         </div>
 
-        <div>
-          <h3 className="font-black mb-2 text-sm text-stone-700">
-            {t("screens.checkout.paidIntoFund")}
-          </h3>
+        {/* WHERE THE MONEY GOES — only asked when there is a real choice */}
+        {funds.length > 1 && (
+          <div>
+            <h3 className="ui-label">{t("simple.checkout.whereMoney")}</h3>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {funds.map((fund) => {
+                const selected = String(fund.id) === fundId;
 
-          <div className="grid grid-cols-3 gap-1.5">
-            {funds.map((fund) => {
-              const selected = String(fund.id) === fundId;
-              const rate = toNumber(fund.currency_exchangeRate || 1) || 1;
-
-              return (
-                <button
-                  key={fund.id}
-                  type="button"
-                  onClick={() => selectFund(fund)}
-                  className={`relative flex flex-col items-center gap-0.5 rounded-lg border px-1.5 py-2 text-center transition ${selected ? "border-teal-500 bg-teal-50" : "border-stone-200 bg-white hover:border-stone-300"}`}
-                >
-                  {selected ? (
-                    <span className="absolute right-1 top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-teal-500 text-white">
-                      <Check size={8} />
+                return (
+                  <button
+                    key={fund.id}
+                    type="button"
+                    onClick={() => selectFund(fund)}
+                    aria-pressed={selected}
+                    className={`flex min-h-[56px] items-center gap-2 rounded-2xl border-2 px-3 py-2 text-start transition ${
+                      selected
+                        ? "border-ok bg-ok-50 text-ok-700"
+                        : "border-slate-200 bg-white text-ink-soft hover:border-slate-300"
+                    }`}
+                  >
+                    {selected ? (
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ok text-white">
+                        <Check size={16} strokeWidth={3} />
+                      </span>
+                    ) : (
+                      <Wallet size={22} className="shrink-0 text-slate-400" />
+                    )}
+                    <span className="min-w-0">
+                      <span className="block truncate text-base font-bold">
+                        {fund.name}
+                      </span>
+                      <span className="block text-sm font-semibold opacity-80">
+                        {fund.currency_code}
+                      </span>
                     </span>
-                  ) : (
-                    <Wallet
-                      size={12}
-                      className="absolute right-1 top-1 text-stone-300"
-                    />
-                  )}
-
-                  <h4 className="w-full truncate text-[11px] font-black">
-                    {fund.name}
-                  </h4>
-
-                  <p className="text-[10px] font-bold text-stone-500">
-                    {fund.currency_code}
-                  </p>
-
-                  {rate !== 1 && (
-                    <p className="text-[9px] font-semibold text-stone-400">
-                      1 = {rate}
-                    </p>
-                  )}
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
+        {/* 2 — MONEY RECEIVED */}
         <div>
-          <label
-            htmlFor="checkout-amount"
-            className="mb-2 block text-sm font-black text-stone-700"
-          >
-            {t("ui.amount")}
+          <label htmlFor="checkout-amount" className="ui-label">
+            {t("simple.checkout.received")}
           </label>
 
           <div className="relative">
             <NumberInput
               id="checkout-amount"
+              autoFocus
               value={amount}
               onChange={(val) => {
                 setAmount(val);
                 setError("");
               }}
-              className="h-24 w-full rounded-2xl border-2 border-stone-200 bg-white px-5 pr-24 text-5xl font-black focus:border-teal-500 focus:outline-none"
+              onFocusCapture={(e) => e.target.select()}
+              className="h-20 w-full rounded-3xl border-[3px] border-slate-300 bg-white pe-28 ps-5 text-4xl font-black tabular-nums text-ink focus:border-ok focus:outline-none focus:ring-4 focus:ring-ok-100"
             />
 
-            <span className="pointer-events-none absolute right-16 top-1/2 -translate-y-1/2 text-lg font-bold text-stone-400">
+            <span className="pointer-events-none absolute end-16 top-1/2 -translate-y-1/2 text-lg font-bold text-ink-muted">
               {selectedFund?.currency_code}
             </span>
 
@@ -242,106 +278,132 @@ export default function CheckoutSingleFundModal({
               <button
                 type="button"
                 onClick={() => applyAmount("")}
-                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600"
+                className="absolute end-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-xl text-ink-muted hover:bg-slate-100 hover:text-ink"
                 aria-label={t("common.clear")}
               >
-                <X size={18} />
+                <X size={22} />
               </button>
             )}
           </div>
 
-          {/* Foreign fund: effective-rate feedback, never blocks */}
-          {isForeignFund && (
-            <div
-              className={`mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold ${
-                rateDeviationPct > 5
-                  ? "bg-amber-50 text-amber-700"
-                  : "bg-stone-100 text-stone-500"
-              }`}
+          {/* QUICK CASH */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => applyAmount(dueInFund)}
+              className="ui-btn ui-btn-soft min-h-[48px] px-4"
             >
-              {rateDeviationPct > 5 ? (
-                <AlertCircle size={14} className="shrink-0" />
-              ) : (
-                <CheckCircle2 size={14} className="shrink-0" />
-              )}
-
-              <span>
-                {t("screens.ledger.effectiveRate")}: 1 {t("ui.primaryCurrency")}{" "}
-                = {effectiveRate.toFixed(2)} {selectedFund?.currency_code}
-              </span>
-
-              {rateDeviationPct > 5 && (
-                <span className="text-amber-600">
-                  ({t("screens.checkout.fundRateShort")} {listedRate.toFixed(2)}
-                  )
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Primary-currency fund: real change / shortfall, can block */}
-          {!isForeignFund && amountInFundCurrency > 0 && (
-            <div
-              className={`mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-bold ${
-                shortfall > 0
-                  ? "bg-amber-50 text-amber-700"
-                  : change > 0
-                    ? "bg-emerald-50 text-emerald-700"
-                    : "bg-stone-100 text-stone-500"
-              }`}
-            >
-              {shortfall > 0 ? (
-                <AlertCircle size={14} className="shrink-0" />
-              ) : change > 0 ? (
-                <Banknote size={14} className="shrink-0" />
-              ) : (
-                <CheckCircle2 size={14} className="shrink-0" />
-              )}
-
-              <span>
-                {shortfall > 0 &&
-                  `${t("screens.checkout.stillNeeds")}: ${money(shortfall)}`}
-                {shortfall === 0 &&
-                  change > 0 &&
-                  `${t("screens.checkout.change")}: ${money(change)}`}
-                {shortfall === 0 &&
-                  change === 0 &&
-                  t("screens.checkout.paymentComplete")}
-              </span>
-            </div>
-          )}
+              <HandCoins size={19} />
+              {t("simple.checkout.exact")}
+            </button>
+            {quickAmounts.map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => applyAmount(value)}
+                className="ui-btn ui-btn-soft min-h-[48px] px-4 tabular-nums"
+                dir="ltr"
+              >
+                <Banknote size={19} />
+                {formatNumber(value, 2)}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {/* 3 — CHANGE / MISSING */}
+        {!isForeignFund && amountInFundCurrency > 0 && (
+          <div
+            aria-live="polite"
+            className={`flex items-center gap-4 rounded-3xl border-2 p-5 ${
+              shortfall > 0
+                ? "border-warn-100 bg-warn-50 text-warn-700"
+                : "border-ok-100 bg-ok-50 text-ok-700"
+            }`}
+          >
+            {shortfall > 0 ? (
+              <AlertTriangle size={40} className="shrink-0" />
+            ) : change > 0 ? (
+              <Banknote size={40} className="shrink-0" />
+            ) : (
+              <CheckCircle2 size={40} className="shrink-0" />
+            )}
+            <div className="min-w-0">
+              <p className="text-lg font-bold">
+                {shortfall > 0
+                  ? t("simple.checkout.missing")
+                  : change > 0
+                    ? t("simple.checkout.change")
+                    : t("simple.checkout.exactOk")}
+              </p>
+              {(shortfall > 0 || change > 0) && (
+                <p className="truncate text-4xl font-black tabular-nums">
+                  <span dir="ltr">
+                    {money(shortfall > 0 ? shortfall : change)}
+                  </span>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Foreign fund: effective-rate feedback, never blocks */}
+        {isForeignFund && amountInFundCurrency > 0 && (
+          <div
+            className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-base font-bold ${
+              rateDeviationPct > 5
+                ? "bg-warn-50 text-warn-700"
+                : "bg-slate-100 text-ink-soft"
+            }`}
+          >
+            {rateDeviationPct > 5 ? (
+              <AlertCircle size={20} className="shrink-0" />
+            ) : (
+              <CheckCircle2 size={20} className="shrink-0" />
+            )}
+
+            <span>
+              {t("screens.ledger.effectiveRate")}: 1 {t("ui.primaryCurrency")}{" "}
+              = {effectiveRate.toFixed(2)} {selectedFund?.currency_code}
+            </span>
+
+            {rateDeviationPct > 5 && (
+              <span>
+                ({t("screens.checkout.fundRateShort")} {listedRate.toFixed(2)})
+              </span>
+            )}
+          </div>
+        )}
+
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <div
+            role="alert"
+            className="flex items-center gap-3 rounded-2xl border-2 border-danger-100 bg-danger-50 px-4 py-3 text-base font-bold text-danger-700"
+          >
+            <AlertCircle size={22} className="shrink-0" />
             {error}
           </div>
         )}
       </div>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-stone-200 bg-white px-5 py-4 sm:flex-row sm:justify-end">
+      <div className="grid grid-cols-[auto_1fr] gap-3 border-t-2 border-slate-200 bg-white px-5 py-4">
         <button
           type="button"
           onClick={onClose}
-          className="h-11 rounded-xl border border-stone-300 px-5 font-bold text-stone-700 transition hover:bg-stone-50"
+          className="ui-btn ui-btn-soft ui-btn-lg"
         >
-          {t("common.cancel")}
+          {t("simple.checkout.back")}
         </button>
 
         <button
-          disabled={
-            checkingOut ||
-            !funds.length ||
-            amountInFundCurrency <= 0 ||
-            (!isForeignFund && shortfall > 0)
-          }
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 font-black text-white shadow-lg shadow-teal-200 transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+          type="submit"
+          disabled={!canConfirm}
+          className="ui-btn ui-btn-ok ui-btn-lg text-xl"
         >
-          <CreditCard size={18} />
-
+          <CheckCircle2 size={26} />
           {checkingOut
-            ? t("common.saving")
-            : t("screens.checkout.completeSale")}
+            ? t("simple.checkout.saving")
+            : t("simple.checkout.confirm")}
         </button>
       </div>
     </form>

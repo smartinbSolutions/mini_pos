@@ -1857,6 +1857,43 @@ export default function registerSalesInvoiceIPC() {
     const limit = Math.max(1, Number(params.limit) || 20);
     const offset = (page - 1) * limit;
 
+    // Optional search: invoice number, amount, or any product on the
+    // invoice (name / latin name / code / barcode). Without it, the rows
+    // and counts are exactly the unfiltered day as before.
+    const search = String(params.search || "").trim();
+    const like = `%${search}%`;
+
+    const itemMatch = `(
+      it.product_name LIKE ? OR it.product_code LIKE ?
+      OR p.name LIKE ? OR p.latinName LIKE ?
+      OR it.product_id IN (SELECT product_id FROM product_barcodes WHERE barcode = ?)
+      OR it.product_id IN (SELECT product_id FROM product_units WHERE barcode = ?)
+    )`;
+    const itemParams = search ? [like, like, like, like, search, search] : [];
+
+    const itemsOf = (table, fk, alias) => `
+      FROM ${table} it
+      LEFT JOIN products p ON p.id = it.product_id
+      WHERE it.${fk} = ${alias}.id AND ${itemMatch}`;
+
+    // which products made the row match — shown to the cashier
+    const matchedItems = (table, fk, alias) =>
+      search
+        ? `(SELECT GROUP_CONCAT(DISTINCT COALESCE(it.product_name, p.name)) ${itemsOf(table, fk, alias)})`
+        : "NULL";
+
+    const saleFilter = search
+      ? `AND (CAST(s.id AS TEXT) LIKE ? OR CAST(s.net_total AS TEXT) LIKE ?
+          OR EXISTS (SELECT 1 ${itemsOf("sales_invoice_items", "invoice_id", "s")}))`
+      : "";
+    const returnFilter = search
+      ? `AND (CAST(r.id AS TEXT) LIKE ? OR CAST(r.sales_invoice_id AS TEXT) LIKE ?
+          OR CAST(r.net_total AS TEXT) LIKE ?
+          OR EXISTS (SELECT 1 ${itemsOf("sales_return_items", "return_id", "r")}))`
+      : "";
+    const saleFilterParams = search ? [like, like, ...itemParams] : [];
+    const returnFilterParams = search ? [like, like, like, ...itemParams] : [];
+
     const rows = db
       .prepare(
         `
@@ -1873,7 +1910,8 @@ export default function registerSalesInvoiceIPC() {
             WHEN COALESCE(ret.total_returned, 0) <= 0 THEN 'none'
             WHEN ret.total_returned >= ret.total_quantity THEN 'full'
             ELSE 'partial'
-          END AS return_status
+          END AS return_status,
+          ${matchedItems("sales_invoice_items", "invoice_id", "s")} AS matched_items
         FROM sales_invoices s
         LEFT JOIN (
           SELECT
@@ -1889,9 +1927,10 @@ export default function registerSalesInvoiceIPC() {
           GROUP BY si.invoice_id
         ) ret ON ret.invoice_id = s.id
         WHERE DATE(s.date) = ? AND s.channel = 'pos'
-  
+        ${saleFilter}
+
         UNION ALL
-  
+
         SELECT
           r.id,
           r.date,
@@ -1900,25 +1939,38 @@ export default function registerSalesInvoiceIPC() {
           NULL AS status,
           'return' AS type,
           r.sales_invoice_id,
-          NULL AS return_status
+          NULL AS return_status,
+          ${matchedItems("sales_return_items", "return_id", "r")} AS matched_items
         FROM sales_returns r
         WHERE DATE(r.date) = ? AND r.channel = 'pos'
+        ${returnFilter}
       )
       ORDER BY date DESC, id DESC
       LIMIT ? OFFSET ?
       `,
       )
-      .all(date, date, limit, offset);
+      .all(
+        ...itemParams,
+        date,
+        ...saleFilterParams,
+        ...itemParams,
+        date,
+        ...returnFilterParams,
+        limit,
+        offset,
+      );
 
     const { total } = db
       .prepare(
         `
         SELECT
-          (SELECT COUNT(*) FROM sales_invoices WHERE DATE(date) = ? AND channel = 'pos') +
-          (SELECT COUNT(*) FROM sales_returns WHERE DATE(date) = ? AND channel = 'pos') AS total
+          (SELECT COUNT(*) FROM sales_invoices s
+            WHERE DATE(s.date) = ? AND s.channel = 'pos' ${saleFilter}) +
+          (SELECT COUNT(*) FROM sales_returns r
+            WHERE DATE(r.date) = ? AND r.channel = 'pos' ${returnFilter}) AS total
         `,
       )
-      .get(date, date);
+      .get(date, ...saleFilterParams, date, ...returnFilterParams);
 
     const salesStats = db
       .prepare(

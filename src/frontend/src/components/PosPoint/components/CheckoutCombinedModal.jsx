@@ -1,4 +1,4 @@
-import { CreditCard, Layers, LayoutGrid, X } from "lucide-react";
+import { Banknote, Layers, X } from "lucide-react";
 import { useState } from "react";
 import CheckoutModal from "./CheckoutModal";
 import CheckoutSingleFundModal from "./CheckoutSingleFundModal";
@@ -12,73 +12,72 @@ export default function UnifiedCheckoutModal({
   t,
   money,
 }) {
-  const isMultiFundDefault = funds.length > 1;
-  const [isMultiMode, setIsMultiMode] = useState();
+  const [isMultiMode, setIsMultiMode] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-sm">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="checkout-title"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-3"
+    >
       <div
-        className={`flex max-h-[94vh] w-full flex-col overflow-hidden rounded-2xl border border-stone-200 bg-[#f8fafc] shadow-2xl transition-all duration-300 ${
+        className={`flex max-h-[96vh] w-full flex-col overflow-hidden rounded-3xl bg-slate-50 shadow-2xl ${
           isMultiMode ? "max-w-4xl" : "max-w-xl"
         }`}
       >
-        <div className="border-b border-stone-200 bg-white px-5 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-500 text-white shadow-lg shadow-teal-100">
-                <CreditCard size={21} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="truncate text-xl font-black text-stone-950">
-                  {t("screens.checkout.title")}
-                </h2>
-                <p className="mt-1 text-sm text-stone-500">
-                  {isMultiMode
-                    ? t("screens.checkout.splitPayment")
-                    : t("screens.checkout.singleFund")}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-stone-500 transition hover:bg-stone-100 hover:text-stone-900"
-                aria-label={t("screens.checkout.close")}
-              >
-                <X size={20} />
-              </button>
-            </div>
+        <div className="flex items-center justify-between gap-3 border-b-2 border-slate-200 bg-white px-5 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-ok text-white">
+              <Banknote size={26} />
+            </span>
+            <h2
+              id="checkout-title"
+              className="truncate text-2xl font-black text-ink"
+            >
+              {t("simple.checkout.title")}
+            </h2>
           </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-ink-muted transition hover:bg-slate-100 hover:text-ink"
+            aria-label={t("simple.pos.close")}
+          >
+            <X size={26} />
+          </button>
         </div>
+
         {funds.length > 1 && (
-          <div className="border-b border-stone-200 bg-white px-5 py-4">
-            <div className="mx-auto flex w-fit rounded-2xl bg-stone-100 p-1.5 shadow-inner">
+          <div className="border-b-2 border-slate-200 bg-white px-5 py-3">
+            <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-slate-100 p-1.5">
               <button
                 type="button"
                 onClick={() => setIsMultiMode(false)}
-                className={`flex min-w-[150px] items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all duration-200 ${
+                aria-pressed={!isMultiMode}
+                className={`flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 text-base font-bold transition ${
                   !isMultiMode
-                    ? "bg-white text-teal-700 shadow-md"
-                    : "text-stone-600 hover:text-stone-900"
+                    ? "bg-white text-ok-700 shadow"
+                    : "text-ink-muted hover:text-ink"
                 }`}
               >
-                <LayoutGrid size={18} />
-                <span>{t("screens.checkout.singleFund")}</span>
+                <Banknote size={20} />
+                {t("simple.checkout.normal")}
               </button>
 
               <button
                 type="button"
                 onClick={() => setIsMultiMode(true)}
-                className={`flex min-w-[150px] items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition-all duration-200 ${
+                aria-pressed={isMultiMode}
+                className={`flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-4 text-base font-bold transition ${
                   isMultiMode
-                    ? "bg-white text-teal-700 shadow-md"
-                    : "text-stone-600 hover:text-stone-900"
+                    ? "bg-white text-ok-700 shadow"
+                    : "text-ink-muted hover:text-ink"
                 }`}
               >
-                <Layers size={18} />
-                <span>{t("screens.checkout.splitPayment")}</span>
+                <Layers size={20} />
+                {t("simple.checkout.split")}
               </button>
             </div>
           </div>
@@ -107,12 +106,12 @@ export default function UnifiedCheckoutModal({
             />
           )
         ) : (
-          <div className="p-8 text-center min-h-[200px] flex flex-col items-center justify-center">
-            <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 max-w-md w-full">
-              <p className="font-bold text-slate-800">
+          <div className="flex min-h-[200px] flex-col items-center justify-center p-8 text-center">
+            <div className="w-full max-w-md rounded-3xl border-2 border-dashed border-slate-300 bg-white p-6">
+              <p className="text-lg font-bold text-ink">
                 {t("screens.checkout.noFunds")}
               </p>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-base text-ink-muted">
                 {t("screens.checkout.noFundsHint")}
               </p>
             </div>

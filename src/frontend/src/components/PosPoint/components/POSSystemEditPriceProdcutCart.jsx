@@ -169,7 +169,7 @@ const POSSystemEditPriceProdcutCart = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/50 backdrop-blur-sm p-4 animate-fadeIn">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/50 backdrop-blur-sm p-4 animate-fadeIn">
       <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-5 shadow-2xl shadow-stone-900/20">
         <div className="flex items-center justify-between border-b border-stone-100 pb-3">
           <h3 className="max-w-[80%] truncate text-base font-black text-stone-950">

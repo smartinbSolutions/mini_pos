@@ -136,3 +136,40 @@ code {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* ================= SIMPLE UI KIT =================
+   Large, high-contrast building blocks for the everyday screens.
+   Touch targets are at least 48px; every action pairs colour with
+   an icon and a word. */
+@layer components {
+  .ui-btn {
+    @apply inline-flex min-h-[48px] select-none items-center justify-center gap-2 rounded-2xl px-5 text-base font-bold transition focus:outline-none focus-visible:ring-4 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+  }
+  .ui-btn-lg {
+    @apply min-h-[60px] px-6 text-lg;
+  }
+  .ui-btn-ok {
+    @apply bg-ok text-white shadow-sm hover:bg-ok-600 focus-visible:ring-ok-100;
+  }
+  .ui-btn-danger {
+    @apply bg-danger text-white shadow-sm hover:bg-danger-700 focus-visible:ring-danger-100;
+  }
+  .ui-btn-danger-soft {
+    @apply border-2 border-danger-100 bg-danger-50 text-danger-700 hover:bg-danger-100 focus-visible:ring-danger-100;
+  }
+  .ui-btn-brand {
+    @apply bg-brand text-white shadow-sm hover:bg-brand-600 focus-visible:ring-brand-100;
+  }
+  .ui-btn-soft {
+    @apply border-2 border-slate-200 bg-white text-ink-soft hover:border-slate-300 hover:bg-slate-50 focus-visible:ring-slate-200;
+  }
+  .ui-input {
+    @apply min-h-[52px] w-full rounded-2xl border-2 border-slate-300 bg-white px-4 text-lg font-semibold text-ink outline-none transition placeholder:font-normal placeholder:text-slate-400 focus:border-brand focus:ring-4 focus:ring-brand-100;
+  }
+  .ui-card {
+    @apply rounded-3xl border border-slate-200 bg-white shadow-sm;
+  }
+  .ui-label {
+    @apply mb-2 block text-base font-bold text-ink-soft;
+  }
+}

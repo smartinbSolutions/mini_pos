@@ -25,12 +25,18 @@ import { useNavigate } from "react-router-dom";
 import ProductUpdateModal from "./ProductUpdateModal";
 import InvoiceListHeader from "../../../Global/InvoiceListHeader";
 import TagList from "../../Tags/components/TagList";
+import ColumnPicker from "../../../Global/ColumnPicker";
+import useColumnVisibility from "../../../Global/useColumnVisibility";
+import StockBadge from "../../../Global/ui/StockBadge";
+import { getStockStatus, useLowStockLevel } from "../../../Global/stockStatus";
 
 export default function ProductList() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
   const navigate = useNavigate();
   const catalog = useProductCatalog();
   const { money } = usePrimaryCurrency();
+  const lowStockLevel = useLowStockLevel();
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [updateExportModalOpen, setUpdateExportModalOpen] = useState(false);
@@ -102,6 +108,210 @@ export default function ProductList() {
     ).length;
     return productLevel + unitLevel;
   };
+
+  // Everyday columns are shown by default; the technical ones are one
+  // click away in the column picker.
+  const columns = [
+    {
+      key: "product",
+      label: t("ui.product"),
+      locked: true,
+      render: (product) => (
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-400">
+            {product.logo ? (
+              <img
+                src={getAssetUrl(product.logo)}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Package size={22} />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div
+              className="truncate text-base font-bold text-ink"
+              title={product.name || t("ui.unnamedProduct")}
+            >
+              {product.name || t("ui.unnamedProduct")}
+            </div>
+            {product.code && (
+              <div className="truncate text-sm font-semibold text-ink-muted">
+                {product.code}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "stock",
+      label: t("simple.products.stock"),
+      render: (product) =>
+        product.type === "service" ? (
+          <span className="text-ink-muted">—</span>
+        ) : (
+          <div className="flex flex-col items-start gap-1">
+            <span className="text-lg font-black tabular-nums text-ink">
+              {formatNumber(product.quantity || 0, 2)}
+            </span>
+            <StockBadge
+              status={getStockStatus(product, lowStockLevel)}
+              size="sm"
+            />
+          </div>
+        ),
+    },
+    {
+      key: "price",
+      label: t("simple.products.price"),
+      render: (product) => (
+        <span dir="ltr" className="text-lg font-black tabular-nums text-ink">
+          {money(product.salePrice || 0)}
+        </span>
+      ),
+    },
+    {
+      key: "cost",
+      label: t("simple.products.cost"),
+      render: (product) => (
+        <span dir="ltr" className="font-bold tabular-nums text-ink-muted">
+          {money(product.costPrice || 0)}
+        </span>
+      ),
+    },
+    {
+      key: "type",
+      label: t("screens.products.productType", "Type"),
+      defaultVisible: false,
+      render: (product) =>
+        product.type === "service" ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-sm font-bold text-violet-700">
+            <Briefcase size={14} />
+            {t("screens.products.typeService", "Service")}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-sm font-bold text-ink-soft">
+            <Package size={14} />
+            {t("screens.products.typeNormal", "Normal")}
+          </span>
+        ),
+    },
+    {
+      key: "unit",
+      label: t("ui.unit"),
+      defaultVisible: false,
+      render: (product) =>
+        product.unit_name ? (
+          <span className="font-semibold text-ink-soft">
+            {product.unit_name}
+            {product.unit_code ? ` (${product.unit_code})` : ""}
+          </span>
+        ) : (
+          <span className="text-ink-muted">{t("ui.noUnit")}</span>
+        ),
+    },
+    {
+      key: "tax",
+      label: t("ui.tax"),
+      defaultVisible: false,
+      render: (product) =>
+        product.tax_name ? (
+          <span className="font-semibold text-ink-soft">
+            ({product.tax_rate}%)
+          </span>
+        ) : (
+          <span className="text-ink-muted">
+            {t("screens.products.noTaxOption")}
+          </span>
+        ),
+    },
+    {
+      key: "sellingUnits",
+      label: t("screens.products.sellingUnits"),
+      defaultVisible: false,
+      render: (product) =>
+        Number(product.unitCount || 0) > 0 ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-sm font-bold text-brand-700">
+            <Layers size={14} />
+            {t("screens.products.extraUnitsCount", {
+              count: product.unitCount,
+            })}
+          </span>
+        ) : (
+          <span className="text-ink-muted">—</span>
+        ),
+    },
+    {
+      key: "barcodes",
+      label: t("ui.barcodes"),
+      defaultVisible: false,
+      render: (product) => {
+        const barcodeCount = getBarcodeCount(product);
+        return barcodeCount > 0 ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-warn-50 px-2.5 py-1 text-sm font-bold text-warn-700">
+            <Barcode size={14} />
+            {barcodeCount}
+          </span>
+        ) : (
+          <span className="text-ink-muted">—</span>
+        );
+      },
+    },
+    {
+      key: "tags",
+      label: t("screens.tags.title"),
+      defaultVisible: false,
+      render: (product) => (
+        <TagList tags={tagsByProduct[product.id] || []} limit={2} />
+      ),
+    },
+    {
+      key: "actions",
+      label: t("common.actions"),
+      locked: true,
+      render: (product) => (
+        <div className="flex items-center justify-start gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/products/${product.id}`)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
+            aria-label={t("screens.products.movementsAria")}
+          >
+            <Eye size={17} />
+            {t("simple.products.view")}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/products/${product.id}/edit`)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
+            aria-label={t("screens.products.editAria")}
+          >
+            <Edit2 size={17} />
+            {t("simple.products.edit")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setOpenDeleteModel(true);
+              setSelectDeleteProduct(product);
+            }}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-danger-50 px-3 text-sm font-bold text-danger-700 transition hover:bg-danger-100"
+            aria-label={t("screens.products.deleteAria")}
+          >
+            <Trash2 size={17} />
+            {t("simple.products.delete")}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  const { visibleColumns, isVisible, toggle, reset } = useColumnVisibility(
+    "product-list",
+    columns,
+  );
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-6 text-slate-900">
@@ -181,23 +391,32 @@ export default function ProductList() {
               })),
             },
           ]}
+          extraActions={
+            <ColumnPicker
+              columns={columns}
+              isVisible={isVisible}
+              onToggle={toggle}
+              onReset={reset}
+              align={isRtl ? "left" : "right"}
+            />
+          }
         />
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <button
             type="button"
             onClick={() => setImportModalOpen(true)}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#dbe4ff] bg-white px-3.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+            className="ui-btn ui-btn-soft min-h-[44px] px-4 text-sm"
           >
-            <FileSpreadsheet size={15} />
+            <FileSpreadsheet size={18} />
             {t("screens.products.import")}
           </button>
           <button
             type="button"
             onClick={() => setUpdateExportModalOpen(true)}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#dbe4ff] bg-white px-3.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
+            className="ui-btn ui-btn-soft min-h-[44px] px-4 text-sm"
           >
-            <FileSpreadsheet size={15} />
+            <FileSpreadsheet size={18} />
             {t("screens.products.updateProducts", "Update Products")}
           </button>
         </div>
@@ -225,188 +444,35 @@ export default function ProductList() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-start text-sm">
+              <table className="w-full text-start text-base">
                 <thead>
-                  <tr className="border-b border-[#e5ebff] bg-[#f8faff] text-xs font-bold uppercase  text-slate-500">
-                    <th className="px-5 py-3 text-start">{t("ui.product")}</th>
-                    <th className="px-5 py-3 text-start">
-                      {t("screens.products.productType", "Type")}
-                    </th>
-                    <th className="px-5 py-3 text-start">{t("ui.unit")}</th>
-                    <th className="px-5 py-3 text-start">{t("ui.qty")}</th>
-                    <th className="px-5 py-3 text-start">{t("ui.cost")}</th>
-                    <th className="px-5 py-3 text-start">{t("ui.price")}</th>
-                    <th className="px-5 py-3 text-start">{t("ui.tax")}</th>
-                    <th className="px-5 py-3 text-start">
-                      {t("screens.products.sellingUnits")}
-                    </th>
-                    <th className="px-5 py-3 text-start">{t("ui.barcodes")}</th>
-                    <th className="px-5 py-3 text-start">
-                      {t("screens.tags.title")}
-                    </th>
-                    <th className="px-5 py-3 text-start">
-                      {t("common.actions")}
-                    </th>
+                  <tr className="border-b-2 border-slate-200 bg-slate-50 text-sm font-bold text-ink-soft">
+                    {visibleColumns.map((col) => (
+                      <th
+                        key={col.key}
+                        className="whitespace-nowrap px-4 py-3 text-start"
+                      >
+                        {col.label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#eef1ff]">
-                  {products.map((product) => {
-                    const isService = product.type === "service";
-                    const barcodeCount = getBarcodeCount(product);
-
-                    return (
-                      <tr
-                        key={product.id}
-                        className="transition hover:bg-[#f8faff]"
-                      >
-                        <td className="px-5 py-3 max-w-[280px]">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#f8faff] text-[#4663ff]">
-                              {product.logo ? (
-                                <img
-                                  src={getAssetUrl(product.logo)}
-                                  alt={product.name || t("ui.product")}
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <Package size={18} />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div
-                                className="truncate font-bold text-slate-950 text-sm"
-                                title={product.name || t("ui.unnamedProduct")}
-                              >
-                                {product.name || t("ui.unnamedProduct")}
-                              </div>
-                              {product.code && (
-                                <div className="truncate text-[11px] font-semibold text-slate-400">
-                                  {product.code}
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                <tbody className="divide-y divide-slate-100">
+                  {products.map((product) => (
+                    <tr
+                      key={product.id}
+                      className="transition hover:bg-slate-50"
+                    >
+                      {visibleColumns.map((col) => (
+                        <td
+                          key={col.key}
+                          className={`px-4 py-3 text-start ${col.key === "product" ? "max-w-[300px]" : ""}`}
+                        >
+                          {col.render(product)}
                         </td>
-                        <td className="px-5 py-3">
-                          {isService ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-600">
-                              <Briefcase size={12} />
-                              {t("screens.products.typeService", "Service")}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600">
-                              <Package size={12} />
-                              {t("screens.products.typeNormal", "Normal")}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-slate-600">
-                          {product.unit_name ? (
-                            <span className="font-semibold">
-                              {product.unit_name}
-                              {product.unit_code
-                                ? ` (${product.unit_code})`
-                                : ""}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">
-                              {t("ui.noUnit")}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-start font-bold tabular-nums text-slate-950">
-                          {isService ? (
-                            <span className="font-normal text-slate-400">
-                              —
-                            </span>
-                          ) : (
-                            formatNumber(product.quantity || 0, 2)
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-start font-bold tabular-nums text-red-600">
-                          {money(product.costPrice || 0)}
-                        </td>
-                        <td className="px-5 py-3 text-start font-bold tabular-nums text-emerald-600">
-                          {money(product.salePrice || 0)}
-                        </td>
-                        <td className="px-5 py-3 text-slate-600">
-                          {product.tax_name ? (
-                            <span className="font-semibold">
-                              ({product.tax_rate}%)
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">
-                              {t("screens.products.noTaxOption")}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-start text-slate-500">
-                          {Number(product.unitCount || 0) > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-[#eef3ff] px-2.5 py-1 text-xs font-bold text-[#4663ff]">
-                              <Layers size={12} />
-                              {t("screens.products.extraUnitsCount", {
-                                count: product.unitCount,
-                              })}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-start">
-                          {barcodeCount > 0 ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
-                              <Barcode size={12} />
-                              {barcodeCount}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                        <td className="px-5 py-3 text-start">
-                          <TagList
-                            tags={tagsByProduct[product.id] || []}
-                            limit={2}
-                          />
-                        </td>
-                        <td className="px-5 py-3">
-                          <div className="flex items-center justify-start gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate(`/products/${product.id}`)
-                              }
-                              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              aria-label={t("screens.products.movementsAria")}
-                            >
-                              <Eye size={15} />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                navigate(`/products/${product.id}/edit`)
-                              }
-                              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                              aria-label={t("screens.products.editAria")}
-                            >
-                              <Edit2 size={15} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenDeleteModel(true);
-                                setSelectDeleteProduct(product);
-                              }}
-                              className="flex h-8 w-8 items-center justify-center rounded-xl text-red-500 transition hover:bg-red-50"
-                              aria-label={t("screens.products.deleteAria")}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                      ))}
+                    </tr>
+                  ))}
                 </tbody>
               </table>
               <Pagination
