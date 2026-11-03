@@ -1917,6 +1917,77 @@
       "view": "View",
       "edit": "Edit",
       "delete": "Delete"
+    },
+    "compare": {
+      "yesterday": "yesterday",
+      "lastWeek": "the previous 7 days",
+      "up": "{{pct}}% more than {{than}}",
+      "down": "{{pct}}% less than {{than}}",
+      "same": "No change",
+      "none": "Nothing to compare with"
+    },
+    "attention": {
+      "title": "Needs your attention",
+      "allGood": "Everything is OK",
+      "allGoodHint": "Nothing needs your attention right now",
+      "outOfStock": "Out of stock",
+      "lowStock": "Running low",
+      "seeProducts": "See products",
+      "backupNever": "No backup has been made yet",
+      "backupOld": "No backup for over a week. Last one: {{date}}",
+      "backupFailed": "The last backup failed",
+      "backupOpen": "Open backup",
+      "loadError": "Could not check. Try again."
+    },
+    "latest": {
+      "title": "Latest sales",
+      "empty": "No sales yet",
+      "emptyHint": "Your sales will show here",
+      "all": "All sales",
+      "view": "View",
+      "walkIn": "Walk-in customer",
+      "paid": "Paid",
+      "partial": "Partly paid",
+      "unpaid": "Not paid",
+      "remaining": "Remaining",
+      "returnedFull": "Returned",
+      "returnedPartial": "Partly returned"
+    },
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "named": "{{greeting}}, {{name}}"
+    },
+    "start": {
+      "title": "Let's get your shop ready",
+      "progress": "{{done}} of {{total}} done",
+      "hide": "Hide",
+      "go": "Start",
+      "done": "Done",
+      "addProduct": "Add your products",
+      "addProductHint": "Name, price and how many you have",
+      "firstSale": "Make your first sale",
+      "firstSaleHint": "Tap a product, then Pay",
+      "addCustomer": "Add a customer (optional)",
+      "addCustomerHint": "So you can see what they owe",
+      "needProduct": "Add a product first"
+    },
+    "cash": {
+      "title": "Money in your cash boxes",
+      "total": "Total (approx.)",
+      "manage": "Cash boxes",
+      "empty": "No cash box yet"
+    },
+    "owed": {
+      "title": "Customers who owe you",
+      "totalLabel": "Total owed to you",
+      "none": "No customer owes you money",
+      "all": "All customers"
+    },
+    "best": {
+      "title": "Best sellers today",
+      "empty": "No sales yet today"
     }
   }
 }

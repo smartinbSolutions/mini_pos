@@ -8,57 +8,132 @@ import {
   Users,
   BarChart3,
   ChevronDown,
-  Package,
-  CheckCircle2,
-  ArrowLeft,
-  ArrowRight,
 } from "lucide-react";
 import usePrimaryCurrency from "../Global/usePrimaryCurrency";
 import useSalesSummary, { periodRange } from "../Global/useSalesSummary";
-import { getStockStatus, useLowStockLevel } from "../Global/stockStatus";
-import { formatNumber } from "../Global/FormatNumber";
-import { getAssetUrl } from "../Global/assetUrl";
+import { useLowStockLevel } from "../Global/stockStatus";
+import { useAuth } from "../Global/AuthContext";
 import SalesSummaryCards from "../Global/ui/SalesSummaryCards";
-import StockBadge from "../Global/ui/StockBadge";
+import NeedsAttention from "../components/Dashboard/NeedsAttention";
+import LatestSales from "../components/Dashboard/LatestSales";
+import BestSellers from "../components/Dashboard/BestSellers";
+import CashBoxes from "../components/Dashboard/CashBoxes";
+import CustomersOwe from "../components/Dashboard/CustomersOwe";
+import GettingStarted from "../components/Dashboard/GettingStarted";
 import DashboardDetails from "./DashboardDetails";
 
-// How many products we scan for the "needs restocking" list. The products
-// API has no stock filter, so this is filtered here.
+// How many products we scan for stock problems. The products API has no
+// stock filter, so this is filtered here.
 const STOCK_SCAN_LIMIT = 1000;
-const RESTOCK_LIST_SIZE = 8;
+const LATEST_SALES_COUNT = 5;
+// Customers loaded to find the biggest debts (the list API has no sort by
+// balance); the totals shown are always for everyone.
+const OWED_SCAN_LIMIT = 100;
+
+function timeOfDay(hour) {
+  if (hour < 12) return "morning";
+  if (hour < 18) return "afternoon";
+  return "evening";
+}
 
 export default function Dashboard() {
   const { t, i18n } = useTranslation();
-  const isRtl = i18n.dir() === "rtl";
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { money } = usePrimaryCurrency();
   const lowStockLevel = useLowStockLevel();
 
   const today = useMemo(() => periodRange("today"), []);
   const summary = useSalesSummary(today);
 
+  // null = loading; false = failed (the card is hidden rather than guessing)
   const [products, setProducts] = useState(null);
+  const [backup, setBackup] = useState(undefined); // undefined = loading, null = unknown
+  const [latestSales, setLatestSales] = useState(null);
+  const [funds, setFunds] = useState(null);
+  const [owed, setOwed] = useState(null);
+  const [customerCount, setCustomerCount] = useState(null);
+  const [failed, setFailed] = useState({});
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
-    window.api
+    const api = window.api;
+    const fail = (key) => (err) => {
+      console.error(`Dashboard: failed to load ${key}:`, err);
+      setFailed((current) => ({ ...current, [key]: true }));
+    };
+
+    api
       ?.getProducts?.({ page: 1, limit: STOCK_SCAN_LIMIT })
       .then((res) => setProducts(res?.data || []))
       .catch((err) => {
-        console.error("Failed to load products:", err);
+        fail("products")(err);
         setProducts([]);
+      });
+
+    api
+      ?.getBackupSettings?.()
+      .then((res) => setBackup(res?.success ? res.data || {} : null))
+      .catch(() => setBackup(null));
+
+    api
+      ?.getSalesInvoices?.({ page: 1, limit: LATEST_SALES_COUNT })
+      .then((res) => setLatestSales(res?.data || []))
+      .catch((err) => {
+        fail("sales")(err);
+        setLatestSales([]);
+      });
+
+    api
+      ?.getFunds?.()
+      .then((res) => setFunds(Array.isArray(res) ? res : []))
+      .catch((err) => {
+        fail("funds")(err);
+        setFunds(false);
+      });
+
+    api
+      ?.getContacts?.({
+        role: "customer",
+        balance_filter: "receivable",
+        page: 1,
+        limit: OWED_SCAN_LIMIT,
+      })
+      .then((res) => {
+        if (!res?.success) throw new Error(res?.error || "contacts");
+        setOwed({
+          total: Number(res.total || 0),
+          amount: Number(res.stats?.receivable || 0),
+          top: [...(res.data || [])].sort(
+            (a, b) => Number(b.balance || 0) - Number(a.balance || 0),
+          ),
+        });
+      })
+      .catch((err) => {
+        fail("owed")(err);
+        setOwed(false);
+      });
+
+    api
+      ?.getContacts?.({ role: "customer", page: 1, limit: 1 })
+      .then((res) => {
+        if (!res?.success) throw new Error(res?.error || "contacts");
+        setCustomerCount(Number(res.total || 0));
+      })
+      .catch((err) => {
+        fail("customers")(err);
+        setCustomerCount(0);
       });
   }, []);
 
-  const restock = useMemo(() => {
-    if (!products) return null;
-    return products
-      .map((p) => ({ ...p, status: getStockStatus(p, lowStockLevel) }))
-      .filter((p) => p.status === "out" || p.status === "low")
-      .sort((a, b) => Number(a.quantity || 0) - Number(b.quantity || 0));
-  }, [products, lowStockLevel]);
-
-  const Arrow = isRtl ? ArrowLeft : ArrowRight;
+  const now = new Date();
+  const name = user?.full_name || user?.username || "";
+  const greeting = t(`simple.greeting.${timeOfDay(now.getHours())}`);
+  const dateLabel = now.toLocaleDateString(i18n.language, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 
   const actions = [
     { to: "/products/new", icon: PackagePlus, label: t("simple.home.addProduct") },
@@ -74,11 +149,11 @@ export default function Dashboard() {
         <section className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-black sm:text-4xl">
-              {t("simple.home.greeting")}
+              {name
+                ? t("simple.greeting.named", { greeting, name })
+                : greeting}
             </h1>
-            <p className="mt-1 text-lg text-ink-muted">
-              {t("simple.home.subtitle")}
-            </p>
+            <p className="mt-1 text-lg text-ink-muted">{dateLabel}</p>
           </div>
 
           <button
@@ -96,6 +171,14 @@ export default function Dashboard() {
           </button>
         </section>
 
+        {/* FIRST STEPS — only for a brand-new shop */}
+        <GettingStarted
+          products={products === null ? null : products.length}
+          sales={latestSales === null ? null : latestSales.length}
+          customers={customerCount}
+          reliable={!failed.products && !failed.sales}
+        />
+
         {/* TODAY IN NUMBERS */}
         <SalesSummaryCards
           summary={summary}
@@ -107,6 +190,23 @@ export default function Dashboard() {
             items: t("simple.home.itemsSold"),
           }}
         />
+
+        {/* WHAT NEEDS ME · WHAT JUST HAPPENED */}
+        <div className="grid items-start gap-6 lg:grid-cols-2">
+          <div className="space-y-6">
+            <NeedsAttention
+              products={products}
+              backup={backup}
+              lowStockLevel={lowStockLevel}
+            />
+            {funds !== false && <CashBoxes funds={funds} money={money} />}
+            {owed !== false && <CustomersOwe owed={owed} money={money} />}
+          </div>
+          <div className="space-y-6">
+            <LatestSales sales={latestSales} money={money} />
+            <BestSellers summary={summary} money={money} />
+          </div>
+        </div>
 
         {/* WHAT DO YOU WANT TO DO */}
         <section>
@@ -127,74 +227,6 @@ export default function Dashboard() {
               </Link>
             ))}
           </div>
-        </section>
-
-        {/* PRODUCTS TO RESTOCK */}
-        <section className="ui-card p-5">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-xl font-black">
-              {t("simple.home.lowStockTitle")}
-              {restock && restock.length > 0 && (
-                <span className="ms-2 rounded-full bg-warn-50 px-3 py-0.5 text-base text-warn-700">
-                  {restock.length}
-                </span>
-              )}
-            </h2>
-            <Link
-              to="/products"
-              className="inline-flex items-center gap-1.5 text-base font-bold text-brand-700 hover:underline"
-            >
-              {t("simple.home.seeAllProducts")}
-              <Arrow size={18} />
-            </Link>
-          </div>
-
-          {restock === null ? (
-            <div className="space-y-2">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
-              ))}
-            </div>
-          ) : restock.length === 0 ? (
-            <div className="flex items-center gap-3 rounded-2xl bg-ok-50 p-4 text-lg font-bold text-ok-700">
-              <CheckCircle2 size={28} className="shrink-0" />
-              {t("simple.home.lowStockEmpty")}
-            </div>
-          ) : (
-            <ul className="grid gap-2 md:grid-cols-2">
-              {restock.slice(0, RESTOCK_LIST_SIZE).map((product) => (
-                <li key={product.id}>
-                  <Link
-                    to={`/products/${product.id}`}
-                    className="flex items-center gap-3 rounded-2xl border-2 border-slate-100 p-3 transition hover:border-brand"
-                  >
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 text-slate-400">
-                      {product.logo ? (
-                        <img
-                          src={getAssetUrl(product.logo)}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <Package size={22} />
-                      )}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-bold">
-                        {product.name}
-                      </span>
-                      <span className="block text-sm font-semibold text-ink-muted">
-                        {t("simple.stock.left", {
-                          count: formatNumber(product.quantity || 0, 2),
-                        })}
-                      </span>
-                    </span>
-                    <StockBadge status={product.status} size="sm" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
         </section>
 
         {/* FULL DETAILS — the original analytics, one tap away */}

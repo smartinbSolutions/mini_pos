@@ -1923,6 +1923,77 @@
       "view": "Gör",
       "edit": "Düzenle",
       "delete": "Sil"
+    },
+    "compare": {
+      "yesterday": "dünden",
+      "lastWeek": "önceki 7 günden",
+      "up": "{{than}} %{{pct}} daha fazla",
+      "down": "{{than}} %{{pct}} daha az",
+      "same": "Değişiklik yok",
+      "none": "Karşılaştıracak satış yok"
+    },
+    "attention": {
+      "title": "Dikkatinizi bekleyenler",
+      "allGood": "Her şey yolunda",
+      "allGoodHint": "Şu anda dikkat gerektiren bir şey yok",
+      "outOfStock": "Stoğu tükenenler",
+      "lowStock": "Azalanlar",
+      "seeProducts": "Ürünleri gör",
+      "backupNever": "Henüz yedek alınmadı",
+      "backupOld": "Bir haftadan uzun süredir yedek yok. Sonuncusu: {{date}}",
+      "backupFailed": "Son yedekleme başarısız oldu",
+      "backupOpen": "Yedeklemeyi aç",
+      "loadError": "Kontrol edilemedi. Tekrar deneyin."
+    },
+    "latest": {
+      "title": "Son satışlar",
+      "empty": "Henüz satış yok",
+      "emptyHint": "Satışlarınız burada görünecek",
+      "all": "Tüm satışlar",
+      "view": "Gör",
+      "walkIn": "Normal müşteri",
+      "paid": "Ödendi",
+      "partial": "Kısmen ödendi",
+      "unpaid": "Ödenmedi",
+      "remaining": "Kalan",
+      "returnedFull": "İade edildi",
+      "returnedPartial": "Kısmen iade"
+    },
+    "greeting": {
+      "morning": "Günaydın",
+      "afternoon": "İyi günler",
+      "evening": "İyi akşamlar",
+      "named": "{{greeting}}, {{name}}"
+    },
+    "start": {
+      "title": "Dükkanınızı hazırlayalım",
+      "progress": "{{total}} adımdan {{done}} tamamlandı",
+      "hide": "Gizle",
+      "go": "Başla",
+      "done": "Tamam",
+      "addProduct": "Ürünlerinizi ekleyin",
+      "addProductHint": "Ad, fiyat ve miktar",
+      "firstSale": "İlk satışınızı yapın",
+      "firstSaleHint": "Bir ürüne dokunun, sonra Öde",
+      "addCustomer": "Müşteri ekleyin (isteğe bağlı)",
+      "addCustomerHint": "Borcunu görebilmek için",
+      "needProduct": "Önce ürün ekleyin"
+    },
+    "cash": {
+      "title": "Kasalarınızdaki para",
+      "total": "Toplam (yaklaşık)",
+      "manage": "Kasalar",
+      "empty": "Henüz kasa yok"
+    },
+    "owed": {
+      "title": "Size borcu olan müşteriler",
+      "totalLabel": "Toplam alacağınız",
+      "none": "Size borcu olan müşteri yok",
+      "all": "Tüm müşteriler"
+    },
+    "best": {
+      "title": "Bugünün en çok satanları",
+      "empty": "Bugün henüz satış yok"
     }
   }
 }
