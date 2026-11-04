@@ -7,7 +7,8 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function ProductImportModal({ isOpen, onClose, onImported }) {
   const { t, i18n } = useTranslation();
@@ -27,7 +28,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
     try {
       const res = await api.downloadProductImportTemplate();
       if (!res.success && !res.canceled) {
-        setError(res.error || t("errors.downloadFailed"));
+        setError(friendlyError(t, res, "errors.downloadFailed"));
       }
     } finally {
       setDownloading(false);
@@ -43,7 +44,7 @@ export default function ProductImportModal({ isOpen, onClose, onImported }) {
 
       if (res.canceled) return;
       if (!res.success) {
-        setError(res.error || t("errors.importFailed"));
+        setError(friendlyError(t, res, "errors.importFailed"));
         return;
       }
       setResult(res);

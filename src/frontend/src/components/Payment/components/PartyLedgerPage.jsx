@@ -26,7 +26,8 @@ import GoTo from "../../../Global/GoTo";
 import Pagination from "../../../Global/Pagination";
 import ExportModal from "../../../Global/ExportModal";
 import partyLedgerRowLabel from "./PartyLedgerRowLabel";
-import LinkedPartyBadge from "../../../Global/LinkedPartyBadge";
+import LinkedPartyBadge from "../../../Global/LinkedPartyBadge";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const PARTY_ICONS = {
   customer: User,
@@ -142,10 +143,10 @@ const PartyLedgerPage = () => {
         toast.success(t("common.exportSuccess", "Export completed"));
         setExportOpen(false);
       } else if (res.error !== "Export cancelled") {
-        setExportError(res.error || t("common.exportFailed", "Export failed"));
+        setExportError(friendlyError(t, res, "common.exportFailed"));
       }
     } catch (err) {
-      setExportError(err.message || String(err));
+      setExportError(friendlyError(t, err, "common.exportFailed"));
     } finally {
       setExporting(false);
     }

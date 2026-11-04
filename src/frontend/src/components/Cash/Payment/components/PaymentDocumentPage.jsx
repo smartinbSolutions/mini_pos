@@ -8,7 +8,8 @@ import { formatMoney } from "../../../../Global/FormatNumber";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import DeleteModal from "../../../../Global/DeleteModel";
 import GoTo from "../../../../Global/GoTo";
-import BackButton from "../../../../Global/BackButton";
+import BackButton from "../../../../Global/BackButton";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -97,7 +98,7 @@ const PaymentDocumentPage = () => {
       toast.success(t("screens.payments.deleted"));
       navigate("/payments");
     } else {
-      toast.error(res.message || t("screens.payments.deleteFailed"));
+      toast.error(friendlyError(t, res, "screens.payments.deleteFailed"));
     }
     setDeleteOpen(false);
   };

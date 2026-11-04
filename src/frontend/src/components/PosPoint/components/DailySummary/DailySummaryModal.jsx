@@ -8,6 +8,7 @@ import InvoiceReturnModal from "./InvoiceReturnModal";
 import ReturnInvoiceDetails from "./ReturnInvoiceDetails";
 import { toLocalDate } from "../../../../Global/useSalesSummary";
 import { normalizeDigits } from "../../../../Global/FormatNumber";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 // Upper bound when a filter needs the full day at once (a single
 // shop-day of POS invoices stays far below this).
@@ -85,7 +86,7 @@ export default function DailySummaryModal({
       setStats(res?.stats || null);
     } catch (err) {
       console.error(err);
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }

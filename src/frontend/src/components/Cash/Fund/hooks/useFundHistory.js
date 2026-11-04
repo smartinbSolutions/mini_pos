@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getDefaultDateRange } from "../../../../Global/dateDefaults";
+import { getDefaultDateRange } from "../../../../Global/dateDefaults";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 export default function useFundHistory(fundId) {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ export default function useFundHistory(fundId) {
       setTotalOut(historyResult?.totalOut || 0);
     } catch (err) {
       console.error("Failed to load fund history:", err);
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
       setHistory([]);
     } finally {
       setLoading(false);
@@ -80,11 +81,11 @@ export default function useFundHistory(fundId) {
         language: range?.language || undefined,
       });
       if (!res?.success) {
-        setExportError(res?.error || t("errors.exportFailed"));
+        setExportError(friendlyError(t, res, "errors.exportFailed"));
       }
       return res;
     } catch (err) {
-      setExportError(err?.message || t("errors.exportFailed"));
+      setExportError(friendlyError(t, err, "errors.exportFailed"));
       return { success: false, error: err?.message };
     } finally {
       setExporting(false);
@@ -102,11 +103,11 @@ export default function useFundHistory(fundId) {
         language: range?.language || undefined,
       });
       if (!res?.success) {
-        setExportError(res?.error || t("errors.exportFailed"));
+        setExportError(friendlyError(t, res, "errors.exportFailed"));
       }
       return res;
     } catch (err) {
-      setExportError(err?.message || t("errors.exportFailed"));
+      setExportError(friendlyError(t, err, "errors.exportFailed"));
       return { success: false, error: err?.message };
     } finally {
       setExporting(false);

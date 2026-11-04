@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const emptyQuotation = {
   contact_id: "",
@@ -183,7 +184,7 @@ export default function useUpdateSalesQuotation() {
       setTaxes(taxRes || []);
       setError("");
     } catch (err) {
-      setError(err.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -203,7 +204,7 @@ export default function useUpdateSalesQuotation() {
       setCustomers(custsRes?.data || []);
       setTaxes(taxRes || []);
     } catch (err) {
-      setError(err.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     }
   }, [api, t]);
 
@@ -707,14 +708,14 @@ export default function useUpdateSalesQuotation() {
       const res = await api.updateSalesQuotation(payload);
 
       if (!res?.success) {
-        setError(res?.error || t("errors.updateFailed"));
+        setError(friendlyError(t, res, "errors.updateFailed"));
         return { success: false, error: res?.error };
       }
       await api.setEntityTags("sales_quotation", id, tagIds);
       navigate("/sales-quotations");
       return { success: true };
     } catch (err) {
-      setError(err?.message || t("errors.updateFailed"));
+      setError(friendlyError(t, err, "errors.updateFailed"));
       return { success: false, error: err?.message };
     } finally {
       setSaving(false);

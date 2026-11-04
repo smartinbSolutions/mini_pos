@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 const NO_SUPPLIER = "none";
 
@@ -91,7 +92,7 @@ const useAddExpense = ({ supplierModalOpen }) => {
 
       setError("");
     } catch (err) {
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -388,7 +389,7 @@ const useAddExpense = ({ supplierModalOpen }) => {
         const res = await api.createExpense(payload);
 
         if (!res?.success) {
-          throw new Error(res?.error || t("errors.createInvoiceFailed"));
+          throw friendlyFail(t, res, "errors.createInvoiceFailed");
         }
 
         if (res.invoiceId && tagIds.length > 0) {
@@ -402,7 +403,7 @@ const useAddExpense = ({ supplierModalOpen }) => {
 
         return res;
       } catch (err) {
-        setError(err?.message || t("errors.createInvoiceFailed"));
+        setError(friendlyError(t, err, "errors.createInvoiceFailed"));
         return { success: false, error: err?.message };
       } finally {
         setSaving(false);

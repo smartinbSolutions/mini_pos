@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError, friendlyFail } from "../../../Global/friendlyError";
 
 const emptyItem = {
   raw_material_product_id: "",
@@ -57,7 +58,7 @@ export default function useManufacturingOrderForm() {
       const res = await api.getProducts({ limit: 50, type: "normal" });
       setProducts(res?.data || []);
     } catch (err) {
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     }
   }, [api]);
 
@@ -75,7 +76,7 @@ export default function useManufacturingOrderForm() {
       .getManufacturingOrder(id)
       .then((res) => {
         if (!res.success) {
-          setError(res.error);
+          setError(friendlyError(t, res));
           return;
         }
 
@@ -122,7 +123,7 @@ export default function useManufacturingOrderForm() {
         );
         // <<< REPLACED BLOCK ENDS HERE >>>
       })
-      .catch((err) => setError(err.message || t("errors.loadError")))
+      .catch((err) => setError(friendlyError(t, err, "errors.loadError")))
       .finally(() => setLoading(false));
   }, [isEdit, id]);
 
@@ -361,13 +362,13 @@ export default function useManufacturingOrderForm() {
         : await api.createManufacturingOrder(payload);
 
       if (!res?.success) {
-        throw new Error(res?.error || t("errors.saveError"));
+        throw friendlyFail(t, res, "errors.saveError");
       }
 
       navigate("/manufacturing-orders");
       return res;
     } catch (err) {
-      setError(err.message || t("errors.saveError"));
+      setError(friendlyError(t, err, "errors.saveError"));
     } finally {
       setSaving(false);
     }

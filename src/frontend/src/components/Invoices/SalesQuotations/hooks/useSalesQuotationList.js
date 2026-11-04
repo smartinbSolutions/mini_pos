@@ -1,6 +1,8 @@
 // useSalesQuotationList.js
 import { useCallback, useEffect, useMemo, useState } from "react";
-import useListParams from "../../../../Global/useListParams";
+import useListParams from "../../../../Global/useListParams";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const emptyFilters = {
   dateFrom: "",
@@ -17,6 +19,7 @@ const LIST_DEFAULTS = { page: 1, limit: 10, search: "", ...emptyFilters };
 const FILTER_KEYS = Object.keys(emptyFilters);
 
 export default function useSalesQuotationList() {
+  const { t } = useTranslation();
   const api = window.api;
 
   const [salesQuotations, setSalesQuotations] = useState([]);
@@ -72,11 +75,11 @@ export default function useSalesQuotationList() {
       setTotalPages(res?.totalPages || 1);
       setError("");
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(t, err));
     } finally {
       setLoading(false);
     }
-  }, [api, page, limit, filters, params.search]);
+  }, [api, page, limit, filters, params.search, t]);
 
   const fetchLookups = useCallback(async () => {
     if (!api) return;

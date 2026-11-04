@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import UnifiedCheckoutModal from "../CheckoutCombinedModal";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 export default function InvoiceReturnModal({
   selectedInvoice,
@@ -236,12 +237,12 @@ export default function InvoiceReturnModal({
     try {
       const result = await window.api.createSalesReturn(returnData);
       if (!result.success) {
-        throw new Error(result.error || t("errors.returnFailed"));
+        throw friendlyFail(t, result, "errors.returnFailed");
       }
       setIsRefundModalOpen(false);
       onSuccess();
     } catch (err) {
-      setActionError(err.message || t("errors.returnFailed"));
+      setActionError(friendlyError(t, err, "errors.returnFailed"));
       throw err;
     } finally {
       setLoading(false);

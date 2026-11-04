@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../Global/AuthContext";
+import { useAuth } from "../../../Global/AuthContext";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const toNumber = (value) => {
   const parsed = Number(value);
@@ -209,7 +210,7 @@ export default function usePosCheckout({ weight } = {}) {
       );
     } catch (err) {
       console.error("Failed to load POS data:", err);
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -246,7 +247,7 @@ export default function usePosCheckout({ weight } = {}) {
       setTotalPages(Math.max(1, Number(res?.totalPages) || 1));
     } catch (err) {
       console.error("Failed to load products:", err);
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setProductsLoading(false);
     }

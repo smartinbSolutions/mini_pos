@@ -41,7 +41,12 @@
     "filters": "Filtreler",
     "clear": "Filtreyi Temizle",
     "confirm": "Onayla",
-    "all": "Tümü"
+    "all": "Tümü",
+    "change": "Değiştir",
+    "done": "Tamam",
+    "exportSuccess": "Dışa aktarma tamamlandı",
+    "exportFailed": "Dışa aktarma başarısız",
+    "showingRange": "{{total}} kayıttan {{start}}–{{end}} gösteriliyor"
   },
   "ui": {
     "manufacturing": "Üretim",
@@ -186,7 +191,26 @@
     "onAccount": "Cari Hesaba",
     "in": "Girişi",
     "out": "Çıkışı",
-    "partiallyRefunded": "Kısmen İade Edildi"
+    "partiallyRefunded": "Kısmen İade Edildi",
+    "primary": "Ana",
+    "transaction": "İşlem",
+    "max": "maks",
+    "paymentHistory": "Ödeme geçmişi",
+    "fundCurrency": "Kasa para birimi",
+    "effective": "efektif",
+    "fullyRefunded": "Tamamen İade Edildi",
+    "partialRefund": "Kısmi iade",
+    "cashRefunded": "Nakit iade edilen",
+    "refunded": "İade edildi",
+    "purchaseReturn": "Alım iadesi",
+    "reasonOfReturn": "İade nedeni",
+    "returnPrice": "İade fiyatı",
+    "remainingToAccount": "Cari hesapta kalan",
+    "returned": "İade edildi",
+    "noReason": "Neden yok",
+    "itemDiscount": "Ürün indirimi",
+    "invoiceDiscount": "Fatura indirimi",
+    "itemTax": "Ürün vergisi"
   },
   "filters": {
     "channel": "Kanal",
@@ -356,7 +380,8 @@
       "cloudDownloadFailed": "İndirme başarısız",
       "downloading": "İndiriliyor...",
       "cloudAvailable": "Bulut yedekleri",
-      "cloudEmpty": "Henüz bulut yedeği yok."
+      "cloudEmpty": "Henüz bulut yedeği yok.",
+      "cloudTitle": "Bulut yedekleme"
     },
     "funds": {
       "transactionType": {
@@ -400,7 +425,9 @@
       "depositFromPartner": "{{party}} ortağından yatırım alındı",
       "withdrawalToPartner": "{{party}} ortağına ödeme yapıldı",
       "genericPaymentIn": "Ödeme alındı",
-      "genericPaymentOut": "Ödeme yapıldı"
+      "genericPaymentOut": "Ödeme yapıldı",
+      "loading": "Hareketler yükleniyor…",
+      "empty": "Bu kasada henüz hareket yok."
     },
     "contacts": {
       "owesYou": "Size borçlu",
@@ -604,7 +631,13 @@
         "purchase_invoice": "Satın alma faturası",
         "products": "Ürünler",
         "sales_return": "Satış İadesi",
-        "purchase_return": "Alış İadesi"
+        "purchase_return": "Alış İadesi",
+        "purchase": "Alım",
+        "sale": "Satış",
+        "sale_return": "Satış iadesi",
+        "initial": "Açılış stoğu",
+        "import": "İçe aktarma",
+        "adjustment": "Düzeltme"
       },
       "importHistory": {
         "title": "İçe Aktarma Geçmişi",
@@ -618,7 +651,11 @@
         "noImportsHint": "İçe aktardığınız ürünler burada görünecektir.",
         "untitledImport": "Başlıksız içe aktarma",
         "noIssuesInImport": "Bu içe aktarmadaki her satır başarıyla oluşturuldu."
-      }
+      },
+      "movementsLoading": "Stok hareketleri yükleniyor…",
+      "noMovements": "Henüz stok hareketi yok.",
+      "taxesUnavailable": "Vergiler kullanılamıyor.",
+      "movementsAria": "Stok hareketlerini gör"
     },
     "invoices": {
       "invoiceType": {
@@ -714,7 +751,14 @@
       "allStatuses": "Tüm durumlar",
       "allSuppliers": "Tüm tedarikçiler",
       "salesReturns": "Satış iadeleri",
-      "salesReturnSubtitle": "Satış iadelerinizi ve alacak dekontlarınızı yönetin"
+      "salesReturnSubtitle": "Satış iadelerinizi ve alacak dekontlarınızı yönetin",
+      "remaining_amount": "Kalan",
+      "noPrinter": "Yazıcı bulunamadı.",
+      "pdfFailed": "PDF kaydedilemedi.",
+      "noSupplier": "Tedarikçi yok",
+      "deletedSuccessfully": "Fatura silindi.",
+      "itemTaxTotal": "Ürün vergisi",
+      "pay": "Öde"
     },
     "company": {
       "languageHint": "Kaydedildikten sonra uygulamanın arayüz dilini de değiştirir.",
@@ -792,7 +836,29 @@
       "cannotDeletePaidInvoice": "Bu faturada ödeme olduğu için silinemez.",
       "invoiceNotFound": "Bu fatura artık mevcut değil.",
       "taxInUse": "Bu vergi bir veya daha fazla ürün için varsayılan olarak ayarlanmış ve silinemez.",
-      "productInUse": "Bu ürünün satış veya alış geçmişi var ve silinemez."
+      "productInUse": "Bu ürünün satış veya alış geçmişi var ve silinemez.",
+      "taxAlreadyExists": "Bu adla bir {{field}} zaten var.",
+      "unitAlreadyExists": "Bu ad veya kodla bir {{field}} zaten var.",
+      "currencyInUse": "Bu {{field}} bir kasada kullanılıyor ve silinemez.",
+      "cannotDeletePrimaryCurrency": "Ana {{field}} silinemez.",
+      "currencyAlreadyExists": "Bu kodla bir {{field}} zaten var.",
+      "rateReservedForPrimary": "1 döviz kuru yalnızca ana para birimi için ayrılmıştır.",
+      "primaryRateMustBeOne": "Ana para biriminin döviz kuru tam olarak 1 olmalıdır.",
+      "invalidPin": "PIN yanlış.",
+      "pinInvalidLength": "PIN tam olarak 6 haneli olmalıdır.",
+      "usernameTaken": "Bu kullanıcı adı zaten alınmış.",
+      "pinAlreadyInUse": "Bu PIN zaten kullanılıyor.",
+      "userNotFound": "Kullanıcı bulunamadı.",
+      "useResetPinFlow": "PIN'i değiştirmek için PIN'i Sıfırla'yı kullanın.",
+      "lastAdminMustRemain": "En az bir aktif yönetici kalmalıdır.",
+      "adminAuthFailed": "Yönetici doğrulaması başarısız oldu.",
+      "recoveryFailed": "Kurtarma tamamlanamadı.",
+      "deactivateBeforeDelete": "Silmeden önce bu kullanıcıyı devre dışı bırakın.",
+      "OPENING_BALANCE_AFTER_FIRST_MOVEMENT": "Açılış bakiyesi tarihi ilk işlemden önce veya o tarihte olmalıdır.",
+      "INVALID_OPENING_BALANCE_AMOUNT": "Geçerli bir açılış bakiyesi tutarı girin.",
+      "OPENING_BALANCE_NOT_FOUND": "Açılış bakiyesi bulunamadı.",
+      "INVALID_OWNER_TYPE": "Geçersiz hesap türü.",
+      "OWNER_NOT_FOUND": "Hesap bulunamadı."
     },
     "pos": {
       "taxLockedByOwner": "İşletme sahibi tarafından belirlendi — burada değiştirilemez",
@@ -863,7 +929,11 @@
       "returnInvoiceTotal": "İade Faturası Toplamı",
       "return": "İade Et",
       "noDataToday": "Bugün kullanılabilir veri yok",
-      "sales": "Satışlar"
+      "sales": "Satışlar",
+      "paidVia": "Ödeme yöntemi",
+      "returnedFromInvoice": "Fatura no",
+      "refundedFrom": "İade kaynağı",
+      "editPrice": "Fiyatı düzenle"
     },
     "checkout": {
       "title": "Ödeme",
@@ -1032,7 +1102,10 @@
       "deletedNotice": "Silinen ödemeleri görüntülüyorsunuz. Bunlar yalnızca referans amaçlı saklanır, geri yüklenemez veya düzenlenemez.",
       "deletedInfo": "Silme Bilgisi",
       "emptyDeleted": "Silinen ödeme bulunamadı.",
-      "deleted": "Silindi"
+      "deleted": "Silindi",
+      "deleteFailed": "Ödeme silinemedi.",
+      "noSettlements": "Henüz mahsuplaşma yok",
+      "overAllocatedBy": "{{amount}} fazla dağıtıldı."
     },
     "ledger": {
       "totalSales": "Toplam satış",
@@ -1082,7 +1155,13 @@
       "invoiceCreatedFor": "{{type}} – {{party}}",
       "returnCreatedFor": "{{type}} – {{party}}",
       "openingBalancePositiveFor": "{{party}} {{amount}} bakiye ile başladı",
-      "openingBalanceNegativeFor": "{{party}} {{amount}} borçla başladı"
+      "openingBalanceNegativeFor": "{{party}} {{amount}} borçla başladı",
+      "paymentReceived": "{{fund}} kasasına tahsilat",
+      "paymentMade": "{{fund}} kasasından ödeme",
+      "partnerDeposit": "{{fund}} kasasına para yatırma",
+      "partnerWithdrawal": "{{fund}} kasasından para çekme",
+      "paymentIn": "Tahsilat",
+      "paymentOut": "Ödeme"
     },
     "fundMovements": {
       "exportTitle": "Kasa Hareketlerini Dışa Aktar",
@@ -1428,7 +1507,8 @@
     "purchaseReturn": "Satın alma iadeleri",
     "salesReturn": "Satış iadeleri",
     "cash": "Nakit",
-    "tags": "Etiketler"
+    "tags": "Etiketler",
+    "salesReport": "Satış raporu"
   },
   "dashboard": {
     "inventoryBelowThreshold": "{{threshold}} eşiğinizin altında",
@@ -1482,7 +1562,12 @@
     "financing": "Finansman (Ortaklar)",
     "withdrawals": "Çekimler",
     "deposits": "Yatırımlar",
-    "topExpenseCategories": "En Çok Harcanan Kategoriler"
+    "topExpenseCategories": "En Çok Harcanan Kategoriler",
+    "from_sales": "Satışlardan",
+    "less_returns": "İadeler düşüldükten sonra",
+    "noExpenseData": "Henüz gider verisi yok.",
+    "approx_total": "≈ yaklaşık",
+    "noFunds": "Henüz kasa yok."
   },
   "activation": {
     "clockTamperedTitle": "Sistem Saati Sorunu",
@@ -1509,7 +1594,11 @@
       "brandSubtitle": "Tek seferlik etkinleştirme bu kurulumu cihazınıza bağlar.",
       "brandHint": "Cihaz başına güvenli ve doğrulanmış",
       "enterKey": "Lisans anahtarınızı girin"
-    }
+    },
+    "brandTitle": "Noon POS'u Etkinleştir",
+    "brandSubtitle": "Tek seferlik etkinleştirme bu kurulumu cihazınıza bağlar.",
+    "brandHint": "Her cihaz için güvenli ve doğrulanmış",
+    "enterKey": "Lisans anahtarınızı girin"
   },
   "deleteModal": {
     "settlementTitle": "Mahsup silinsin mi?",
@@ -1517,7 +1606,9 @@
     "title": "Öğeyi Sil",
     "message": "Bu öğeyi silmek istediğinizden emin misiniz?",
     "paymentMessage": "Makbuzu Sil",
-    "paymentTitle": "Bu makbuzu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
+    "paymentTitle": "Bu makbuzu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+    "transferTitle": "Transferi sil",
+    "transferMessage": "Bu transferi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
   },
   "errors": {
     "INVALID_SETTLEMENT_AMOUNT": "Sıfırdan büyük bir mahsup tutarı girin.",
@@ -1658,7 +1749,92 @@
     "cloud_backup_not_included": "Bulut yedekleme bu lisansa dahil değil.",
     "backup_not_found": "Bu yedek bulunamadı.",
     "backup_file_missing": "Bu yedeğin dosyası sunucuda eksik.",
-    "missing_fields": "Gerekli bilgiler eksik."
+    "missing_fields": "Gerekli bilgiler eksik.",
+    "exportFailed": "Dışa aktarma başarısız oldu. Lütfen tekrar deneyin.",
+    "dateRequired": "Lütfen bir tarih seçin.",
+    "dateBeforeMin": "Tarih {{date}} tarihinden önce olamaz.",
+    "deleteError": "Silinemedi. Lütfen tekrar deneyin.",
+    "cannotDeletePaidInvoice": "Ödemesi olan bir fatura silinemez.",
+    "createQuotationFailed": "Teklif kaydedilemedi. Lütfen tekrar deneyin.",
+    "returnFailed": "İade kaydedilemedi. Lütfen tekrar deneyin.",
+    "downloadFailed": "Dosya indirilemedi.",
+    "importFailed": "İçe aktarma başarısız oldu. Dosyayı kontrol edip tekrar deneyin.",
+    "emailInvalid": "Lütfen geçerli bir e-posta adresi girin.",
+    "unitInUse": "Bu {{field}} kullanımda ve silinemez.",
+    "generic": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+    "INSUFFICIENT_STOCK": "Yeterli stok yok. Miktarı azaltıp tekrar deneyin.",
+    "INSUFFICIENT_STOCK_NAMED": "“{{name}}” için yeterli stok yok. Miktarı azaltıp tekrar deneyin.",
+    "MISSING_REQUIRED_FIELDS": "Lütfen tüm zorunlu alanları doldurun.",
+    "FUND_REQUIRED": "Lütfen bir kasa seçin.",
+    "INVALID_PAYMENT_AMOUNT": "Geçerli bir ödeme tutarı girin.",
+    "INVALID_CREDIT_AMOUNT": "Geçerli bir alacak tutarı girin.",
+    "INSUFFICIENT_CREDIT": "Mevcut alacak yeterli değil.",
+    "INVALID_TOTALS": "Toplamlar tutmuyor. Lütfen tutarları kontrol edin.",
+    "INVALID_ITEM_DATA": "Bazı ürünlerin verisi geçersiz. Miktar ve fiyatları kontrol edin.",
+    "INVALID_TAX_ID": "Seçilen vergi geçerli değil.",
+    "INVALID_ITEM_TAX_ID": "Seçilen vergi geçerli değil.",
+    "INVALID_DATE_RANGE": "Başlangıç tarihi bitiş tarihinden önce olmalıdır.",
+    "REPORT_GENERATION_FAILED": "Rapor oluşturulamadı. Lütfen tekrar deneyin.",
+    "CANNOT_DELETE_PAID_INVOICE": "Ödemesi olan bir fatura silinemez.",
+    "CANNOT_DELETE_PAID_EXPENSE": "Ödemesi olan bir gider silinemez.",
+    "CANNOT_EDIT_PAID_INVOICE": "Ödemesi olan bir fatura düzenlenemez.",
+    "CANNOT_EDIT_PAID_EXPENSE": "Ödemesi olan bir gider düzenlenemez.",
+    "CANNOT_DELETE_INVOICE_WITH_RETURN": "İadesi olan bir fatura silinemez.",
+    "CANNOT_MODIFY_INVOICE_WITH_RETURN": "İadesi olan bir fatura değiştirilemez.",
+    "CANNOT_MODIFY_POS_INVOICE": "Kasadan yapılan bir satış değiştirilemez.",
+    "CANNOT_DELETE_ACCEPTED_QUOTATION": "Kabul edilmiş bir teklif silinemez.",
+    "EXCEEDED_RETURN_LIMIT": "İade miktarı orijinal miktardan fazla.",
+    "PRODUCT_NOT_FOUND_IN_ORIGINAL_INVOICE": "Bu ürün orijinal faturada yok.",
+    "INVOICE_NOT_FOUND": "Fatura bulunamadı.",
+    "PURCHASE_INVOICE_NOT_FOUND": "Fatura bulunamadı.",
+    "SALES_INVOICE_NOT_FOUND": "Fatura bulunamadı.",
+    "SALES_QUOTATION_NOT_FOUND": "Teklif bulunamadı.",
+    "EXPENSE_NOT_FOUND": "Gider bulunamadı.",
+    "PAYMENT_NOT_FOUND": "Ödeme bulunamadı.",
+    "PAYMENT_HISTORY_NOT_FOUND": "Ödeme bulunamadı.",
+    "PRODUCT_NOT_FOUND": "Ürün bulunamadı.",
+    "PRODUCT_IN_USE": "Bu ürün faturalarda kullanılıyor ve silinemez.",
+    "DUPLICATE_UNIT_NAME": "Bu ürün için bu adla bir satış birimi zaten var.",
+    "BOM_NOT_FOUND": "Ürün reçetesi bulunamadı.",
+    "INVALID_UNIT_FOR_RAW_MATERIAL": "Seçilen birim bu malzeme için kullanılamaz.",
+    "CATEGORY_IN_USE": "Bu kategori kullanımda ve silinemez.",
+    "FUND_HAS_HISTORY": "Bu kasanın hareketleri var ve silinemez.",
+    "PARTNER_HAS_HISTORY": "Bu ortağın işlemleri var ve silinemez.",
+    "PARTNER_PERCENTAGE_EXCEEDS_REMAINING": "Yüzde, kalan paydan fazla.",
+    "OPENING_BALANCE_ALLOCATED": "Açılış bakiyesi kullanımda ve değiştirilemez.",
+    "CURRENCY_ALREADY_EXISTS": "Bu kodla bir para birimi zaten var.",
+    "CURRENCY_IN_USE": "Bu para birimi bir kasada kullanılıyor ve silinemez.",
+    "CURRENCY_NOT_FOUND": "Para birimi bulunamadı.",
+    "CANNOT_DELETE_PRIMARY": "Ana para birimi silinemez.",
+    "PRIMARY_RATE_MUST_BE_ONE": "Ana para biriminin döviz kuru tam olarak 1 olmalıdır.",
+    "RATE_RESERVED_FOR_PRIMARY": "1 döviz kuru yalnızca ana para birimi için ayrılmıştır.",
+    "TAX_ALREADY_EXISTS": "Bu adla bir vergi zaten var.",
+    "TAX_IN_USE": "Bu vergi kullanımda ve silinemez.",
+    "UNIT_ALREADY_EXISTS": "Bu ad veya kodla bir birim zaten var.",
+    "UNIT_IN_USE": "Bu birim kullanımda ve silinemez.",
+    "INVALID_PIN": "PIN yanlış.",
+    "PIN_INVALID_LENGTH": "PIN tam olarak 6 haneli olmalıdır.",
+    "USERNAME_TAKEN": "Bu kullanıcı adı zaten alınmış.",
+    "PIN_ALREADY_IN_USE": "Bu PIN zaten kullanılıyor.",
+    "USER_NOT_FOUND": "Kullanıcı bulunamadı.",
+    "USE_RESET_PIN_FLOW": "PIN'i değiştirmek için PIN'i Sıfırla'yı kullanın.",
+    "LAST_ADMIN_MUST_REMAIN": "En az bir aktif yönetici kalmalıdır.",
+    "ADMIN_AUTH_FAILED": "Yönetici doğrulaması başarısız oldu.",
+    "RECOVERY_FAILED": "Kurtarma tamamlanamadı.",
+    "DEACTIVATE_BEFORE_DELETE": "Silmeden önce bu kullanıcıyı devre dışı bırakın.",
+    "ADMIN_USERNAME_REQUIRED": "Lütfen yönetici kullanıcı adını girin.",
+    "COUNTRY_REQUIRED": "Lütfen bir ülke seçin.",
+    "CANCELED": "İptal edildi.",
+    "EXPORT_CANCELLED": "Dışa aktarma iptal edildi.",
+    "NO_PRODUCTS_TO_EXPORT": "Dışa aktarılacak ürün yok.",
+    "DEVICE_NAME_REQUIRED": "Lütfen bir yazıcı seçin.",
+    "ELECTRON_PRINT_FAILED": "Yazdırma başarısız oldu. Yazıcıyı kontrol edip tekrar deneyin.",
+    "INVALID_PAPER_SIZE": "Geçerli bir kağıt boyutu seçin.",
+    "NO_PRINTER": "Yazıcı bulunamadı. Yazıcının bağlı olduğunu kontrol edin.",
+    "PRINT_NOT_READY": "Sayfa henüz yazdırmaya hazır değil. Lütfen tekrar deneyin.",
+    "RAW_ESCPOS_UNSUPPORTED_PLATFORM": "Doğrudan fiş yazdırma bu bilgisayarda desteklenmiyor.",
+    "BACKUP_SETTINGS_READ_FAILED": "Yedekleme ayarları yüklenemedi.",
+    "BACKUP_SETTINGS_UPDATE_FAILED": "Yedekleme ayarları kaydedilemedi. Lütfen tekrar deneyin."
   },
   "success": {
     "created": "{{field}} başarıyla oluşturuldu",

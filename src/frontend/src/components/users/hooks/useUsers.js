@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const useUsers = () => {
   const { t } = useTranslation();
@@ -146,7 +147,7 @@ const useUsers = () => {
       }
     } catch (err) {
       console.error("Failed to deactivate user:", err);
-      setActionError(err?.message || t("errors.deactivateFailed"));
+      setActionError(friendlyError(t, err, "errors.deactivateFailed"));
     } finally {
       setSaving(false);
     }

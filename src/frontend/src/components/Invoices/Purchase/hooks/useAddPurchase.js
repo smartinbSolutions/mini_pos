@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const emptyItem = {
   product_id: "",
@@ -111,7 +112,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
       setSuppliers(suppliersResult?.data || []);
       setError("");
     } catch (err) {
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -668,7 +669,7 @@ export default function useAddPurchase({ isFormOpen, supplierModalOpen }) {
         navigat("/purchase");
         return res;
       } catch (err) {
-        setError(err.message || t("errors.createInvoiceFailed"));
+        setError(friendlyError(t, err, "errors.createInvoiceFailed"));
       } finally {
         setSaving(false);
       }

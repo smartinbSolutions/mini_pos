@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function useExpenseCategoryItems(categoryId) {
   const { t } = useTranslation();
@@ -43,7 +44,7 @@ export default function useExpenseCategoryItems(categoryId) {
       setTotalSpent(itemsResult?.totalSpent || 0);
     } catch (err) {
       console.error("Failed to load expense category items:", err);
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
       setItems([]);
     } finally {
       setLoading(false);

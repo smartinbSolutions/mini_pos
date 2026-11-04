@@ -1,8 +1,11 @@
 // packages/app/src/renderer/features/manufacturingOrders/hooks/useManufacturingOrders.js
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function useManufacturingOrders() {
+  const { t } = useTranslation();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -93,11 +96,11 @@ export default function useManufacturingOrders() {
           setTotal(res.total);
           setTotalPages(res.totalPages);
         } else {
-          setError(res.error);
+          setError(friendlyError(t, res));
         }
       })
       .finally(() => setLoading(false));
-  }, [page, limit, search, filters]);
+  }, [page, limit, search, filters, t]);
 
   useEffect(() => {
     fetchOrders();
@@ -107,7 +110,7 @@ export default function useManufacturingOrders() {
     setActionError(null);
     const res = await window.api.deleteManufacturingOrder(order.id);
     if (!res.success) {
-      setActionError(res.error);
+      setActionError(friendlyError(t, res));
     } else {
       fetchOrders();
     }

@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
 import { formatMoney } from "../../../../Global/FormatNumber";
-import usePaymentAllocationPreview from "./usePaymentAllocationPreview";
+import usePaymentAllocationPreview from "./usePaymentAllocationPreview";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
 
@@ -353,7 +354,7 @@ const useAddFundPayment = ({
         invoiceId: null,
       });
 
-      if (!res.success) throw new Error(res.message);
+      if (!res.success) throw friendlyFail(t, res);
 
       setMessageTone("success");
       setMessage(t("screens.payments.receipt_saved_successfully"));
@@ -364,7 +365,7 @@ const useAddFundPayment = ({
 
       setTimeout(() => onClose(), 800);
     } catch (err) {
-      showError(err.message || t("screens.payments.unexpected_error_posting"));
+      showError(friendlyError(t, err, "screens.payments.unexpected_error_posting"));
     } finally {
       setLoading(false);
     }

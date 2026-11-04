@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useListParams from "../../../../Global/useListParams";
+import useListParams from "../../../../Global/useListParams";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const DEFAULT_FILTERS = {
   dateFrom: "",
@@ -92,7 +93,7 @@ const usePurchaseReturnList = () => {
       setTotalPages(res?.totalPages || 1);
       setError("");
     } catch (err) {
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }

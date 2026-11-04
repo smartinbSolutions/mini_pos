@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -131,7 +132,7 @@ export default function useSettlement({ isOpen, contactId, onClose, onSaved }) {
       onSaved?.();
       onClose();
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(t, err));
     } finally {
       setSaving(false);
     }

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "./friendlyError";
 
 const AuthContext = createContext(null);
 
@@ -24,7 +25,7 @@ export function AuthProvider({ children }) {
         setError(t("errors.invalidPin") || res?.error);
         return false;
       } catch (err) {
-        setError(err?.message || String(err));
+        setError(friendlyError(t, err, "common.exportFailed"));
         return false;
       } finally {
         setLoggingIn(false);

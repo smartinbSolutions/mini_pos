@@ -8,7 +8,8 @@ import React, {
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
 import { useAuth } from "../../../../Global/AuthContext";
-import usePaymentAllocationPreview from "./usePaymentAllocationPreview";
+import usePaymentAllocationPreview from "./usePaymentAllocationPreview";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const round2 = (n) => Math.round((n + Number.EPSILON) * 100) / 100;
@@ -446,13 +447,13 @@ const useAddPayment = ({
           amount: baseAmount,
           created_by: user.id,
         });
-        if (!res.success) throw new Error(res.error);
+        if (!res.success) throw friendlyFail(t, res);
       } else {
         res = await api.createPayment({
           ...paymentData,
           invoiceId: invoice?.id || null,
         });
-        if (!res.success) throw new Error(res.message);
+        if (!res.success) throw friendlyFail(t, res);
       }
 
       setMessageTone("success");
@@ -464,7 +465,7 @@ const useAddPayment = ({
 
       setTimeout(() => onClose(), 700);
     } catch (err) {
-      showError(err.message);
+      showError(friendlyError(t, err));
     } finally {
       setLoading(false);
     }

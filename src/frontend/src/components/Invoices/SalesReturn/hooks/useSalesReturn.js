@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 export default function useSalesReturn() {
   const { t } = useTranslation();
@@ -53,7 +54,7 @@ export default function useSalesReturn() {
       );
       setError("");
     } catch (err) {
-      setError(err.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -253,7 +254,7 @@ export default function useSalesReturn() {
       const result = await api.createSalesReturn(payload);
 
       if (!result?.success) {
-        setError(result?.error || t("errors.saveFailed"));
+        setError(friendlyError(t, result, "errors.saveFailed"));
         return { success: false, error: result?.error };
       }
 
@@ -264,7 +265,7 @@ export default function useSalesReturn() {
       navigate("/sales");
       return { success: true };
     } catch (err) {
-      setError(err.message || t("errors.saveFailed"));
+      setError(friendlyError(t, err, "errors.saveFailed"));
       return { success: false, error: err.message };
     } finally {
       setSaving(false);

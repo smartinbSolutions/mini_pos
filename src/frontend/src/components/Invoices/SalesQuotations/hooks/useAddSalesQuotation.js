@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 const emptyItem = {
   product_id: null,
@@ -111,7 +112,7 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
       setCustomers(custRes?.data || []);
       setError("");
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(t, err));
     } finally {
       setLoading(false);
     }
@@ -543,7 +544,7 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
       const res = await api.createSalesQuotation(payload);
 
       if (!res?.success) {
-        throw new Error(res?.error || t("errors.createQuotationFailed"));
+        throw friendlyFail(t, res, "errors.createQuotationFailed");
       }
 
       if (res.quotationId && tagIds.length > 0) {
@@ -556,7 +557,7 @@ export default function useAddSalesQuotation({ customerModalOpen } = {}) {
       navigate("/sales-quotations");
       return res;
     } catch (err) {
-      setError(err?.message || t("errors.saveError"));
+      setError(friendlyError(t, err, "errors.saveError"));
       return { success: false, error: err?.message };
     } finally {
       setSaving(false);
