@@ -7,7 +7,8 @@ import {
   AlertTriangle,
   Package,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function ImportHistoryList() {
   const { t, i18n } = useTranslation();
@@ -45,7 +46,7 @@ export default function ImportHistoryList() {
         }
       } catch (err) {
         console.error("Failed to load import history:", err);
-        if (!cancelled) setError(err?.message || t("errors.loadError"));
+        if (!cancelled) setError(friendlyError(t, err, "errors.loadError"));
       } finally {
         if (!cancelled) setLoading(false);
       }

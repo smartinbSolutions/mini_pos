@@ -1,6 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function useProductMovements(productId) {
+  const { t } = useTranslation();
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -28,11 +31,11 @@ export default function useProductMovements(productId) {
       setTotalPages(res?.totalPages || 1);
     } catch (err) {
       console.error("Failed to load product movements:", err);
-      setError(err?.message || "errors.loadError");
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [api, productId, page, limit]);
+  }, [api, productId, page, limit, t]);
 
   return {
     movements,

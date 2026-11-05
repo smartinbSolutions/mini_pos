@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 export default function usePurchaseReturn() {
   const { t } = useTranslation();
@@ -53,7 +54,7 @@ export default function usePurchaseReturn() {
       );
       setError("");
     } catch (err) {
-      setError(err.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -216,7 +217,7 @@ export default function usePurchaseReturn() {
       const result = await api.createPurchaseReturn(payload);
 
       if (!result?.success) {
-        setError(result?.error || t("errors.saveFailed"));
+        setError(friendlyError(t, result, "errors.saveFailed"));
         return { success: false, error: result?.error };
       }
       if (result.returnId && tagIds.length > 0) {
@@ -226,7 +227,7 @@ export default function usePurchaseReturn() {
       navigate("/purchase");
       return { success: true };
     } catch (err) {
-      setError(err.message || t("errors.saveFailed"));
+      setError(friendlyError(t, err, "errors.saveFailed"));
       return { success: false, error: err.message };
     } finally {
       setSaving(false);

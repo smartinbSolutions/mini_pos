@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "react-toastify";
+import { toast } from "react-toastify";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const useUpdateCompanySettings = () => {
   const { t, i18n } = useTranslation();
@@ -158,7 +159,7 @@ const useUpdateCompanySettings = () => {
         : await window.api.createCompanySetting(payload);
 
       if (res?.success === false) {
-        toast.error(res.error || t("errors.saveError"));
+        toast.error(friendlyError(t, res, "errors.saveError"));
         return;
       }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "react-toastify";
+import { toast } from "react-toastify";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function usePrinterSettings({ enabled = true } = {}) {
   const { t } = useTranslation();
@@ -42,11 +43,11 @@ export default function usePrinterSettings({ enabled = true } = {}) {
       const res = await api.listPrinters();
       setDetectedPrinters(res?.success ? res.data : []);
       if (!res?.success) {
-        toast.error(res?.error || t("errors.loadError"));
+        toast.error(friendlyError(t, res, "errors.loadError"));
       }
     } catch (err) {
       console.error("Failed to detect printers:", err);
-      toast.error(err?.message || t("errors.loadError"));
+      toast.error(friendlyError(t, err, "errors.loadError"));
     } finally {
       setDetecting(false);
     }
@@ -79,11 +80,11 @@ export default function usePrinterSettings({ enabled = true } = {}) {
       if (res?.success) {
         await refetch();
       } else {
-        toast.error(res?.error || t("errors.saveError"));
+        toast.error(friendlyError(t, res, "errors.saveError"));
       }
     } catch (err) {
       console.error("Failed to save printer settings:", err);
-      toast.error(err?.message || t("errors.saveError"));
+      toast.error(friendlyError(t, err, "errors.saveError"));
     } finally {
       setSavingId(null);
     }
@@ -101,11 +102,11 @@ export default function usePrinterSettings({ enabled = true } = {}) {
         });
         await refetch();
       } else {
-        toast.error(res?.error || t("errors.deleteError"));
+        toast.error(friendlyError(t, res, "errors.deleteError"));
       }
     } catch (err) {
       console.error("Failed to delete printer settings:", err);
-      toast.error(err?.message || t("errors.deleteError"));
+      toast.error(friendlyError(t, err, "errors.deleteError"));
     }
   };
 

@@ -20,7 +20,8 @@ import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import GoTo from "../../../Global/GoTo";
 import Pagination from "../../../Global/Pagination";
 import ExportModal from "../../../Global/ExportModal";
-import partyLedgerRowLabel from "../../Payment/components/PartyLedgerRowLabel";
+import partyLedgerRowLabel from "../../Payment/components/PartyLedgerRowLabel";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const UNKNOWN_DAY = "__unknown__";
 
@@ -87,10 +88,10 @@ export default function PartnerLedgerPage() {
         toast.success(t("common.exportSuccess", "Export completed"));
         setExportOpen(false);
       } else if (res.error !== "Export cancelled") {
-        setExportError(res.error || t("common.exportFailed", "Export failed"));
+        setExportError(friendlyError(t, res, "common.exportFailed"));
       }
     } catch (err) {
-      setExportError(err.message || String(err));
+      setExportError(friendlyError(t, err, "common.exportFailed"));
     } finally {
       setExporting(false);
     }

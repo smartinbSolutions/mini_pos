@@ -7,7 +7,8 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const FIELD_KEYS = [
   "name",
@@ -64,7 +65,7 @@ export default function ProductUpdateModal({ isOpen, onClose, onUpdated }) {
         fields: Array.from(selectedFields),
       });
       if (!res.success && !res.canceled) {
-        setError(res.error || t("errors.downloadFailed"));
+        setError(friendlyError(t, res, "errors.downloadFailed"));
       }
     } finally {
       setExporting(false);
@@ -80,7 +81,7 @@ export default function ProductUpdateModal({ isOpen, onClose, onUpdated }) {
 
       if (res.canceled) return;
       if (!res.success) {
-        setError(res.error || t("errors.importFailed"));
+        setError(friendlyError(t, res, "errors.importFailed"));
         return;
       }
       setResult(res);

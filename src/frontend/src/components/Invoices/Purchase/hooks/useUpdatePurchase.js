@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const emptyInvoice = {
   contact_id: "",
@@ -180,7 +181,7 @@ export default function useUpdatePurchase() {
       setTaxes(taxRes || []);
       setError("");
     } catch (err) {
-      setError(err.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -200,7 +201,7 @@ export default function useUpdatePurchase() {
       setSuppliers(supsRes?.data || []);
       setTaxes(taxRes || []);
     } catch (err) {
-      setError(err.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     }
   }, [api, t]);
 
@@ -698,7 +699,7 @@ export default function useUpdatePurchase() {
       const res = await api.updatePurchaseInvoice(payload);
 
       if (res?.success === false) {
-        setError(res.error || t("errors.saveFailed"));
+        setError(friendlyError(t, res, "errors.saveFailed"));
         return { success: false, error: res.error };
       }
 
@@ -707,7 +708,7 @@ export default function useUpdatePurchase() {
       navigat("/purchase");
       return { success: true };
     } catch (err) {
-      setError(err.message || t("errors.saveFailed"));
+      setError(friendlyError(t, err, "errors.saveFailed"));
       return { success: false, error: err.message };
     } finally {
       setSaving(false);

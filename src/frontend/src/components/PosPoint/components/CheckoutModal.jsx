@@ -161,9 +161,7 @@ export default function CheckoutModal({
     if (!isFullyAllocated) {
       const message =
         allocationDiff > 0
-          ? t("screens.checkout.remainingToAllocate", {
-              amount: money(allocationDiff),
-            })
+          ? `${t("screens.checkout.remainingToAllocate")}: ${money(allocationDiff)}`
           : t("screens.payments.overAllocatedBy", {
               amount: money(-allocationDiff),
             });

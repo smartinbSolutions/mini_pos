@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 const emptyItem = {
   product_id: "",
@@ -112,7 +113,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
       setCustomers(custRes?.data || []);
       setError("");
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(t, err));
     } finally {
       setLoading(false);
     }
@@ -639,7 +640,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
         const res = await api.createSalesInvoice(payload);
 
         if (!res?.success) {
-          throw new Error(res?.error || t("errors.createInvoiceFailed"));
+          throw friendlyFail(t, res, "errors.createInvoiceFailed");
         }
 
         if (res.invoiceId && tagIds.length > 0) {
@@ -653,7 +654,7 @@ export default function useAddSales({ customerModalOpen, isFormOpen }) {
         navigate("/sales");
         return res;
       } catch (err) {
-        setError(err?.message || t("errors.saveError"));
+        setError(friendlyError(t, err, "errors.saveError"));
         return { success: false, error: err?.message };
       } finally {
         setSaving(false);

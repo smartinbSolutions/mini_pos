@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useListParams from "../../../Global/useListParams";
+import useListParams from "../../../Global/useListParams";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const normalizeBarcodes = (barcodes = []) => {
   const seen = new Set();
@@ -231,7 +232,7 @@ export default function useProductCatalog() {
     } catch (err) {
       console.error("Failed to load product catalog:", err);
       setUnavailableHandlers([]);
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -365,7 +366,7 @@ export default function useProductCatalog() {
       return result;
     } catch (err) {
       console.error("Failed to save product:", err);
-      setActionError(err?.message || t("errors.saveError"));
+      setActionError(friendlyError(t, err, "errors.saveError"));
       throw err;
     }
   };

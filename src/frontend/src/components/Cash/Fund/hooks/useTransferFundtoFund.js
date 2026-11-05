@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePrimaryCurrency from "../../../../Global/usePrimaryCurrency";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -351,7 +352,7 @@ const useTransferFundtoFund = ({
         : await api.transferFundToFund(payload);
 
       if (!res.success) {
-        throw new Error(res.message);
+        throw friendlyFail(t, res);
       }
 
       if (refetchList) {
@@ -360,7 +361,7 @@ const useTransferFundtoFund = ({
 
       onClose();
     } catch (err) {
-      setMessage(err.message || "An error occurred during transfer.");
+      setMessage(friendlyError(t, err));
     } finally {
       setLoading(false);
     }

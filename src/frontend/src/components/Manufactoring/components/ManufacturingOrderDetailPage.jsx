@@ -17,7 +17,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import usePrimaryCurrency from "../../../Global/usePrimaryCurrency";
 import { formatNumber } from "../../../Global/FormatNumber";
-import DeleteModal from "../../../Global/DeleteModel";
+import DeleteModal from "../../../Global/DeleteModel";
+import { friendlyError } from "../../../Global/friendlyError";
 
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
@@ -49,10 +50,10 @@ export default function ManufacturingOrderDetailPage() {
         if (res.success) {
           setOrder(res.data);
         } else {
-          setError(res.error);
+          setError(friendlyError(t, res));
         }
       })
-      .catch((err) => setError(err.message || t("errors.loadError")))
+      .catch((err) => setError(friendlyError(t, err, "errors.loadError")))
       .finally(() => setLoading(false));
   };
 
@@ -65,7 +66,7 @@ export default function ManufacturingOrderDetailPage() {
     try {
       const res = await api.deleteManufacturingOrder(order.id);
       if (!res.success) {
-        toast.error(res.error);
+        toast.error(friendlyError(t, res));
         return;
       }
       toast.success(t("screens.manufacturingOrders.deleted", "Order deleted"));

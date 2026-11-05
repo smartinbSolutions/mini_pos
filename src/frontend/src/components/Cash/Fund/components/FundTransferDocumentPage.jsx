@@ -13,7 +13,8 @@ import {
 import { formatMoney } from "../../../../Global/FormatNumber";
 import DeleteModal from "../../../../Global/DeleteModel";
 import GoTo from "../../../../Global/GoTo";
-import BackButton from "../../../../Global/BackButton";
+import BackButton from "../../../../Global/BackButton";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const FundTransferDocumentPage = () => {
   const { id } = useParams();
@@ -47,7 +48,7 @@ const FundTransferDocumentPage = () => {
       toast.success(t("screens.funds.transferDeleted"));
       navigate(-1);
     } else {
-      toast.error(res.message || t("screens.funds.transferDeleteFailed"));
+      toast.error(friendlyError(t, res, "screens.funds.transferDeleteFailed"));
     }
     setDeleteOpen(false);
   };

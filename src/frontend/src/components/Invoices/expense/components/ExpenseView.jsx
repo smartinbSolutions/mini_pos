@@ -15,7 +15,8 @@ import { useTranslation } from "react-i18next";
 import GoTo from "../../../../Global/GoTo";
 import HoverTooltip from "../../../../Global/HoverTooltip";
 import BackButton from "../../../../Global/BackButton";
-import TagList from "../../../Tags/components/TagList";
+import TagList from "../../../Tags/components/TagList";
+import { friendlyError } from "../../../../Global/friendlyError";
 
 const STATUS_CONFIG = {
   paid: { bg: "bg-green-100", text: "text-green-700" },
@@ -87,7 +88,7 @@ export default function ExpenseView() {
           }
         }
       } catch (err) {
-        if (!cancelled) setError(err.message);
+        if (!cancelled) setError(friendlyError(t, err));
       } finally {
         if (!cancelled) setLoading(false);
       }

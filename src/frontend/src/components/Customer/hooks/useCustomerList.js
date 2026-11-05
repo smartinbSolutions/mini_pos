@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import useListParams from "../../../Global/useListParams";
+import useListParams from "../../../Global/useListParams";
+import { friendlyFail } from "../../../Global/friendlyError";
 
 const LIST_DEFAULTS = { page: 1, limit: 10, balance: "all", search: "" };
 const useCustomerList = () => {
@@ -139,7 +140,7 @@ const useCustomerList = () => {
     try {
       const res = await api.createCustomer(normalizeCustomer(cust));
       if (!res?.success) {
-        throw new Error(res?.error || res?.message);
+        throw friendlyFail(t, res);
       }
       await refetch();
       return res;
@@ -158,7 +159,7 @@ const useCustomerList = () => {
     try {
       const res = await api.updateCustomer(normalizeCustomer(cust));
       if (!res?.success) {
-        throw new Error(res?.error || res?.message);
+        throw friendlyFail(t, res);
       }
       await refetch();
     } finally {

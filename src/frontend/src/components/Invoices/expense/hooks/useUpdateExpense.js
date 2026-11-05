@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { useAuth } from "../../../../Global/AuthContext";
+import { useAuth } from "../../../../Global/AuthContext";
+import { friendlyError, friendlyFail } from "../../../../Global/friendlyError";
 
 const NO_SUPPLIER = "none";
 
@@ -85,7 +86,7 @@ const useUpdateExpense = () => {
       setSuppliers(supRes?.data || []);
       setTaxes(taxRes || []);
     } catch (err) {
-      setError(err?.message || t("errors.loadError"));
+      setError(friendlyError(t, err, "errors.loadError"));
     } finally {
       setLoading(false);
     }
@@ -130,7 +131,7 @@ const useUpdateExpense = () => {
         ),
       );
     } catch (err) {
-      setError(err?.message || t("errors.loadExpenseFailed"));
+      setError(friendlyError(t, err, "errors.loadExpenseFailed"));
     } finally {
       setLoading(false);
     }
@@ -425,7 +426,7 @@ const useUpdateExpense = () => {
         const res = await api.updateExpense(payload);
 
         if (!res?.success) {
-          throw new Error(res?.error || t("errors.updateFailed"));
+          throw friendlyFail(t, res, "errors.updateFailed");
         }
 
         await api.setEntityTags("expense", id, tagIds);
@@ -434,7 +435,7 @@ const useUpdateExpense = () => {
         navigate("/expense");
         return res;
       } catch (err) {
-        setError(err?.message || t("errors.updateFailed"));
+        setError(friendlyError(t, err, "errors.updateFailed"));
         return { success: false, error: err?.message };
       } finally {
         setSaving(false);

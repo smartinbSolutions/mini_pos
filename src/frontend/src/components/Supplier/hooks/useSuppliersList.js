@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import useListParams from "../../../Global/useListParams";
+import useListParams from "../../../Global/useListParams";
+import { friendlyFail } from "../../../Global/friendlyError";
 
 const LIST_DEFAULTS = { page: 1, limit: 10, balance: "all", search: "" };
 
@@ -140,7 +141,7 @@ const useSuppliersList = () => {
     try {
       const res = await api.createSupplier(normalizeSupplier(sup));
       if (!res?.success) {
-        throw new Error(res?.message || res?.error);
+        throw friendlyFail(t, res);
       }
       await refetch();
       return res;
@@ -159,7 +160,7 @@ const useSuppliersList = () => {
     try {
       const res = await api.updateSupplier(normalizeSupplier(sup));
       if (!res?.success) {
-        throw new Error(res?.message || res?.error);
+        throw friendlyFail(t, res);
       }
       await refetch();
     } finally {
@@ -172,7 +173,7 @@ const useSuppliersList = () => {
     try {
       const res = await api.deleteSupplier(sup.id);
       if (!res?.success) {
-        throw new Error(res?.message || res?.error);
+        throw friendlyFail(t, res);
       }
       await refetch();
     } finally {

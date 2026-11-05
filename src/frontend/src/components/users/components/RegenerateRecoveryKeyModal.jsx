@@ -6,7 +6,8 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function RegenerateRecoveryKeyModal({
   open,
@@ -49,9 +50,9 @@ export default function RegenerateRecoveryKeyModal({
         return;
       }
 
-      setError(result?.error || t("screens.recovery.genericError"));
+      setError(friendlyError(t, result, "screens.recovery.genericError"));
     } catch (err) {
-      setError(err?.message || t("screens.recovery.genericError"));
+      setError(friendlyError(t, err, "screens.recovery.genericError"));
     } finally {
       setSaving(false);
     }

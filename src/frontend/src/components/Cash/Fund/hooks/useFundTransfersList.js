@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import useListParams from "../../../../Global/useListParams";
+import useListParams from "../../../../Global/useListParams";
+import { friendlyFail } from "../../../../Global/friendlyError";
 
 const DEFAULT_FILTERS = { fundId: null, dateFrom: null, dateTo: null };
 const LIST_DEFAULTS = { page: 1, limit: 10, search: "", ...DEFAULT_FILTERS };
@@ -97,7 +98,7 @@ const useFundTransfersList = () => {
     try {
       const res = await api.deleteFundTransfer(transfer.id);
 
-      if (!res?.success) throw new Error(res?.error || res?.message);
+      if (!res?.success) throw friendlyFail(t, res);
       setActionError("");
       await refetch();
     } catch (err) {

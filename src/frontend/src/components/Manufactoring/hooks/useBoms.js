@@ -1,8 +1,11 @@
 // packages/app/src/renderer/features/boms/hooks/useBoms.js
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function useBoms() {
+  const { t } = useTranslation();
   const [boms, setBoms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -49,11 +52,11 @@ export default function useBoms() {
           setTotal(res.total);
           setTotalPages(res.totalPages);
         } else {
-          setError(res.error);
+          setError(friendlyError(t, res));
         }
       })
       .finally(() => setLoading(false));
-  }, [page, limit, search, filters]);
+  }, [page, limit, search, filters, t]);
 
   useEffect(() => {
     fetchBoms();
@@ -63,7 +66,7 @@ export default function useBoms() {
     setActionError(null);
     const res = await window.api.deleteBom(bom.id);
     if (!res.success) {
-      setActionError(res.error);
+      setActionError(friendlyError(t, res));
     } else {
       fetchBoms();
     }

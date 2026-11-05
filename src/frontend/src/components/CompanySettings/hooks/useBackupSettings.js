@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { toast } from "react-toastify";
+import { toast } from "react-toastify";
+import { friendlyError } from "../../../Global/friendlyError";
 
 export default function useBackupSettings({ enabled = true } = {}) {
   const { t } = useTranslation();
@@ -100,7 +101,7 @@ export default function useBackupSettings({ enabled = true } = {}) {
       return res;
     } catch (err) {
       console.error("Failed to update backup settings:", err);
-      toast.error(err?.message || t("errors.saveError"));
+      toast.error(friendlyError(t, err, "errors.saveError"));
       return { success: false, error: err?.message };
     } finally {
       setSavingSettings(false);

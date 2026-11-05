@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
-import useListParams from "../../../Global/useListParams";
+import useListParams from "../../../Global/useListParams";
+import { friendlyFail } from "../../../Global/friendlyError";
 
 const LIST_DEFAULTS = { page: 1, limit: 10, search: "" };
 
@@ -132,7 +133,7 @@ const usePartnersList = () => {
             }),
           );
         }
-        throw new Error(result.error);
+        throw friendlyFail(t, result);
       }
       await refetch();
       return result;
@@ -158,7 +159,7 @@ const usePartnersList = () => {
             }),
           );
         }
-        throw new Error(result.error);
+        throw friendlyFail(t, result);
       }
       await refetch();
     } finally {
