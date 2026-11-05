@@ -12,6 +12,9 @@ import {
   ShoppingBasket,
   Banknote,
 } from "lucide-react";
+import useLatinMode from "../../../Global/useLatinMode";
+import EmptyState from "../../../Global/ui/EmptyState";
+import { getStockStatus, useLowStockLevel } from "../../../Global/stockStatus";
 import { useEffect, useMemo, useRef, useState } from "react";
 import usePosCheckout, { PAGE_SIZE_OPTIONS } from "../hooks/usePosCheckout";
 import { formatNumber } from "../../../Global/FormatNumber";
@@ -44,9 +47,6 @@ function readColumns() {
     return "auto";
   }
 }
-import useLatinMode from "../../../Global/useLatinMode";
-import EmptyState from "../../../Global/ui/EmptyState";
-import { getStockStatus, useLowStockLevel } from "../../../Global/stockStatus";
 
 export default function POSSystem() {
   const { t, i18n } = useTranslation();
@@ -387,7 +387,9 @@ export default function POSSystem() {
                   ) : (
                     <ArrowBigRight size={22} strokeWidth={2.2} />
                   )}
-                  <span className="hidden sm:inline">{t("simple.pos.back")}</span>
+                  <span className="hidden sm:inline">
+                    {t("simple.pos.back")}
+                  </span>
                 </Link>
               )}
 
