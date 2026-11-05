@@ -14,6 +14,7 @@ import {
 export default function registerPaymentIPC() {
   ipcMain.handle("create-payment", (event, data) => {
     try {
+      console.log("data from Ipc", data);
       const amount = Number(data.amount);
 
       if (!data.type || !data.party_type || !data.fund_id || !amount) {
