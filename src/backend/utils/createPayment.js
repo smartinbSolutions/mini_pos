@@ -51,8 +51,6 @@ export default function createPayment(db, data) {
   `);
 
   const paymentDate = data.date;
-  console.log("row data", data);
-  console.log("paymentDate", paymentDate);
   const result = insertPayment.run({
     type: data.type,
     party_type: data.party_type,

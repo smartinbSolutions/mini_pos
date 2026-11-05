@@ -95,10 +95,8 @@ function getOpenInvoicesForParty(db, { contactId, invoiceType }) {
 // allocated $420 leaves $80 available — usable toward this contact's next
 // purchase/expense, independent of any income-side payments.
 export function getPartyCredit(db, { contactId, invoiceType }) {
-  console.log("contactId", contactId);
-  console.log("invoiceType", invoiceType);
   const dir = DIRECTION_FOR_INVOICE[invoiceType];
-  console.log("dir", invoiceType);
+
   if (!dir || !contactId) return { totalAvailable: 0, payments: [] };
 
   const payments = unallocatedPayments(db, contactId, dir);
