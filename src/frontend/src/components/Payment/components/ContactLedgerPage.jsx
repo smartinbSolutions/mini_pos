@@ -24,7 +24,8 @@ import GoTo from "../../../Global/GoTo";
 import Pagination from "../../../Global/Pagination";
 import ExportModal from "../../../Global/ExportModal";
 import partyLedgerRowLabel from "./PartyLedgerRowLabel";
-import BackButton from "../../../Global/BackButton";
+import BackButton from "../../../Global/BackButton";
+
 import { friendlyError } from "../../../Global/friendlyError";
 
 const KIND_STYLE = {
@@ -325,7 +326,10 @@ export default function ContactLedgerPage() {
     salesSideFormula[2].value -
     salesSideFormula[3].value;
 
-  const runExport = async (apiFn, { startDate, endDate, language }) => {
+  const runExport = async (
+    apiFn,
+    { startDate, endDate, language, detailed },
+  ) => {
     if (!ledgerKey) return;
     setExporting(true);
     setExportError("");
@@ -337,6 +341,7 @@ export default function ContactLedgerPage() {
         endDate,
         language,
         partyName,
+        detailed: !!detailed,
       });
       if (res.success) {
         toast.success(t("common.exportSuccess", "Export completed"));
@@ -741,6 +746,7 @@ export default function ContactLedgerPage() {
         exporting={exporting}
         exportError={exportError}
         title={t("screens.ledger.exportTitle", "Export Ledger")}
+        allowDetailed
       />
     </div>
   );

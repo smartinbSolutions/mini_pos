@@ -42,6 +42,13 @@ const EXPORT_LABELS = {
     closingBalance: "Closing balance",
     dr: "Dr",
     cr: "Cr",
+    qty: "Qty",
+    unit: "Unit",
+    unitPrice: "Unit price",
+    discount: "Discount",
+    tax: "Tax",
+    lineTotal: "Line total",
+    invoiceLevel: "Invoice-level discount / tax",
     allTime: "Beginning",
     present: "Today",
     fundAmount: "Fund amount",
@@ -96,6 +103,13 @@ const EXPORT_LABELS = {
     debit: "مدين",
     credit: "دائن",
     balance: "الرصيد",
+    qty: "الكمية",
+    unit: "الوحدة",
+    unitPrice: "سعر الوحدة",
+    discount: "الخصم",
+    tax: "الضريبة",
+    lineTotal: "إجمالي البند",
+    invoiceLevel: "خصم / ضريبة على مستوى الفاتورة",
     broughtForward: "رصيد منقول",
     totals: "المجاميع",
     closingBalance: "الرصيد الختامي",
@@ -156,6 +170,13 @@ const EXPORT_LABELS = {
     closingBalance: "Kapanış bakiyesi",
     dr: "B",
     cr: "A",
+    qty: "Miktar",
+    unit: "Birim",
+    unitPrice: "Birim fiyat",
+    discount: "İskonto",
+    tax: "Vergi",
+    lineTotal: "Satır toplamı",
+    invoiceLevel: "Fatura düzeyi iskonto / vergi",
     allTime: "Başlangıç",
     present: "Bugün",
     fundAmount: "Kasa tutarı",
@@ -618,6 +639,7 @@ export default function registerPartyHistoryIPC() {
         language,
         partyName,
         includeLinked,
+        detailed,
       },
     ) => {
       try {
@@ -628,6 +650,7 @@ export default function registerPartyHistoryIPC() {
           parties: [{ partyId, partyType }],
           startDate,
           endDate,
+          detailed: !!detailed,
         });
 
         const accounts = statementAccounts(db, statement, {
@@ -653,6 +676,17 @@ export default function registerPartyHistoryIPC() {
           { key: "creditFx", header: L.fundAmount, width: 16 },
           { key: "balance", header: L.balance, width: 14, money: true },
         ];
+        if (detailed) {
+          columns.push(
+            { key: "qty", header: L.qty, width: 9 },
+            { key: "unit", header: L.unit, width: 10 },
+            { key: "unitPrice", header: L.unitPrice, width: 12, money: true },
+            { key: "itemDiscount", header: L.discount, width: 11, money: true },
+            { key: "itemTax", header: L.tax, width: 11, money: true },
+            { key: "lineTotal", header: L.lineTotal, width: 13, money: true },
+          );
+        }
+
         const toRow = (values) => columns.map((c) => values[c.key] ?? null);
 
         const HEADER_ROW = 9;
@@ -757,7 +791,7 @@ export default function registerPartyHistoryIPC() {
         statement.rows.forEach((r) => {
           const fund = getFundAmount(r);
           const fxText = fund ? `${fmtMoney(fund.amount)} ${fund.unit}` : null;
-          sheet.addRow(
+          const docRow = sheet.addRow(
             toRow({
               type: formatType(L, r),
               date: formatExportDate(r.date),
@@ -771,6 +805,36 @@ export default function registerPartyHistoryIPC() {
               side: sideLabel(L, r.balance_side),
             }),
           );
+          if (detailed && r.items?.length) {
+            docRow.font = { bold: true };
+            const grey = { size: 9, color: { argb: "FF64748B" } };
+            r.items.forEach((it) => {
+              const row = sheet.addRow(
+                toRow({
+                  description: `${it.name || ""}${it.description ? " — " + it.description : ""}`,
+                  qty: it.quantity,
+                  unit: it.unit_name,
+                  unitPrice: it.price,
+                  itemDiscount: it.discount || null,
+                  itemTax: it.taxValue || null,
+                  lineTotal: it.line_total,
+                }),
+              );
+              row.font = grey;
+              row.getCell(3).alignment = { indent: 2 };
+            });
+            if (r.doc_discount || r.doc_tax_value) {
+              const foot = sheet.addRow(
+                toRow({
+                  description: L.invoiceLevel,
+                  itemDiscount: r.doc_discount || null,
+                  itemTax: r.doc_tax_value || null,
+                }),
+              );
+              foot.font = { ...grey, italic: true };
+              foot.getCell(3).alignment = { indent: 2 };
+            }
+          }
         });
 
         // ---- Totals + closing ----
@@ -834,7 +898,7 @@ export default function registerPartyHistoryIPC() {
     "export-party-history-pdf",
     async (
       event,
-      { partyId, partyType, startDate, endDate, language, partyName },
+      { partyId, partyType, startDate, endDate, language, partyName, detailed },
     ) => {
       try {
         const L = getLabels(language);
@@ -844,6 +908,7 @@ export default function registerPartyHistoryIPC() {
           parties: [{ partyId, partyType }],
           startDate,
           endDate,
+          detailed: !!detailed,
         });
 
         const accounts = statementAccounts(db, statement, {
@@ -861,6 +926,56 @@ export default function registerPartyHistoryIPC() {
 
         const balanceCell = (value) => fmtMoney(Math.abs(value));
 
+        // ---- NEW: detailed-mode helpers ----
+        const E = (n) => "<td></td>".repeat(n);
+        const pad = detailed ? E(6) : "";
+        const widths = detailed
+          ? [6.5, 6, 19, 7, 6, 6, 6, 6, 6.5, 4, 4.5, 6, 5, 5, 6.5]
+          : [9, 9, 21, 12, 10, 10, 10, 10, 9];
+        const colgroupHtml = widths
+          .map((w) => `<col style="width:${w}%" />`)
+          .join("");
+        const extraHead = detailed
+          ? [L.qty, L.unit, L.unitPrice, L.discount, L.tax, L.lineTotal]
+              .map((h) => `<th class="num">${escapeHtml(h)}</th>`)
+              .join("")
+          : "";
+        const itemRowsHtml = (r) => {
+          if (!detailed || !r.items?.length) return "";
+          const lines = r.items
+            .map(
+              (it) => `
+          <tr class="item">
+            ${E(2)}
+            <td class="indent">${escapeHtml(it.name || "")}${
+              it.description ? ` — ${escapeHtml(it.description)}` : ""
+            }</td>
+            ${E(6)}
+            <td class="num">${it.quantity ?? ""}</td>
+            <td>${escapeHtml(it.unit_name || "")}</td>
+            <td class="num">${fmtMoney(it.price)}</td>
+            <td class="num">${it.discount ? fmtMoney(it.discount) : ""}</td>
+            <td class="num">${it.taxValue ? fmtMoney(it.taxValue) : ""}</td>
+            <td class="num">${fmtMoney(it.line_total)}</td>
+          </tr>`,
+            )
+            .join("");
+          const foot =
+            r.doc_discount || r.doc_tax_value
+              ? `
+          <tr class="item foot">
+            ${E(2)}
+            <td class="indent">${escapeHtml(L.invoiceLevel)}</td>
+            ${E(9)}
+            <td class="num">${r.doc_discount ? fmtMoney(r.doc_discount) : ""}</td>
+            <td class="num">${r.doc_tax_value ? fmtMoney(r.doc_tax_value) : ""}</td>
+            <td></td>
+          </tr>`
+              : "";
+          return lines + foot;
+        };
+        // ---- end NEW ----
+
         const broughtForwardHtml = statement.period.startDate
           ? `
           <tr class="bf">
@@ -873,6 +988,7 @@ export default function registerPartyHistoryIPC() {
             <td class="num"></td>
             <td class="num"></td>
            <td class="num">${balanceCell(statement.broughtForward)}</td>
+           ${pad}
           </tr>`
           : "";
 
@@ -883,7 +999,7 @@ export default function registerPartyHistoryIPC() {
               ? `${fmtMoney(fund.amount)} ${escapeHtml(fund.unit)}`
               : "";
             return `
-          <tr>
+          <tr class="${detailed && r.items?.length ? "has-items" : ""}">
             <td>${escapeHtml(formatType(L, r))}</td>
             <td class="nowrap">${escapeHtml(formatExportDate(r.date))}</td>
             <td>${escapeHtml(formatDescription(r))}</td>
@@ -893,7 +1009,8 @@ export default function registerPartyHistoryIPC() {
             <td class="num">${r.credit ? fmtMoney(r.credit) : ""}</td>
             <td class="num">${r.credit ? fxText : ""}</td>
            <td class="num">${balanceCell(r.balance)}</td>
-          </tr>`;
+           ${pad}
+          </tr>${itemRowsHtml(r)}`;
           })
           .join("");
 
@@ -927,7 +1044,7 @@ export default function registerPartyHistoryIPC() {
           <head>
             <meta charset="UTF-8" />
             <style>
-               @page { size: A4; margin: 10mm 8mm 14mm; }
+               @page { size: A4${detailed ? " landscape" : ""}; margin: 10mm 8mm 14mm; }
               * { box-sizing: border-box; }
               body {
                 font-family: "Segoe UI", Tahoma, Arial, sans-serif;
@@ -1001,6 +1118,10 @@ export default function registerPartyHistoryIPC() {
            .nowrap { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
               .side { color: #64748b; font-size: 7.5px; margin-inline-start: 2px; }
               tr.bf td { font-style: italic; font-weight: 700; background: #f8fafc; }
+              tr.has-items td { font-weight: 700; }
+              tr.item td { color: #64748b; font-size: 7px; border-bottom: 1px dotted #e5e7eb; }
+              tr.item td.indent { padding-inline-start: 12px; }
+              tr.item.foot td { font-style: italic; }
               tfoot td { font-weight: 700; border-bottom: none; }
               tfoot tr.totals td { border-top: 1.5px solid #1c2340; }
               tfoot tr.closing td { background: #eef3ff; }
@@ -1022,17 +1143,7 @@ export default function registerPartyHistoryIPC() {
             </div>
 
             <table class="lines">
-              <colgroup>
-                <col style="width:9%" />
-                <col style="width:9%" />
-                <col style="width:21%" />
-                <col style="width:12%" />
-                <col style="width:10%" />
-                <col style="width:10%" />
-                <col style="width:10%" />
-                <col style="width:10%" />
-                <col style="width:9%" />
-              </colgroup>
+              <colgroup>${colgroupHtml}</colgroup>
               <thead>
                 <tr>
                  <th class="col-type">${escapeHtml(L.type)}</th>
@@ -1044,6 +1155,7 @@ export default function registerPartyHistoryIPC() {
                   <th class="col-credit num">${escapeHtml(L.credit)}</th>
                   <th class="col-cfx num">${escapeHtml(L.fundAmount)}</th>
                   <th class="col-bal num">${escapeHtml(L.balance)}</th>
+                  ${extraHead}
                 </tr>
               </thead>
               <tbody>
@@ -1061,6 +1173,7 @@ export default function registerPartyHistoryIPC() {
                   <td class="num">${fmtMoney(statement.totals.credit)}</td>
                   <td class="num"></td>
                   <td class="num"></td>
+                  ${pad}
                 </tr>
                 <tr class="closing">
                  <td>${escapeHtml(closingLabel)}</td>
@@ -1072,6 +1185,7 @@ export default function registerPartyHistoryIPC() {
                   <td class="num"></td>
                   <td class="num"></td>
                   <td class="num">${balanceCell(statement.closing)}</td>
+                  ${pad}
                 </tr>
               </tfoot>
             </table>
