@@ -7,9 +7,11 @@ export default function createPayment(db, data) {
   // data.party_id / data.partyId IS the contact id. Resolve the legacy id
   // from it for the legacy party_id column; contact_id gets the contact
   // id directly.
+  const isPartner = data.party_type === "partner";
   const contactId = data.party_id || data.partyId || null;
-  const legacyPartyId =
-    contactId && data.party_type !== "partner"
+  const legacyPartyId = isPartner
+    ? contactId
+    : contactId
       ? ensureContactRole(db, contactId, data.party_type)
       : null;
 
@@ -90,7 +92,6 @@ export default function createPayment(db, data) {
     (data.party_type === "customer" && data.type === "expense") ||
     (data.party_type === "supplier" && data.type === "income");
 
-  const isPartner = data.party_type === "partner";
   const movementType = isPartner
     ? data.type === "income"
       ? "increase"
@@ -103,7 +104,7 @@ export default function createPayment(db, data) {
     createPartyHistory(db, {
       party_type: data.party_type,
       party_id: legacyPartyId,
-      contact_id: contactId,
+      contact_id: isPartner ? null : contactId,
       record_type: "payment",
       invoice_id: data.invoice_id,
       invoice_type: "payment",

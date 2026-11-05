@@ -9,6 +9,7 @@
 //                                < 0 → Cr (you owe the party)
 
 import { findLegacyContact } from "./contacts";
+import attachStatementItems from "./statementItems";
 
 const SUPPORTED_TYPES = ["customer", "supplier", "partner"];
 const ACCOUNT_ORDER = { customer: 0, supplier: 1, partner: 2 };
@@ -47,7 +48,7 @@ export function getPaymentKind(row) {
 
 export default function buildPartyStatement(
   db,
-  { parties, startDate, endDate },
+  { parties, startDate, endDate, detailed = false },
 ) {
   const list = (parties || []).filter(
     (p) => p?.partyId && SUPPORTED_TYPES.includes(p.partyType),
@@ -161,7 +162,9 @@ export default function buildPartyStatement(
         p.note,
         p.settlement_id,
 
-        COALESCE(si.invoice_name, pi.invoice_name, ex.invoice_name) AS invoice_name,
+        COALESCE(si.invoice_name, sr.invoice_name, pi.invoice_name, pr.invoice_name, ex.invoice_name) AS invoice_name,
+        COALESCE(si.discount, sr.discount, pi.discount, pr.discount, ex.discount, 0) AS doc_discount,
+        COALESCE(si.taxValue, sr.taxValue, pi.taxValue, pr.taxValue, ex.taxValue, 0) AS doc_tax_value,
 
         pay.fund_id AS payment_fund_id,
         pay.currency_code,
@@ -175,14 +178,24 @@ export default function buildPartyStatement(
       FROM party_history p
 
       LEFT JOIN sales_invoices si
-        ON p.record_type IN ('invoice','return')
-        AND p.invoice_type IN ('sales','sales_return')
+        ON p.record_type = 'invoice'
+        AND p.invoice_type = 'sales'
         AND si.id = p.invoice_id
 
+      LEFT JOIN sales_returns sr
+        ON p.record_type = 'return'
+        AND p.invoice_type = 'sales_return'
+        AND sr.id = p.invoice_id
+
       LEFT JOIN purchase_invoices pi
-        ON p.record_type IN ('invoice','return')
-        AND p.invoice_type IN ('purchase','purchase_return')
+        ON p.record_type = 'invoice'
+        AND p.invoice_type = 'purchase'
         AND pi.id = p.invoice_id
+
+      LEFT JOIN purchase_returns pr
+        ON p.record_type = 'return'
+        AND p.invoice_type = 'purchase_return'
+        AND pr.id = p.invoice_id
 
       LEFT JOIN expense ex
         ON p.record_type = 'invoice'
@@ -280,6 +293,9 @@ export default function buildPartyStatement(
         closingSide: balanceSide(accountClosing),
       };
     });
+
+  // Informational only — item lines never touch debit/credit/balance.
+  if (detailed) attachStatementItems(db, rows);
 
   return {
     period: { startDate: startDate || null, endDate: endDate || null },

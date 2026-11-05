@@ -26,6 +26,7 @@ const ExportModal = ({
   exporting = false,
   exportError = "",
   title,
+  allowDetailed = false,
 }) => {
   const { t, i18n } = useTranslation();
   const [startDate, setStartDate] = useState(
@@ -33,6 +34,7 @@ const ExportModal = ({
   );
   const [endDate, setEndDate] = useState(() => getDefaultDateRange().endDate);
   const [language, setLanguage] = useState(i18n.language?.slice(0, 2) || "en");
+  const [detailed, setDetailed] = useState(false);
 
   if (!isOpen) return null;
 
@@ -41,6 +43,7 @@ const ExportModal = ({
       startDate,
       endDate,
       language,
+      ...(allowDetailed ? { detailed } : {}),
     };
     if (format === "excel") onExportExcel?.(range);
     else onExportPdf?.(range);
@@ -108,6 +111,21 @@ const ExportModal = ({
             </select>
           </div>
         </div>
+
+        {allowDetailed && (
+          <label className="mb-5 flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-700">
+            <input
+              type="checkbox"
+              checked={detailed}
+              onChange={(e) => setDetailed(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-[#4663ff]"
+            />
+            {t(
+              "common.detailedExport",
+              "Detailed (show items under each document)",
+            )}
+          </label>
+        )}
 
         {exportError && (
           <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600">
