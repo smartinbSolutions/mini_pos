@@ -6,28 +6,28 @@ import { useTranslation } from "react-i18next";
 
 const VARIANTS = {
   blue: {
-    border: "border-[#e5ebff]",
-    bg: "bg-[#f8faff]",
-    icon: "text-[#4663ff]",
-    value: "text-slate-950",
+    border: "border-brand-100",
+    bg: "bg-brand-50/50",
+    icon: "text-brand-600",
+    value: "text-ink",
   },
   amber: {
-    border: "border-amber-100",
-    bg: "bg-amber-50/50",
-    icon: "text-amber-600",
-    value: "text-slate-950",
+    border: "border-warn-100",
+    bg: "bg-warn-50/50",
+    icon: "text-warn-600",
+    value: "text-ink",
   },
   violet: {
-    border: "border-violet-100",
-    bg: "bg-violet-50/50",
-    icon: "text-violet-600",
-    value: "text-slate-950",
+    border: "border-purple-100",
+    bg: "bg-purple-50/50",
+    icon: "text-purple-600",
+    value: "text-ink",
   },
   brand: {
-    border: "border-[#4663ff]/20",
-    bg: "bg-[#4663ff]/[0.06]",
-    icon: "text-[#4663ff]",
-    value: "text-[#4663ff]",
+    border: "border-brand-100",
+    bg: "bg-brand-50",
+    icon: "text-brand-600",
+    value: "text-brand-700",
   },
 };
 
@@ -80,9 +80,6 @@ export default function InvoiceListHeader({
         displayValue = match?.label ?? rawValue;
       }
 
-      // Search-type fields don't carry their full option list (it's a
-      // live-search result set, not a complete lookup table), so the
-      // display label comes from the field itself, supplied by the caller.
       if (field.type === "search") {
         displayValue = field.selectedLabel || rawValue;
       }
@@ -120,51 +117,51 @@ export default function InvoiceListHeader({
         : "md:grid-cols-2 lg:grid-cols-3";
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/80 bg-white/80 shadow-[0_12px_40px_rgba(70,99,255,0.10)] backdrop-blur">
-      <div className="grid gap-4 p-4 lg:grid-cols-2 lg:items-center">
+    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="grid gap-4 p-5 lg:grid-cols-2 lg:items-center">
         <div>
           {badgeLabel && (
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#eef3ff] px-2.5 py-0.5">
-              {BadgeIcon && <BadgeIcon size={11} className="text-[#4663ff]" />}
-              <span className="text-[10px] font-bold uppercase tracking-wide text-[#4663ff]">
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1">
+              {BadgeIcon && <BadgeIcon size={14} className="text-brand" />}
+              <span className="text-sm font-bold text-brand">
                 {badgeLabel}
               </span>
             </div>
           )}
-          <h1 className="text-2xl font-black leading-tight text-slate-950">
+          <h1 className="text-2xl font-black leading-tight text-ink">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-1.5 max-w-md text-xs leading-5 text-slate-500">
+            <p className="mt-1.5 max-w-md text-sm leading-6 text-ink-muted">
               {subtitle}
             </p>
           )}
         </div>
 
-        <div className={`grid gap-2 ${gridColsClass}`}>
+        <div className={`grid gap-2.5 ${gridColsClass}`}>
           {stats.map((stat, i) => {
             const variant = VARIANTS[stat.variant || "blue"];
             const StatIcon = stat.icon;
             return (
               <div
                 key={i}
-                className={`rounded-xl border ${variant.border} ${variant.bg} px-2.5 py-2.5`}
+                className={`rounded-2xl border ${variant.border} ${variant.bg} p-3`}
               >
                 {StatIcon ? (
-                  <StatIcon size={13} className={`mb-1.5 ${variant.icon}`} />
+                  <StatIcon size={16} className={`mb-1.5 ${variant.icon}`} />
                 ) : (
                   <div
-                    className={`mb-1.5 text-[10px] font-black ${variant.icon}`}
+                    className={`mb-1.5 text-sm font-bold ${variant.icon}`}
                   >
                     {stat.eyebrow}
                   </div>
                 )}
                 <div
-                  className={`text-base font-black tabular-nums ${variant.value}`}
+                  className={`text-lg font-black tabular-nums ${variant.value}`}
                 >
                   {stat.value}
                 </div>
-                <div className="text-[10px] font-semibold text-slate-500">
+                <div className="text-sm font-semibold text-ink-muted">
                   {stat.label}
                 </div>
               </div>
@@ -173,84 +170,94 @@ export default function InvoiceListHeader({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 border-t border-[#e5ebff] bg-white/60 p-3.5 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-3 border-t-2 border-slate-100 bg-slate-50/50 p-4 lg:flex-row lg:items-center">
         <div className="relative flex-1">
           <Search
-            size={15}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+            size={18}
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 rtl:left-auto rtl:right-3.5"
           />
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="h-9 w-full rounded-xl border border-[#dbe4ff] bg-white/90 pl-9 pr-3 text-xs outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12"
+            className="min-h-[48px] w-full rounded-2xl border-2 border-slate-200 bg-white px-4 pl-10 pr-4 text-base font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-4 focus:ring-brand-100 rtl:pl-4 rtl:pr-10"
             placeholder={searchPlaceholder}
           />
         </div>
 
         {filterFields.length > 0 && (
           <button
+            type="button"
             onClick={() => setShowFilters((prev) => !prev)}
-            className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
+            aria-label={t("ui.filters", "Filters")}
+            className={`inline-flex min-h-[48px] min-w-[48px] items-center justify-center gap-2 rounded-2xl border-2 px-4 text-sm font-bold transition ${
               showFilters || hasActiveFilters
-                ? "border-[#4663ff] bg-[#eef3ff] text-[#4663ff]"
-                : "border-[#dbe4ff] bg-white text-slate-600 hover:bg-[#eef3ff] hover:text-[#4663ff]"
+                ? "border-brand bg-brand-50 text-brand"
+                : "border-slate-200 bg-white text-ink-soft hover:bg-slate-50"
             }`}
           >
-            <SlidersHorizontal size={14} />
+            <SlidersHorizontal size={18} />
+            <span className="hidden sm:inline">{t("ui.filters", "Filters")}</span>
             {hasActiveFilters && (
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#4663ff] text-[9px] font-black text-white">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-sm font-black text-white">
                 {activeEntries.length}
               </span>
             )}
           </button>
         )}
+
         {extraActions}
+
         <button
+          type="button"
           onClick={onRefresh}
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#dbe4ff] bg-white px-3 text-xs font-bold text-slate-600 transition hover:border-[#cbd7ff] hover:bg-[#eef3ff] hover:text-[#4663ff]"
+          aria-label={t("common.refresh", "Refresh")}
+          className="inline-flex min-h-[48px] min-w-[48px] items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-4 text-sm font-bold text-ink-soft transition hover:bg-slate-50 hover:text-ink"
         >
-          <RefreshCw size={14} />
+          <RefreshCw size={18} />
         </button>
 
         {onAdd && (
           <button
+            type="button"
             onClick={onAdd}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-xs font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+            className="ui-btn ui-btn-brand min-h-[48px] px-5"
           >
-            {AddIcon && <AddIcon size={14} />}
-            {addLabel}
+            {AddIcon && <AddIcon size={18} />}
+            <span>{addLabel}</span>
           </button>
         )}
       </div>
 
       {hasActiveFilters && (
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-[#e5ebff] bg-white/40 px-3.5 py-2.5">
-          <Filter size={12} className="shrink-0 text-slate-400" />
+        <div className="flex flex-wrap items-center gap-2 border-t-2 border-slate-100 bg-white px-4 py-3">
+          <Filter size={16} className="shrink-0 text-slate-400" />
           {activeEntries.map((entry) => (
             <span
               key={entry.name}
-              className="inline-flex items-center gap-1 rounded-full border border-[#dbe4ff] bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm"
+              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1 text-sm font-semibold text-ink shadow-sm"
             >
-              <span className="text-slate-400">{entry.label}:</span>
-              <span className="font-bold text-[#4663ff]">{entry.value}</span>
+              <span className="text-ink-muted">{entry.label}:</span>
+              <span className="font-bold text-brand">{entry.value}</span>
               <button
+                type="button"
                 onClick={() => {
                   onFilterChange(entry.name, entry.isMultiselect ? [] : "");
                   entry.onClear?.();
                 }}
-                className="ms-0.5 rounded-full p-0.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                className="ms-1 flex h-6 w-6 items-center justify-center rounded-lg text-slate-400 transition hover:bg-danger-50 hover:text-danger"
               >
-                <X size={11} />
+                <X size={14} />
               </button>
             </span>
           ))}
 
           {onClearFilters && (
             <button
+              type="button"
               onClick={onClearFilters}
-              className="ms-1 inline-flex items-center gap-1 text-[11px] font-bold text-red-500 transition hover:text-red-600"
+              className="ms-2 inline-flex min-h-[36px] items-center gap-1 text-sm font-bold text-danger transition hover:underline"
             >
-              <X size={11} />
+              <X size={14} />
               {clearLabel || t("common.clear")}
             </button>
           )}
@@ -259,19 +266,19 @@ export default function InvoiceListHeader({
 
       {showFilters && filterFields.length > 0 && (
         <div
-          className={`grid grid-cols-2 gap-3 border-t border-[#e5ebff] bg-white/60 p-3.5 ${filterGridColsClass}`}
+          className={`grid grid-cols-1 gap-3.5 border-t-2 border-slate-100 bg-slate-50/70 p-4 sm:grid-cols-2 ${filterGridColsClass}`}
         >
           {filterFields.map((field) => {
             const isActive = isFieldActive(filters?.[field.name]);
 
-            const fieldWrapperClass = "flex flex-col gap-1";
-            const labelClass = `text-[10px] font-bold uppercase tracking-wide ${
-              isActive ? "text-[#4663ff]" : "text-slate-400"
+            const fieldWrapperClass = "flex flex-col gap-1.5";
+            const labelClass = `text-sm font-bold ${
+              isActive ? "text-brand" : "text-ink-soft"
             }`;
-            const inputBaseClass = `h-9 rounded-lg border bg-white px-2.5 text-xs outline-none transition focus:ring-[3px] focus:ring-[#4663ff]/12 ${
+            const inputBaseClass = `min-h-[48px] rounded-2xl border-2 bg-white px-3 text-sm font-semibold outline-none transition focus:ring-4 focus:ring-brand-100 ${
               isActive
-                ? "border-[#4663ff]/40 bg-[#f8faff]"
-                : "border-[#dbe4ff] focus:border-[#4663ff]"
+                ? "border-brand bg-brand-50/30 text-ink"
+                : "border-slate-200 text-ink focus:border-brand"
             }`;
 
             if (field.type === "date") {
@@ -302,12 +309,6 @@ export default function InvoiceListHeader({
               );
             }
 
-            // Live-search filter — for fields with too many options to load
-            // as a flat list (products, customers, etc). The caller owns
-            // the option list and re-fetches it on every keystroke via
-            // field.onInputChange; the caller also owns the display label
-            // via field.selectedLabel, since the selected item may not be
-            // present in the current (search-scoped) options list.
             if (field.type === "search") {
               return (
                 <div key={field.name} className={fieldWrapperClass}>
@@ -358,24 +359,24 @@ export default function InvoiceListHeader({
                 <div key={field.name} className={fieldWrapperClass}>
                   <label className={labelClass}>{field.label}</label>
                   <div
-                    className={`flex min-h-9 flex-wrap items-center gap-1 rounded-lg border bg-white px-1.5 py-1 ${
+                    className={`flex min-h-[48px] flex-wrap items-center gap-1.5 rounded-2xl border-2 bg-white px-2 py-1.5 ${
                       isActive
-                        ? "border-[#4663ff]/40 bg-[#f8faff]"
-                        : "border-[#dbe4ff]"
+                        ? "border-brand bg-brand-50/20"
+                        : "border-slate-200"
                     }`}
                   >
                     {selectedOptions.map((opt) => (
                       <span
                         key={opt.value}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#4663ff]/20 bg-[#eef3ff] px-1.5 py-0.5 text-[11px] font-bold text-[#4663ff]"
+                        className="inline-flex min-h-[32px] shrink-0 items-center gap-1.5 rounded-xl border border-brand-100 bg-brand-50 px-2.5 py-0.5 text-sm font-bold text-brand"
                       >
                         {opt.label}
                         <button
                           type="button"
                           onClick={() => removeOption(opt.value)}
-                          className="rounded p-0.5 text-[#4663ff]/60 transition hover:bg-white hover:text-red-600"
+                          className="flex h-5 w-5 items-center justify-center rounded-lg text-brand/70 transition hover:bg-white hover:text-danger"
                         >
-                          <X size={10} />
+                          <X size={12} />
                         </button>
                       </span>
                     ))}
@@ -383,7 +384,7 @@ export default function InvoiceListHeader({
                     <select
                       value=""
                       onChange={(e) => addOption(e.target.value)}
-                      className="h-7 min-w-[5.5rem] flex-1 rounded-md border-none bg-transparent px-1 text-xs text-slate-500 outline-none focus:ring-0"
+                      className="min-h-[36px] min-w-[6rem] flex-1 rounded-xl border-none bg-transparent px-2 text-sm font-semibold text-ink-muted outline-none focus:ring-0"
                     >
                       <option value="">
                         {selectedOptions.length > 0

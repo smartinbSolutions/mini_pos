@@ -28,7 +28,7 @@ const Num = ({ children, className = "" }) => (
 
 const Field = ({ label, children }) => (
   <label className="block">
-    <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+    <span className="mb-1.5 block text-sm font-bold text-ink-soft">
       {label}
     </span>
     {children}
@@ -45,14 +45,14 @@ const DirectionCard = ({
 }) => {
   const tones = {
     green: {
-      active: "border-emerald-400 bg-emerald-50 ring-4 ring-emerald-100",
-      icon: "text-emerald-600",
-      title: "text-emerald-700",
+      active: "border-ok bg-ok-50 ring-4 ring-ok-100",
+      icon: "text-ok-600",
+      title: "text-ok-700",
     },
     red: {
-      active: "border-red-400 bg-red-50 ring-4 ring-red-100",
-      icon: "text-red-600",
-      title: "text-red-700",
+      active: "border-danger bg-danger-50 ring-4 ring-danger-100",
+      icon: "text-danger-600",
+      title: "text-danger-700",
     },
   }[tone];
 
@@ -60,25 +60,25 @@ const DirectionCard = ({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-start gap-2.5 rounded-2xl border-2 p-3 text-start transition ${
+      className={`flex min-h-[52px] items-start gap-3 rounded-2xl border-2 p-3 text-start transition ${
         selected
           ? tones.active
-          : "border-gray-200 bg-white hover:border-gray-300"
+          : "border-slate-200 bg-white hover:border-slate-300"
       }`}
     >
       <Icon
-        size={20}
-        className={`mt-0.5 shrink-0 ${selected ? tones.icon : "text-gray-400"}`}
+        size={22}
+        className={`mt-0.5 shrink-0 ${selected ? tones.icon : "text-slate-400"}`}
       />
       <span className="min-w-0">
         <span
-          className={`block text-xs font-black ${
-            selected ? tones.title : "text-gray-600"
+          className={`block text-sm font-black ${
+            selected ? tones.title : "text-ink"
           }`}
         >
           {title}
         </span>
-        <span className="mt-0.5 block text-[11px] leading-snug text-slate-500">
+        <span className="mt-0.5 block text-sm leading-snug text-ink-muted">
           {hint}
         </span>
       </span>
@@ -107,11 +107,11 @@ const ContactFormModal = ({
   const originalRef = useRef(null);
 
   const inputClass =
-    "w-full rounded-xl border border-[#dbe4ff] bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#4663ff] focus:ring-4 focus:ring-[#4663ff]/10";
+    "min-h-[48px] w-full rounded-2xl border-2 border-slate-200 bg-white px-3.5 text-base font-medium text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand-100";
   const primaryButtonClass =
-    "flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-[#4663ff]/20 transition hover:bg-[#3854e8] disabled:opacity-50";
+    "ui-btn ui-btn-brand min-h-[48px] px-5";
   const ghostButtonClass =
-    "flex items-center gap-1.5 rounded-xl border border-[#dbe4ff] bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-[#eef3ff] hover:text-[#4663ff]";
+    "inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-1.5 text-sm font-bold text-ink-soft transition hover:bg-slate-50 hover:text-ink";
 
   const set = (patch) => setForm((prev) => ({ ...prev, ...patch }));
 
@@ -139,28 +139,21 @@ const ContactFormModal = ({
   const balanceDate = form.date || defaultOpeningDate();
   const summaryName = form.name?.trim() || "—";
 
-  // Reset local UI state each time the modal opens / closes
+  // Cache the opening balance as it came in when the modal opened so
+  // "Undo delete" or "Cancel edit" can put it back.
   useEffect(() => {
-    if (open) {
-      if (!form.date) set({ date: defaultOpeningDate() });
-      setExpanded(!isEdit && Number(form.opening_balance || 0) !== 0);
-    } else {
-      originalRef.current = null;
-      setExpanded(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+    if (!open) return;
+    originalRef.current = {
+      opening_balance: form.opening_balance,
+      balance_type: form.balance_type,
+      date: form.date,
+      hasOpeningBalance: form.hasOpeningBalance,
+    };
+    // New contact with an initial balance starts expanded; edit starts collapsed
+    setExpanded(!isEdit && Number(form.opening_balance || 0) > 0);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Snapshot the stored balance once it arrives (loaded async in startEdit)
-  useEffect(() => {
-    if (open && form.hasOpeningBalance && !originalRef.current) {
-      originalRef.current = {
-        opening_balance: form.opening_balance,
-        balance_type: form.balance_type,
-        date: form.date,
-      };
-    }
-  }, [open, form.hasOpeningBalance]);
+  if (!open) return null;
 
   const restoreOriginal = () => {
     if (originalRef.current) set(originalRef.current);
@@ -168,61 +161,62 @@ const ContactFormModal = ({
   };
 
   const cancelBalanceEdit = () => {
-    if (hasExisting) {
-      restoreOriginal();
+    if (hasExisting && originalRef.current) {
+      set(originalRef.current);
     } else {
-      set({ opening_balance: "" });
-      setExpanded(false);
+      set({ opening_balance: "", balance_type: "increase", date: "" });
     }
+    setExpanded(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    const result = await onSubmit(e);
-    if (result !== false) onClose();
+    onSubmit();
   };
 
-  if (!open) return null;
-
-  const directionLabel = theyOweYouSelected ? theyOweYouTitle : youOweThemTitle;
+  const directionLabel = theyOweYouSelected
+    ? theyOweYouTitle
+    : youOweThemTitle;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#1c2340]/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
       <div
-        className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-[28px] bg-white shadow-[0_24px_80px_rgba(28,35,64,0.35)]"
+        className="relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#e9edfb] bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_100%)] px-6 py-5">
+        <div className="flex items-center justify-between border-b-2 border-slate-100 bg-slate-50/50 px-6 py-5">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#4663ff]/10 text-[#4663ff]">
-              <UserRound size={18} />
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-50 text-brand">
+              <UserRound size={22} />
             </span>
             <div className="min-w-0">
-              <h3 className="text-base font-black text-slate-950">{title}</h3>
-              <p className="truncate text-xs text-slate-500">{subtitle}</p>
+              <h3 className="text-lg font-black text-ink">{title}</h3>
+              {subtitle && (
+                <p className="truncate text-sm text-ink-muted">{subtitle}</p>
+              )}
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2 text-slate-400 transition hover:bg-[#eef3ff] hover:text-slate-700"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl text-ink-muted transition hover:bg-slate-100 hover:text-ink"
             title={t("common.close")}
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
             {actionError && (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div className="rounded-2xl border border-danger-100 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700">
                 {actionError}
               </div>
             )}
 
             {/* Contact details */}
-            <section className="space-y-3">
+            <section className="space-y-3.5">
               <Field label={t("ui.name")}>
                 <input
                   required
@@ -261,7 +255,7 @@ const ContactFormModal = ({
                     className={inputClass}
                     placeholder="0"
                   />
-                  <span className="mt-1 block text-[11px] text-slate-400">
+                  <span className="mt-1.5 block text-sm font-medium text-ink-muted">
                     {t("screens.contacts.maxPercentageAllowed", {
                       value: remainingPercentage,
                     })}
@@ -279,73 +273,73 @@ const ContactFormModal = ({
             </section>
 
             {/* Opening balance */}
-            <section className="rounded-2xl border border-[#e9edfb] bg-[#f8faff] p-4">
-              <div className="flex items-start gap-2.5">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#4663ff] shadow-sm">
-                  <Wallet size={15} />
+            <section className="rounded-3xl border-2 border-slate-200 bg-slate-50/50 p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-brand shadow-sm">
+                  <Wallet size={18} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-700">
+                  <p className="text-base font-bold text-ink">
                     {t("ui.opening_balance")}
-                    <span className="ms-1.5 text-[11px] font-medium text-slate-400">
+                    <span className="ms-1.5 text-sm font-medium text-ink-muted">
                       ({t("ui.optional")})
                     </span>
                   </p>
-                  <p className="mt-0.5 text-xs leading-snug text-slate-500">
+                  <p className="mt-0.5 text-sm leading-snug text-ink-muted">
                     {t("screens.contacts.openingBalanceExplain")}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-3">
+              <div className="mt-3.5">
                 {/* 1. Existing balance, collapsed: summary + Change / Delete */}
                 {hasExisting && !expanded && !markedForRemoval && (
                   <div
-                    className={`rounded-xl border bg-white p-3 ${
+                    className={`rounded-2xl border-2 bg-white p-3.5 ${
                       theyOweYouSelected
-                        ? "border-emerald-200"
-                        : "border-red-200"
+                        ? "border-ok bg-ok-50/20"
+                        : "border-danger bg-danger-50/20"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                        <p className="text-sm font-bold text-ink-muted">
                           {t("screens.contacts.openingBalanceOnRecord")}
                         </p>
                         <p
-                          className={`mt-0.5 text-lg font-black ${
+                          className={`mt-0.5 text-xl font-black ${
                             theyOweYouSelected
-                              ? "text-emerald-600"
-                              : "text-red-600"
+                              ? "text-ok-600"
+                              : "text-danger-600"
                           }`}
                         >
                           <Num>{amount}</Num>
                         </p>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs font-medium text-slate-500">
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm font-medium text-ink-muted">
                           <span>{directionLabel}</span>
                           <span className="text-slate-300">•</span>
                           <span className="flex items-center gap-1">
-                            <Calendar size={11} />
+                            <Calendar size={13} />
                             <Num>{balanceDate}</Num>
                           </span>
                         </p>
                       </div>
 
-                      <div className="flex shrink-0 flex-col gap-1.5">
+                      <div className="flex shrink-0 flex-col gap-2">
                         <button
                           type="button"
                           onClick={() => setExpanded(true)}
                           className={ghostButtonClass}
                         >
-                          <Pencil size={12} />
+                          <Pencil size={14} />
                           {t("screens.contacts.changeOpeningBalance")}
                         </button>
                         <button
                           type="button"
                           onClick={() => set({ opening_balance: "" })}
-                          className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-500 transition hover:bg-red-50"
+                          className="flex min-h-[44px] items-center gap-1.5 rounded-xl border border-danger-100 bg-white px-3.5 py-1.5 text-sm font-bold text-danger transition hover:bg-danger-50"
                         >
-                          <Trash2 size={12} />
+                          <Trash2 size={14} />
                           {t("common.delete")}
                         </button>
                       </div>
@@ -355,17 +349,17 @@ const ContactFormModal = ({
 
                 {/* 2. Existing balance marked for removal: notice + Undo */}
                 {markedForRemoval && (
-                  <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
-                    <span className="flex items-start gap-2 text-xs font-bold text-red-700">
-                      <Trash2 size={14} className="mt-0.5 shrink-0" />
+                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-danger-100 bg-danger-50 px-4 py-3">
+                    <span className="flex items-start gap-2 text-sm font-bold text-danger-700">
+                      <Trash2 size={16} className="mt-0.5 shrink-0" />
                       {t("screens.contacts.openingBalanceWillBeRemoved")}
                     </span>
                     <button
                       type="button"
                       onClick={restoreOriginal}
-                      className="flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-bold text-red-600 shadow-sm transition hover:bg-red-100"
+                      className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-xl bg-white px-3.5 py-1 text-sm font-bold text-danger shadow-sm transition hover:bg-danger-100"
                     >
-                      <RotateCcw size={12} />
+                      <RotateCcw size={14} />
                       {t("common.undo")}
                     </button>
                   </div>
@@ -376,16 +370,16 @@ const ContactFormModal = ({
                   <button
                     type="button"
                     onClick={() => setExpanded(true)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#4663ff]/40 bg-white py-2.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                    className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-brand/40 bg-white py-2.5 text-sm font-bold text-brand transition hover:bg-brand-50"
                   >
-                    <Plus size={14} />
+                    <Plus size={16} />
                     {t("screens.contacts.addOpeningBalance")}
                   </button>
                 )}
 
                 {/* 4. Expanded: amount, direction, date, summary */}
                 {expanded && !markedForRemoval && (
-                  <div className="space-y-3">
+                  <div className="space-y-3.5">
                     <Field label={t("ui.amount")}>
                       <NumberInput
                         value={form.opening_balance}
@@ -396,10 +390,10 @@ const ContactFormModal = ({
                     </Field>
 
                     <div>
-                      <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                      <span className="mb-1.5 block text-sm font-bold text-ink-soft">
                         {t("screens.contacts.directionQuestion")}
                       </span>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <DirectionCard
                           selected={theyOweYouSelected}
                           tone="green"
@@ -427,20 +421,20 @@ const ContactFormModal = ({
                         onChange={(e) => set({ date: e.target.value })}
                         className={inputClass}
                       />
-                      <span className="mt-1 block text-[11px] text-slate-400">
+                      <span className="mt-1.5 block text-sm text-ink-muted">
                         {t("screens.contacts.balanceAsOfHint")}
                       </span>
                     </Field>
 
                     {amount !== 0 && (
                       <div
-                        className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-xs font-bold ${
+                        className={`flex items-start gap-2.5 rounded-2xl border px-3.5 py-3 text-sm font-bold ${
                           theyOweYouSelected
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border-red-200 bg-red-50 text-red-700"
+                            ? "border-ok-100 bg-ok-50 text-ok-700"
+                            : "border-danger-100 bg-danger-50 text-danger-700"
                         }`}
                       >
-                        <Info size={14} className="mt-0.5 shrink-0" />
+                        <Info size={16} className="mt-0.5 shrink-0" />
                         <span>
                           {theyOweYouSelected
                             ? label(
@@ -471,7 +465,7 @@ const ContactFormModal = ({
                         onClick={cancelBalanceEdit}
                         className={ghostButtonClass}
                       >
-                        <X size={12} />
+                        <X size={14} />
                         {t("common.cancel")}
                       </button>
                     </div>
@@ -482,11 +476,11 @@ const ContactFormModal = ({
           </div>
 
           {/* Footer */}
-          <div className="flex gap-2 border-t border-[#e9edfb] bg-[#f8faff] px-6 py-4">
+          <div className="flex gap-3 border-t-2 border-slate-100 bg-slate-50/50 px-6 py-4">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-[#dbe4ff] bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-[#eef3ff]"
+              className="ui-btn ui-btn-soft min-h-[48px] px-5"
             >
               {t("common.cancel")}
             </button>
@@ -494,7 +488,7 @@ const ContactFormModal = ({
               disabled={saving}
               className={`flex-1 ${primaryButtonClass}`}
             >
-              {isEdit ? <Save size={15} /> : <Plus size={15} />}
+              {isEdit ? <Save size={18} /> : <Plus size={18} />}
               {saving ? t("common.saving") : submitLabel}
             </button>
           </div>

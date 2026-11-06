@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 const SearchableSelect = ({
   label,
   labelWidth = "20",
-  height = "2.75",
+  height = "3", // default 3rem (48px)
   placeholder,
   options,
   selectedValue,
@@ -17,7 +17,7 @@ const SearchableSelect = ({
   getOptionLabel = (option) => option.name,
   disableTyping = false,
   onKeyDown,
-  serverFiltered = false, // ← new
+  serverFiltered = false,
 }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +35,7 @@ const SearchableSelect = ({
     top: 0,
     left: 0,
     width: 0,
-    maxHeight: 192,
+    maxHeight: 240,
   });
 
   const menuRef = useRef(null);
@@ -108,12 +108,12 @@ const SearchableSelect = ({
 
     const rect = el.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
-    const desiredMaxHeight = 192;
+    const desiredMaxHeight = 240;
     const spaceBelow = viewportHeight - rect.bottom - 8;
     const spaceAbove = rect.top - 8;
-    const openUp = spaceBelow < 140 && spaceAbove > spaceBelow;
+    const openUp = spaceBelow < 160 && spaceAbove > spaceBelow;
     const maxHeight = Math.max(
-      120,
+      140,
       Math.min(desiredMaxHeight, openUp ? spaceAbove : spaceBelow),
     );
 
@@ -148,44 +148,34 @@ const SearchableSelect = ({
     };
   }, [isOpen]);
 
-  // useEffect(() => {
-  //   const handleClickOutside = (event) => {
-  //     if (!rootRef.current) return;
-  //     if (!rootRef.current.contains(event.target)) setIsOpen(false);
-  //   };
-
-  //   document.addEventListener("mousedown", handleClickOutside);
-  //   return () => document.removeEventListener("mousedown", handleClickOutside);
-  // }, []);
+  const hasLabel = Boolean(label && String(label).trim().length > 0 && labelWidth !== "0");
 
   return (
     <div className="relative w-full" ref={rootRef}>
       <div className="flex items-center">
-        {label && (
+        {hasLabel && (
           <span
-            className="flex items-center rounded-l-2xl border border-r-0 border-slate-200 bg-slate-100 px-3 text-left text-sm font-bold text-slate-700"
+            className="flex items-center rounded-l-2xl border-2 border-r-0 border-slate-200 bg-slate-100 px-3.5 text-left text-sm font-bold text-ink-soft min-h-[48px]"
             style={{
               width: `${labelWidth}%`,
               height: `${height}rem`,
-              minHeight: 0,
             }}
           >
             {label}
           </span>
         )}
 
-        <div className="relative" style={{ width: `${100 - labelWidth}%` }}>
+        <div className="relative" style={{ width: hasLabel ? `${100 - Number(labelWidth)}%` : "100%" }}>
           <input
             ref={inputRef}
             type="text"
             disabled={disabled}
             readOnly={disableTyping}
-            className={`w-full border bg-slate-50 px-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100 ${
-              label ? "rounded-r-2xl" : "rounded-2xl"
-            } ${error ? "border-red-300" : "border-slate-200"}`}
+            className={`w-full min-h-[48px] border-2 bg-slate-50 px-3.5 text-base font-medium text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${
+              hasLabel ? "rounded-r-2xl" : "rounded-2xl"
+            } ${error ? "border-danger" : "border-slate-200"}`}
             style={{
               height: `${height}rem`,
-              minHeight: 0,
             }}
             placeholder={placeholder}
             value={searchQuery}
@@ -208,7 +198,7 @@ const SearchableSelect = ({
         createPortal(
           <div
             ref={menuRef}
-            className="z-[9999] flex flex-col rounded-2xl border border-slate-200 bg-white py-2 shadow-xl"
+            className="z-[9999] flex flex-col rounded-2xl border-2 border-slate-200 bg-white py-1.5 shadow-2xl"
             style={{
               position: "fixed",
               top: menuRect.top,
@@ -223,15 +213,15 @@ const SearchableSelect = ({
                 <button
                   type="button"
                   key={option.id || option._id}
-                  className="cursor-pointer px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-slate-100"
+                  className="flex min-h-[44px] cursor-pointer items-center px-4 py-2 text-start text-sm font-medium text-ink hover:bg-brand-50 hover:text-brand focus:bg-brand-50 focus:text-brand outline-none transition"
                   onClick={() => handleSelect(option)}
                 >
                   {getOptionLabel(option)}
                 </button>
               ))
             ) : (
-              <div className="px-4 py-2 text-xs text-slate-500">
-                {t("ui.noOptionsFound")}
+              <div className="flex min-h-[44px] items-center px-4 py-2 text-sm text-slate-500">
+                {t("ui.noOptionsFound", "No options found")}
               </div>
             )}
           </div>,

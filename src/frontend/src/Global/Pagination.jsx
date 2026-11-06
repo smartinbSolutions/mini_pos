@@ -1,9 +1,12 @@
 import React from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 const LIMIT_OPTIONS = [5, 10, 20, 50, 100];
 
+// Shared pagination matching POSPagination's clear, touch-friendly style:
+// Previous / Page X of Y / Next.
+// Also supports limit selector when onLimitChange is passed.
 export default function Pagination({
   page,
   totalPages,
@@ -14,42 +17,32 @@ export default function Pagination({
 }) {
   const { t } = useTranslation();
 
-  if (!total) return null;
+  if (!total && totalPages <= 1) return null;
 
-  const start = (page - 1) * limit + 1;
-  const end = Math.min(page * limit, total);
-
-  const pages = [];
-  const windowSize = 1;
-  for (let p = 1; p <= totalPages; p++) {
-    if (
-      p === 1 ||
-      p === totalPages ||
-      (p >= page - windowSize && p <= page + windowSize)
-    ) {
-      pages.push(p);
-    } else if (pages[pages.length - 1] !== "…") {
-      pages.push("…");
-    }
-  }
+  const prevText = t("simple.pos.prevPage", "Previous");
+  const nextText = t("simple.pos.nextPage", "Next");
+  const pageOfText = t("simple.pos.pageOf", {
+    page,
+    total: totalPages,
+    defaultValue: `Page ${page} of ${totalPages}`,
+  });
 
   return (
-    <div className="flex flex-col gap-3 border-t border-[#e5ebff] bg-white/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <nav
+      aria-label={t("simple.pos.pages", "Pages")}
+      className="flex flex-col gap-3 border-t-2 border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+    >
       <div className="flex items-center gap-3">
-        {/* <p className="text-xs font-semibold text-slate-500">
-          {t("common.showingRange", { start, end, total }) ||
-            `Showing ${start}–${end} of ${total}`}
-        </p> */}
-
         {onLimitChange && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-400">
-              {t("common.perPage") || "Per page"}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-ink-muted">
+              {t("common.perPage", "Per page")}
             </span>
             <select
               value={limit}
               onChange={(e) => onLimitChange(Number(e.target.value))}
-              className="h-8 rounded-lg border border-[#dbe4ff] bg-white px-2 text-xs font-bold text-slate-600 outline-none transition focus:border-[#4663ff]"
+              aria-label={t("common.perPage", "Per page")}
+              className="h-11 rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-bold text-ink outline-none transition focus:border-brand focus:ring-4 focus:ring-brand-100"
             >
               {LIMIT_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -62,44 +55,35 @@ export default function Pagination({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center gap-1">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:flex sm:items-center sm:gap-4">
           <button
+            type="button"
             onClick={() => onPageChange(page - 1)}
             disabled={page <= 1}
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:cursor-not-allowed disabled:opacity-40"
+            className="ui-btn ui-btn-soft min-h-[48px] px-4 disabled:hover:border-slate-200 disabled:hover:bg-white"
           >
-            <ChevronRight size={16} />
+            <ChevronLeft size={20} className="rtl:rotate-180" />
+            <span>{prevText}</span>
           </button>
 
-          {pages.map((p, i) =>
-            p === "…" ? (
-              <span key={`ellipsis-${i}`} className="px-2 text-slate-400">
-                …
-              </span>
-            ) : (
-              <button
-                key={p}
-                onClick={() => onPageChange(p)}
-                className={`h-9 min-w-9 rounded-xl px-3 text-sm font-bold transition ${
-                  p === page
-                    ? "bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25"
-                    : "text-slate-600 hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                }`}
-              >
-                {p}
-              </button>
-            )
-          )}
+          <p
+            aria-live="polite"
+            className="px-2 text-center text-base font-black text-ink whitespace-nowrap"
+          >
+            {pageOfText}
+          </p>
 
           <button
+            type="button"
             onClick={() => onPageChange(page + 1)}
             disabled={page >= totalPages}
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] disabled:cursor-not-allowed disabled:opacity-40"
+            className="ui-btn ui-btn-soft min-h-[48px] px-4 disabled:hover:border-slate-200 disabled:hover:bg-white"
           >
-            <ChevronLeft size={16} />
+            <span>{nextText}</span>
+            <ChevronLeft size={20} className="rotate-180 rtl:rotate-0" />
           </button>
         </div>
       )}
-    </div>
+    </nav>
   );
 }

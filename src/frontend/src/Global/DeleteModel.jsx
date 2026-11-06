@@ -30,27 +30,29 @@ const DeleteModal = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         onClick={onClose}
-        className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/50 backdrop-blur-sm"
       />
 
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-red-100 bg-white shadow-2xl animate-in fade-in zoom-in-95"
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl animate-in fade-in zoom-in-95"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-red-100 bg-red-50 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600">
-              <AlertTriangle size={22} />
-            </div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-danger-50 text-danger-600">
+              <AlertTriangle size={28} />
+            </span>
 
             <div>
-              <h2 className="text-lg font-black text-slate-950">
+              <h2 className="text-xl font-black text-ink">
                 {modalTitle}
               </h2>
-              <p className="mt-1 text-xs font-semibold text-red-600">
-                {t(subTitle)}
-              </p>
+              {subTitle && (
+                <p className="mt-0.5 text-sm font-semibold text-danger-600">
+                  {t(subTitle)}
+                </p>
+              )}
             </div>
           </div>
 
@@ -58,22 +60,25 @@ const DeleteModal = ({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-xl p-2 text-slate-500 transition hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={t("common.cancel")}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-ink-muted transition hover:bg-slate-100 hover:text-ink disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        <div className="px-5 py-6">
-          <p className="text-sm leading-6 text-slate-600">{modalMessage}</p>
+        <div className="my-5">
+          <p className="text-base leading-6 text-ink-muted">{modalMessage}</p>
         </div>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end">
+        {/* Safe choice first (Cancel), red destructive button with label */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             type="button"
+            autoFocus
             onClick={onClose}
             disabled={loading}
-            className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+            className="ui-btn ui-btn-soft min-h-[48px]"
           >
             {t("common.cancel")}
           </button>
@@ -82,9 +87,9 @@ const DeleteModal = ({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-black text-white shadow-lg shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="ui-btn ui-btn-danger min-h-[48px]"
           >
-            <Trash2 size={16} />
+            <Trash2 size={18} />
             {loading ? t("common.loading") : t(btnTxt)}
           </button>
         </div>

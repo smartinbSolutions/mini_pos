@@ -18,13 +18,15 @@ import { normalizeDigits } from "./FormatNumber";
 //   allowDecimal - true for prices/rates/anything fractional (default true)
 //   min          - clamp floor on blur (default 0; pass null to disable)
 //   max          - clamp ceiling on blur (default none)
-//   ...rest      - spread onto the underlying <input> (className, placeholder, etc.)
+//   className    - passed to underlying input (default minimum 48px height, 16px+ text)
+//   ...rest      - spread onto the underlying <input> (placeholder, disabled, etc.)
 export default function NumberInput({
   value,
   onChange,
   allowDecimal = true,
   min = 0,
   max = null,
+  className = "",
   ...rest
 }) {
   const pattern = allowDecimal ? /^\d*\.?\d*$/ : /^\d*$/;
@@ -73,6 +75,20 @@ export default function NumberInput({
     onChange(num);
   };
 
+  // If caller already specifies a custom height (e.g. h-6, h-8, h-9, h-12, h-14, h-20)
+  // or explicit min-h-, preserve it; otherwise ensure a touch-friendly min-h-[48px] (or h-12).
+  // Similarly, ensure text size is 16px+ (text-base or larger) unless explicitly sized.
+  const hasExplicitHeight = /\b(h-\d+|h-\[[^\]]+\]|min-h-\S+)/.test(className);
+  const hasExplicitTextSize = /\btext-(xs|sm|base|lg|xl|\d+xl|\[[^\]]+\])/.test(className);
+
+  const baseClasses = [
+    hasExplicitHeight ? "" : "min-h-[48px]",
+    hasExplicitTextSize ? "" : "text-base",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <input
       type="text"
@@ -82,6 +98,7 @@ export default function NumberInput({
       onFocus={handleFocus}
       onChange={handleChange}
       onBlur={handleBlur}
+      className={baseClasses}
       {...rest}
     />
   );
