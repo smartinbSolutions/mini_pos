@@ -60,27 +60,27 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
     paid: {
       label: t("ui.paid"),
-      classes: "bg-emerald-50 text-emerald-600",
+      classes: "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
       dot: "bg-emerald-500",
     },
     partial: {
       label: t("ui.partial"),
-      classes: "bg-amber-50 text-amber-600",
+      classes: "bg-amber-50 text-amber-700 border border-amber-200/60",
       dot: "bg-amber-500",
     },
     unpaid: {
       label: t("ui.unpaid"),
-      classes: "bg-red-50 text-red-500",
-      dot: "bg-red-400",
+      classes: "bg-rose-50 text-rose-700 border border-rose-200/60",
+      dot: "bg-rose-500",
     },
   };
   const current = config[status] || config.unpaid;
 
   const badge = (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${current.classes}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${current.classes}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${current.dot}`} />
+      <span className={`h-2 w-2 rounded-full ${current.dot}`} />
       {current.label}
     </span>
   );
@@ -92,13 +92,13 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
       trigger={badge}
       content={
         <>
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-3 text-xs">
             <span>{t("ui.paid")}</span>
             <span className="font-bold text-emerald-600">
               {money(paidAmount)}
             </span>
           </div>
-          <div className="mt-1 flex justify-between">
+          <div className="mt-1 flex justify-between gap-3 text-xs">
             <span>{t("ui.remaining")}</span>
             <span className="font-bold text-amber-600">
               {money(remainingAmount)}
@@ -187,14 +187,58 @@ const ExpenseList = () => {
       label: t("ui.invoice"),
       locked: true,
       render: (exp) => (
-        <span className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-[11px] font-black text-[#4663ff]">
-          #{exp.id}
-        </span>
+        <InvoiceIdBadge id={exp.id} name={exp.invoice_name} />
+      ),
+    },
+    {
+      key: "date",
+      label: t("ui.date"),
+      cellClassName: "font-medium text-slate-600",
+      render: (exp) => {
+        const { dateLabel, fullLabel } = splitDateTime(exp.date);
+        return (
+          <HoverTooltip
+            trigger={
+              <span className="inline-flex cursor-help items-center gap-1.5">
+                {dateLabel}
+                <Clock size={12} className="text-slate-300" />
+              </span>
+            }
+            content={<div>{fullLabel}</div>}
+          />
+        );
+      },
+    },
+    {
+      key: "category",
+      label: t("ui.category"),
+      render: (exp) => <CategoryTags names={exp.category_names} />,
+    },
+    {
+      key: "net",
+      label: t("ui.total"),
+      align: "end",
+      cellClassName: "font-black text-base tabular-nums text-slate-950",
+      render: (exp) => money(exp.net_total || 0),
+    },
+    {
+      key: "status",
+      label: t("ui.status"),
+      align: "center",
+      render: (exp) => (
+        <StatusBadge
+          status={exp.status}
+          paidAmount={exp.paid_amount}
+          remainingAmount={exp.remaining_amount}
+          money={money}
+          t={t}
+        />
       ),
     },
     {
       key: "name",
       label: t("ui.name"),
+      defaultVisible: false,
       align: "start",
       cellClassName: "max-w-[220px]",
       render: (exp) => {
@@ -223,6 +267,7 @@ const ExpenseList = () => {
     {
       key: "supplier",
       label: t("ui.supplier"),
+      defaultVisible: false,
       align: "start",
       cellClassName: "max-w-[180px] truncate font-bold text-slate-900",
       render: (exp) => (
@@ -230,30 +275,6 @@ const ExpenseList = () => {
           {exp.supplier_name || "-"}
         </GoTo>
       ),
-    },
-    {
-      key: "category",
-      label: t("ui.category"),
-      render: (exp) => <CategoryTags names={exp.category_names} />,
-    },
-    {
-      key: "date",
-      label: t("ui.date"),
-      cellClassName: "text-slate-500",
-      render: (exp) => {
-        const { dateLabel, fullLabel } = splitDateTime(exp.date);
-        return (
-          <HoverTooltip
-            trigger={
-              <span className="inline-flex cursor-help items-center gap-1.5">
-                {dateLabel}
-                <Clock size={12} className="text-slate-300" />
-              </span>
-            }
-            content={<div>{fullLabel}</div>}
-          />
-        );
-      },
     },
     {
       key: "subtotal",
@@ -267,6 +288,7 @@ const ExpenseList = () => {
       key: "discount",
       label: t("ui.discount"),
       align: "end",
+      defaultVisible: false,
       cellClassName: "tabular-nums",
       render: (exp) => {
         const a = getAmounts(exp);
@@ -301,6 +323,7 @@ const ExpenseList = () => {
       key: "tax",
       label: t("ui.tax"),
       align: "end",
+      defaultVisible: false,
       cellClassName: "tabular-nums",
       render: (exp) => {
         const a = getAmounts(exp);
@@ -331,26 +354,6 @@ const ExpenseList = () => {
       },
     },
     {
-      key: "net",
-      label: t("ui.net"),
-      align: "end",
-      cellClassName: "font-bold tabular-nums text-emerald-700",
-      render: (exp) => money(exp.net_total || 0),
-    },
-    {
-      key: "status",
-      label: t("ui.status"),
-      render: (exp) => (
-        <StatusBadge
-          status={exp.status}
-          paidAmount={exp.paid_amount}
-          remainingAmount={exp.remaining_amount}
-          money={money}
-          t={t}
-        />
-      ),
-    },
-    {
       key: "tags",
       label: t("screens.tags.title"),
       defaultVisible: false,
@@ -361,28 +364,32 @@ const ExpenseList = () => {
       label: t("common.actions"),
       locked: true,
       sticky: true,
-      width: 140,
+      width: 110,
+      align: "center",
       render: (exp) => {
         const canEditDelete = exp.status === "unpaid";
         return (
           <DropdownMenu
             trigger={
-              <button className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]">
-                <MoreVertical size={16} />
+              <button
+                aria-label={t("common.actions")}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] active:scale-95"
+              >
+                <MoreVertical size={18} />
               </button>
             }
             align={isRtl ? "left" : "right"}
             options={[
               {
                 key: "view",
-                icon: <Eye size={14} />,
+                icon: <Eye size={16} />,
                 label: t("common.view"),
                 inline: true,
                 onClick: () => navigate(`/view-expense/${exp.id}`),
               },
               {
                 key: "edit",
-                icon: <Pencil size={14} />,
+                icon: <Pencil size={16} />,
                 label: t("common.edit"),
                 inline: true,
                 onClick: () => navigate(`/edit-expense/${exp.id}`),
@@ -390,7 +397,7 @@ const ExpenseList = () => {
               },
               {
                 key: "payment",
-                icon: <Wallet2 size={14} />,
+                icon: <Wallet2 size={16} />,
                 label: t("ui.payment"),
                 inline: true,
                 onClick: () => {
@@ -401,19 +408,19 @@ const ExpenseList = () => {
               },
               {
                 key: "savePdf",
-                icon: <Download size={14} />,
+                icon: <Download size={16} />,
                 label: t("common.savePdf"),
                 onClick: () => handleSavePdf(exp.id),
               },
               {
                 key: "print",
-                icon: <Printer size={14} />,
+                icon: <Printer size={16} />,
                 label: t("common.print"),
                 onClick: () => handlePrint(exp.id),
               },
               {
                 key: "delete",
-                icon: <Trash2 size={14} className="text-red-500" />,
+                icon: <Trash2 size={16} className="text-rose-600" />,
                 label: t("common.delete"),
                 onClick: () => setDeleteExpense(exp),
                 visible: canEditDelete,

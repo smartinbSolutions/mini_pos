@@ -30,17 +30,17 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
   const config = {
     paid: {
       label: t("ui.paid"),
-      classes: "bg-emerald-50 text-emerald-600",
+      classes: "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
       dot: "bg-emerald-500",
     },
     partial: {
       label: t("ui.partial"),
-      classes: "bg-amber-50 text-amber-600",
+      classes: "bg-amber-50 text-amber-700 border border-amber-200/60",
       dot: "bg-amber-500",
     },
     unpaid: {
       label: t("ui.unpaid"),
-      classes: "bg-slate-100 text-slate-500",
+      classes: "bg-slate-100 text-slate-700 border border-slate-200",
       dot: "bg-slate-400",
     },
   };
@@ -48,9 +48,9 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
 
   const badge = (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${current.classes}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${current.classes}`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${current.dot}`} />
+      <span className={`h-2 w-2 rounded-full ${current.dot}`} />
       {current.label}
     </span>
   );
@@ -62,13 +62,13 @@ const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
       trigger={badge}
       content={
         <>
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-3 text-xs">
             <span>{t("ui.refunded")}</span>
             <span className="font-bold text-emerald-600">
               {money(paidAmount)}
             </span>
           </div>
-          <div className="mt-1 flex justify-between">
+          <div className="mt-1 flex justify-between gap-3 text-xs">
             <span>{t("ui.remaining")}</span>
             <span className="font-bold text-amber-600">
               {money(remainingAmount)}
@@ -126,46 +126,33 @@ const SalesReturnList = () => {
       label: t("ui.returnId"),
       locked: true,
       render: (inv) => (
-        <span className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-[11px] font-bold text-[#4663ff]">
-          #{inv.id}
-        </span>
+        <InvoiceIdBadge id={inv.id} name={inv.return_name} />
       ),
     },
     {
-      key: "channel",
-      label: t("filters.channel"),
-      render: (inv) => (
-        <span
-          className={`rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase ${
-            inv.channel === "pos"
-              ? "bg-violet-50 text-violet-600"
-              : "bg-slate-100 text-slate-500"
-          }`}
-        >
-          {inv.channel === "pos"
-            ? t("screens.invoices.pos")
-            : t("screens.invoices.manual")}
-        </span>
-      ),
+      key: "date",
+      label: t("ui.date"),
+      cellClassName: "font-medium text-slate-600",
+      render: (inv) => <FormattedDate value={inv.date} />,
     },
     {
       key: "originalInvoice",
       label: t("ui.originalInvoice"),
-      cellClassName: "font-medium text-slate-600",
+      cellClassName: "font-medium text-slate-700",
       render: (inv) => (
-        <>
+        <GoTo type="invoice" id={inv.sales_invoice_id}>
           {inv.original_invoice_name ? `${inv.original_invoice_name} ` : ""}
-          <span className="text-[11px] font-normal text-slate-400">
+          <span className="text-xs text-slate-500">
             (#{inv.sales_invoice_id})
           </span>
-        </>
+        </GoTo>
       ),
     },
     {
       key: "customer",
       label: t("ui.customer"),
       align: "start",
-      cellClassName: "max-w-[200px] truncate font-bold text-slate-900",
+      cellClassName: "max-w-[220px] truncate font-bold text-slate-900",
       render: (inv) => (
         <GoTo type="customer" id={inv.contact_id}>
           {inv.customer_name || "-"}
@@ -173,10 +160,43 @@ const SalesReturnList = () => {
       ),
     },
     {
-      key: "date",
-      label: t("ui.date"),
-      cellClassName: "text-slate-500",
-      render: (inv) => <FormattedDate value={inv.date} />,
+      key: "net",
+      label: t("ui.total"),
+      align: "end",
+      cellClassName: "font-black text-base tabular-nums text-slate-950",
+      render: (inv) => money(inv.net_total || 0),
+    },
+    {
+      key: "status",
+      label: t("ui.status"),
+      align: "center",
+      render: (inv) => (
+        <StatusBadge
+          status={inv.status}
+          paidAmount={inv.refunded_amount}
+          remainingAmount={inv.remaining_amount}
+          money={money}
+          t={t}
+        />
+      ),
+    },
+    {
+      key: "channel",
+      label: t("filters.channel"),
+      defaultVisible: false,
+      render: (inv) => (
+        <span
+          className={`rounded-lg px-2 py-0.5 text-xs font-semibold ${
+            inv.channel === "pos"
+              ? "bg-violet-50 text-violet-700 border border-violet-200/60"
+              : "bg-slate-100 text-slate-600 border border-slate-200"
+          }`}
+        >
+          {inv.channel === "pos"
+            ? t("screens.invoices.pos")
+            : t("screens.invoices.manual")}
+        </span>
+      ),
     },
     {
       key: "subtotal",
@@ -190,6 +210,7 @@ const SalesReturnList = () => {
       key: "discount",
       label: t("ui.discount"),
       align: "end",
+      defaultVisible: false,
       cellClassName: "tabular-nums",
       render: (inv) =>
         Number(inv.total_discount_value || 0) > 0 ? (
@@ -204,6 +225,7 @@ const SalesReturnList = () => {
       key: "tax",
       label: t("ui.tax"),
       align: "end",
+      defaultVisible: false,
       cellClassName: "tabular-nums",
       render: (inv) => {
         if (taxOf(inv) <= 0) return <span className="text-slate-300">—</span>;
@@ -243,26 +265,6 @@ const SalesReturnList = () => {
       },
     },
     {
-      key: "net",
-      label: t("ui.net"),
-      align: "end",
-      cellClassName: "font-bold tabular-nums text-emerald-700",
-      render: (inv) => money(inv.net_total || 0),
-    },
-    {
-      key: "status",
-      label: t("ui.status"),
-      render: (inv) => (
-        <StatusBadge
-          status={inv.status}
-          paidAmount={inv.refunded_amount}
-          remainingAmount={inv.remaining_amount}
-          money={money}
-          t={t}
-        />
-      ),
-    },
-    {
       key: "tags",
       label: t("screens.tags.title"),
       defaultVisible: false,
@@ -274,25 +276,29 @@ const SalesReturnList = () => {
       locked: true,
       sticky: true,
       width: 110,
+      align: "center",
       render: (inv) => (
         <DropdownMenu
           trigger={
-            <button className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]">
-              <MoreVertical size={16} />
+            <button
+              aria-label={t("common.actions")}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] active:scale-95"
+            >
+              <MoreVertical size={18} />
             </button>
           }
           align={isRtl ? "left" : "right"}
           options={[
             {
               key: "view",
-              icon: <Eye size={14} />,
+              icon: <Eye size={16} />,
               label: t("common.view"),
               inline: true,
               onClick: () => navigate(`/view-sales-return/${inv.id}`),
             },
             {
               key: "payment",
-              icon: <HandCoins size={14} />,
+              icon: <HandCoins size={16} />,
               label: t("ui.payment"),
               inline: true,
               onClick: () => {
@@ -303,13 +309,13 @@ const SalesReturnList = () => {
             },
             {
               key: "savePdf",
-              icon: <Download size={14} />,
+              icon: <Download size={16} />,
               label: t("common.savePdf"),
               onClick: () => handleSavePdf(inv.id),
             },
             {
               key: "print",
-              icon: <Printer size={14} />,
+              icon: <Printer size={16} />,
               label: t("common.print"),
               onClick: () => handlePrint(inv.id),
             },

@@ -70,9 +70,9 @@ const StatusBadge = ({ status, t }) => {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${cfg.classes}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.classes} border border-current/20`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${cfg.dot}`} />
+      <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
       {t(`screens.quotations.status.${status}`)}
     </span>
   );
@@ -137,10 +137,16 @@ const SalesQuotationList = () => {
       render: (q) => <InvoiceIdBadge id={q.id} name={q.quotation_name} />,
     },
     {
+      key: "date",
+      label: t("ui.date"),
+      cellClassName: "font-medium text-slate-600",
+      render: (q) => <FormattedDate value={q.date} />,
+    },
+    {
       key: "customer",
       label: t("ui.customer"),
       align: "start",
-      cellClassName: "max-w-[200px] truncate font-bold text-slate-900",
+      cellClassName: "max-w-[220px] truncate font-bold text-slate-900",
       render: (q) =>
         q.customer_id ? (
           <GoTo type="customer" id={q.customer_id}>
@@ -153,10 +159,17 @@ const SalesQuotationList = () => {
         ),
     },
     {
-      key: "date",
-      label: t("ui.date"),
-      cellClassName: "text-slate-500",
-      render: (q) => <FormattedDate value={q.date} />,
+      key: "net",
+      label: t("ui.total"),
+      align: "end",
+      cellClassName: "font-black text-base tabular-nums text-slate-950",
+      render: (q) => money(q.net_total || 0),
+    },
+    {
+      key: "status",
+      label: t("ui.status"),
+      align: "center",
+      render: (q) => <StatusBadge status={q.status} t={t} />,
     },
     {
       key: "subtotal",
@@ -170,6 +183,7 @@ const SalesQuotationList = () => {
       key: "discount",
       label: t("ui.discount"),
       align: "end",
+      defaultVisible: false,
       cellClassName: "tabular-nums",
       render: (q) => {
         const a = getAmounts(q);
@@ -204,6 +218,7 @@ const SalesQuotationList = () => {
       key: "tax",
       label: t("ui.tax"),
       align: "end",
+      defaultVisible: false,
       cellClassName: "tabular-nums",
       render: (q) => {
         const a = getAmounts(q);
@@ -234,18 +249,6 @@ const SalesQuotationList = () => {
       },
     },
     {
-      key: "net",
-      label: t("ui.net"),
-      align: "end",
-      cellClassName: "font-bold tabular-nums text-emerald-700",
-      render: (q) => money(q.net_total || 0),
-    },
-    {
-      key: "status",
-      label: t("ui.status"),
-      render: (q) => <StatusBadge status={q.status} t={t} />,
-    },
-    {
       key: "tags",
       label: t("screens.tags.title"),
       defaultVisible: false,
@@ -257,27 +260,31 @@ const SalesQuotationList = () => {
       locked: true,
       sticky: true,
       width: 110,
+      align: "center",
       render: (q) => {
         const editable = q.status !== "accepted";
         return (
           <DropdownMenu
             trigger={
-              <button className="rounded-lg p-1.5 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]">
-                <MoreVertical size={16} />
+              <button
+                aria-label={t("common.actions")}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] active:scale-95"
+              >
+                <MoreVertical size={18} />
               </button>
             }
             align={isRtl ? "left" : "right"}
             options={[
               {
                 key: "view",
-                icon: <Eye size={14} />,
+                icon: <Eye size={16} />,
                 label: t("common.view"),
                 inline: true,
                 onClick: () => navigate(`/view-sales-quotation/${q.id}`),
               },
               {
                 key: "edit",
-                icon: <Edit2 size={14} />,
+                icon: <Edit2 size={16} />,
                 label: t("common.edit"),
                 inline: true,
                 onClick: () => navigate(`/edit-sales-quotation/${q.id}`),
@@ -285,19 +292,19 @@ const SalesQuotationList = () => {
               },
               {
                 key: "savePdf",
-                icon: <Download size={14} />,
+                icon: <Download size={16} />,
                 label: t("common.savePdf", "Save as PDF"),
                 onClick: () => handleSavePdf(q.id),
               },
               {
                 key: "print",
-                icon: <Printer size={14} />,
+                icon: <Printer size={16} />,
                 label: t("common.print"),
                 onClick: () => handlePrint(q.id),
               },
               {
                 key: "delete",
-                icon: <Trash2 size={14} className="text-red-500" />,
+                icon: <Trash2 size={16} className="text-rose-600" />,
                 label: t("common.delete"),
                 onClick: () => setDeleteQuotationTarget(q),
                 visible: editable,

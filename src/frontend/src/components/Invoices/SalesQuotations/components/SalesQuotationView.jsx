@@ -39,20 +39,23 @@ export default function SalesQuotationView() {
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [isSavingPdf, setIsSavingPdf] = useState(false);
+  const [actionError, setActionError] = useState("");
   const api = window.api;
 
   const handlePrint = async () => {
     try {
+      setActionError("");
       setIsPrinting(true);
       const res = await api.printDocument(
         `/print-sales-quotation/${id}`,
         i18n.language,
       );
       if (!res.success && res.error === "NO_PRINTER") {
-        console.error("No printer found");
+        setActionError(t("screens.invoices.noPrinter", "No printer found."));
       }
     } catch (err) {
       console.error(err);
+      setActionError(t("screens.invoices.printFailed", "Printing failed."));
     } finally {
       setIsPrinting(false);
     }
@@ -60,6 +63,7 @@ export default function SalesQuotationView() {
 
   const handleSavePdf = async () => {
     try {
+      setActionError("");
       setIsSavingPdf(true);
       const res = await api.saveDocumentPdf(
         `/print-sales-quotation/${id}`,
@@ -67,10 +71,11 @@ export default function SalesQuotationView() {
         i18n.language,
       );
       if (!res.success && res.error !== "CANCELED") {
-        console.error(res.error);
+        setActionError(t("screens.invoices.pdfFailed", "Failed to save PDF."));
       }
     } catch (err) {
       console.error(err);
+      setActionError(t("screens.invoices.pdfFailed", "Failed to save PDF."));
     } finally {
       setIsSavingPdf(false);
     }
@@ -152,7 +157,7 @@ export default function SalesQuotationView() {
   return (
     <div className="min-h-screen bg-[#f6f8fd] p-5 text-slate-900 print:bg-white">
       <div className="mx-auto max-w-5xl space-y-4">
-        <div className="flex items-center justify-between print:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
           <BackButton />
 
           <div className="flex items-center gap-2">
@@ -160,44 +165,51 @@ export default function SalesQuotationView() {
               type="button"
               onClick={() => handleSavePdf()}
               disabled={isSavingPdf}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Download size={14} />
-              {isSavingPdf ? t("common.saving") : t("common.savePdf")}
+              <Download size={16} />
+              {isSavingPdf ? t("common.saving") : t("common.savePdf", "Save as PDF")}
             </button>
 
             <button
               type="button"
               onClick={() => handlePrint()}
               disabled={isPrinting}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-[#4663ff] px-6 text-base font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Printer size={14} />
+              <Printer size={18} />
               {isPrinting ? t("common.saving") : t("common.print")}
             </button>
           </div>
         </div>
+
+        {actionError && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 print:hidden">
+            {actionError}
+          </div>
+        )}
+
         <div className="overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_12px_40px_rgba(70,99,255,0.10)] print:rounded-none print:border-none print:shadow-none">
-          <div className="grid gap-4 border-b border-[#eef1ff] bg-[#f6f8fd] p-5 md:grid-cols-[1fr_auto]">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25">
-                <FileText size={20} />
+          <div className="grid gap-4 border-b border-[#eef1ff] bg-[#f8faff] p-5 md:grid-cols-[1fr_auto]">
+            <div className="flex items-center gap-3.5">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/25">
+                <FileText size={22} />
               </span>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
+                <p className="text-xs font-semibold text-[#4663ff]">
                   {t("screens.quotations.salesQuotation")}
                 </p>
-                <h1 className="text-xl font-black leading-tight text-slate-950">
+                <h1 className="text-2xl font-black leading-tight text-slate-950">
                   {t("screens.quotations.quotation")} #{quotation.id}
                 </h1>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm font-medium text-slate-500">
                   <FormattedDate value={quotation.date} />
                 </p>
               </div>
             </div>
 
-            <div className="text-left md:text-right">
-              <p className="text-base font-black text-slate-950">
+            <div className="flex flex-col justify-center text-left md:text-right">
+              <p className="text-lg font-bold text-slate-950">
                 {quotation.customer_id ? (
                   <GoTo
                     id={quotation.customer_id}
@@ -212,11 +224,14 @@ export default function SalesQuotationView() {
                   </span>
                 )}
               </p>
-              <span
-                className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${statusStyle.bg} ${statusStyle.text}`}
-              >
-                {statusLabel}
-              </span>
+              <div className="mt-1.5">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text} border border-current/20`}
+                >
+                  <span className="h-2 w-2 rounded-full bg-current" />
+                  {statusLabel}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -241,16 +256,16 @@ export default function SalesQuotationView() {
               <AccentRule colorClass="bg-violet-500" />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-sm">
-                  <thead className="bg-[#f8faff] text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  <thead className="bg-[#f8faff] text-xs font-semibold text-slate-500">
                     <tr>
-                      <th className="p-3 text-right">{t("ui.product")}</th>
-                      <th className="p-3 text-right">{t("ui.qty")}</th>
-                      <th className="p-3 text-right">{t("ui.price")}</th>
-                      <th className="p-3 text-right">
+                      <th className="p-3.5 text-start">{t("ui.product")}</th>
+                      <th className="p-3.5 text-end">{t("ui.qty")}</th>
+                      <th className="p-3.5 text-end">{t("ui.price")}</th>
+                      <th className="p-3.5 text-end">
                         {t("screens.invoices.discountPercent")}
                       </th>
-                      <th className="p-3 text-right">{t("ui.tax")}</th>
-                      <th className="p-3 text-right">{t("ui.total")}</th>
+                      <th className="p-3.5 text-end">{t("ui.tax")}</th>
+                      <th className="p-3.5 text-end">{t("ui.total")}</th>
                     </tr>
                   </thead>
 
@@ -446,11 +461,11 @@ export default function SalesQuotationView() {
                   </div>
                 ))}
 
-                <div className="flex items-center justify-between rounded-xl bg-[#f6f8fd] px-3 py-2.5">
-                  <span className="text-xs font-black text-slate-700">
+                <div className="flex items-center justify-between rounded-xl bg-[#f6f8fd] px-3.5 py-3">
+                  <span className="text-sm font-bold text-slate-700">
                     {t("ui.total")}
                   </span>
-                  <span className="text-lg font-black tabular-nums text-[#4663ff]">
+                  <span className="text-2xl font-black tabular-nums text-[#4663ff]">
                     {money(quotation.net_total)}
                   </span>
                 </div>
