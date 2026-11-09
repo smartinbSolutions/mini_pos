@@ -12,6 +12,8 @@ import {
   Briefcase,
   Lock,
   TagIcon,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -25,12 +27,12 @@ import TagPickerField from "../../Tags/components/TagPickerField";
 
 // ---- Shared style tokens ----
 const inputClass =
-  "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400";
+  "h-12 w-full rounded-xl border-2 border-[#e1e7fb] bg-white px-3 text-base font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400";
 const inputWithPrefixClass = inputClass + " pl-6";
 const labelClass =
-  "flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-slate-400";
+  "flex items-center gap-1 text-sm font-bold text-slate-600";
 const smallRemoveBtnClass =
-  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-red-50 hover:text-red-600";
+  "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-300 transition hover:bg-red-50 hover:text-red-600";
 
 // Panel accent recipe: { icon bg/text, top rule, section chip }
 const accents = {
@@ -68,7 +70,7 @@ const Panel = ({ accent, icon, title, action, children }) => (
         >
           {icon}
         </span>
-        <h3 className="text-[13px] font-black text-slate-900">{title}</h3>
+        <h3 className="text-sm font-black text-slate-900">{title}</h3>
       </div>
       {action}
     </div>
@@ -82,7 +84,7 @@ const AddButton = ({ onClick, colorClass, label, disabled, tooltip }) => {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-7 items-center justify-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${colorClass}`}
+      className={`inline-flex h-10 items-center justify-center gap-1 rounded-lg px-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-50 ${colorClass}`}
     >
       <Plus size={13} />
       {label}
@@ -93,7 +95,7 @@ const AddButton = ({ onClick, colorClass, label, disabled, tooltip }) => {
     return (
       <span className="group relative inline-flex">
         {button}
-        <span className="pointer-events-none absolute top-full left-1/2 z-20 mt-1.5 -translate-x-1/3 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition group-hover:opacity-100">
+        <span className="pointer-events-none absolute top-full left-1/2 z-20 mt-1.5 -translate-x-1/3 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-sm font-semibold text-white opacity-0 transition group-hover:opacity-100">
           {tooltip}
         </span>
       </span>
@@ -146,6 +148,7 @@ export default function ProductFormPage() {
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [tagIds, setTagIds] = useState([]);
+  const [showMore, setShowMore] = useState(false);
 
   const isService = form.type === "service";
   const barcodeInputRefs = useRef([]);
@@ -228,6 +231,24 @@ export default function ProductFormPage() {
       setForm(emptyForm);
     }
   }, [activeProduct, barcodesByProduct, isEditing]);
+
+  // Editing a product that already uses the extras: show them straight away.
+  useEffect(() => {
+    if (!isEditing || !activeProduct) return;
+    const f = activeProduct;
+    const hasBarcode = (barcodesByProduct[f.id] || []).length > 0;
+    if (
+      hasBarcode ||
+      f.tax_id ||
+      f.latinName ||
+      f.code ||
+      f.description ||
+      f.type === "service" ||
+      (f.productUnits || []).some((u) => !u.is_base)
+    ) {
+      setShowMore(true);
+    }
+  }, [isEditing, activeProduct, barcodesByProduct]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -404,13 +425,13 @@ export default function ProductFormPage() {
             <button
               type="button"
               onClick={() => navigate("/products")}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
               aria-label={t("common.close")}
             >
               <X size={18} />
             </button>
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
+              <p className="text-sm font-black text-[#4663ff]">
                 {t("ui.inventory")}
               </p>
               <h1 className="truncate text-[17px] font-black leading-tight text-slate-950">
@@ -425,7 +446,7 @@ export default function ProductFormPage() {
             <button
               type="button"
               onClick={() => navigate("/products")}
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:border-slate-300 hover:bg-slate-50"
             >
               {t("common.cancel")}
             </button>
@@ -433,9 +454,9 @@ export default function ProductFormPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-[#4663ff] px-4 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-[#4663ff] px-4 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Save size={15} />
+              <Save size={18} />
               {saving
                 ? t("common.saving")
                 : isEditing
@@ -446,17 +467,17 @@ export default function ProductFormPage() {
         </div>
 
         {actionError && (
-          <div className="mx-5 mt-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-bold text-red-700">
+          <div className="mx-5 mt-3 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
             {actionError}
           </div>
         )}
 
-        <div className="grid gap-3.5 p-5">
-          {/* Identity: logo + core fields */}
+        <div className="grid gap-4 p-5">
+          {/* The basics: what a shop owner needs to sell something */}
           <Panel
             accent="identity"
-            icon={<Package size={15} />}
-            title={t("screens.products.identity")}
+            icon={<Package size={18} />}
+            title={t("simple.product.basics")}
           >
             <div className="flex flex-wrap items-start gap-4">
               <label className="group relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-[#d6ddf9] bg-[#f6f8fd] transition hover:border-[#4663ff]">
@@ -480,9 +501,7 @@ export default function ProductFormPage() {
                 />
               </label>
 
-              <div className="flex-1 space-y-3">
-                {/* Row 1: naming/identifying fields */}
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-1.5 md:col-span-2">
                     <label className={labelClass}>
                       {t("ui.name")} <span className="text-red-400">*</span>
@@ -498,36 +517,46 @@ export default function ProductFormPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className={labelClass}>{t("ui.latinName")}</label>
-                    <input
-                      value={form.latinName}
-                      onChange={(event) =>
-                        updateField("latinName", event.target.value)
-                      }
-                      placeholder={t("ui.optional")}
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className={labelClass}>{t("ui.code")}</label>
-                    <input
-                      value={form.code}
-                      onChange={(event) =>
-                        updateField("code", event.target.value)
-                      }
-                      placeholder={t("ui.optional")}
-                      className={inputClass}
-                    />
-                  </div>
+              <div className="space-y-1.5">
+                <label className={labelClass}>
+                  {t("screens.products.baseSalePrice")}{" "}
+                  <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <DollarSign
+                    size={13}
+                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-400"
+                  />
+                  <NumberInput
+                    required
+                    value={form.salePrice}
+                    onChange={(val) => updateField("salePrice", val)}
+                    className={
+                      inputWithPrefixClass +
+                      " font-black text-emerald-700 focus:border-emerald-400 focus:ring-emerald-400/15"
+                    }
+                  />
                 </div>
+              </div>
 
-                {/* Row 2: stock/unit fields */}
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {/* Quantity is meaningless for a service — no physical stock
-                      behind it — so it's hidden entirely rather than shown
-                      disabled-at-zero. */}
+              <div className="space-y-1.5">
+                <label className={labelClass}>
+                  {t("ui.costPrice")} <span className="text-red-400">*</span>
+                </label>
+                <div className="relative">
+                  <DollarSign
+                    size={13}
+                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-350"
+                  />
+                  <NumberInput
+                    required
+                    value={form.costPrice}
+                    onChange={(val) => updateField("costPrice", val)}
+                    className={inputWithPrefixClass}
+                  />
+                </div>
+              </div>
+
                   {!isService && (
                     <div className="space-y-1.5">
                       <label className={labelClass}>{t("ui.quantity")}</label>
@@ -565,74 +594,7 @@ export default function ProductFormPage() {
                       ))}
                     </select>
                   </div>
-                </div>
               </div>
-            </div>
-
-            {/* Row 3: description, full width */}
-            <div className="mt-3.5 space-y-1.5">
-              <label className={labelClass}>{t("ui.description")}</label>
-              <textarea
-                value={form.description}
-                onChange={(event) =>
-                  updateField("description", event.target.value)
-                }
-                placeholder={t("ui.optional")}
-                rows={2}
-                className={inputClass + " h-auto resize-none py-2"}
-              />
-            </div>
-
-            {/* Product type — editable only at creation. Once a product has
-                real stock movements (or, later, expiry lots) tied to it,
-                flipping normal<->service would reinterpret that history, so
-                this is locked the moment the product exists. */}
-            <div className="mt-3.5 border-t border-slate-100 pt-3.5">
-              <label className={labelClass}>
-                {t("screens.products.productType", "Product Type")}
-              </label>
-
-              {isEditing ? (
-                <div className="mt-1.5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-                  <Lock size={13} />
-                  {form.type === "service"
-                    ? t("screens.products.typeService", "Service")
-                    : t("screens.products.typeNormal", "Normal")}
-                  <span className="font-medium text-slate-400">
-                    {t(
-                      "screens.products.typeLocked",
-                      "— can't be changed after creation",
-                    )}
-                  </span>
-                </div>
-              ) : (
-                <div className="mt-1.5 inline-flex overflow-hidden rounded-xl border border-slate-200">
-                  <button
-                    type="button"
-                    onClick={() => updateField("type", "normal")}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold transition ${
-                      form.type === "normal"
-                        ? "bg-[#4663ff] text-white"
-                        : "bg-white text-slate-500 hover:bg-slate-50"
-                    }`}
-                  >
-                    <Package size={13} />
-                    {t("screens.products.typeNormal", "Normal")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => updateField("type", "service")}
-                    className={`flex items-center gap-1.5 border-l border-slate-200 px-3.5 py-2 text-xs font-bold transition ${
-                      form.type === "service"
-                        ? "bg-[#4663ff] text-white"
-                        : "bg-white text-slate-500 hover:bg-slate-50"
-                    }`}
-                  >
-                    <Briefcase size={13} />
-                    {t("screens.products.typeService", "Service")}
-                  </button>
-                </div>
-              )}
             </div>
           </Panel>
 
@@ -650,52 +612,54 @@ export default function ProductFormPage() {
             />
           </Panel>
 
-          {/* Pricing */}
-          <Panel
-            accent="pricing"
-            icon={<DollarSign size={15} />}
-            title={t("ui.price")}
+          <button
+            type="button"
+            onClick={() => setShowMore((v) => !v)}
+            aria-expanded={showMore}
+            className="flex min-h-[56px] w-full items-center justify-between gap-3 rounded-2xl border-2 border-dashed border-slate-300 bg-white/70 px-5 py-3 text-start transition hover:border-[#4663ff]"
           >
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              <div className="space-y-1.5">
-                <label className={labelClass}>
-                  {t("ui.costPrice")} <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <DollarSign
-                    size={13}
-                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-350"
-                  />
-                  <NumberInput
-                    required
-                    value={form.costPrice}
-                    onChange={(val) => updateField("costPrice", val)}
-                    className={inputWithPrefixClass}
-                  />
-                </div>
-              </div>
+            <span>
+              <span className="block text-base font-black text-slate-900">
+                {showMore ? t("simple.product.lessOptions") : t("simple.product.moreOptions")}
+              </span>
+              <span className="block text-sm font-semibold text-slate-500">
+                {t("simple.product.moreHint")}
+              </span>
+            </span>
+            {showMore ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+          </button>
 
-              <div className="space-y-1.5">
-                <label className={labelClass}>
-                  {t("screens.products.baseSalePrice")}{" "}
-                  <span className="text-red-400">*</span>
-                </label>
-                <div className="relative">
-                  <DollarSign
-                    size={13}
-                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-400"
-                  />
-                  <NumberInput
-                    required
-                    value={form.salePrice}
-                    onChange={(val) => updateField("salePrice", val)}
-                    className={
-                      inputWithPrefixClass +
-                      " font-black text-emerald-700 focus:border-emerald-400 focus:ring-emerald-400/15"
-                    }
-                  />
-                </div>
-              </div>
+          {showMore && (
+            <>
+              <Panel
+                accent="pricing"
+                icon={<Percent size={18} />}
+                title={t("simple.product.moreOptions")}
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>{t("ui.latinName")}</label>
+                    <input
+                      value={form.latinName}
+                      onChange={(event) =>
+                        updateField("latinName", event.target.value)
+                      }
+                      placeholder={t("ui.optional")}
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className={labelClass}>{t("ui.code")}</label>
+                    <input
+                      value={form.code}
+                      onChange={(event) =>
+                        updateField("code", event.target.value)
+                      }
+                      placeholder={t("ui.optional")}
+                      className={inputClass}
+                    />
+                  </div>
 
               <div className="col-span-2 space-y-1.5 md:col-span-1">
                 <label className={labelClass}>{t("ui.tax")}</label>
@@ -726,10 +690,72 @@ export default function ProductFormPage() {
                   </select>
                 </div>
               </div>
-            </div>
-          </Panel>
+                </div>
 
-          {/* Selling units + barcodes side by side */}
+                <div className="mt-4">
+<div className="mt-3.5 space-y-1.5">
+  <label className={labelClass}>{t("ui.description")}</label>
+  <textarea
+    value={form.description}
+    onChange={(event) =>
+      updateField("description", event.target.value)
+    }
+    placeholder={t("ui.optional")}
+    rows={2}
+    className={inputClass + " h-auto resize-none py-2"}
+  />
+</div>
+                </div>
+
+            <div className="mt-4 border-t border-slate-100 pt-3.5">
+              <label className={labelClass}>
+                {t("screens.products.productType", "Product Type")}
+              </label>
+
+              {isEditing ? (
+                <div className="mt-1.5 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-500">
+                  <Lock size={13} />
+                  {form.type === "service"
+                    ? t("screens.products.typeService", "Service")
+                    : t("screens.products.typeNormal", "Normal")}
+                  <span className="font-medium text-slate-400">
+                    {t(
+                      "screens.products.typeLocked",
+                      "— can't be changed after creation",
+                    )}
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-1.5 inline-flex overflow-hidden rounded-xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => updateField("type", "normal")}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 text-sm font-bold transition ${
+                      form.type === "normal"
+                        ? "bg-[#4663ff] text-white"
+                        : "bg-white text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Package size={13} />
+                    {t("screens.products.typeNormal", "Normal")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => updateField("type", "service")}
+                    className={`flex items-center gap-1.5 border-l border-slate-200 px-3.5 py-2 text-sm font-bold transition ${
+                      form.type === "service"
+                        ? "bg-[#4663ff] text-white"
+                        : "bg-white text-slate-500 hover:bg-slate-50"
+                    }`}
+                  >
+                    <Briefcase size={13} />
+                    {t("screens.products.typeService", "Service")}
+                  </button>
+                </div>
+              )}
+            </div>
+              </Panel>
+
           <div className="grid gap-3.5 md:grid-cols-[3fr_2fr]">
             <Panel
               accent="units"
@@ -749,7 +775,7 @@ export default function ProductFormPage() {
                 />
               }
             >
-              <div className="mb-2.5 flex items-start gap-2 rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2 text-[11px] font-semibold leading-relaxed text-violet-700">
+              <div className="mb-2.5 flex items-start gap-2 rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2 text-sm font-semibold leading-relaxed text-violet-700">
                 <Layers size={13} className="mt-0.5 shrink-0" />
                 <span>
                   {t(
@@ -760,7 +786,7 @@ export default function ProductFormPage() {
               </div>
 
               {form.productUnits.length === 0 ? (
-                <div className="flex items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 py-4 text-xs font-semibold text-slate-400">
+                <div className="flex items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 py-4 text-sm font-semibold text-slate-400">
                   {t("screens.products.noSellingUnits")}
                 </div>
               ) : (
@@ -863,7 +889,7 @@ export default function ProductFormPage() {
                         </div>
 
                         {hasInvalidFactor && (
-                          <p className="mt-1 px-1 text-[11px] font-semibold text-red-500">
+                          <p className="mt-1 px-1 text-sm font-semibold text-red-500">
                             {t(
                               "screens.products.conversionMustExceedOne",
                               "Conversion factor must be greater than 1 — it can't be smaller than or equal to the base unit.",
@@ -932,11 +958,13 @@ export default function ProductFormPage() {
                 </div>
               </Panel>
             ) : (
-              <div className="flex items-center rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-xs font-bold text-amber-800">
+              <div className="flex items-center rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm font-bold text-amber-800">
                 {t("screens.products.barcodeUnavailable")}
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </form>
 

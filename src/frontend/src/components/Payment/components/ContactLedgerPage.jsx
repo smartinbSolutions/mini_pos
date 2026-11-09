@@ -116,7 +116,7 @@ function FormulaRow({ title, items, balance, balanceColor, money, accent }) {
   return (
     <div className="grid grid-cols-[88px_1fr_auto] items-center gap-3 border-t border-[#e5ebff] px-5 py-3.5 first:border-t-0">
       <span
-        className={`justify-self-start rounded-lg px-2 py-1 text-[11px] font-bold ${accent}`}
+        className={`justify-self-start rounded-lg px-2 py-1 text-sm font-bold ${accent}`}
       >
         {title}
       </span>
@@ -370,13 +370,13 @@ export default function ContactLedgerPage() {
     "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
 
   const roleChip = (Icon, label) => (
-    <span className="inline-flex items-center gap-1 rounded-lg bg-[#eef3ff] px-2 py-0.5 text-[11px] font-bold text-[#4663ff]">
+    <span className="inline-flex items-center gap-1 rounded-lg bg-[#eef3ff] px-2 py-0.5 text-sm font-bold text-[#4663ff]">
       <Icon size={12} />
       {label}
     </span>
   );
 
-  const th = "px-4 py-3 text-xs font-semibold text-slate-500 whitespace-nowrap";
+  const th = "px-4 py-3 text-sm font-semibold text-slate-500 whitespace-nowrap";
 
   return (
     <div className="min-h-screen bg-[linear-gradient(135deg,#eef3ff_0%,#f8faff_50%,#eefaf6_100%)] p-4 text-slate-900 sm:p-6">
@@ -408,7 +408,7 @@ export default function ContactLedgerPage() {
                 {contact?.phone ? (
                   <span
                     dir="ltr"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500"
+                    className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500"
                   >
                     <Phone size={12} />
                     {contact.phone}
@@ -420,9 +420,9 @@ export default function ContactLedgerPage() {
             <button
               type="button"
               onClick={() => setExportOpen(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-[#dbe4ff] bg-white px-3 py-2 text-sm font-bold text-[#1c2340] transition hover:bg-[#eef3ff] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4663ff]/20"
+              className="inline-flex items-center gap-2 min-h-[44px] rounded-xl border-2 border-[#dbe4ff] bg-white px-4 py-2 text-base font-bold text-[#1c2340] transition hover:bg-[#eef3ff] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#4663ff]/20"
             >
-              <Download size={15} />
+              <Download size={18} />
               {t("common.export")}
             </button>
           </div>
@@ -476,7 +476,7 @@ export default function ContactLedgerPage() {
                       setDateFrom(p.from);
                       setDateTo(p.to);
                     }}
-                    className={`rounded-full px-3 py-1.5 text-xs font-bold transition ${
+                    className={`min-h-[44px] rounded-full px-4 py-2 text-sm font-bold transition ${
                       active
                         ? "bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/20"
                         : "border border-[#dbe4ff] bg-white text-slate-500 hover:bg-[#eef3ff]"
@@ -514,14 +514,14 @@ export default function ContactLedgerPage() {
                   setDateFrom("");
                   setDateTo("");
                 }}
-                className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:bg-slate-200"
+                className="inline-flex items-center gap-1 min-h-[44px] rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-200"
               >
                 <X size={13} />
                 {t("common.clear", "Clear")}
               </button>
             )}
 
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-sm font-semibold text-slate-500">
               {hasDateFilter
                 ? t("screens.ledger.filteredResults", { count: total })
                 : t("screens.ledger.allTimeResults", { count: total })}
@@ -643,7 +643,7 @@ export default function ContactLedgerPage() {
                               docId && (
                                 <span
                                   dir="ltr"
-                                  className="ms-1.5 text-xs font-normal text-slate-400"
+                                  className="ms-1.5 text-sm font-normal text-slate-400"
                                 >
                                   #{docId}
                                 </span>
@@ -672,7 +672,7 @@ export default function ContactLedgerPage() {
                             {isForeignCurrency && (
                               <span
                                 dir="ltr"
-                                className="shrink-0 whitespace-nowrap text-[11px] tabular-nums text-slate-400"
+                                className="shrink-0 whitespace-nowrap text-sm tabular-nums text-slate-400"
                               >
                                 {fundAmount.toFixed(2)} {p.currency_code} @{" "}
                                 {rate.toFixed(4)}
@@ -685,7 +685,7 @@ export default function ContactLedgerPage() {
                           {formatDate(p.date)}
                           <span
                             dir="ltr"
-                            className="mx-2 text-xs tabular-nums text-slate-400"
+                            className="mx-2 text-sm tabular-nums text-slate-400"
                           >
                             {(p.date || "").slice(11, 16)}
                           </span>
@@ -697,7 +697,7 @@ export default function ContactLedgerPage() {
                             className="inline-flex items-center gap-2"
                           >
                             <span
-                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-black leading-none ${
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-sm font-black leading-none ${
                                 sign === "+"
                                   ? "bg-emerald-50 text-emerald-600"
                                   : "bg-red-50 text-red-500"

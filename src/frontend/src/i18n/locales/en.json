@@ -2148,6 +2148,12 @@
     "best": {
       "title": "Best sellers today",
       "empty": "No sales yet today"
+    },
+    "product": {
+      "moreOptions": "More options",
+      "lessOptions": "Hide extra options",
+      "moreHint": "Barcode, tax, code, description, selling units",
+      "basics": "The basics"
     }
   }
 }

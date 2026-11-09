@@ -1,14 +1,14 @@
 // Shared layout for invoice item lines: one header + one compact row per item.
 // Header and rows use the same grid so columns always line up.
 export const ITEM_GRID =
-  "grid grid-cols-[minmax(0,1fr)_88px_104px_110px_104px_68px] items-center gap-2";
+  "grid grid-cols-[minmax(0,1fr)_104px_128px_140px_128px_96px] items-center gap-2";
 export const compactInputClass =
-  "h-8 w-full rounded-lg border border-[#dbe4ff] bg-white px-2 text-xs font-semibold outline-none transition focus:border-[#4663ff] focus:ring-2 focus:ring-[#4663ff]/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+  "h-11 w-full rounded-lg border-2 border-[#dbe4ff] bg-white px-2 text-base font-semibold outline-none transition focus:border-[#4663ff] focus:ring-2 focus:ring-[#4663ff]/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
 
 export function InvoiceItemsHeader({ labels, gridClass = ITEM_GRID }) {
   return (
     <div
-      className={`${gridClass} border-b border-[#eef1ff] bg-[#f8faff] px-3.5 py-2 text-[10px] font-bold uppercase tracking-wide text-slate-400`}
+      className={`${gridClass} border-b border-[#eef1ff] bg-[#f8faff] px-3.5 py-2.5 text-sm font-bold text-slate-600`}
     >
       {labels.map((label, i) => (
         <span key={i} className={i === 0 ? "" : "text-center"}>
@@ -29,7 +29,7 @@ export function InvoiceItemRow({
   gridClass = ITEM_GRID,
 }) {
   return (
-    <div className="px-3.5 py-2 transition hover:bg-[#fafbff]">
+    <div className="px-3.5 py-3 transition hover:bg-[#fafbff]">
       <div className={gridClass}>
         {children}
         <div className="flex items-center justify-end gap-0.5">{actions}</div>

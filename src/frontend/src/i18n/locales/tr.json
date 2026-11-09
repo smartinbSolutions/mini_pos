@@ -2173,6 +2173,12 @@
     "best": {
       "title": "Bugünün en çok satanları",
       "empty": "Bugün henüz satış yok"
+    },
+    "product": {
+      "moreOptions": "Daha fazla seçenek",
+      "lessOptions": "Ek seçenekleri gizle",
+      "moreHint": "Barkod, vergi, kod, açıklama, satış birimleri",
+      "basics": "Temel bilgiler"
     }
   }
 }

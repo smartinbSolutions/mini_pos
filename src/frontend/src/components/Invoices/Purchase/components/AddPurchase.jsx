@@ -30,6 +30,7 @@ import DropdownMenu from "../../../../Global/DropdownMenu";
 import ContactFormModal from "../../../../Global/ContactFormModal";
 import NumberInput from "../../../../Global/NumberInput";
 import TagPickerField from "../../../Tags/components/TagPickerField";
+import MoreOptions from "../../../../Global/ui/MoreOptions";
 import {
   compactInputClass,
   InvoiceItemRow,
@@ -40,9 +41,9 @@ import {
 // focus-loss bug we hit earlier with in-body component definitions) ----
 
 const inputClass =
-  "h-9 w-full rounded-xl border border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
+  "h-12 w-full rounded-xl border-2 border-[#e1e7fb] bg-white px-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:font-medium placeholder:text-slate-350 focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400";
 const smallInputClass =
-  "h-8 w-full rounded-lg border border-[#e1e7fb] bg-white px-2 text-xs font-semibold text-slate-900 outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12";
+  "h-11 w-full rounded-lg border-2 border-[#e1e7fb] bg-white px-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#4663ff] focus:ring-[3px] focus:ring-[#4663ff]/12";
 const panelClass =
   "relative overflow-hidden rounded-2xl border border-[#e9edfb] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]";
 const panelBodyClass = "p-4";
@@ -58,10 +59,10 @@ function AddOptionsMenu({ options, align = "right" }) {
   const trigger = (
     <button
       type="button"
-      className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-slate-200 text-slate-400 transition hover:border-[#4663ff]/50 hover:bg-[#f6f8fd] hover:text-[#4663ff]"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-lg border-2 border-dashed border-slate-200 text-slate-400 transition hover:border-[#4663ff]/50 hover:bg-[#f6f8fd] hover:text-[#4663ff]"
       aria-label="Add"
     >
-      <Plus size={14} />
+      <Plus size={18} />
     </button>
   );
 
@@ -303,7 +304,7 @@ export default function AddPurchase() {
               <Receipt size={18} />
             </span>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
+              <p className="text-sm font-black text-[#4663ff]">
                 {t("ui.purchase")}
               </p>
               <h1 className="text-lg font-black leading-tight text-slate-950">
@@ -317,7 +318,7 @@ export default function AddPurchase() {
               type="button"
               onClick={reset}
               disabled={saving}
-              className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
             >
               {t("common.refresh")}
             </button>
@@ -325,16 +326,16 @@ export default function AddPurchase() {
               type="button"
               onClick={() => window.history.back()}
               disabled={saving}
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-bold text-slate-500 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              <ArrowLeft size={14} />
+              <ArrowLeft size={18} />
               {t("common.back")}
             </button>
           </div>
         </section>
 
         {error && (
-          <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-bold text-red-700">
+          <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm font-bold text-red-700">
             <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <span>{error}</span>
           </div>
@@ -370,15 +371,15 @@ export default function AddPurchase() {
                       <button
                         type="button"
                         onClick={() => setSupplierModalOpen(true)}
-                        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
+                        className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8]"
                       >
-                        <Plus size={14} />
+                        <Plus size={18} />
                         <span>{t("screens.contacts.addSupplier")}</span>
                       </button>
                     </div>
 
                     {!invoice.contact_id && (
-                      <p className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-amber-600">
+                      <p className="mt-1.5 flex items-center gap-1 text-sm font-semibold text-amber-600">
                         <AlertCircle size={12} />
                         {t("errors.supplierRequired")}
                       </p>
@@ -397,14 +398,15 @@ export default function AddPurchase() {
               </div>
             </section>
             {/* Tags */}
-            <section className={panelClass}>
+            <MoreOptions hint={t("screens.tags.title")} forceOpen={tagIds.length > 0}>
+              <section className={panelClass}>
               <AccentRule colorClass="bg-pink-500" />
               <div className={panelBodyClass}>
                 <div className="mb-3 flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
                     <Tag size={15} />
                   </span>
-                  <h3 className="text-[13px] font-black text-slate-950">
+                  <h3 className="text-sm font-black text-slate-950">
                     {t("screens.tags.title")}
                   </h3>
                 </div>
@@ -418,16 +420,17 @@ export default function AddPurchase() {
                 />
               </div>
             </section>
+            </MoreOptions>
             {/* Items */}
             <section className={panelClass}>
               <AccentRule colorClass="bg-violet-500" />
               <div className="flex items-center justify-between gap-3 border-b border-[#eef1ff] px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[13px] font-black text-slate-900">
+                  <h2 className="text-sm font-black text-slate-900">
                     {t("ui.items")}
                   </h2>
                   {items.length > 0 && (
-                    <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-bold text-violet-600">
+                    <span className="rounded-full bg-violet-50 px-2 py-0.5 text-sm font-bold text-violet-600">
                       {items.length}
                     </span>
                   )}
@@ -437,17 +440,17 @@ export default function AddPurchase() {
                   {/* <button
                     type="button"
                     onClick={addItem}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
+                    className="inline-flex h-11 items-center gap-1.5 rounded-lg bg-[#4663ff] px-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#3854e8]"
                   >
-                    <Plus size={13} />
+                    <Plus size={18} />
                     {t("screens.invoices.addItem")}
                   </button> */}
                   <button
                     type="button"
                     onClick={() => setIsFormOpen(true)}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-xs font-bold text-violet-600 transition hover:bg-violet-100"
+                    className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-3 text-sm font-bold text-violet-600 transition hover:bg-violet-100"
                   >
-                    <Plus size={13} />
+                    <Plus size={18} />
                     {t("screens.products.create")}
                   </button>
                 </div>
@@ -456,7 +459,7 @@ export default function AddPurchase() {
               {loading ? (
                 <div className="flex flex-col items-center justify-center gap-2.5 p-10 text-slate-400">
                   <Loader2 size={22} className="animate-spin" />
-                  <p className="text-xs font-bold">{t("common.loading")}</p>
+                  <p className="text-sm font-bold">{t("common.loading")}</p>
                 </div>
               ) : items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center gap-2.5 p-10 text-center">
@@ -467,16 +470,16 @@ export default function AddPurchase() {
                     <p className="text-sm font-bold text-slate-700">
                       {t("screens.invoices.noItemsYet")}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm text-slate-500">
                       {t("screens.invoices.addItemToStart")}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={addItem}
-                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-[#dbe4ff] bg-white px-3 py-1.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                    className="mt-1 inline-flex items-center gap-1.5 rounded-lg border border-[#dbe4ff] bg-white px-3 py-1.5 text-sm font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
                   >
-                    <Plus size={13} />
+                    <Plus size={18} />
                     {t("screens.invoices.addItem")}
                   </button>
                 </div>
@@ -577,9 +580,9 @@ export default function AddPurchase() {
                                         ? t("screens.invoices.keepOneItem")
                                         : undefined
                                     }
-                                    className="rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                    className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                                   >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={20} />
                                   </button>
                                 </>
                               }
@@ -587,7 +590,7 @@ export default function AddPurchase() {
                                 hasExtras ? (
                                   <>
                                     {isNonBaseUnit && (
-                                      <p className="flex items-center gap-1.5 rounded-lg bg-[#f6f8fd] px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                      <p className="flex items-center gap-1.5 rounded-lg bg-[#f6f8fd] px-2.5 py-1 text-sm font-semibold text-slate-500">
                                         <Tag
                                           size={11}
                                           className="shrink-0 text-slate-400"
@@ -620,7 +623,7 @@ export default function AddPurchase() {
                                             }
                                           >
                                             <select
-                                              className="h-6 border-none bg-transparent text-xs font-bold text-emerald-700 outline-none"
+                                              className="h-9 border-none bg-transparent text-sm font-bold text-emerald-700 outline-none"
                                               value={item.tax_id || ""}
                                               onChange={(e) => {
                                                 const newTaxId = e.target.value
@@ -671,7 +674,7 @@ export default function AddPurchase() {
                                             }
                                           >
                                             <NumberInput
-                                              className="h-6 w-12 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                              className="h-9 w-12 border-none bg-transparent text-sm font-bold text-red-600 outline-none"
                                               value={item.discount_rate || ""}
                                               onChange={(val) =>
                                                 updateItemDiscountRate(
@@ -682,11 +685,11 @@ export default function AddPurchase() {
                                               max={100}
                                               placeholder="0"
                                             />
-                                            <span className="text-[10px] text-red-400">
+                                            <span className="text-sm text-red-400">
                                               % =
                                             </span>
                                             <NumberInput
-                                              className="h-6 w-16 border-none bg-transparent text-xs font-bold text-red-600 outline-none"
+                                              className="h-9 w-16 border-none bg-transparent text-sm font-bold text-red-600 outline-none"
                                               value={
                                                 item.discount
                                                   ? item.discount
@@ -713,7 +716,7 @@ export default function AddPurchase() {
                                         />
                                         <input
                                           type="text"
-                                          className="h-6 w-full min-w-0 flex-1 border-none bg-transparent text-xs font-medium text-slate-700 outline-none placeholder:text-slate-400"
+                                          className="h-9 w-full min-w-0 flex-1 border-none bg-transparent text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
                                           value={item.description || ""}
                                           onChange={(e) =>
                                             updateItemDescription(
@@ -802,12 +805,12 @@ export default function AddPurchase() {
                                   ))}
                                 </select>
                               ) : (
-                                <div className="flex h-8 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 px-2 text-xs text-slate-400">
+                                <div className="flex h-11 items-center justify-center rounded-lg border border-slate-100 bg-slate-50 px-2 text-sm text-slate-400">
                                   {item.unit_name || "—"}
                                 </div>
                               )}
 
-                              <div className="flex h-8 items-center justify-center rounded-lg bg-[#f6f8fd] px-2 text-xs font-black tabular-nums text-[#4663ff]">
+                              <div className="flex h-11 items-center justify-center rounded-lg bg-[#f6f8fd] px-2 text-sm font-black tabular-nums text-[#4663ff]">
                                 {money(lineTotal)}
                               </div>
                             </InvoiceItemRow>
@@ -821,9 +824,9 @@ export default function AddPurchase() {
                     <button
                       type="button"
                       onClick={addItem}
-                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#4663ff]/40 bg-white py-2.5 text-xs font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
+                      className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#4663ff]/40 bg-white py-2.5 text-sm font-bold text-[#4663ff] transition hover:bg-[#eef3ff]"
                     >
-                      <Plus size={13} />
+                      <Plus size={18} />
                       {t("screens.invoices.addItem")}
                     </button>
                   </div>
@@ -841,14 +844,14 @@ export default function AddPurchase() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
                     <HandCoins size={15} />
                   </span>
-                  <h3 className="text-[13px] font-black text-slate-950">
+                  <h3 className="text-sm font-black text-slate-950">
                     {t("ui.summary")}
                   </h3>
                 </div>
 
                 <div className="space-y-2.5">
                   <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-500">
+                    <span className="text-sm font-semibold text-slate-500">
                       {t("ui.subtotal")}
                     </span>
                     <span className="text-right text-sm font-black tabular-nums">
@@ -861,12 +864,12 @@ export default function AddPurchase() {
                       key={`item-discount-${group.rate}`}
                       className="grid grid-cols-[1fr_7.5rem] items-center gap-2"
                     >
-                      <span className="text-xs text-slate-400">
+                      <span className="text-sm text-slate-400">
                         {t("screens.invoices.itemDiscountAt", {
                           rate: Number(group.rate).toFixed(2),
                         })}
                       </span>
-                      <span className="text-right text-xs font-bold tabular-nums text-red-500">
+                      <span className="text-right text-sm font-bold tabular-nums text-red-500">
                         -{money(group.amount)}
                       </span>
                     </div>
@@ -877,10 +880,10 @@ export default function AddPurchase() {
                       key={`item-tax-${group.tax_id}`}
                       className="grid grid-cols-[1fr_7.5rem] items-center gap-2"
                     >
-                      <span className="text-xs text-slate-400">
+                      <span className="text-sm text-slate-400">
                         {t("screens.invoices.itemTaxAt", { rate: group.rate })}
                       </span>
-                      <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
+                      <span className="text-right text-sm font-bold tabular-nums text-emerald-600">
                         +{money(group.value)}
                       </span>
                     </div>
@@ -894,7 +897,7 @@ export default function AddPurchase() {
                   {invoiceDiscountRevealed && (
                     <div className="space-y-3 rounded-xl border border-red-100 bg-red-50/40 p-2.5">
                       <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-1.5 text-xs font-bold text-red-600">
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-red-600">
                           <Percent size={12} />
                           {t("screens.invoices.invoiceDiscountRate")}
                         </label>
@@ -919,11 +922,11 @@ export default function AddPurchase() {
                             placeholder="0"
                           />
 
-                          <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">
+                          <span className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 text-sm text-slate-400">
                             %
                           </span>
                         </div>
-                        <span className="text-xs text-slate-300">=</span>
+                        <span className="text-sm text-slate-300">=</span>
                         <NumberInput
                           className={`${smallInputClass} flex-1 text-end tabular-nums`}
                           value={invoiceDiscount ? invoiceDiscount : ""}
@@ -937,7 +940,7 @@ export default function AddPurchase() {
                   {invoiceTaxRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-emerald-100 bg-emerald-50/40 p-2.5">
                       <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-emerald-700">
                           <Receipt size={12} />
                           {t("ui.tax")}
                         </label>
@@ -958,7 +961,7 @@ export default function AddPurchase() {
                           {invoice.taxes.map((tax) => (
                             <span
                               key={tax.id}
-                              className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-bold text-emerald-700 shadow-sm"
+                              className="flex items-center gap-1 rounded-md bg-white px-2 py-1 text-sm font-bold text-emerald-700 shadow-sm"
                             >
                               {tax.name} ({tax.rate}%)
                               <button
@@ -1050,10 +1053,10 @@ export default function AddPurchase() {
 
                   {invoiceDiscount > 0 && (
                     <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
-                      <span className="text-xs text-slate-400">
+                      <span className="text-sm text-slate-400">
                         {t("screens.invoices.invoiceDiscountAmount")}
                       </span>
-                      <span className="text-right text-xs font-bold tabular-nums text-red-500">
+                      <span className="text-right text-sm font-bold tabular-nums text-red-500">
                         -{money(invoiceDiscount)}
                       </span>
                     </div>
@@ -1061,10 +1064,10 @@ export default function AddPurchase() {
 
                   {invoiceTaxValue > 0 && (
                     <div className="grid grid-cols-[1fr_7.5rem] items-center gap-2">
-                      <span className="text-xs text-slate-400">
+                      <span className="text-sm text-slate-400">
                         {t("screens.invoices.invoiceTaxAmount")}
                       </span>
-                      <span className="text-right text-xs font-bold tabular-nums text-emerald-600">
+                      <span className="text-right text-sm font-bold tabular-nums text-emerald-600">
                         +{money(invoiceTaxValue)}
                       </span>
                     </div>
@@ -1072,7 +1075,7 @@ export default function AddPurchase() {
                   {invoiceNoteRevealed && (
                     <div className="space-y-1.5 rounded-xl border border-amber-100 bg-amber-50/40 p-2.5">
                       <div className="flex items-center justify-between">
-                        <label className="flex items-center gap-1.5 text-xs font-bold text-amber-600">
+                        <label className="flex items-center gap-1.5 text-sm font-bold text-amber-600">
                           <StickyNote size={12} />
                           {t("screens.invoices.invoiceNote")}
                         </label>
@@ -1109,7 +1112,7 @@ export default function AddPurchase() {
                 </div>
 
                 <div className="mt-3 grid grid-cols-[1fr_7.5rem] items-center gap-2 rounded-xl bg-[#f6f8fd] px-3 py-2.5">
-                  <span className="text-xs font-black text-slate-700">
+                  <span className="text-sm font-black text-slate-700">
                     {t("ui.total")}
                   </span>
                   <span className="text-right text-lg font-black tabular-nums text-[#4663ff]">
@@ -1125,9 +1128,9 @@ export default function AddPurchase() {
               <div className={`${panelBodyClass} space-y-2.5`}>
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                    <Save size={14} />
+                    <Save size={18} />
                   </span>
-                  <h3 className="text-[13px] font-black text-slate-950">
+                  <h3 className="text-sm font-black text-slate-950">
                     {t("ui.payment")}
                   </h3>
                 </div>
@@ -1137,10 +1140,10 @@ export default function AddPurchase() {
                     type="button"
                     onClick={handleSaveUnpaid}
                     disabled={!canSave}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white min-h-[52px] py-3 text-base font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {saving ? (
-                      <Loader2 size={15} className="animate-spin" />
+                      <Loader2 size={18} className="animate-spin" />
                     ) : null}
                     {t("screens.invoices.saveUnpaid")}
                   </button>
@@ -1148,15 +1151,15 @@ export default function AddPurchase() {
                     type="button"
                     onClick={handleOpenPayModal}
                     disabled={!canSave}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] py-2.5 text-sm font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-[#4663ff] min-h-[56px] py-3 text-base font-black text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <Save size={15} />
+                    <Save size={18} />
                     {t("screens.invoices.saveAndPay")}
                   </button>
                 </div>
 
                 {!canSave && !saving && (
-                  <p className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-400">
                     <AlertCircle size={12} />
                     {!invoice.contact_id
                       ? t("errors.supplierRequired")
