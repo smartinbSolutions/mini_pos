@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import DeleteModal from "../../../../Global/DeleteModel";
 import AddPayment from "../../../Cash/Payment/components/AddPayment";
 import InvoiceListHeader from "../../../../Global/InvoiceListHeader";
+import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
 import Pagination from "../../../../Global/Pagination";
 import useSalesReturnList from "../hooks/useSalesReturnList";
 import GoTo from "../../../../Global/GoTo";
@@ -25,60 +26,7 @@ import TagList from "../../../Tags/components/TagList";
 import DataTable from "../../../../Global/DataTable";
 import ColumnPicker from "../../../../Global/ColumnPicker";
 import useColumnVisibility from "../../../../Global/useColumnVisibility";
-
-const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
-  const config = {
-    paid: {
-      label: t("ui.paid"),
-      classes: "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
-      dot: "bg-emerald-500",
-    },
-    partial: {
-      label: t("ui.partial"),
-      classes: "bg-amber-50 text-amber-700 border border-amber-200/60",
-      dot: "bg-amber-500",
-    },
-    unpaid: {
-      label: t("ui.unpaid"),
-      classes: "bg-slate-100 text-slate-700 border border-slate-200",
-      dot: "bg-slate-400",
-    },
-  };
-  const current = config[status] || config.unpaid;
-
-  const badge = (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${current.classes}`}
-    >
-      <span className={`h-2 w-2 rounded-full ${current.dot}`} />
-      {current.label}
-    </span>
-  );
-
-  if (status !== "partial") return badge;
-
-  return (
-    <HoverTooltip
-      trigger={badge}
-      content={
-        <>
-          <div className="flex justify-between gap-3 text-xs">
-            <span>{t("ui.refunded")}</span>
-            <span className="font-bold text-emerald-600">
-              {money(paidAmount)}
-            </span>
-          </div>
-          <div className="mt-1 flex justify-between gap-3 text-xs">
-            <span>{t("ui.remaining")}</span>
-            <span className="font-bold text-amber-600">
-              {money(remainingAmount)}
-            </span>
-          </div>
-        </>
-      }
-    />
-  );
-};
+import PaymentStatusBadge from "../../../../Global/PaymentStatusBadge";
 
 const SalesReturnList = () => {
   const { t, i18n } = useTranslation();
@@ -142,7 +90,7 @@ const SalesReturnList = () => {
       render: (inv) => (
         <GoTo type="invoice" id={inv.sales_invoice_id}>
           {inv.original_invoice_name ? `${inv.original_invoice_name} ` : ""}
-          <span className="text-xs text-slate-500">
+          <span className="text-sm text-slate-500">
             (#{inv.sales_invoice_id})
           </span>
         </GoTo>
@@ -171,7 +119,7 @@ const SalesReturnList = () => {
       label: t("ui.status"),
       align: "center",
       render: (inv) => (
-        <StatusBadge
+        <PaymentStatusBadge
           status={inv.status}
           paidAmount={inv.refunded_amount}
           remainingAmount={inv.remaining_amount}
@@ -186,7 +134,7 @@ const SalesReturnList = () => {
       defaultVisible: false,
       render: (inv) => (
         <span
-          className={`rounded-lg px-2 py-0.5 text-xs font-semibold ${
+          className={`rounded-lg px-2 py-0.5 text-sm font-semibold ${
             inv.channel === "pos"
               ? "bg-violet-50 text-violet-700 border border-violet-200/60"
               : "bg-slate-100 text-slate-600 border border-slate-200"
@@ -275,17 +223,21 @@ const SalesReturnList = () => {
       label: t("common.actions"),
       locked: true,
       sticky: true,
-      width: 110,
+      width: 200,
       align: "center",
       render: (inv) => (
-        <DropdownMenu
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/view-sales-return/${inv.id}`)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
+          >
+            <Eye size={17} />
+            {t("simple.latest.view")}
+          </button>
+          <DropdownMenu
           trigger={
-            <button
-              aria-label={t("common.actions")}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] active:scale-95"
-            >
-              <MoreVertical size={18} />
-            </button>
+            <button type="button" aria-label={t("common.actions")} className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-muted transition hover:bg-slate-100 hover:text-ink"><MoreVertical size={20} /></button>
           }
           align={isRtl ? "left" : "right"}
           options={[
@@ -293,7 +245,6 @@ const SalesReturnList = () => {
               key: "view",
               icon: <Eye size={16} />,
               label: t("common.view"),
-              inline: true,
               onClick: () => navigate(`/view-sales-return/${inv.id}`),
             },
             {
@@ -321,6 +272,7 @@ const SalesReturnList = () => {
             },
           ]}
         />
+        </div>
       ),
     },
   ];
@@ -463,7 +415,6 @@ const SalesReturnList = () => {
             },
             {
               icon: Undo2,
-              eyebrow: "NET",
               value: money(totalNet),
               label: t("ui.total"),
               variant: "brand",

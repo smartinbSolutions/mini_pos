@@ -25,6 +25,7 @@ import TagList from "../../../Tags/components/TagList";
 import DataTable from "../../../../Global/DataTable";
 import ColumnPicker from "../../../../Global/ColumnPicker";
 import useColumnVisibility from "../../../../Global/useColumnVisibility";
+import PaymentStatusBadge from "../../../../Global/PaymentStatusBadge";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -50,59 +51,6 @@ function BreakdownTooltip({ trigger, rows }) {
     />
   );
 }
-
-const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
-  const config = {
-    paid: {
-      label: t("ui.paid"),
-      classes: "bg-emerald-50 text-emerald-600",
-      dot: "bg-emerald-500",
-    },
-    partial: {
-      label: t("ui.partial"),
-      classes: "bg-amber-50 text-amber-600",
-      dot: "bg-amber-500",
-    },
-    unpaid: {
-      label: t("ui.unpaid"),
-      classes: "bg-slate-100 text-slate-500",
-      dot: "bg-slate-400",
-    },
-  };
-  const current = config[status] || config.unpaid;
-
-  const badge = (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${current.classes}`}
-    >
-      <span className={`h-1.5 w-1.5 rounded-full ${current.dot}`} />
-      {current.label}
-    </span>
-  );
-  if (status !== "partial") return badge;
-
-  return (
-    <HoverTooltip
-      trigger={badge}
-      content={
-        <>
-          <div className="flex justify-between">
-            <span>{t("ui.refunded")}</span>
-            <span className="font-bold text-emerald-600">
-              {money(paidAmount)}
-            </span>
-          </div>
-          <div className="mt-1 flex justify-between">
-            <span>{t("ui.remaining")}</span>
-            <span className="font-bold text-amber-600">
-              {money(remainingAmount)}
-            </span>
-          </div>
-        </>
-      }
-    />
-  );
-};
 
 const PurchaseReturnList = () => {
   const { t, i18n } = useTranslation();
@@ -169,7 +117,7 @@ const PurchaseReturnList = () => {
       label: t("ui.returnId"),
       locked: true,
       render: (inv) => (
-        <span className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-[11px] font-bold text-[#4663ff]">
+        <span className="rounded-lg bg-[#eef3ff] px-2 py-0.5 text-sm font-bold text-[#4663ff]">
           #{inv.id}
         </span>
       ),
@@ -211,6 +159,7 @@ const PurchaseReturnList = () => {
     },
     {
       key: "discount",
+      defaultVisible: false,
       label: t("ui.discount"),
       align: "end",
       cellClassName: "tabular-nums",
@@ -245,6 +194,7 @@ const PurchaseReturnList = () => {
     },
     {
       key: "tax",
+      defaultVisible: false,
       label: t("ui.tax"),
       align: "end",
       cellClassName: "tabular-nums",
@@ -287,7 +237,7 @@ const PurchaseReturnList = () => {
       key: "status",
       label: t("ui.status"),
       render: (inv) => (
-        <StatusBadge
+        <PaymentStatusBadge
           status={inv.status}
           paidAmount={inv.refunded_amount}
           remainingAmount={inv.remaining_amount}
@@ -307,13 +257,20 @@ const PurchaseReturnList = () => {
       label: t("common.actions"),
       locked: true,
       sticky: true,
-      width: 110,
+      width: 200,
       render: (inv) => (
-        <DropdownMenu
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/view-purchase-return/${inv.id}`)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
+          >
+            <Eye size={17} />
+            {t("simple.latest.view")}
+          </button>
+          <DropdownMenu
           trigger={
-            <button className="rounded-lg p-1.5 text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]">
-              <MoreVertical size={16} />
-            </button>
+            <button type="button" aria-label={t("common.actions")} className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-muted transition hover:bg-slate-100 hover:text-ink"><MoreVertical size={20} /></button>
           }
           align={isRtl ? "left" : "right"}
           options={[
@@ -321,7 +278,6 @@ const PurchaseReturnList = () => {
               key: "view",
               icon: <Eye size={14} />,
               label: t("common.view"),
-              inline: true,
               onClick: () => navigate(`/view-purchase-return/${inv.id}`),
             },
             {
@@ -349,6 +305,7 @@ const PurchaseReturnList = () => {
             },
           ]}
         />
+        </div>
       ),
     },
   ];
@@ -480,7 +437,6 @@ const PurchaseReturnList = () => {
             },
             {
               icon: Undo2,
-              eyebrow: "NET",
               value: money(totalNet),
               label: t("ui.total"),
               variant: "brand",

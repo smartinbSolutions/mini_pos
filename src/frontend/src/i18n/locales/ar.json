@@ -213,7 +213,8 @@
     "itemDiscount": "خصم الأصناف",
     "invoiceDiscount": "خصم الفاتورة",
     "itemTax": "ضريبة الأصناف",
-    "country": "الدولة"
+    "country": "الدولة",
+    "filters": "التصفيات"
   },
   "filters": {
     "channel": "القناة",
@@ -760,7 +761,8 @@
       "noSupplier": "بدون مورد",
       "deletedSuccessfully": "تم حذف الفاتورة.",
       "itemTaxTotal": "ضريبة الأصناف",
-      "pay": "ادفع"
+      "pay": "ادفع",
+      "printFailed": "فشلت الطباعة."
     },
     "company": {
       "languageHint": "سيؤدي هذا أيضًا إلى تغيير لغة واجهة التطبيق بعد الحفظ.",

@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Eye, Edit2, Trash2, HandCoins, ArrowLeftRight } from "lucide-react";
+import {
+  Eye,
+  Edit2,
+  Trash2,
+  HandCoins,
+  ArrowLeftRight,
+  MoreVertical,
+  Users,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ToastContainer } from "react-toastify";
 import useContactList from "../hooks/useContactList";
@@ -10,6 +18,8 @@ import ContactListHeader from "../../../Global/Contactlistheader";
 import ContactFormModal from "../../../Global/ContactFormModal";
 import Pagination from "../../../Global/Pagination";
 import TagList from "../../Tags/components/TagList";
+import DropdownMenu from "../../../Global/DropdownMenu";
+import EmptyState from "../../../Global/ui/EmptyState";
 import SettlementModal from "../../Cash/Settlement/components/SettlementModal";
 
 // dir="ltr" font-mono tabular-nums wrapper, per the app's RTL-number convention.
@@ -29,7 +39,7 @@ const StatCard = ({ label, value, tone = "neutral" }) => {
 
   return (
     <div className="rounded-2xl border border-white/80 bg-white/70 px-4 py-3 shadow-[0_10px_30px_rgba(70,99,255,0.06)]">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+      <p className="text-sm font-bold text-slate-500">
         {label}
       </p>
       <p className={`mt-1 text-xl font-black ${toneClass}`}>
@@ -63,7 +73,7 @@ const BalanceCell = ({ balance, money, t }) => {
   return (
     <div className="flex items-center justify-center gap-2">
       <span
-        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${style.chip}`}
+        className={`rounded-full px-2.5 py-1 text-sm font-bold ${style.chip}`}
       >
         {label}
       </span>
@@ -75,7 +85,8 @@ const BalanceCell = ({ balance, money, t }) => {
 };
 
 export default function ContactList({ role }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isRtl = i18n.dir() === "rtl";
   const { money } = usePrimaryCurrency();
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [settlementContact, setSettlementContact] = useState(null);
@@ -149,7 +160,7 @@ export default function ContactList({ role }) {
     "rounded-[28px] border border-white/80 bg-white/80 shadow-[0_24px_80px_rgba(70,99,255,0.12)] backdrop-blur overflow-hidden";
 
   const filterChipClass = (key) =>
-    `rounded-full px-3 py-1.5 text-xs font-bold transition ${
+    `rounded-full min-h-[44px] px-4 py-2 text-sm font-bold transition ${
       balanceFilter === key
         ? "bg-[#4663ff] text-white shadow-md shadow-[#4663ff]/20"
         : "bg-white/80 text-slate-500 border border-[#dbe4ff] hover:bg-[#eef3ff]"
@@ -229,13 +240,13 @@ export default function ContactList({ role }) {
           </div>
 
           {contacts.length === 0 ? (
-            <div className="text-center text-gray-400 text-sm py-10">
-              {text.empty}
+            <div className="p-6">
+              <EmptyState icon={Users} title={text.empty} />
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-center text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase text-slate-500">
+                <thead className="bg-[#f8faff] text-sm font-bold text-slate-600">
                   <tr>
                     <th className="px-5 py-4 text-center">{t("ui.name")}</th>
                     <th className="px-5 py-4 text-center">{t("ui.phone")}</th>
@@ -258,25 +269,25 @@ export default function ContactList({ role }) {
                     >
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4663ff] text-xs font-bold text-white shadow-md shadow-[#4663ff]/20">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#4663ff] text-sm font-bold text-white shadow-md shadow-[#4663ff]/20">
                             {contact.name?.charAt(0)?.toUpperCase() || "C"}
                           </div>
                           <div className="min-w-0 text-start">
-                            <span className="block font-bold text-slate-900">
+                            <span className="block text-base font-bold text-slate-900">
                               {contact.name}
                             </span>
                             {hasOtherRole(contact) ? (
-                              <span className="mt-0.5 inline-block rounded-md bg-[#eef3ff] px-1.5 py-0.5 text-[11px] font-bold text-[#4663ff]">
+                              <span className="mt-0.5 inline-block rounded-md bg-[#eef3ff] px-2 py-0.5 text-sm font-bold text-[#4663ff]">
                                 {text.otherRole}
                               </span>
                             ) : null}
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-slate-500">
+                      <td className="px-5 py-3 text-base text-slate-600">
                         {contact.phone || t("ui.noPhone")}
                       </td>
-                      <td className="px-5 py-3 max-w-[200px] truncate text-slate-500">
+                      <td className="px-5 py-3 max-w-[200px] truncate text-base text-slate-600">
                         {contact.address || t("ui.noAddress")}
                       </td>
                       <td className="px-5 py-3 text-center">
@@ -293,48 +304,56 @@ export default function ContactList({ role }) {
                         />
                       </td>
                       <td className="px-5 py-3">
-                        <div className="flex justify-center gap-1">
+                        <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => navigate(`/contact/${contact.id}`)}
-                            className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                            title={t("screens.funds.viewMovements")}
+                            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
                           >
-                            <Eye size={16} />
+                            <Eye size={17} />
+                            {t("simple.latest.view")}
                           </button>
-                          <button
-                            onClick={() => {
-                              setSelectedContact(contact);
-                              setOpenPaymentModel(true);
-                            }}
-                            className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                            title={t("ui.payment")}
-                          >
-                            <HandCoins size={16} />
-                          </button>
-                          <button
-                            onClick={() => setSettlementContact(contact)}
-                            className="rounded-xl p-2 text-slate-500 transition hover:bg-violet-50 hover:text-violet-600"
-                            title={t(
-                              "screens.payments.settlement",
-                              "Settlement",
-                            )}
-                          >
-                            <ArrowLeftRight size={16} />
-                          </button>
-                          <button
-                            onClick={() => startEdit(contact)}
-                            className="rounded-xl p-2 text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff]"
-                            title={t("common.edit")}
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(contact)}
-                            className="rounded-xl p-2 text-red-500 transition hover:bg-red-50"
-                            title={t("common.delete")}
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <DropdownMenu
+                            align={isRtl ? "left" : "right"}
+                            trigger={
+                              <button
+                                type="button"
+                                aria-label={t("common.actions")}
+                                className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-muted transition hover:bg-slate-100 hover:text-ink"
+                              >
+                                <MoreVertical size={20} />
+                              </button>
+                            }
+                            options={[
+                              {
+                                key: "payment",
+                                icon: <HandCoins size={18} />,
+                                label: t("ui.payment"),
+                                onClick: () => {
+                                  setSelectedContact(contact);
+                                  setOpenPaymentModel(true);
+                                },
+                              },
+                              {
+                                key: "settlement",
+                                icon: <ArrowLeftRight size={18} />,
+                                label: t("screens.payments.settlement", "Settlement"),
+                                onClick: () => setSettlementContact(contact),
+                              },
+                              {
+                                key: "edit",
+                                icon: <Edit2 size={18} />,
+                                label: t("common.edit"),
+                                onClick: () => startEdit(contact),
+                              },
+                              {
+                                key: "delete",
+                                icon: <Trash2 size={18} />,
+                                label: t("common.delete"),
+                                danger: true,
+                                onClick: () => setDeleteTarget(contact),
+                              },
+                            ]}
+                          />
                         </div>
                       </td>
                     </tr>

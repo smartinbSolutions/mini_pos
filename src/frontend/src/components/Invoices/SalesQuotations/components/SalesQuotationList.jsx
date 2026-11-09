@@ -70,7 +70,7 @@ const StatusBadge = ({ status, t }) => {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.draft;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.classes} border border-current/20`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-semibold ${cfg.classes} border border-current/20`}
     >
       <span className={`h-2 w-2 rounded-full ${cfg.dot}`} />
       {t(`screens.quotations.status.${status}`)}
@@ -259,19 +259,23 @@ const SalesQuotationList = () => {
       label: t("common.actions"),
       locked: true,
       sticky: true,
-      width: 110,
+      width: 200,
       align: "center",
       render: (q) => {
         const editable = q.status !== "accepted";
         return (
+          <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/view-sales-quotation/${q.id}`)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
+          >
+            <Eye size={17} />
+            {t("simple.latest.view")}
+          </button>
           <DropdownMenu
             trigger={
-              <button
-                aria-label={t("common.actions")}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] active:scale-95"
-              >
-                <MoreVertical size={18} />
-              </button>
+              <button type="button" aria-label={t("common.actions")} className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-muted transition hover:bg-slate-100 hover:text-ink"><MoreVertical size={20} /></button>
             }
             align={isRtl ? "left" : "right"}
             options={[
@@ -279,7 +283,6 @@ const SalesQuotationList = () => {
                 key: "view",
                 icon: <Eye size={16} />,
                 label: t("common.view"),
-                inline: true,
                 onClick: () => navigate(`/view-sales-quotation/${q.id}`),
               },
               {
@@ -311,6 +314,7 @@ const SalesQuotationList = () => {
               },
             ]}
           />
+        </div>
         );
       },
     },
@@ -469,7 +473,6 @@ const SalesQuotationList = () => {
               variant: "violet",
             },
             {
-              eyebrow: "NET",
               value: money(totalNet),
               label: t("ui.total"),
               variant: "brand",

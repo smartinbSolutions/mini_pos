@@ -211,7 +211,8 @@
     "noReason": "No reason",
     "itemDiscount": "Item discount",
     "invoiceDiscount": "Invoice discount",
-    "itemTax": "Item tax"
+    "itemTax": "Item tax",
+    "filters": "Filters"
   },
   "filters": {
     "channel": "Channel",
@@ -755,7 +756,8 @@
       "pdfFailed": "Failed to save PDF.",
       "noSupplier": "No supplier",
       "deletedSuccessfully": "Invoice deleted.",
-      "itemTaxTotal": "Item tax"
+      "itemTaxTotal": "Item tax",
+      "printFailed": "Printing failed."
     },
     "company": {
       "languageHint": "Also switches the app's interface language once saved.",

@@ -43,7 +43,7 @@ export default function DropdownMenu({ trigger, options, align = "right" }) {
           title={option.label}
           aria-label={option.label}
           onClick={option.onClick}
-          className={`rounded-lg p-1.5 transition ${
+          className={`flex h-11 w-11 items-center justify-center rounded-xl transition ${
             option.danger
               ? "text-red-500 hover:bg-red-50"
               : "text-slate-500 hover:bg-[#eef3ff] hover:text-[#4663ff]"
@@ -73,7 +73,7 @@ export default function DropdownMenu({ trigger, options, align = "right" }) {
               onClick={() => setOpen(false)}
             />
             <div
-              className="fixed z-[9999] min-w-[10rem] overflow-hidden rounded-xl border border-[#e9edfb] bg-white py-1 shadow-[0_10px_28px_rgba(15,23,42,0.14)]"
+              className="fixed z-[9999] min-w-[14rem] overflow-hidden rounded-2xl border-2 border-[#e9edfb] bg-white py-1 shadow-[0_10px_28px_rgba(15,23,42,0.14)]"
               style={{
                 top: coords.top,
                 left: coords.left,
@@ -89,7 +89,11 @@ export default function DropdownMenu({ trigger, options, align = "right" }) {
                     option.onClick();
                     setOpen(false);
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[11px] font-bold text-slate-600 transition hover:bg-[#f6f8fd] hover:text-[#4663ff]"
+                  className={`flex min-h-[48px] w-full items-center gap-3 px-4 text-start text-base font-bold transition ${
+                    option.danger
+                      ? "text-danger-700 hover:bg-danger-50"
+                      : "text-ink-soft hover:bg-slate-50 hover:text-brand-700"
+                  }`}
                 >
                   {option.icon}
                   {option.label}

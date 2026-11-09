@@ -167,7 +167,7 @@ export default function SalesQuotationView() {
               disabled={isSavingPdf}
               className="inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Download size={16} />
+              <Download size={18} />
               {isSavingPdf ? t("common.saving") : t("common.savePdf", "Save as PDF")}
             </button>
 
@@ -196,7 +196,7 @@ export default function SalesQuotationView() {
                 <FileText size={22} />
               </span>
               <div>
-                <p className="text-xs font-semibold text-[#4663ff]">
+                <p className="text-sm font-semibold text-[#4663ff]">
                   {t("screens.quotations.salesQuotation")}
                 </p>
                 <h1 className="text-2xl font-black leading-tight text-slate-950">
@@ -226,7 +226,7 @@ export default function SalesQuotationView() {
               </p>
               <div className="mt-1.5">
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${statusStyle.bg} ${statusStyle.text} border border-current/20`}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${statusStyle.bg} ${statusStyle.text} border border-current/20`}
                 >
                   <span className="h-2 w-2 rounded-full bg-current" />
                   {statusLabel}
@@ -237,7 +237,7 @@ export default function SalesQuotationView() {
 
           <div className="space-y-4 p-5">
             {quotation.description && (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50/40 px-3.5 py-2.5 text-xs font-medium text-slate-600">
+              <div className="flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50/40 px-3.5 py-2.5 text-sm font-medium text-slate-600">
                 <StickyNote
                   size={14}
                   className="mt-0.5 shrink-0 text-amber-500"
@@ -256,7 +256,7 @@ export default function SalesQuotationView() {
               <AccentRule colorClass="bg-violet-500" />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-sm">
-                  <thead className="bg-[#f8faff] text-xs font-semibold text-slate-500">
+                  <thead className="bg-[#f8faff] text-sm font-semibold text-slate-500">
                     <tr>
                       <th className="p-3.5 text-start">{t("ui.product")}</th>
                       <th className="p-3.5 text-end">{t("ui.qty")}</th>
@@ -306,13 +306,13 @@ export default function SalesQuotationView() {
                                   line.productName || "-"
                                 )}
                                 {item.product_code && (
-                                  <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
+                                  <p className="mt-0.5 text-sm font-semibold text-slate-400">
                                     #{item.product_code}
                                   </p>
                                 )}
                               </div>
                               {isNonBaseUnit && (
-                                <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                                <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
                                   {t("screens.invoices.unitConversionDetail", {
                                     enteredQty: line.quantity,
@@ -323,7 +323,7 @@ export default function SalesQuotationView() {
                                 </div>
                               )}
                               {item.description && (
-                                <div className="mt-1 flex items-start gap-1 text-[11px] font-medium text-amber-600">
+                                <div className="mt-1 flex items-start gap-1 text-sm font-medium text-amber-600">
                                   <StickyNote
                                     size={11}
                                     className="mt-0.5 shrink-0"
@@ -335,12 +335,12 @@ export default function SalesQuotationView() {
                             <td className="p-3 text-right tabular-nums text-slate-700">
                               {line.quantity}
                               {line.unitName && (
-                                <span className="ml-1 text-[11px] text-slate-400">
+                                <span className="ml-1 text-sm text-slate-400">
                                   {line.unitName}
                                 </span>
                               )}
                               {isNonBaseUnit && (
-                                <span className="ml-1 text-[11px] text-slate-400">
+                                <span className="ml-1 text-sm text-slate-400">
                                   ({line.baseQuantity})
                                 </span>
                               )}
@@ -415,7 +415,7 @@ export default function SalesQuotationView() {
                 </div>
 
                 {itemDiscountTotal > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {t("screens.invoices.itemDiscount")}
                     </span>
@@ -426,7 +426,7 @@ export default function SalesQuotationView() {
                 )}
 
                 {quotationDiscount > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {t("screens.invoices.invoiceDiscount")}
                       {quotation.discount_rate
@@ -440,7 +440,7 @@ export default function SalesQuotationView() {
                 )}
 
                 {itemTaxTotal > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {t("screens.invoices.itemTax")}
                     </span>
@@ -451,7 +451,7 @@ export default function SalesQuotationView() {
                 )}
 
                 {(quotation.taxes || []).map((tax) => (
-                  <div key={tax.id} className="flex justify-between text-xs">
+                  <div key={tax.id} className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {tax.tax_name} ({tax.tax_rate}%)
                     </span>

@@ -211,7 +211,8 @@
     "noReason": "Neden yok",
     "itemDiscount": "Ürün indirimi",
     "invoiceDiscount": "Fatura indirimi",
-    "itemTax": "Ürün vergisi"
+    "itemTax": "Ürün vergisi",
+    "filters": "Filtreler"
   },
   "filters": {
     "channel": "Kanal",
@@ -759,7 +760,8 @@
       "noSupplier": "Tedarikçi yok",
       "deletedSuccessfully": "Fatura silindi.",
       "itemTaxTotal": "Ürün vergisi",
-      "pay": "Öde"
+      "pay": "Öde",
+      "printFailed": "Yazdırma başarısız oldu."
     },
     "company": {
       "languageHint": "Kaydedildikten sonra uygulamanın arayüz dilini de değiştirir.",

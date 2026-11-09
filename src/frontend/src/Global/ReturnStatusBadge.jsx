@@ -14,9 +14,9 @@ export default function ReturnStatusBadge({ status }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold ${STYLES[status]}`}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-sm font-bold ${STYLES[status]}`}
     >
-      <Undo2 size={11} />
+      <Undo2 size={14} />
       {status === "full" ? t("ui.fully-refunded") : t("ui.partially-refunded")}
     </span>
   );

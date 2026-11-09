@@ -169,9 +169,9 @@ export default function SalesInvoiceView() {
               type="button"
               onClick={() => handleSavePdf(invoice.id)}
               disabled={isSavingPdf}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Download size={14} />
+              <Download size={18} />
               {isSavingPdf ? t("common.saving") : t("common.savePdf")}
             </button>
 
@@ -179,9 +179,9 @@ export default function SalesInvoiceView() {
               type="button"
               onClick={() => handlePrint(invoice.id)}
               disabled={isPrinting}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 items-center gap-1.5 rounded-xl bg-[#4663ff] px-3.5 text-sm font-bold text-white shadow-md shadow-[#4663ff]/25 transition hover:bg-[#3854e8] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Printer size={14} />
+              <Printer size={18} />
               {isPrinting ? t("common.saving") : t("common.print")}
             </button>
           </div>
@@ -194,13 +194,13 @@ export default function SalesInvoiceView() {
                 <Receipt size={20} />
               </span>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-[#4663ff]">
+                <p className="text-sm font-black text-[#4663ff]">
                   {t("screens.invoices.salesInvoice")}
                 </p>
                 <h1 className="text-xl font-black leading-tight text-slate-950">
                   {t("ui.invoice")} #{invoice.id}
                 </h1>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-slate-500">
                   <FormattedDate value={invoice.date} />
                 </p>
               </div>
@@ -216,9 +216,9 @@ export default function SalesInvoiceView() {
                   {invoice.customer_name || "-"}
                 </GoTo>
               </p>
-              {/* <p className="text-xs text-slate-500">{t("ui.customer")}</p> */}
+              {/* <p className="text-sm text-slate-500">{t("ui.customer")}</p> */}
               <span
-                className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${statusStyle.bg} ${statusStyle.text}`}
+                className={`mt-2 inline-block rounded-full px-2.5 py-1 text-sm font-bold ${statusStyle.bg} ${statusStyle.text}`}
               >
                 {statusLabel}
               </span>
@@ -227,7 +227,7 @@ export default function SalesInvoiceView() {
 
           <div className="space-y-4 p-5">
             {invoice.description && (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50/40 px-3.5 py-2.5 text-xs font-medium text-slate-600">
+              <div className="flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50/40 px-3.5 py-2.5 text-sm font-medium text-slate-600">
                 <StickyNote
                   size={14}
                   className="mt-0.5 shrink-0 text-amber-500"
@@ -246,7 +246,7 @@ export default function SalesInvoiceView() {
               <AccentRule colorClass="bg-violet-500" />
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[760px] text-sm">
-                  <thead className="bg-[#f8faff] text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  <thead className="bg-[#f8faff] text-sm font-bold text-slate-400">
                     <tr>
                       <th className="p-3 text-right">{t("ui.product")}</th>
                       <th className="p-3 text-right">{t("ui.qty")}</th>
@@ -297,13 +297,13 @@ export default function SalesInvoiceView() {
                                   {line.productName || "-"}
                                 </GoTo>
                                 {item.product_code && (
-                                  <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
+                                  <p className="mt-0.5 text-sm font-semibold text-slate-400">
                                     #{item.product_code}
                                   </p>
                                 )}
                               </div>
                               {isNonBaseUnit && (
-                                <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
+                                <div className="mt-1 flex items-center gap-1 text-sm font-semibold text-slate-400">
                                   <Tag size={11} className="shrink-0" />
                                   {t("screens.invoices.unitConversionDetail", {
                                     enteredQty: line.quantity,
@@ -314,7 +314,7 @@ export default function SalesInvoiceView() {
                                 </div>
                               )}
                               {item.returned_quantity > 0 && (
-                                <div className="mt-1 text-[11px] font-semibold text-rose-500">
+                                <div className="mt-1 text-sm font-semibold text-rose-500">
                                   {t("screens.invoices.returnedQty", {
                                     qty: item.returned_quantity,
                                     defaultValue: "{{qty}} returned",
@@ -322,7 +322,7 @@ export default function SalesInvoiceView() {
                                 </div>
                               )}
                               {item.description && (
-                                <div className="mt-1 flex items-start gap-1 text-[11px] font-medium text-amber-600">
+                                <div className="mt-1 flex items-start gap-1 text-sm font-medium text-amber-600">
                                   <StickyNote
                                     size={11}
                                     className="mt-0.5 shrink-0"
@@ -334,12 +334,12 @@ export default function SalesInvoiceView() {
                             <td className="p-3 text-right tabular-nums text-slate-700">
                               {line.quantity}
                               {line.unitName && (
-                                <span className="ml-1 text-[11px] text-slate-400">
+                                <span className="ml-1 text-sm text-slate-400">
                                   {line.unitName}
                                 </span>
                               )}
                               {isNonBaseUnit && (
-                                <span className="ml-1 text-[11px] text-slate-400">
+                                <span className="ml-1 text-sm text-slate-400">
                                   ({line.baseQuantity})
                                 </span>
                               )}
@@ -405,7 +405,7 @@ export default function SalesInvoiceView() {
                                 >
                                   {money(item.item_profit)}
                                 </span>
-                                <div className="text-[11px] font-medium text-slate-400">
+                                <div className="text-sm font-medium text-slate-400">
                                   {item.item_margin_percent}%
                                 </div>
                               </td>
@@ -423,12 +423,12 @@ export default function SalesInvoiceView() {
               <div className={panelClass}>
                 <AccentRule colorClass="bg-amber-500" />
                 <div className="p-4">
-                  <h3 className="mb-3 text-[13px] font-black text-slate-900">
+                  <h3 className="mb-3 text-sm font-black text-slate-900">
                     {t("screens.invoices.paymentHistory", "Payment History")}
                   </h3>
 
                   {allocations.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-xs font-semibold text-slate-400">
+                    <div className="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm font-semibold text-slate-400">
                       {t("screens.invoices.noPaymentsRecordedYet")}
                     </div>
                   ) : (
@@ -444,7 +444,7 @@ export default function SalesInvoiceView() {
                                 {alloc.fund_name || "-"}
                               </GoTo>
                             </div>
-                            <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+                            <div className="mt-0.5 flex items-center gap-1 text-sm text-slate-400">
                               <FormattedDate value={alloc.date} /> ·{" "}
                               <GoTo type="payment" id={alloc.payment_id}>
                                 {t("ui.payment")} #{alloc.payment_id}
@@ -472,7 +472,7 @@ export default function SalesInvoiceView() {
                   </div>
 
                   {itemDiscountTotal > 0 && (
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-sm">
                       <span className="text-slate-400">
                         {t("screens.invoices.itemDiscount")}
                       </span>
@@ -483,7 +483,7 @@ export default function SalesInvoiceView() {
                   )}
 
                   {invoiceDiscount > 0 && (
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-sm">
                       <span className="text-slate-400">
                         {t("screens.invoices.invoiceDiscount")}
                         {invoice.discount_rate
@@ -497,7 +497,7 @@ export default function SalesInvoiceView() {
                   )}
 
                   {itemTaxTotal > 0 && (
-                    <div className="flex justify-between text-xs">
+                    <div className="flex justify-between text-sm">
                       <span className="text-slate-400">
                         {t("screens.invoices.itemTax")}
                       </span>
@@ -508,7 +508,7 @@ export default function SalesInvoiceView() {
                   )}
 
                   {(invoice.taxes || []).map((tax) => (
-                    <div key={tax.id} className="flex justify-between text-xs">
+                    <div key={tax.id} className="flex justify-between text-sm">
                       <span className="text-slate-400">
                         {tax.tax_name} ({tax.tax_rate}%)
                       </span>
@@ -519,7 +519,7 @@ export default function SalesInvoiceView() {
                   ))}
 
                   <div className="flex items-center justify-between rounded-xl bg-[#f6f8fd] px-3 py-2.5">
-                    <span className="text-xs font-black text-slate-700">
+                    <span className="text-sm font-black text-slate-700">
                       {t("ui.total")}
                     </span>
                     <span className="text-lg font-black tabular-nums text-[#4663ff]">
@@ -529,7 +529,7 @@ export default function SalesInvoiceView() {
 
                   {status !== "unpaid" && (
                     <>
-                      <div className="flex justify-between border-t border-dashed border-slate-200 pt-2.5 text-xs">
+                      <div className="flex justify-between border-t border-dashed border-slate-200 pt-2.5 text-sm">
                         <span className="text-slate-500">
                           {t("screens.invoices.paid")}
                         </span>
@@ -539,11 +539,11 @@ export default function SalesInvoiceView() {
                       </div>
 
                       {status === "partial" && (
-                        <div className="flex justify-between text-xs">
+                        <div className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-base font-bold">
                           <span className="text-slate-500">
                             {t("ui.remaining")}
                           </span>
-                          <span className="font-bold tabular-nums text-amber-600">
+                          <span className="text-xl font-black tabular-nums text-amber-700">
                             {money(invoice.remaining_amount)}
                           </span>
                         </div>
@@ -558,12 +558,12 @@ export default function SalesInvoiceView() {
               <div className={panelClass}>
                 <AccentRule colorClass="bg-emerald-500" />
                 <div className="flex items-center justify-between border-b border-[#eef1ff] px-4 py-3">
-                  <h3 className="flex items-center gap-1.5 text-[13px] font-black text-emerald-800">
+                  <h3 className="flex items-center gap-1.5 text-sm font-black text-emerald-800">
                     <TrendingUp size={14} />
                     {t("screens.invoices.profitBreakdown", "Profit Breakdown")}
                   </h3>
                   <span
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                    className={`rounded-full px-2.5 py-1 text-sm font-bold ${
                       profitSummary.grossProfit >= 0
                         ? "bg-emerald-50 text-emerald-600"
                         : "bg-rose-50 text-rose-600"
@@ -575,7 +575,7 @@ export default function SalesInvoiceView() {
 
                 <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    <p className="text-sm font-bold text-slate-400">
                       {t("ui.total", "Revenue")}
                     </p>
                     <p className="text-base font-black text-slate-900">
@@ -583,7 +583,7 @@ export default function SalesInvoiceView() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    <p className="text-sm font-bold text-slate-400">
                       {t("ui.cogs", "Cost of goods")}
                     </p>
                     <p className="text-base font-black text-rose-600">
@@ -591,7 +591,7 @@ export default function SalesInvoiceView() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    <p className="text-sm font-bold text-slate-400">
                       {t("ui.grossProfit", "Gross profit")}
                     </p>
                     <p
@@ -607,7 +607,7 @@ export default function SalesInvoiceView() {
                 </div>
 
                 <details className="border-t border-[#eef1ff] px-4 py-3">
-                  <summary className="cursor-pointer text-xs font-bold text-emerald-700">
+                  <summary className="cursor-pointer text-sm font-bold text-emerald-700">
                     {t("screens.invoices.perItemProfit", "Per-item profit")}
                   </summary>
                   <div className="mt-3 space-y-2">
@@ -632,7 +632,7 @@ export default function SalesInvoiceView() {
                           >
                             {money(item.item_profit)}
                           </span>
-                          <span className="ms-2 text-xs text-slate-400">
+                          <span className="ms-2 text-sm text-slate-400">
                             ({item.item_margin_percent}%)
                           </span>
                         </div>

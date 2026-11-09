@@ -184,7 +184,7 @@ export default function ExpenseView() {
                 <Receipt size={24} />
               </span>
               <div>
-                <p className="text-xs font-bold uppercase text-[#4663ff]">
+                <p className="text-sm font-bold text-[#4663ff]">
                   {t("ui.expenses")}
                 </p>
                 <h1 className="text-3xl font-black text-slate-950">
@@ -214,7 +214,7 @@ export default function ExpenseView() {
               </p>
               <p className="text-sm text-slate-500">{t("ui.supplier")}</p>
               <span
-                className={`mt-3 inline-block rounded-full px-3 py-1 text-xs font-black ${statusStyle.bg} ${statusStyle.text}`}
+                className={`mt-3 inline-block rounded-full px-3 py-1 text-sm font-black ${statusStyle.bg} ${statusStyle.text}`}
               >
                 {statusLabel}
               </span>
@@ -241,7 +241,7 @@ export default function ExpenseView() {
             )}
             <div className="overflow-x-auto rounded-2xl border border-[#e5ebff]">
               <table className="w-full min-w-[720px] text-sm">
-                <thead className="bg-[#f8faff] text-xs font-bold uppercase text-slate-500">
+                <thead className="bg-[#f8faff] text-sm font-bold text-slate-500">
                   <tr>
                     <th className="p-3 text-start">{t("ui.category")}</th>
                     <th className="p-3 text-start">{t("ui.price")}</th>
@@ -286,7 +286,7 @@ export default function ExpenseView() {
                               )}
                             </div>
                             {item.description && (
-                              <div className="mt-1 flex items-start gap-1 text-xs italic text-slate-400">
+                              <div className="mt-1 flex items-start gap-1 text-sm italic text-slate-400">
                                 <StickyNote
                                   size={11}
                                   className="mt-0.5 shrink-0"
@@ -361,7 +361,7 @@ export default function ExpenseView() {
               {/* PAYMENT HISTORY */}
               <div className="flex-1">
                 <h3 className="mb-3 flex items-start gap-2 text-sm font-black text-slate-700">
-                  <HandCoins size={16} className="text-[#4663ff]" />
+                  <HandCoins size={18} className="text-[#4663ff]" />
                   {t("screens.invoices.paymentHistory", "Payment History")}
                 </h3>
 
@@ -386,7 +386,7 @@ export default function ExpenseView() {
                               {alloc.fund_name || "-"}
                             </GoTo>
                           </div>
-                          <div className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                          <div className="mt-1 flex items-center gap-1 text-sm text-slate-400">
                             {formatDate(alloc.date)} ·{" "}
                             <GoTo
                               type="payment"
@@ -416,7 +416,7 @@ export default function ExpenseView() {
                 </div>
 
                 {itemDiscountTotal > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {t("screens.invoices.itemDiscount")}
                     </span>
@@ -427,7 +427,7 @@ export default function ExpenseView() {
                 )}
 
                 {invoiceDiscount > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {t("screens.invoices.invoiceDiscount")}
                       {expense.discount_rate
@@ -441,7 +441,7 @@ export default function ExpenseView() {
                 )}
 
                 {itemTaxTotal > 0 && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {t("screens.invoices.itemTax")}
                     </span>
@@ -452,7 +452,7 @@ export default function ExpenseView() {
                 )}
 
                 {(expense.taxes || []).map((tax) => (
-                  <div key={tax.id} className="flex justify-between text-xs">
+                  <div key={tax.id} className="flex justify-between text-sm">
                     <span className="text-slate-400">
                       {tax.tax_name} ({tax.tax_rate}%)
                     </span>

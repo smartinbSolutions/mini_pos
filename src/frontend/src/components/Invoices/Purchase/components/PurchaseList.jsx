@@ -31,6 +31,7 @@ import InvoiceIdBadge from "../../../../Global/InvoiceIdBadge";
 import ColumnPicker from "../../../../Global/ColumnPicker";
 import useColumnVisibility from "../../../../Global/useColumnVisibility";
 import DataTable from "../../../../Global/DataTable";
+import PaymentStatusBadge from "../../../../Global/PaymentStatusBadge";
 
 function BreakdownTooltip({ trigger, rows }) {
   const hasAnyValue = rows.some((r) => Number(r.value) > 0);
@@ -56,60 +57,6 @@ function BreakdownTooltip({ trigger, rows }) {
     />
   );
 }
-
-const StatusBadge = ({ status, paidAmount, remainingAmount, money, t }) => {
-  const config = {
-    paid: {
-      label: t("ui.paid"),
-      classes: "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
-      dot: "bg-emerald-500",
-    },
-    partial: {
-      label: t("ui.partial", "Partial"),
-      classes: "bg-amber-50 text-amber-700 border border-amber-200/60",
-      dot: "bg-amber-500",
-    },
-    unpaid: {
-      label: t("ui.unpaid"),
-      classes: "bg-slate-100 text-slate-700 border border-slate-200",
-      dot: "bg-slate-400",
-    },
-  };
-  const current = config[status] || config.unpaid;
-
-  const badge = (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${current.classes}`}
-    >
-      <span className={`h-2 w-2 rounded-full ${current.dot}`} />
-      {current.label}
-    </span>
-  );
-
-  if (status !== "partial") return badge;
-
-  return (
-    <HoverTooltip
-      trigger={badge}
-      content={
-        <>
-          <div className="flex justify-between gap-3 text-xs">
-            <span>{t("ui.paid")}</span>
-            <span className="font-bold text-emerald-600">
-              {money(paidAmount)}
-            </span>
-          </div>
-          <div className="mt-1 flex justify-between gap-3 text-xs">
-            <span>{t("ui.remaining", "Remaining")}</span>
-            <span className="font-bold text-amber-600">
-              {money(remainingAmount)}
-            </span>
-          </div>
-        </>
-      }
-    />
-  );
-};
 
 const PurchaseList = () => {
   const { t, i18n } = useTranslation();
@@ -204,7 +151,7 @@ const PurchaseList = () => {
       align: "center",
       render: (inv) => (
         <div className="flex flex-col items-center gap-1">
-          <StatusBadge
+          <PaymentStatusBadge
             status={inv.status}
             paidAmount={inv.paid_amount}
             remainingAmount={inv.remaining_amount}
@@ -303,17 +250,21 @@ const PurchaseList = () => {
       label: t("common.actions"),
       locked: true,
       sticky: true,
-      width: 110,
+      width: 200,
       align: "center",
       render: (inv) => (
-        <DropdownMenu
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/view-purchase/${inv.id}`)}
+            className="inline-flex h-11 items-center gap-1.5 rounded-xl border-2 border-slate-200 px-3 text-sm font-bold text-ink-soft transition hover:border-brand hover:text-brand-700"
+          >
+            <Eye size={17} />
+            {t("simple.latest.view")}
+          </button>
+          <DropdownMenu
           trigger={
-            <button
-              aria-label={t("common.actions")}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition hover:bg-[#eef3ff] hover:text-[#4663ff] active:scale-95"
-            >
-              <MoreVertical size={18} />
-            </button>
+            <button type="button" aria-label={t("common.actions")} className="flex h-11 w-11 items-center justify-center rounded-xl text-ink-muted transition hover:bg-slate-100 hover:text-ink"><MoreVertical size={20} /></button>
           }
           align={isRtl ? "left" : "right"}
           options={[
@@ -321,7 +272,6 @@ const PurchaseList = () => {
               key: "view",
               icon: <Eye size={16} />,
               label: t("common.view"),
-              inline: true,
               onClick: () => navigate(`/view-purchase/${inv.id}`),
             },
             {
@@ -371,6 +321,7 @@ const PurchaseList = () => {
             },
           ]}
         />
+        </div>
       ),
     },
   ];
@@ -520,7 +471,6 @@ const PurchaseList = () => {
               variant: "violet",
             },
             {
-              eyebrow: "NET",
               value: money(totalNet),
               label: t("ui.total"),
               variant: "brand",
